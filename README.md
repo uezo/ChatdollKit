@@ -67,7 +67,7 @@ In this README, I use [Anime Girls Idle Animations Free](https://assetstore.unit
 Add `Chatdoll/chatdoll.cs` to the 3D model. These 2 components are added automatically at this time.
 
 - `ModelController` controls animations, voices and face expressions of 3D model.
-- `MicEnabler` get the permission to use microphone for speech recognition.
+- `MicEnabler` gets the permission to use microphone for speech recognition.
 
 ## ModelController configuration
 
@@ -96,6 +96,49 @@ Here is how to configure and run "Hello world example".
 
 
 Play and click the `Start Chat` button in inspector. Confirm that she asks `呼びました？`, the value put in the dummy text is shown in the message box, she recognizes it as the hello intent and says `はいは〜い`, lastly she says `こんにちは` as the result of hello dialog.
+
+
+# Customize Hello world
+
+## IntentExtractor
+
+`IntentExtractor` is automatically added with `HelloWorldExample`. You implement the rules to extract the intent and entities from what the user is saying. You see the static rule by default.
+
+```Csharp
+request.Intent = "hello";
+```
+
+Replace this code like below or call some NLU service.
+
+```Csharp
+if (request.Text.ToLower().Contains("weather"))
+{
+    request.Intent = "weather";
+    request.Entities["LocationName"] = ParseLocation(request.Text);
+}
+else if (...)
+{
+
+}
+```
+
+Besides this, you can customize what the 3D model says and animates for each intent by editing here.
+
+```Csharp
+var animatedVoiceRequest = new AnimatedVoiceRequest();
+animatedVoiceRequest.AddVoice("line-girl1-haihaai1", preGap: 1.0f, postGap: 2.0f);
+animatedVoiceRequest.AddAnimation("Default");
+```
+
+## DialogProcessor
+
+HelloWorld example has a DialogProcessor named `hello` and it is implemented in `HelloDialog`. In this module, nothing is processed and just respond to say hello.
+
+You can add your own skill to chatdoll by creating and adding the DialogProcessors implements `IDialogProcessor`. When the value of `TopicName` property is set to the `request.Intent` in the `IntentExtractor`, the DialogProcessor is called and the `TopicName` is set to `Context.Topic.Name` to continue the successive conversation.
+
+## RequestProvider
+
+`DummyRequestProvider` is just a mock to walk through the HelloWorld example. To create a pratical chatdoll you should replace it to `AzureVoiceRequestProvider`, `GoogleCloudSpeechRequestProvider` or your own RequestProvider implements `IRequestProvider` to recognize what the user is saying. Please refer the RequestProviders in `Chatdoll.Extension` to create your own.
 
 
 # Deep Dive
