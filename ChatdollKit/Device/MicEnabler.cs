@@ -48,7 +48,7 @@ namespace ChatdollKit.Device
                 }
 #else
             Debug.Log("Permission for Mic is granted");
-            micPermissionGranted = true;
+            IsMicrophoneEnabled = true;
 #endif
             }
         }
