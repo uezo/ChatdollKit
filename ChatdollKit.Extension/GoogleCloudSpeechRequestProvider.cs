@@ -19,7 +19,7 @@ namespace ChatdollKit.Extension
         // GCSR configurations
         public string ApiKey;
         public string Language = "ja-JP";
-        public float Timeout = 3.0f;
+        public float Timeout = 6.0f;
 
         // Dummy for test
         public bool UseDummy = false;
@@ -120,28 +120,33 @@ namespace ChatdollKit.Extension
                 return DummyText;
             }
 
-            // Start recording
-            speechRecognition.StartRecord(true);
-            nowRecording = true;
-
-            // Wait for talking ends or timeout
-            var startTime = Time.time;
-            while (nowRecording || Time.time - startTime < Timeout)
-            {
-                await Task.Delay(50);
-            }
-
-            // Exit if RecognitionId is updated by another request
-            if (recognitionId != currentRecognitionId)
-            {
-                Debug.Log($"Id was updated by another request: Current {currentRecognitionId} / Global {recognitionId}");
-                return string.Empty;
-            }
-
             try
             {
-                // Stop recording before recognition
+                // Start recording
+                speechRecognition.StartRecord(true);
+                nowRecording = true;
+
+                // Wait for talking ends or timeout
+                var startTime = Time.time;
+                while (nowRecording)
+                {
+                    if (Time.time - startTime > Timeout)
+                    {
+                        Debug.Log($"Recording timeout");
+                        return string.Empty;
+                    }
+                    await Task.Delay(50);
+                }
+
+                // Stop recording just after voice detected
                 speechRecognition.StopRecord();
+
+                // Exit if RecognitionId is updated by another request
+                if (recognitionId != currentRecognitionId)
+                {
+                    Debug.Log($"Id was updated by another request: Current {currentRecognitionId} / Global {recognitionId}");
+                    return string.Empty;
+                }
 
                 // Exit if audio clip to recognize is empty
                 if (recordedClip == null)
