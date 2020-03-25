@@ -64,7 +64,7 @@ Animator Controllerを作成してBase Layerに`Default`というステートを
 
 `Chatdoll/chatdoll.cs`を3Dモデルに追加してください。以下2つのコンポーネントも自動的に追加されます。
 
-- `ModelController` 3Dモデルのアニメーション、発話、表情を制御
+- `ModelController` 3Dモデルのアニメーション、発話、表情を制御。使い方は[ModelControllerの使い方](https://github.com/uezo/ChatdollKit/blob/master/ModelController.ja.md)を参照
 - `MicEnabler` 音声認識のためのマイクの利用権限を取得
 
 ## ModelControllerの設定
