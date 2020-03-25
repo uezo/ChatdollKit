@@ -444,7 +444,7 @@ namespace ChatdollKit.Model
         }
 
         // Initialize and start blink
-        private void StartBlink(bool startNew = false)
+        public void StartBlink(bool startNew = false)
         {
             // Return with doing nothing when already blinking
             if (isBlinkEnabled && startNew == false)
@@ -472,16 +472,16 @@ namespace ChatdollKit.Model
             // Start
             if (BlinkOnCoroutine)
             {
-                StartCoroutine(BlinkCoroutine(startNew));
+                StartCoroutine(BlinkCoroutine());
             }
             else
             {
-                _ = StartBlinkTask(startNew);
+                _ = StartBlinkTask();
             }
         }
 
         // Blink loop in Task
-        private async Task StartBlinkTask(bool startNew = false)
+        private async Task StartBlinkTask()
         {
             // Start new blink loop
             while (true)
@@ -502,7 +502,7 @@ namespace ChatdollKit.Model
         }
 
         // Blink coroutine
-        private IEnumerator BlinkCoroutine(bool startNew = false)
+        private IEnumerator BlinkCoroutine()
         {
             // Start new blink loop
             while (true)
@@ -519,7 +519,7 @@ namespace ChatdollKit.Model
         }
 
         // Stop blink
-        private void StopBlink()
+        public void StopBlink()
         {
             isBlinkEnabled = false;
             skinnedMeshRenderer.SetBlendShapeWeight(blinkShapeIndex, 0);
