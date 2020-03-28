@@ -23,9 +23,19 @@ namespace ChatdollKit.Model
             }
         }
 
-        public void AddVoice(string name, float preGap = 0.0f, float postGap = 0.0f)
+        public void AddVoice(string name, float preGap = 0.0f, float postGap = 0.0f, string text = null, string url = null, VoiceSource source = VoiceSource.Local)
         {
-            Voices.Add(new Voice(name, preGap, postGap));
+            Voices.Add(new Voice(name, preGap, postGap, text, url, source));
+        }
+
+        public void AddVoiceWeb(string url, float preGap = 0.0f, float postGap = 0.0f, string name = null, string text = null)
+        {
+            Voices.Add(new Voice(name ?? string.Empty, preGap, postGap, text, url, VoiceSource.Web));
+        }
+
+        public void AddVoiceTTS(string text, float preGap = 0.0f, float postGap = 0.0f, string name = null)
+        {
+            Voices.Add(new Voice(name ?? string.Empty, preGap, postGap, text, string.Empty, VoiceSource.TTS));
         }
     }
 }

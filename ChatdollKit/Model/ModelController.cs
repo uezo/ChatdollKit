@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Networking;
 
 
 namespace ChatdollKit.Model
@@ -15,6 +16,15 @@ namespace ChatdollKit.Model
         // Audio
         public AudioSource AudioSource;
         private Dictionary<string, AudioClip> voices = new Dictionary<string, AudioClip>();
+        public Func<Voice, AudioType, Task<AudioClip>> VoiceDownloadFunc;
+        public Func<Voice, AudioType, Task<AudioClip>> SpeechToTextFunc;
+        public string TTSApiKey;
+        public string TTSRegion = "japanwest";
+        public string TTSLanguage = "ja-JP";
+        public string TTSGender = "Female";
+        public string TTSSpeakerName = "ja-JP-HarukaRUS";
+        public AudioType TTSAudioType = AudioType.WAV;
+        public AudioType WebAudioType = AudioType.WAV;
 
         // Animation
         private Animator animator;
@@ -241,19 +251,55 @@ namespace ChatdollKit.Model
                 {
                     return;
                 }
-                await Task.Delay((int)(v.PreGap * 1000), token);
-                if (voices.ContainsKey(v.Name))
+
+                if (v.Source == VoiceSource.Local)
                 {
-                    AudioSource.PlayOneShot(voices[v.Name]);
+                    if (voices.ContainsKey(v.Name))
+                    {
+                        // Wait for PreGap
+                        await Task.Delay((int)(v.PreGap * 1000), token);
+                        // Play audio
+                        AudioSource.PlayOneShot(voices[v.Name]);
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"Voice not found: {v.Name}");
+                    }
                 }
                 else
                 {
-                    Debug.LogWarning($"Voice not found: {v.Name}");
+                    // Download voice from web or TTS service
+                    var downloadStartTime = Time.time;
+                    AudioClip clip = null;
+                    if (v.Source == VoiceSource.Web)
+                    {
+                        clip = await (VoiceDownloadFunc ?? GetAudioClipFromWeb)(v, WebAudioType);
+                    }
+                    else if (v.Source == VoiceSource.TTS)
+                    {
+                        clip = await (SpeechToTextFunc ?? GetAudioClipFromTTS)(v, TTSAudioType);
+                    }
+
+                    if (clip != null)
+                    {
+                        // Wait for PreGap remains after download
+                        var preGap = v.PreGap - (Time.time - downloadStartTime);
+                        if (preGap > 0)
+                        {
+                            await Task.Delay((int)(preGap * 1000), token);
+                        }
+                        // Play audio
+                        AudioSource.PlayOneShot(clip);
+                    }
                 }
+
+                // Wait while voice playing
                 while (AudioSource.isPlaying && !token.IsCancellationRequested)
                 {
                     await Task.Delay(1);
                 }
+
+                // Wait for PostGap
                 await Task.Delay((int)(v.PostGap * 1000), token);
             }
 
@@ -262,6 +308,111 @@ namespace ChatdollKit.Model
             {
                 StartBlink();
             }
+        }
+
+        // Get audio clip from web
+        public async Task<AudioClip> GetAudioClipFromWeb(Voice voice, AudioType audioType)
+        {
+            // Return from cache when name is set and it's cached
+            if (!string.IsNullOrEmpty(voice.Name))
+            {
+                if (voices.ContainsKey(voice.Name))
+                {
+                    return voices[voice.Name];
+                }
+            }
+
+            using (var www = UnityWebRequestMultimedia.GetAudioClip(voice.Url, audioType))
+            {
+                www.timeout = 10;
+                www.SendWebRequest();
+                while (true)
+                {
+                    if (www.isNetworkError || www.isHttpError)
+                    {
+                        Debug.LogError($"Error occured while downloading voice: {www.error}");
+                        break;
+                    }
+                    else if (www.isDone)
+                    {
+                        var clip = DownloadHandlerAudioClip.GetContent(www);
+                        if (!string.IsNullOrEmpty(voice.Name))
+                        {
+                            // Cache if name is set
+                            voices[voice.Name] = clip;
+                        }
+                        return clip;
+                    }
+                    await Task.Delay(50);
+                }
+            }
+            return null;
+        }
+
+        // Get audio clip from using Azure Text-to-Speech
+        public async Task<AudioClip> GetAudioClipFromTTS(Voice voice, AudioType audioType)
+        {
+            // Return from cache when name is set and it's cached
+            if (!string.IsNullOrEmpty(voice.Name))
+            {
+                if (voices.ContainsKey(voice.Name))
+                {
+                    return voices[voice.Name];
+                }
+            }
+
+            var url = $"https://{TTSRegion}.tts.speech.microsoft.com/cognitiveservices/v1";
+            using (var www = UnityWebRequestMultimedia.GetAudioClip(url, audioType))
+            {
+                www.timeout = 10;
+                www.method = "POST";
+
+                // Header
+                www.SetRequestHeader("X-Microsoft-OutputFormat", audioType == AudioType.WAV ? "riff-16khz-16bit-mono-pcm" : "audio-16khz-128kbitrate-mono-mp3");
+                www.SetRequestHeader("Content-Type", "application/ssml+xml");
+                www.SetRequestHeader("Ocp-Apim-Subscription-Key", TTSApiKey);
+
+                // Body
+                var text = $"<speak version='1.0' xml:lang='{TTSLanguage}'><voice xml:lang='{TTSLanguage}' xml:gender='{TTSGender}' name='{TTSSpeakerName}'>{voice.Text}</voice></speak>";
+                www.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(text));
+
+                // Send request
+                www.SendWebRequest();
+                while (true)
+                {
+                    if (www.isNetworkError || www.isHttpError)
+                    {
+                        Debug.LogError($"Error occured while processing text-to-speech voice: {www.error}");
+                        break;
+                    }
+                    else if (www.isDone)
+                    {
+                        var clip = DownloadHandlerAudioClip.GetContent(www);
+                        if (!string.IsNullOrEmpty(voice.Name))
+                        {
+                            // Cache if name is set
+                            voices[voice.Name] = clip;
+                        }
+                        return clip;
+                    }
+                    await Task.Delay(50);
+                }
+            }
+            return null;
+        }
+
+        // Load audio clip from web
+        public async Task<bool> LoadAudioClipFromWeb(string name, string url, AudioType? audioType = null)
+        {
+            var voice = new Voice(name, 0.0f, 0.0f, string.Empty, url, VoiceSource.Web);
+            return await GetAudioClipFromWeb(voice, audioType ?? WebAudioType) == null ? false : true;
+        }
+
+        // Load audio clip from web
+        public async Task<bool> LoadAudioClipFromTTS(string name, string text, AudioType? audioType = null)
+        {
+            var voice = new Voice(name, 0.0f, 0.0f, text, string.Empty, VoiceSource.TTS);
+            return await GetAudioClipFromTTS(voice, audioType ?? WebAudioType) == null ? false : true;
         }
 
         // Stop speech
