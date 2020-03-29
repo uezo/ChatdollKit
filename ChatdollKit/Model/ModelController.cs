@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
+using ChatdollKit.Network;
 
 
 namespace ChatdollKit.Model
@@ -325,25 +326,21 @@ namespace ChatdollKit.Model
             using (var www = UnityWebRequestMultimedia.GetAudioClip(voice.Url, audioType))
             {
                 www.timeout = 10;
-                www.SendWebRequest();
-                while (true)
+                await www.SendWebRequest();
+
+                if (www.isNetworkError || www.isHttpError)
                 {
-                    if (www.isNetworkError || www.isHttpError)
+                    Debug.LogError($"Error occured while downloading voice: {www.error}");
+                }
+                else if (www.isDone)
+                {
+                    var clip = DownloadHandlerAudioClip.GetContent(www);
+                    if (!string.IsNullOrEmpty(voice.Name))
                     {
-                        Debug.LogError($"Error occured while downloading voice: {www.error}");
-                        break;
+                        // Cache if name is set
+                        voices[voice.Name] = clip;
                     }
-                    else if (www.isDone)
-                    {
-                        var clip = DownloadHandlerAudioClip.GetContent(www);
-                        if (!string.IsNullOrEmpty(voice.Name))
-                        {
-                            // Cache if name is set
-                            voices[voice.Name] = clip;
-                        }
-                        return clip;
-                    }
-                    await Task.Delay(50);
+                    return clip;
                 }
             }
             return null;
@@ -377,25 +374,21 @@ namespace ChatdollKit.Model
                 www.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(text));
 
                 // Send request
-                www.SendWebRequest();
-                while (true)
+                await www.SendWebRequest();
+
+                if (www.isNetworkError || www.isHttpError)
                 {
-                    if (www.isNetworkError || www.isHttpError)
+                    Debug.LogError($"Error occured while processing text-to-speech voice: {www.error}");
+                }
+                else if (www.isDone)
+                {
+                    var clip = DownloadHandlerAudioClip.GetContent(www);
+                    if (!string.IsNullOrEmpty(voice.Name))
                     {
-                        Debug.LogError($"Error occured while processing text-to-speech voice: {www.error}");
-                        break;
+                        // Cache if name is set
+                        voices[voice.Name] = clip;
                     }
-                    else if (www.isDone)
-                    {
-                        var clip = DownloadHandlerAudioClip.GetContent(www);
-                        if (!string.IsNullOrEmpty(voice.Name))
-                        {
-                            // Cache if name is set
-                            voices[voice.Name] = clip;
-                        }
-                        return clip;
-                    }
-                    await Task.Delay(50);
+                    return clip;
                 }
             }
             return null;
