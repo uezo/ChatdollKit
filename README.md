@@ -26,10 +26,9 @@ Clone or download this repository and put `ChatdollKit` directory into your Unit
 Add 3D model to the scene and adjust as you like. Install required resources for the 3D model like shaders and Dynamic Bone at this time.
 In this README, I use Cygnet-chan that we can perchase at Booth. https://booth.pm/ja/items/1870320
 
-After adjustment, add the LipSync components using inspector.
+After adjustment, add following LipSync components using inspector.
 
 - OVR Lip Sync Context Morph Target
-- OVR Lip Sync Mic Input
 - OVR Lip Sync Context
 
 Then set the object that has the shapekeys for face expressions to `Skinned Mesh Renderer` in `OVR Lip Sync Context Morph Target` and turn on `Audio Loopback` in `OVR Lip Sync Context`.

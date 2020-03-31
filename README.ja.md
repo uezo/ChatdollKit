@@ -25,10 +25,9 @@ Watch this 2 minutes video to learn how ChatdollKit works and the way to use qui
 
 お好みの3Dモデルをシーンに配置してください。シェーダーやダイナミックボーンなど必要に応じてセットアップしておいてください。なおこの手順で使っているモデルはシグネットちゃんです。とてもかわいいですね。 https://booth.pm/ja/items/1870320
 
-モデル自体の設定が完了したら、リップシンクの設定もしておきます。モデルのオブジェクトまたは適当な場所に追加したオブジェクトに、インスペクターから以下3つのコンポーネントを追加してください。
+モデル自体の設定が完了したら、リップシンクの設定もしておきます。モデルのオブジェクトまたは適当な場所に追加したオブジェクトに、インスペクターから以下2つのコンポーネントを追加してください。
 
 - OVR Lip Sync Context Morph Target
-- OVR Lip Sync Mic Input
 - OVR Lip Sync Context
 
 表情関連のシェイプキーを`OVR Lip Sync Context Morph Target`の`Skinned Mesh Renderer`に設定し、`OVR Lip Sync Context`の`Audio Loopback`のチェックをオンにすれば設定完了です。これによって3Dモデルにおしゃべりをさせると発話内容に応じて口が動くようになります。
