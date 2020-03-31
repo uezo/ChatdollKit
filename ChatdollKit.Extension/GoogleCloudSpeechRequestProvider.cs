@@ -133,6 +133,7 @@ namespace ChatdollKit.Extension
                     if (Time.time - startTime > Timeout)
                     {
                         Debug.Log($"Recording timeout");
+                        speechRecognition.StopRecord();
                         return string.Empty;
                     }
                     await Task.Delay(50);
