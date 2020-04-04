@@ -51,6 +51,24 @@ namespace ChatdollKit.Model
             AnimatedVoices.Last().AddVoice(name, preGap, postGap);
         }
 
+        public void AddVoiceWeb(string url, float preGap = 0.0f, float postGap = 0.0f, string name = null, string text = null, bool asNewFrame = false)
+        {
+            if (asNewFrame || AnimatedVoices.Count == 0)
+            {
+                CreateNewFrame();
+            }
+            AnimatedVoices.Last().AddVoiceWeb(url, preGap, postGap, name, text);
+        }
+
+        public void AddVoiceTTS(string text, float preGap = 0.0f, float postGap = 0.0f, string name = null, Dictionary<string, string> ttsOptions = null, bool asNewFrame = false)
+        {
+            if (asNewFrame || AnimatedVoices.Count == 0)
+            {
+                CreateNewFrame();
+            }
+            AnimatedVoices.Last().AddVoiceTTS(text, preGap, postGap, name, ttsOptions);
+        }
+
         public void AddAnimation(string name, float duration = 0.0f, float fadeLength = -1.0f, float weight = 1.0f, float preGap = 0.0f, bool asNewFrame = false)
         {
             AddAnimation(name, BaseLayerName, duration, fadeLength, weight, preGap, asNewFrame);

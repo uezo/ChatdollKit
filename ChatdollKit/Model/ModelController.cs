@@ -370,7 +370,10 @@ namespace ChatdollKit.Model
                 www.SetRequestHeader("Ocp-Apim-Subscription-Key", TTSApiKey);
 
                 // Body
-                var text = $"<speak version='1.0' xml:lang='{TTSLanguage}'><voice xml:lang='{TTSLanguage}' xml:gender='{TTSGender}' name='{TTSSpeakerName}'>{voice.Text}</voice></speak>";
+                var ttsLanguage = voice.GetTTSOption("language") ?? TTSLanguage;
+                var ttsGender = voice.GetTTSOption("gender") ?? TTSGender;
+                var ttsSpeakerName = voice.GetTTSOption("speakerName") ?? TTSSpeakerName;
+                var text = $"<speak version='1.0' xml:lang='{ttsLanguage}'><voice xml:lang='{ttsLanguage}' xml:gender='{ttsGender}' name='{ttsSpeakerName}'>{voice.Text}</voice></speak>";
                 www.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(text));
 
                 // Send request
@@ -397,14 +400,14 @@ namespace ChatdollKit.Model
         // Load audio clip from web
         public async Task<bool> LoadAudioClipFromWeb(string name, string url, AudioType? audioType = null)
         {
-            var voice = new Voice(name, 0.0f, 0.0f, string.Empty, url, VoiceSource.Web);
+            var voice = new Voice(name, 0.0f, 0.0f, string.Empty, url, null, VoiceSource.Web);
             return await GetAudioClipFromWeb(voice, audioType ?? WebAudioType) == null ? false : true;
         }
 
         // Load audio clip from web
-        public async Task<bool> LoadAudioClipFromTTS(string name, string text, AudioType? audioType = null)
+        public async Task<bool> LoadAudioClipFromTTS(string name, string text, Dictionary<string, string> ttsOptions = null, AudioType? audioType = null)
         {
-            var voice = new Voice(name, 0.0f, 0.0f, text, string.Empty, VoiceSource.TTS);
+            var voice = new Voice(name, 0.0f, 0.0f, text, string.Empty, ttsOptions, VoiceSource.TTS);
             return await GetAudioClipFromTTS(voice, audioType ?? WebAudioType) == null ? false : true;
         }
 
