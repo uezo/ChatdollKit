@@ -13,6 +13,7 @@ namespace ChatdollKit.Extension
         public AzureLanguage(string name)
         {
             Name = name;
+            // Set params when matched
             if (name.Contains("アラビア語")) { SpeechCode = "ar-EG"; SpeakerGender = "Female"; SpeakerName = "ar-EG-Hoda"; TranslationCode = "ar"; }
             else if (name.Contains("カタルニア語") || name.Contains("カタルーニャ語")) { SpeechCode = "ca-ES"; SpeakerGender = "Female"; SpeakerName = "ca-ES-HerenaRUS"; TranslationCode = "ca"; }
             else if (name.Contains("デンマーク語")) { SpeechCode = "da-DK"; SpeakerGender = "Female"; SpeakerName = "da-DK-HelleRUS"; TranslationCode = "da"; }
