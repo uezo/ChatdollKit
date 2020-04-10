@@ -408,7 +408,7 @@ namespace ChatdollKit.Model
         public async Task<bool> LoadAudioClipFromTTS(string name, string text, Dictionary<string, string> ttsOptions = null, AudioType? audioType = null)
         {
             var voice = new Voice(name, 0.0f, 0.0f, text, string.Empty, ttsOptions, VoiceSource.TTS);
-            return await GetAudioClipFromTTS(voice, audioType ?? WebAudioType) == null ? false : true;
+            return await GetAudioClipFromTTS(voice, audioType ?? TTSAudioType) == null ? false : true;
         }
 
         // Stop speech
