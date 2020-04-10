@@ -9,10 +9,14 @@ namespace ChatdollKit.Extension
         public string SpeakerName { get; set; }
         public string SpeakerGender { get; set; }
         public string TranslationCode { get; set; }
+        public bool IsSupported { get; set; }
 
         public AzureLanguage(string name)
         {
+            // Set Name and IsSupported
             Name = name;
+            IsSupported = true;
+
             // Set params when matched
             if (name.Contains("アラビア語")) { SpeechCode = "ar-EG"; SpeakerGender = "Female"; SpeakerName = "ar-EG-Hoda"; TranslationCode = "ar"; }
             else if (name.Contains("カタルニア語") || name.Contains("カタルーニャ語")) { SpeechCode = "ca-ES"; SpeakerGender = "Female"; SpeakerName = "ca-ES-HerenaRUS"; TranslationCode = "ca"; }
@@ -38,7 +42,7 @@ namespace ChatdollKit.Extension
             else if (name.Contains("台湾語")) { SpeechCode = "zh-TW"; SpeakerGender = "Female"; SpeakerName = "zh-TW-HanHanRUS"; TranslationCode = "zh-Hant"; }
             else
             {
-                throw new ArgumentException($"Unsupported language: {name}");
+                IsSupported = false;
             }
         }
 
@@ -49,6 +53,7 @@ namespace ChatdollKit.Extension
             SpeakerName = speakerName;
             SpeakerGender = speakerGender;
             TranslationCode = translationCode;
+            IsSupported = true;
         }
     }
 }
