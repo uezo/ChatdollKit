@@ -172,6 +172,8 @@ namespace ChatdollKit
                     // Post process
                     if (context.Topic.ContinueTopic)
                     {
+                        // Save user
+                        await UserStore.SaveUserAsync(user);
                         // Save context
                         await ContextStore.SaveContextAsync(context);
                         // Update properties for next
