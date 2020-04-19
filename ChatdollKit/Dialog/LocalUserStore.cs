@@ -22,7 +22,7 @@ namespace ChatdollKit.Dialog
             var filePath = Path.Combine(saveDirectory, $"user_{userId}.json");
             if (!File.Exists(filePath))
             {
-                Debug.Log("User created (File not found)");
+                Debug.Log($"User created (File not found): {filePath}");
                 return new User(userId, SaveUserAsync);
             }
 
