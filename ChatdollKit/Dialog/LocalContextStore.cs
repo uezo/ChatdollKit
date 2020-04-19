@@ -23,7 +23,7 @@ namespace ChatdollKit.Dialog
             var filePath = Path.Combine(saveDirectory, $"context_{userId}.json");
             if (!File.Exists(filePath))
             {
-                Debug.Log("Context created (File not found)");
+                Debug.Log($"Context created (File not found): {filePath}");
                 return new Context(userId);
             }
 
@@ -35,7 +35,8 @@ namespace ChatdollKit.Dialog
                     jsonString = await reader.ReadToEndAsync();
                 }
                 var context = JsonConvert.DeserializeObject<Context>(jsonString);
-                if (DateTime.UtcNow.Ticks - context.Timestamp.Ticks > TimeoutSeconds * 10000000)
+
+                if ((int)(DateTime.UtcNow - context.Timestamp).TotalSeconds > TimeoutSeconds)
                 {
                     // Create new context when timeout
                     Debug.Log("Context created (Timeout)");
