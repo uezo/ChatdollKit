@@ -32,18 +32,18 @@ namespace ChatdollKit.Model
             Voices.Add(new Voice(name ?? string.Empty, preGap, postGap, text, string.Empty, ttsOptions, VoiceSource.TTS));
         }
 
-        public void AddAnimation(string name, string layerName = null, float duration = 0.0f, float fadeLength = -1.0f, float weight = 1.0f, float preGap = 0.0f)
+        public void AddAnimation(string name, string layerName = null, float duration = 0.0f, float fadeLength = -1.0f, float weight = 1.0f, float preGap = 0.0f, string description = null)
         {
             if (!Animations.ContainsKey(layerName))
             {
                 Animations.Add(layerName, new List<Animation>());
             }
-            Animations[layerName].Add(new Animation(name, layerName, duration, fadeLength, weight, preGap));
+            Animations[layerName].Add(new Animation(name, layerName, duration, fadeLength, weight, preGap, description));
         }
 
-        public void AddFace(string name, float duration = 0.0f)
+        public void AddFace(string name, float duration = 0.0f, string description = null)
         {
-            Faces.Add(new FaceExpression(name, duration));
+            Faces.Add(new FaceExpression(name, duration, description));
         }
     }
 }

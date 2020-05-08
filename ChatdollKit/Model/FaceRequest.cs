@@ -15,9 +15,9 @@ namespace ChatdollKit.Model
             DefaultOnEnd = defaultOnEnd;
         }
 
-        public void AddFace(string name, float duration = 0.0f)
+        public void AddFace(string name, float duration = 0.0f, string description = null)
         {
-            Faces.Add(new FaceExpression(name, duration));
+            Faces.Add(new FaceExpression(name, duration, description));
         }
     }
 }
