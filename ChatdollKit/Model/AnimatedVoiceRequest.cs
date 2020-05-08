@@ -28,17 +28,17 @@ namespace ChatdollKit.Model
             BaseLayerName = baseLayerName ?? string.Empty;
         }
 
-        public void AddAnimatedVoice(string voiceName, string animationName, string faceName = null, float voicePreGap = 0.0f, float voicePostGap = 0.0f, float animationDuration = 0.0f, float animationFadeLength = -1.0f, float animationWeight = 1.0f, float animationPreGap = 0.0f, float faceDuration = 0.0f, bool asNewFrame = false)
+        public void AddAnimatedVoice(string voiceName, string animationName, string faceName = null, float voicePreGap = 0.0f, float voicePostGap = 0.0f, float animationDuration = 0.0f, float animationFadeLength = -1.0f, float animationWeight = 1.0f, float animationPreGap = 0.0f, float faceDuration = 0.0f, string description = null, bool asNewFrame = false)
         {
             if (asNewFrame || AnimatedVoices.Count == 0)
             {
                 CreateNewFrame();
             }
             AddVoice(voiceName, voicePreGap, voicePostGap);
-            AddAnimation(animationName, animationDuration, animationFadeLength, animationWeight, animationPreGap);
+            AddAnimation(animationName, animationDuration, animationFadeLength, animationWeight, animationPreGap, description);
             if (faceName != null)
             {
-                AddFace(faceName, faceDuration);
+                AddFace(faceName, faceDuration, description);
             }
         }
 
@@ -69,27 +69,27 @@ namespace ChatdollKit.Model
             AnimatedVoices.Last().AddVoiceTTS(text, preGap, postGap, name, ttsOptions);
         }
 
-        public void AddAnimation(string name, float duration = 0.0f, float fadeLength = -1.0f, float weight = 1.0f, float preGap = 0.0f, bool asNewFrame = false)
+        public void AddAnimation(string name, float duration = 0.0f, float fadeLength = -1.0f, float weight = 1.0f, float preGap = 0.0f, string description = null, bool asNewFrame = false)
         {
-            AddAnimation(name, BaseLayerName, duration, fadeLength, weight, preGap, asNewFrame);
+            AddAnimation(name, BaseLayerName, duration, fadeLength, weight, preGap, description, asNewFrame);
         }
 
-        public void AddAnimation(string name, string layerName, float duration = 0.0f, float fadeLength = -1.0f, float weight = 1.0f, float preGap = 0.0f, bool asNewFrame = false)
+        public void AddAnimation(string name, string layerName, float duration = 0.0f, float fadeLength = -1.0f, float weight = 1.0f, float preGap = 0.0f, string description = null, bool asNewFrame = false)
         {
             if (asNewFrame || AnimatedVoices.Count == 0)
             {
                 CreateNewFrame();
             }
-            AnimatedVoices.Last().AddAnimation(name, layerName, duration, fadeLength, weight, preGap);
+            AnimatedVoices.Last().AddAnimation(name, layerName, duration, fadeLength, weight, preGap, description);
         }
 
-        public void AddFace(string name, float duration = 0.0f, bool asNewFrame = false)
+        public void AddFace(string name, float duration = 0.0f, string description = null, bool asNewFrame = false)
         {
             if (asNewFrame || AnimatedVoices.Count == 0)
             {
                 CreateNewFrame();
             }
-            AnimatedVoices.Last().AddFace(name, duration);
+            AnimatedVoices.Last().AddFace(name, duration, description);
         }
 
         public int CreateNewFrame()

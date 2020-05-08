@@ -60,6 +60,9 @@ namespace ChatdollKit.Model
         private Action blinkAction;
         private CancellationTokenSource blinkTokenSource;
 
+        // History recorder for debug and test
+        public ActionHistoryRecorder History;
+
         private void Awake()
         {
             // Get animator of this model
@@ -114,6 +117,7 @@ namespace ChatdollKit.Model
             idleTokenSource = new CancellationTokenSource();
             var token = idleTokenSource.Token;
 
+            History?.Add("Start idling");
             if (IdleFunc == null)
             {
                 while (!token.IsCancellationRequested)
@@ -136,6 +140,7 @@ namespace ChatdollKit.Model
         // Stop idling
         public void StopIdling()
         {
+            History?.Add("Stop idling");
             // Stop running default animation loop
             if (idleTokenSource != null)
             {
@@ -161,12 +166,12 @@ namespace ChatdollKit.Model
             if (addToLastRequest)
             {
                 var request = IdleAnimationRequests.Last();
-                request.AddAnimation(name, layerName ?? request.BaseLayerName, duration == 0.0f ? IdleAnimationDefaultDuration : duration, fadeLength, weight, preGap);
+                request.AddAnimation(name, layerName ?? request.BaseLayerName, duration == 0.0f ? IdleAnimationDefaultDuration : duration, fadeLength, weight, preGap, "idle");
             }
             else
             {
                 var request = new AnimationRequest();
-                request.AddAnimation(name, layerName ?? request.BaseLayerName, duration == 0.0f ? IdleAnimationDefaultDuration : duration, fadeLength, weight, preGap);
+                request.AddAnimation(name, layerName ?? request.BaseLayerName, duration == 0.0f ? IdleAnimationDefaultDuration : duration, fadeLength, weight, preGap, "idle");
                 IdleAnimationRequests.Add(request);
             }
         }
@@ -260,6 +265,7 @@ namespace ChatdollKit.Model
                         // Wait for PreGap
                         await Task.Delay((int)(v.PreGap * 1000), token);
                         // Play audio
+                        History?.Add(v);
                         AudioSource.PlayOneShot(voices[v.Name]);
                     }
                     else
@@ -290,6 +296,7 @@ namespace ChatdollKit.Model
                             await Task.Delay((int)(preGap * 1000), token);
                         }
                         // Play audio
+                        History?.Add(v);
                         AudioSource.PlayOneShot(clip);
                     }
                 }
@@ -414,6 +421,7 @@ namespace ChatdollKit.Model
         // Stop speech
         public void StopSpeech()
         {
+            History?.Add("Stop speech");
             AudioSource.Stop();
         }
 
@@ -502,6 +510,7 @@ namespace ChatdollKit.Model
             var layerIndex = layerName == string.Empty ? 0 : animator.GetLayerIndex(layerName);
             foreach (var a in animations)
             {
+                var histroyId = string.Empty;
                 try
                 {
                     if (a.PreGap > 0)
@@ -509,15 +518,18 @@ namespace ChatdollKit.Model
                         await Task.Delay((int)(a.PreGap * 1000), token);
                     }
                     animator.SetLayerWeight(layerIndex, a.Weight);
+                    histroyId = History?.Add(a);
                     animator.CrossFadeInFixedTime(a.Name, a.FadeLength < 0 ? AnimationFadeLength : a.FadeLength, layerIndex);
                     await Task.Delay((int)(a.Duration * 1000), token);
                 }
                 catch (TaskCanceledException tcex)
                 {
+                    History?.Add(histroyId, "canceled");
                     Debug.Log($"Animation {a.Name} on {a.LayerName} canceled: {tcex.Message}");
                 }
                 catch (Exception ex)
                 {
+                    History?.Add(histroyId, "error");
                     Debug.LogError($"Error occured in playing animation: {ex.Message}\n{ex.StackTrace}");
                 }
                 finally
@@ -545,13 +557,14 @@ namespace ChatdollKit.Model
         // Set default face expression
         public async Task SetDefaultFace()
         {
-            await SetFace(new FaceRequest(new List<FaceExpression>() { new FaceExpression(DefaultFaceName, 0.0f) }));
+            History?.Add("Set default face");
+            await SetFace(new FaceRequest(new List<FaceExpression>() { new FaceExpression(DefaultFaceName, 0.0f, "default") }));
         }
 
         // Set a face expression
         public async Task SetFace(string name, float duration = 0f)
         {
-            await SetFace(new FaceRequest(new List<FaceExpression>() { new FaceExpression(name, duration) }));
+            await SetFace(new FaceRequest(new List<FaceExpression>() { new FaceExpression(name, duration, null) }));
         }
 
         // Set face expressions
@@ -559,6 +572,7 @@ namespace ChatdollKit.Model
         {
             foreach (var face in request.Faces)
             {
+                History?.Add(face);
                 for (var i = 0; i < skinnedMeshRenderer.sharedMesh.blendShapeCount; i++)
                 {
                     // Apply weights
@@ -630,6 +644,7 @@ namespace ChatdollKit.Model
         // Blink loop in Task
         private async Task StartBlinkTask()
         {
+            History?.Add("Start blink");
             // Start new blink loop
             while (true)
             {
@@ -651,6 +666,7 @@ namespace ChatdollKit.Model
         // Blink coroutine
         private IEnumerator BlinkCoroutine()
         {
+            History?.Add("Start blink");
             // Start new blink loop
             while (true)
             {
@@ -668,6 +684,7 @@ namespace ChatdollKit.Model
         // Stop blink
         public void StopBlink()
         {
+            History?.Add("Stop blink");
             isBlinkEnabled = false;
             skinnedMeshRenderer.SetBlendShapeWeight(blinkShapeIndex, 0);
         }
