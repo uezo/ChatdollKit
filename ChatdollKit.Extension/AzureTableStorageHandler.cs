@@ -1,25 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
-using Newtonsoft.Json;
+using ChatdollKit.Network;
 
 
 namespace ChatdollKit.Extension
 {
-    public class AzureTableStorageHandler
+    public class AzureTableStorageHandler : IDisposable
     {
         public string StorageURI;
         public LogType MinLevel;
         private int serialNumber = 0;
         private object locker = new object();
+        private ChatdollHttp client;
 
         public AzureTableStorageHandler(string storageURI, LogType minLevel = LogType.Warning)
         {
             StorageURI = storageURI;
             MinLevel = minLevel;
+            client = new ChatdollHttp();
         }
 
         // Log handler
@@ -61,14 +61,16 @@ namespace ChatdollKit.Extension
                 {"StackTrace", stackTrace},
             };
 
+            // Headers
+            var headers = new Dictionary<string, string>() { { "Accept", "application/json" } };
+
             // Send request
-            var request = new HttpRequestMessage(HttpMethod.Post, StorageURI);
-            request.Headers.Add("Accept", "application/json");
-            request.Content = new StringContent(JsonConvert.SerializeObject(logJson), Encoding.UTF8, "application/json");
-            using (var client = new HttpClient())
-            {
-                await client.SendAsync(request);
-            }
+            await client.PostJsonAsync(StorageURI, logJson, headers);
+        }
+
+        public void Dispose()
+        {
+            client?.Dispose();
         }
     }
 }

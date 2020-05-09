@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Net.Http;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using UnityEngine;
 using ChatdollKit.Model;
+using ChatdollKit.Network;
 
 
 namespace ChatdollKit.Dialog
@@ -13,11 +11,18 @@ namespace ChatdollKit.Dialog
     public class HttpIntentExtractorBase : MonoBehaviour, IIntentExtractor
     {
         public string IntentExtractorUri;
-        private ModelController modelController;
+        protected ModelController modelController;
+        protected ChatdollHttp httpClient;
 
         protected virtual void Awake()
         {
             modelController = gameObject.GetComponent<ModelController>();
+            httpClient = new ChatdollHttp();
+        }
+
+        private void OnDestroy()
+        {
+            httpClient?.Dispose();
         }
 
         public virtual void Configure()
@@ -27,28 +32,17 @@ namespace ChatdollKit.Dialog
 
         public virtual async Task<Response> ExtractIntentAsync(Request request, Context context, CancellationToken token)
         {
-            // Call intent extractor
-            var data = JsonConvert.SerializeObject(new HttpIntentRequest(request, context));
-            var content = new StringContent(data, Encoding.UTF8, "application/json");
-            using (var client = new HttpClient())
-            {
-                var response = await client.PostAsync(IntentExtractorUri, content);
-                if (!response.IsSuccessStatusCode)
-                {
-                    throw new HttpRequestException($"Error occured while calling intent extraction service ({response.StatusCode.ToString()})");
-                }
-                var responseContent = await response.Content.ReadAsStringAsync();
-                var httpIntentResponse = JsonConvert.DeserializeObject<HttpIntentResponse>(responseContent);
+            var httpIntentResponse = await httpClient.PostJsonAsync<HttpIntentResponse>(
+                IntentExtractorUri, new HttpIntentRequest(request, context));
 
-                // Update request
-                request.Intent = httpIntentResponse.Request.Intent;
-                request.IntentPriority = httpIntentResponse.Request.IntentPriority;
-                request.Words = httpIntentResponse.Request.Words ?? request.Words;
-                request.Entities = httpIntentResponse.Request.Entities ?? request.Entities;
-                request.IsAdhoc = httpIntentResponse.Request.IsAdhoc;
+            // Update request
+            request.Intent = httpIntentResponse.Request.Intent;
+            request.IntentPriority = httpIntentResponse.Request.IntentPriority;
+            request.Words = httpIntentResponse.Request.Words ?? request.Words;
+            request.Entities = httpIntentResponse.Request.Entities ?? request.Entities;
+            request.IsAdhoc = httpIntentResponse.Request.IsAdhoc;
 
-                return httpIntentResponse.Response;
-            }
+            return httpIntentResponse.Response;
         }
 
         // Show response
