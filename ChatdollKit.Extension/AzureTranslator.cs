@@ -1,21 +1,21 @@
-﻿using System.Text;
-using System.Threading.Tasks;
+﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.Networking;
-using Newtonsoft.Json;
 using ChatdollKit.Network;
 
 
 namespace ChatdollKit.Extension
 {
-    public class AzureTranslator
+    public class AzureTranslator : IDisposable
     {
         public string ApiKey { get; set; }
+        private ChatdollHttp client { get; }
 
         public AzureTranslator(string apiKey)
         {
             ApiKey = apiKey;
+            client = new ChatdollHttp();
         }
 
         // Translate
@@ -24,35 +24,30 @@ namespace ChatdollKit.Extension
             // Compose url
             var url = $"https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&to={language}";
 
-            using (var www = UnityWebRequest.Post(url, string.Empty))
+            // Create headers
+            var headers = new Dictionary<string, string>();
+            headers.Add("Ocp-Apim-Subscription-Key", ApiKey);
+
+            // Create data
+            var data = new List<AzureTranslationText>() { new AzureTranslationText(text) };
+
+            // Send request
+            var translatedText = string.Empty;
+            try
             {
-                www.timeout = 10;
-
-                // Set headers
-                www.SetRequestHeader("Ocp-Apim-Subscription-Key", ApiKey);
-                www.SetRequestHeader("Content-Type", "application/json; charset=UTF-8");
-
-                // Set data
-                var data = new List<AzureTranslationText>() { new AzureTranslationText(text) };
-                www.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)));
-
-                // Send request
-                await www.SendWebRequest();
-
-                // Handle response
-                if (www.isNetworkError || www.isHttpError)
-                {
-                    Debug.LogError($"Error occured while processing text-to-speech voice: {www.error}");
-                }
-                else if (www.isDone)
-                {
-                    var responseString = DownloadHandlerBuffer.GetContent(www);
-                    var translationResponse = JsonConvert.DeserializeObject<List<AzureTranslationResponse>>(responseString);
-                    var translatedText = translationResponse[0].Translations[0].Text;
-                    return translatedText;
-                }
+                var response = await client.PostJsonAsync<List<AzureTranslationResponse>>(url, data, headers);
+                translatedText = response[0].Translations[0].Text;
             }
-            return null;
+            catch (Exception ex)
+            {
+                Debug.LogError($"Error occured while translation: {ex.Message}");
+            }
+            return translatedText;
+        }
+
+        public void Dispose()
+        {
+            client?.Dispose();
         }
     }
 

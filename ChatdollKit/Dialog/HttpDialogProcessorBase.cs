@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Net.Http;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
-using Newtonsoft.Json;
 using ChatdollKit.Model;
+using ChatdollKit.Network;
 
 
 namespace ChatdollKit.Dialog
@@ -14,11 +12,18 @@ namespace ChatdollKit.Dialog
     {
         public string Name;
         public string DialogUri;
-        private ModelController modelController;
+        protected ModelController modelController;
+        protected ChatdollHttp httpClient;
 
         protected virtual void Awake()
         {
             modelController = gameObject.GetComponent<ModelController>();
+            httpClient = new ChatdollHttp();
+        }
+
+        private void OnDestroy()
+        {
+            httpClient?.Dispose();
         }
 
         // Get topic name
@@ -54,30 +59,17 @@ namespace ChatdollKit.Dialog
         // Process dialog on server
         public virtual async Task<Response> ProcessAsync(Request request, Context context, CancellationToken token)
         {
-            // Call Dialog
-            var data = JsonConvert.SerializeObject(new HttpDialogRequest(request, context));
-            var content = new StringContent(data, Encoding.UTF8, "application/json");
-            using (var client = new HttpClient())
-            {
-                // Post request
-                var response = await client.PostAsync(DialogUri, content);
-                if (!response.IsSuccessStatusCode)
-                {
-                    throw new HttpRequestException($"Error occured while calling dialog service ({response.StatusCode.ToString()})");
-                }
-                var responseContent = await response.Content.ReadAsStringAsync();
-                var httpDialogResponse = JsonConvert.DeserializeObject<HttpDialogResponse>(responseContent);
+            var httpDialogResponse = await httpClient.PostJsonAsync<HttpDialogResponse>(DialogUri, new HttpDialogRequest(request, context));
 
-                // Update topic
-                context.Topic.Status = httpDialogResponse.Context.Topic.Status;
-                context.Topic.ContinueTopic = httpDialogResponse.Context.Topic.ContinueTopic;
-                context.Topic.RequiredRequestType = httpDialogResponse.Context.Topic.RequiredRequestType;
+            // Update topic
+            context.Topic.Status = httpDialogResponse.Context.Topic.Status;
+            context.Topic.ContinueTopic = httpDialogResponse.Context.Topic.ContinueTopic;
+            context.Topic.RequiredRequestType = httpDialogResponse.Context.Topic.RequiredRequestType;
 
-                // Update data
-                context.Data = httpDialogResponse.Context.Data;
+            // Update data
+            context.Data = httpDialogResponse.Context.Data;
 
-                return httpDialogResponse.Response;
-            }
+            return httpDialogResponse.Response;
         }
 
         // Show response
