@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
+using Newtonsoft.Json;
 using ChatdollKit.Network;
 
 
@@ -15,6 +17,7 @@ namespace ChatdollKit.Model
     public class ModelController : MonoBehaviour
     {
         // Audio
+        [Header("Voice")]
         public AudioSource AudioSource;
         private Dictionary<string, AudioClip> voices = new Dictionary<string, AudioClip>();
         public Func<Voice, AudioType, Task<AudioClip>> VoiceDownloadFunc;
@@ -29,6 +32,7 @@ namespace ChatdollKit.Model
 
         // Animation
         private Animator animator;
+        [Header("Animation")]
         public float AnimationDuration = 0.0f;
         public float AnimationFadeLength = 0.5f;
         public float IdleAnimationDefaultDuration = 10.0f;
@@ -37,12 +41,8 @@ namespace ChatdollKit.Model
         private CancellationTokenSource idleTokenSource;
         public string DefaultLayeredAnimationName = "Default";
 
-        // Face Expression
-        public string DefaultFaceName = "Default";
-        public SkinnedMeshRenderer skinnedMeshRenderer;
-        private Dictionary<string, Dictionary<string, float>> faces = new Dictionary<string, Dictionary<string, float>>();
-
         // Blink
+        [Header("Blink")]
         public string BlinkBlendShapeName;
         private int blinkShapeIndex;
         public float MinBlinkIntervalToClose = 3.0f;
@@ -60,6 +60,13 @@ namespace ChatdollKit.Model
         private Action blinkAction;
         private CancellationTokenSource blinkTokenSource;
 
+        // Face Expression
+        [Header("Face")]
+        public SkinnedMeshRenderer SkinnedMeshRenderer;
+        public string FaceConfigurationFile;
+        private Dictionary<string, FaceClip> faceClips = new Dictionary<string, FaceClip>();
+        private FaceRequest DefaultFace;
+
         // History recorder for debug and test
         public ActionHistoryRecorder History;
 
@@ -76,11 +83,10 @@ namespace ChatdollKit.Model
 
         private void Start()
         {
-            // Set default face expression
-            if (!faces.ContainsKey(DefaultFaceName))
+            if (DefaultFace == null)
             {
-                // Set zero for all shape keys when default is not registered
-                faces.Add(DefaultFaceName, new Dictionary<string, float>());
+                // Set default face if not registered
+                AddFace("DefaultFace", new Dictionary<string, float>(), asDefault: true);
             }
             _ = SetDefaultFace();
 
@@ -558,13 +564,13 @@ namespace ChatdollKit.Model
         public async Task SetDefaultFace()
         {
             History?.Add("Set default face");
-            await SetFace(new FaceRequest(new List<FaceExpression>() { new FaceExpression(DefaultFaceName, 0.0f, "default") }));
+            await SetFace(DefaultFace);
         }
 
-        // Set a face expression
-        public async Task SetFace(string name, float duration = 0f)
+        // Set face expression
+        public async Task SetFace(string name, float duration = 0.0f, string description = null)
         {
-            await SetFace(new FaceRequest(new List<FaceExpression>() { new FaceExpression(name, duration, null) }));
+            await SetFace(new FaceRequest(new List<FaceExpression>() { new FaceExpression(name, duration, description) }));
         }
 
         // Set face expressions
@@ -573,15 +579,19 @@ namespace ChatdollKit.Model
             foreach (var face in request.Faces)
             {
                 History?.Add(face);
-                for (var i = 0; i < skinnedMeshRenderer.sharedMesh.blendShapeCount; i++)
+                if (faceClips.ContainsKey(face.Name))
                 {
-                    // Apply weights
-                    var weights = faces[face.Name];
-                    var name = skinnedMeshRenderer.sharedMesh.GetBlendShapeName(i);
-                    var weight = weights.Keys.Contains(name) ? weights[name] : 0f;
-                    skinnedMeshRenderer.SetBlendShapeWeight(i, weight * 100);
+                    foreach (var blendShapeValue in faceClips[face.Name].Values)
+                    {
+                        // Apply weights
+                        SkinnedMeshRenderer.SetBlendShapeWeight(blendShapeValue.Index, blendShapeValue.Weight);
+                    }
+                    await Task.Delay((int)(face.Duration * 1000));
                 }
-                await Task.Delay((int)(face.Duration * 1000));
+                else
+                {
+                    Debug.LogWarning($"FaceClip not exists: {face.Name}");
+                }
             }
 
             // Reset default face expression
@@ -591,16 +601,25 @@ namespace ChatdollKit.Model
             }
         }
 
-        // Register face expression
-        public void AddFace(string name, Dictionary<string, float> weights)
+        // Register weights for face expression name
+        public void AddFace(string name, Dictionary<string, float> weights, bool asDefault = false)
         {
-            if (faces.ContainsKey(name))
+            var faceClip = new FaceClip(name, SkinnedMeshRenderer, weights);
+            faceClips[name] = faceClip;
+            if (asDefault)
             {
-                faces[name] = weights;
+                DefaultFace = new FaceRequest();
+                DefaultFace.AddFace(name, 0.0f, "default face");
             }
-            else
+        }
+
+        // Load faces from config file
+        public void LoadFacesFromFile(string configFilePath = null)
+        {
+            var path = configFilePath ?? FaceConfigurationFile;
+            foreach (var faceClip in JsonConvert.DeserializeObject<List<FaceClip>>(File.ReadAllText(path)))
             {
-                faces.Add(name, weights);
+                faceClips[faceClip.Name] = faceClip;
             }
         }
 
@@ -614,13 +633,13 @@ namespace ChatdollKit.Model
             }
 
             // Initialize
-            blinkShapeIndex = skinnedMeshRenderer.sharedMesh.GetBlendShapeIndex(BlinkBlendShapeName);
+            blinkShapeIndex = SkinnedMeshRenderer.sharedMesh.GetBlendShapeIndex(BlinkBlendShapeName);
             blinkWeight = 0f;
             blinkVelocity = 0f;
             blinkAction = null;
 
             // Open the eyes
-            skinnedMeshRenderer.SetBlendShapeWeight(blinkShapeIndex, 0);
+            SkinnedMeshRenderer.SetBlendShapeWeight(blinkShapeIndex, 0);
 
             // Enable blink
             isBlinkEnabled = true;
@@ -686,7 +705,7 @@ namespace ChatdollKit.Model
         {
             History?.Add("Stop blink");
             isBlinkEnabled = false;
-            skinnedMeshRenderer.SetBlendShapeWeight(blinkShapeIndex, 0);
+            SkinnedMeshRenderer.SetBlendShapeWeight(blinkShapeIndex, 0);
         }
 
         // Action for closing eyes called on every updates
@@ -697,7 +716,7 @@ namespace ChatdollKit.Model
                 return;
             }
             blinkWeight = Mathf.SmoothDamp(blinkWeight, 1, ref blinkVelocity, BlinkTransitionToClose);
-            skinnedMeshRenderer.SetBlendShapeWeight(blinkShapeIndex, blinkWeight * 100);
+            SkinnedMeshRenderer.SetBlendShapeWeight(blinkShapeIndex, blinkWeight * 100);
         }
 
         // Action for opening eyes called on every updates
@@ -708,7 +727,7 @@ namespace ChatdollKit.Model
                 return;
             }
             blinkWeight = Mathf.SmoothDamp(blinkWeight, 0, ref blinkVelocity, BlinkTransitionToOpen);
-            skinnedMeshRenderer.SetBlendShapeWeight(blinkShapeIndex, blinkWeight * 100);
+            SkinnedMeshRenderer.SetBlendShapeWeight(blinkShapeIndex, blinkWeight * 100);
         }
     }
 }
