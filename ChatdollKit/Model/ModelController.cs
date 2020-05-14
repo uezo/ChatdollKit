@@ -20,14 +20,8 @@ namespace ChatdollKit.Model
         [Header("Voice")]
         public AudioSource AudioSource;
         private Dictionary<string, AudioClip> voices = new Dictionary<string, AudioClip>();
-        public Func<Voice, AudioType, Task<AudioClip>> VoiceDownloadFunc;
-        public Func<Voice, AudioType, Task<AudioClip>> SpeechToTextFunc;
-        public string TTSApiKey;
-        public string TTSRegion = "japanwest";
-        public string TTSLanguage = "ja-JP";
-        public string TTSGender = "Female";
-        public string TTSSpeakerName = "ja-JP-HarukaRUS";
-        public AudioType TTSAudioType = AudioType.WAV;
+        public Func<Voice, Task<AudioClip>> VoiceDownloadFunc;
+        public Func<Voice, Task<AudioClip>> TextToSpeechFunc;
         public AudioType WebAudioType = AudioType.WAV;
 
         // Animation
@@ -286,11 +280,11 @@ namespace ChatdollKit.Model
                     AudioClip clip = null;
                     if (v.Source == VoiceSource.Web)
                     {
-                        clip = await (VoiceDownloadFunc ?? GetAudioClipFromWeb)(v, WebAudioType);
+                        clip = await (VoiceDownloadFunc ?? GetAudioClipFromWeb)(v);
                     }
                     else if (v.Source == VoiceSource.TTS)
                     {
-                        clip = await (SpeechToTextFunc ?? GetAudioClipFromTTS)(v, TTSAudioType);
+                        clip = await TextToSpeechFunc?.Invoke(v);
                     }
 
                     if (clip != null)
@@ -325,18 +319,15 @@ namespace ChatdollKit.Model
         }
 
         // Get audio clip from web
-        public async Task<AudioClip> GetAudioClipFromWeb(Voice voice, AudioType audioType)
+        public async Task<AudioClip> GetAudioClipFromWeb(Voice voice)
         {
-            // Return from cache when name is set and it's cached
-            if (!string.IsNullOrEmpty(voice.Name))
+            if (!string.IsNullOrEmpty(voice.Name) && voices.ContainsKey(voice.Name))
             {
-                if (voices.ContainsKey(voice.Name))
-                {
-                    return voices[voice.Name];
-                }
+                // Use cache when name is set and it's cached
+                return voices[voice.Name];
             }
 
-            using (var www = UnityWebRequestMultimedia.GetAudioClip(voice.Url, audioType))
+            using (var www = UnityWebRequestMultimedia.GetAudioClip(voice.Url, WebAudioType))
             {
                 www.timeout = 10;
                 await www.SendWebRequest();
@@ -348,62 +339,13 @@ namespace ChatdollKit.Model
                 else if (www.isDone)
                 {
                     var clip = DownloadHandlerAudioClip.GetContent(www);
-                    if (!string.IsNullOrEmpty(voice.Name))
+
+                    if (!string.IsNullOrEmpty(voice.Name) && clip != null)
                     {
                         // Cache if name is set
                         voices[voice.Name] = clip;
                     }
-                    return clip;
-                }
-            }
-            return null;
-        }
 
-        // Get audio clip from using Azure Text-to-Speech
-        public async Task<AudioClip> GetAudioClipFromTTS(Voice voice, AudioType audioType)
-        {
-            // Return from cache when name is set and it's cached
-            if (!string.IsNullOrEmpty(voice.Name))
-            {
-                if (voices.ContainsKey(voice.Name))
-                {
-                    return voices[voice.Name];
-                }
-            }
-
-            var url = $"https://{TTSRegion}.tts.speech.microsoft.com/cognitiveservices/v1";
-            using (var www = UnityWebRequestMultimedia.GetAudioClip(url, audioType))
-            {
-                www.timeout = 10;
-                www.method = "POST";
-
-                // Header
-                www.SetRequestHeader("X-Microsoft-OutputFormat", audioType == AudioType.WAV ? "riff-16khz-16bit-mono-pcm" : "audio-16khz-128kbitrate-mono-mp3");
-                www.SetRequestHeader("Content-Type", "application/ssml+xml");
-                www.SetRequestHeader("Ocp-Apim-Subscription-Key", TTSApiKey);
-
-                // Body
-                var ttsLanguage = voice.GetTTSOption("language") ?? TTSLanguage;
-                var ttsGender = voice.GetTTSOption("gender") ?? TTSGender;
-                var ttsSpeakerName = voice.GetTTSOption("speakerName") ?? TTSSpeakerName;
-                var text = $"<speak version='1.0' xml:lang='{ttsLanguage}'><voice xml:lang='{ttsLanguage}' xml:gender='{ttsGender}' name='{ttsSpeakerName}'>{voice.Text}</voice></speak>";
-                www.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(text));
-
-                // Send request
-                await www.SendWebRequest();
-
-                if (www.isNetworkError || www.isHttpError)
-                {
-                    Debug.LogError($"Error occured while processing text-to-speech voice: {www.error}");
-                }
-                else if (www.isDone)
-                {
-                    var clip = DownloadHandlerAudioClip.GetContent(www);
-                    if (!string.IsNullOrEmpty(voice.Name))
-                    {
-                        // Cache if name is set
-                        voices[voice.Name] = clip;
-                    }
                     return clip;
                 }
             }
@@ -411,17 +353,10 @@ namespace ChatdollKit.Model
         }
 
         // Load audio clip from web
-        public async Task<bool> LoadAudioClipFromWeb(string name, string url, AudioType? audioType = null)
+        public async Task<bool> LoadAudioClipFromWeb(string name, string url)
         {
             var voice = new Voice(name, 0.0f, 0.0f, string.Empty, url, null, VoiceSource.Web);
-            return await GetAudioClipFromWeb(voice, audioType ?? WebAudioType) == null ? false : true;
-        }
-
-        // Load audio clip from web
-        public async Task<bool> LoadAudioClipFromTTS(string name, string text, Dictionary<string, string> ttsOptions = null, AudioType? audioType = null)
-        {
-            var voice = new Voice(name, 0.0f, 0.0f, text, string.Empty, ttsOptions, VoiceSource.TTS);
-            return await GetAudioClipFromTTS(voice, audioType ?? TTSAudioType) == null ? false : true;
+            return await GetAudioClipFromWeb(voice) == null ? false : true;
         }
 
         // Stop speech
