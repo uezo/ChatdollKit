@@ -12,8 +12,8 @@ namespace ChatdollKit.Extension
     public class VoiceroidTTS
     {
         public string EndpointUrl { get; set; }
-
-        private Dictionary<string, AudioClip> audioCache;
+        public AudioType AudioType { get; set; } = AudioType.WAV;
+        private Dictionary<string, AudioClip> audioCache { get; set; }
 
         public VoiceroidTTS(string endpointUrl)
         {
@@ -22,7 +22,7 @@ namespace ChatdollKit.Extension
 
         // Get audio clip from Voiceroid Daemon
         // https://github.com/Nkyoku/voiceroid_daemon
-        public async Task<AudioClip> GetAudioClipFromTTS(Voice voice, AudioType audioType = AudioType.WAV)
+        public async Task<AudioClip> GetAudioClipFromTTS(Voice voice)
         {
             // Return from cache when name is set and it's cached
             if (!string.IsNullOrEmpty(voice.Name))
@@ -33,7 +33,7 @@ namespace ChatdollKit.Extension
                 }
             }
 
-            using (var www = UnityWebRequestMultimedia.GetAudioClip(EndpointUrl, audioType))
+            using (var www = UnityWebRequestMultimedia.GetAudioClip(EndpointUrl, AudioType))
             {
                 www.timeout = 10;
                 www.method = "POST";
