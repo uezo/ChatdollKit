@@ -32,13 +32,13 @@ namespace ChatdollKit.Examples
 
             // 笑顔の定義
             chatdoll.ModelController.AddFace("Smile", new Dictionary<string, float>() {
-                {"eyes_close_1", 1.0f }
+                {"eyes_close_1", 100.0f }
             });
             // 悲しい顔の定義
             chatdoll.ModelController.AddFace("Sad", new Dictionary<string, float>() {
-                {"eyes_close_2", 0.15f },
-                {"mouth_:0", 0.6f },
-                {"mouth_:(", 0.7f },
+                {"eyes_close_2", 15.0f },
+                {"mouth_:0", 60.0f },
+                {"mouth_:(", 70.0f },
             });
         }
 
@@ -84,7 +84,7 @@ namespace ChatdollKit.Examples
             // まばたきの停止・表情設定・まばたき再開
             chatdoll.ModelController.StopBlink();
             await chatdoll.ModelController.SetFace("Smile", 2.0f);
-            chatdoll.ModelController.StartBlink();
+            chatdoll.ModelController.StartBlinkAsync();
         }
 
         private async Task AnimatedSay()
