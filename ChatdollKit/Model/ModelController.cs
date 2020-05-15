@@ -44,7 +44,6 @@ namespace ChatdollKit.Model
         public float MaxBlinkIntervalToOpen = 0.1f;
         public float BlinkTransitionToClose = 0.01f;
         public float BlinkTransitionToOpen = 0.02f;
-        public bool BlinkOnCoroutine = false;
         private float blinkIntervalToClose;
         private float blinkIntervalToOpen;
         private float blinkWeight = 0.0f;
@@ -65,13 +64,8 @@ namespace ChatdollKit.Model
 
         private void Awake()
         {
-            // Get animator of this model
             animator = gameObject.GetComponent<Animator>();
-
-            if (!BlinkOnCoroutine)
-            {
-                blinkTokenSource = new CancellationTokenSource();
-            }
+            blinkTokenSource = new CancellationTokenSource();
         }
 
         private void Start()
@@ -94,7 +88,7 @@ namespace ChatdollKit.Model
             _ = StartIdlingAsync();
 
             // Start blink
-            StartBlink(true);
+            _ = StartBlinkAsync(true);
         }
 
         private void LateUpdate()
@@ -105,11 +99,7 @@ namespace ChatdollKit.Model
 
         private void OnDestroy()
         {
-            if (!BlinkOnCoroutine)
-            {
-                blinkTokenSource.Cancel();
-            }
-
+            blinkTokenSource.Cancel();
             idleTokenSource.Cancel();
         }
 
@@ -226,7 +216,7 @@ namespace ChatdollKit.Model
             // Restart blink
             if (request.DisableBlink && !token.IsCancellationRequested)
             {
-                StartBlink();
+                _ = StartBlinkAsync();
             }
         }
 
@@ -315,7 +305,7 @@ namespace ChatdollKit.Model
             // Restart blink
             if (request.DisableBlink && !token.IsCancellationRequested)
             {
-                StartBlink();
+                _ = StartBlinkAsync();
             }
         }
 
@@ -443,7 +433,7 @@ namespace ChatdollKit.Model
             // Restart blink
             if (request.DisableBlink && !token.IsCancellationRequested)
             {
-                StartBlink();
+                _ = StartBlinkAsync();
             }
         }
 
@@ -560,7 +550,7 @@ namespace ChatdollKit.Model
         }
 
         // Initialize and start blink
-        public void StartBlink(bool startNew = false)
+        public async Task StartBlinkAsync(bool startNew = false)
         {
             // Return with doing nothing when already blinking
             if (isBlinkEnabled && startNew == false)
@@ -585,22 +575,8 @@ namespace ChatdollKit.Model
                 return;
             }
 
-            // Start
-            if (BlinkOnCoroutine)
-            {
-                StartCoroutine(BlinkCoroutine());
-            }
-            else
-            {
-                _ = StartBlinkTask();
-            }
-        }
-
-        // Blink loop in Task
-        private async Task StartBlinkTask()
-        {
-            History?.Add("Start blink");
             // Start new blink loop
+            History?.Add("Start blink");
             while (true)
             {
                 if (blinkTokenSource.Token.IsCancellationRequested)
@@ -614,24 +590,6 @@ namespace ChatdollKit.Model
                 // Open eyes
                 blinkIntervalToOpen = UnityEngine.Random.Range(MinBlinkIntervalToOpen, MaxBlinkIntervalToOpen);
                 await Task.Delay((int)(blinkIntervalToOpen * 1000));
-                blinkAction = OpenEyesOnUpdate;
-            }
-        }
-
-        // Blink coroutine
-        private IEnumerator BlinkCoroutine()
-        {
-            History?.Add("Start blink");
-            // Start new blink loop
-            while (true)
-            {
-                // Close eyes
-                blinkIntervalToClose = UnityEngine.Random.Range(MinBlinkIntervalToClose, MaxBlinkIntervalToClose);
-                yield return new WaitForSeconds(blinkIntervalToClose);
-                blinkAction = CloseEyesOnUpdate;
-                // Open eyes
-                blinkIntervalToOpen = UnityEngine.Random.Range(MinBlinkIntervalToOpen, MaxBlinkIntervalToOpen);
-                yield return new WaitForSeconds(blinkIntervalToOpen);
                 blinkAction = OpenEyesOnUpdate;
             }
         }
