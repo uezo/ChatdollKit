@@ -27,13 +27,12 @@ namespace ChatdollKit.Model
         // Animation
         private Animator animator;
         [Header("Animation")]
-        public float AnimationDuration = 0.0f;
         public float AnimationFadeLength = 0.5f;
         public float IdleAnimationDefaultDuration = 10.0f;
-        public List<AnimationRequest> IdleAnimationRequests;
+        private List<AnimationRequest> idleAnimationRequests = new List<AnimationRequest>();
         public Func<CancellationToken, Task> IdleFunc;
         private CancellationTokenSource idleTokenSource;
-        public string DefaultLayeredAnimationName = "Default";
+        public string AnimatorDefaultState = "Default";
 
         // Blink
         [Header("Blink")]
@@ -80,11 +79,18 @@ namespace ChatdollKit.Model
             if (DefaultFace == null)
             {
                 // Set default face if not registered
+                Debug.LogWarning("Default face expression is not registered. Temprarily use zero-weigths-face as default.");
                 AddFace("DefaultFace", new Dictionary<string, float>(), asDefault: true);
             }
             _ = SetDefaultFace();
 
             // Start default animation
+            if (idleAnimationRequests.Count == 0)
+            {
+                // Set idle animation if not registered
+                Debug.LogWarning("Idle animations are not registered. Temprarily use dafault state as idle animation.");
+                AddIdleAnimation(AnimatorDefaultState);
+            }
             _ = StartIdlingAsync();
 
             // Start blink
@@ -122,8 +128,8 @@ namespace ChatdollKit.Model
             {
                 while (!token.IsCancellationRequested)
                 {
-                    var i = UnityEngine.Random.Range(0, IdleAnimationRequests.Count);
-                    var request = IdleAnimationRequests[i];
+                    var i = UnityEngine.Random.Range(0, idleAnimationRequests.Count);
+                    var request = idleAnimationRequests[i];
                     request.DisableBlink = false;
                     request.StartIdlingOnEnd = false;
                     request.StopIdlingOnStart = false;
@@ -158,21 +164,16 @@ namespace ChatdollKit.Model
 
         public void AddIdleAnimation(string name, string layerName, float duration = 0.0f, float fadeLength = -1.0f, float weight = 1.0f, float preGap = 0.0f, bool addToLastRequest = false)
         {
-            if (IdleAnimationRequests == null)
-            {
-                IdleAnimationRequests = new List<AnimationRequest>();
-            }
-
             if (addToLastRequest)
             {
-                var request = IdleAnimationRequests.Last();
+                var request = idleAnimationRequests.Last();
                 request.AddAnimation(name, layerName ?? request.BaseLayerName, duration == 0.0f ? IdleAnimationDefaultDuration : duration, fadeLength, weight, preGap, "idle");
             }
             else
             {
                 var request = new AnimationRequest();
                 request.AddAnimation(name, layerName ?? request.BaseLayerName, duration == 0.0f ? IdleAnimationDefaultDuration : duration, fadeLength, weight, preGap, "idle");
-                IdleAnimationRequests.Add(request);
+                idleAnimationRequests.Add(request);
             }
         }
 
@@ -490,7 +491,7 @@ namespace ChatdollKit.Model
                 }
                 else
                 {
-                    animator.CrossFadeInFixedTime(DefaultLayeredAnimationName, AnimationFadeLength, i);
+                    animator.CrossFadeInFixedTime(AnimatorDefaultState, AnimationFadeLength, i);
                 }
             }
         }
