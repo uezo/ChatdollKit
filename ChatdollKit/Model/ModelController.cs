@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -88,7 +87,14 @@ namespace ChatdollKit.Model
             _ = StartIdlingAsync();
 
             // Start blink
-            _ = StartBlinkAsync(true);
+            if (string.IsNullOrEmpty(BlinkBlendShapeName))
+            {
+                Debug.LogWarning("Blink is disabled because BlinkBlendShapeName is not defined");
+            }
+            else
+            {
+                _ = StartBlinkAsync(true);
+            }
         }
 
         private void LateUpdate()
@@ -99,8 +105,8 @@ namespace ChatdollKit.Model
 
         private void OnDestroy()
         {
-            blinkTokenSource.Cancel();
-            idleTokenSource.Cancel();
+            blinkTokenSource?.Cancel();
+            idleTokenSource?.Cancel();
         }
 
         // Start idling
