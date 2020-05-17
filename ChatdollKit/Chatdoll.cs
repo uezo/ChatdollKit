@@ -14,31 +14,30 @@ namespace ChatdollKit
     [RequireComponent(typeof(MicEnabler))]
     public class Chatdoll : MonoBehaviour
     {
-        // Dependencies
-        public ModelController ModelController { get; private set; }
-        public DialogRouter DialogRouter { get; private set; }
+        // Conversation
+        public DialogRouter DialogRouter { get; } = new DialogRouter();
         public IIntentExtractor IntentExtractor { get; private set; }
         public IUserStore UserStore { get; private set; }
         public IContextStore ContextStore { get; private set; }
         public Dictionary<RequestType, IRequestProvider> RequestProviders { get; private set; }
 
+        // Model
+        public ModelController ModelController { get; set; }
+
         // TokenSource to cancel talking
         private CancellationTokenSource chatTokenSource;
 
         // Actions for each status
-        public Func<User, Context, CancellationToken, Task> OnPromptAsync;
-        public Func<Request, Context, CancellationToken, Task> OnNoIntentAsync;
-        public Func<Request, Context, CancellationToken, Task> OnErrorAsync;
+        public Func<User, Context, CancellationToken, Task> OnPromptAsync
+            = async (u, c, t) => { Debug.LogWarning("Chatdoll.OnPromptAsync is not implemented"); };
+        public Func<Request, Context, CancellationToken, Task> OnNoIntentAsync
+            = async (r, c, t) => { Debug.LogWarning("Chatdoll.OnNoIntentAsync is not implemented"); };
+        public Func<Request, Context, CancellationToken, Task> OnErrorAsync
+            = async (r, c, t) => { Debug.LogWarning("Chatdoll.OnErrorAsync is not implemented"); };
 
         // Awake
         private void Awake()
         {
-            ModelController = gameObject.GetComponent<ModelController>();
-            DialogRouter = new DialogRouter();
-
-            IntentExtractor = gameObject.GetComponent<IIntentExtractor>();
-            IntentExtractor.Configure();
-
             // Use local store when no UserStore attached
             UserStore = gameObject.GetComponent<IUserStore>() ?? gameObject.AddComponent<LocalUserStore>();
 
@@ -47,18 +46,61 @@ namespace ChatdollKit
 
             // Register request providers for each input type
             RequestProviders = new Dictionary<RequestType, IRequestProvider>();
-            foreach (var rp in gameObject.GetComponents<IRequestProvider>())
+            var requestProviders = gameObject.GetComponents<IRequestProvider>();
+            if (requestProviders != null)
             {
-                if (((MonoBehaviour)rp).enabled)
+                foreach (var rp in requestProviders)
                 {
-                    RequestProviders[rp.RequestType] = rp;
+                    if (((MonoBehaviour)rp).enabled)
+                    {
+                        RequestProviders[rp.RequestType] = rp;
+                    }
                 }
+            }
+            else
+            {
+                Debug.LogError("RequestProviders are missing");
             }
 
             // Register intents and its processor
-            foreach (var dp in gameObject.GetComponents<IDialogProcessor>())
+            var dialogProcessors = gameObject.GetComponents<IDialogProcessor>();
+            if (dialogProcessors != null)
             {
-                DialogRouter.RegisterIntent(dp.TopicName, dp);
+                foreach (var dp in dialogProcessors)
+                {
+                    DialogRouter.RegisterIntent(dp.TopicName, dp);
+                    Debug.Log($"Intent '{dp.TopicName}' registered successfully");
+                }
+            }
+            else
+            {
+                Debug.LogError("DialogProcessors are missing");
+            }
+
+            // IntentExtractor
+            IntentExtractor = gameObject.GetComponent<IIntentExtractor>();
+            if (IntentExtractor != null)
+            {
+                IntentExtractor.Configure();
+            }
+            else
+            {
+                if (dialogProcessors != null && dialogProcessors.Length > 0)
+                {
+                    IntentExtractor = new StaticIntentExtractor(dialogProcessors[0].TopicName);
+                    Debug.LogWarning($"IntentExtractor is missing. '{dialogProcessors[0].TopicName}' will be set to Request.Intent for any request messages.");
+                }
+                else
+                {
+                    Debug.LogError("IntentExtractor is missing");
+                }
+            }
+
+            // ModelController
+            ModelController = gameObject.GetComponent<ModelController>();
+            if (ModelController == null)
+            {
+                Debug.LogError("ModelController is missing");
             }
         }
 
@@ -105,8 +147,8 @@ namespace ChatdollKit
             {
                 Debug.LogError($"Error occured in speaking prompt: {ex.Message}\n{ex.StackTrace}");
                 // Restart idling animation and reset face expression
-                _ = ModelController.StartIdlingAsync();
-                _ = ModelController.SetDefaultFace();
+                _ = ModelController?.StartIdlingAsync();
+                _ = ModelController?.SetDefaultFace();
                 return;
             }
 
@@ -211,8 +253,8 @@ namespace ChatdollKit
                     if (!token.IsCancellationRequested)
                     {
                         // Restart idling animation and reset face expression 
-                        _ = ModelController.StartIdlingAsync();
-                        _ = ModelController.SetDefaultFace();
+                        _ = ModelController?.StartIdlingAsync();
+                        _ = ModelController?.SetDefaultFace();
                     }
                 }
             }
@@ -232,13 +274,13 @@ namespace ChatdollKit
             // Stop speaking immediately if not wait
             if (!waitVoice)
             {
-                ModelController.StopSpeech();
+                ModelController?.StopSpeech();
             }
 
             // Stop animation (and start idling if startDefaultAnimation is true)
             if (startIdling)
             {
-                _ = ModelController.StartIdlingAsync();
+                _ = ModelController?.StartIdlingAsync();
             }
         }
 

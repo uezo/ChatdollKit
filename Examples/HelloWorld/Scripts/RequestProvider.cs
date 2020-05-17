@@ -1,25 +1,27 @@
-﻿using UnityEngine;
-using ChatdollKit.Dialog;
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using UnityEngine;
+using ChatdollKit.Dialog;
 
-namespace ChatdollKit.Examples
+
+namespace ChatdollKit.Examples.HelloWorld
 {
-    // ダミーのリクエストプロバイダー
-    public class DummyRequestProvider : MonoBehaviour, IRequestProvider
+    public class RequestProvider : MonoBehaviour, IRequestProvider
     {
         // This provides voice request
         public RequestType RequestType { get; } = RequestType.Voice;
 
         // Dummy recognized text
-        public string DummyText = string.Empty;
+        public string DummyText = "Hello, Chatdoll!";
 
         // Actions for each status
-        public Func<Request, Context, CancellationToken, Task> OnStartListeningAsync;
-        public Func<Request, Context, CancellationToken, Task> OnFinishListeningAsync;
-        public Func<Request, Context, CancellationToken, Task> OnErrorAsync;
-
+        public Func<Request, Context, CancellationToken, Task> OnStartListeningAsync
+            = async (r, c, t) => { Debug.LogWarning("RequestProvider.OnStartListeningAsync is not implemented"); };
+        public Func<Request, Context, CancellationToken, Task> OnFinishListeningAsync
+            = async(r, c, t) => { Debug.LogWarning("RequestProvider.OnFinishListeningAsync is not implemented"); };
+        public Func<Request, Context, CancellationToken, Task> OnErrorAsync
+            = async (r, c, t) => { Debug.LogWarning("RequestProvider.OnErrorAsync is not implemented"); };
 
         // Create request using voice recognition
         public async Task<Request> GetRequestAsync(User user, Context context, CancellationToken token)
@@ -30,10 +32,11 @@ namespace ChatdollKit.Examples
             try
             {
                 // Invoke action before start recognition
-                await OnStartListeningAsync?.Invoke(request, context, token);
+                await OnStartListeningAsync(request, context, token);
 
                 // Recognize speech
-                request.Text = await RecognizeOnceAsync();
+                await Task.Delay(1000); // Dummy wait
+                request.Text = DummyText;
                 if (request.IsSet())
                 {
                     Debug.Log(request.Text);
@@ -50,22 +53,15 @@ namespace ChatdollKit.Examples
             catch (Exception ex)
             {
                 Debug.LogError($"Error occured in recognizing speech: {ex.Message}\n{ex.StackTrace}");
-                await OnErrorAsync?.Invoke(request, context, token);
+                await OnErrorAsync(request, context, token);
             }
             finally
             {
                 // Invoke action after recognition
-                await OnFinishListeningAsync?.Invoke(request, context, token);
+                await OnFinishListeningAsync(request, context, token);
             }
 
             return request;
-        }
-
-        // Always returns the dummy text
-        public async Task<string> RecognizeOnceAsync()
-        {
-            await Task.Delay(1000);
-            return DummyText;
         }
     }
 }

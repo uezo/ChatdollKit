@@ -5,7 +5,7 @@ using ChatdollKit.Dialog;
 using ChatdollKit.Model;
 
 
-namespace ChatdollKit.Examples
+namespace ChatdollKit.Examples.HelloWorld
 {
     public class HelloDialog : MonoBehaviour, IDialogProcessor
     {
@@ -20,19 +20,20 @@ namespace ChatdollKit.Examples
 
         public void Configure()
         {
-            // 何もしない
         }
 
         public async Task<Response> ProcessAsync(Request request, Context context, CancellationToken token)
         {
-            // 何らかの処理
+            // 
+            // Put your application logic here
+            // 
 
-            // インテント抽出結果の表示アクションを定義
+            // Model actions to express the result of application logic
             var animatedVoiceRequest = new AnimatedVoiceRequest();
             animatedVoiceRequest.AddVoice("line-girl1-konnichiha1", preGap: 1.0f, postGap: 2.0f);
             animatedVoiceRequest.AddAnimation("Default");
 
-            // レスポンス
+            // Build and return response message
             var response = new Response(request.Id);
             response.Payloads = animatedVoiceRequest;
             return response;

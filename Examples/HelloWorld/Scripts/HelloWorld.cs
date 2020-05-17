@@ -1,54 +1,51 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
-using UnityEditor;
-using ChatdollKit.Extension;
 using ChatdollKit.Dialog;
-using System.Threading;
+using ChatdollKit.Extension;
 using ChatdollKit.Model;
 
 
-namespace ChatdollKit.Examples
+namespace ChatdollKit.Examples.HelloWorld
 {
-    [RequireComponent(typeof(DummyRequestProvider))]
-    [RequireComponent(typeof(IntentExtractor))]
+    [RequireComponent(typeof(RequestProvider))]
     [RequireComponent(typeof(HelloDialog))]
-    public class HelloWorldExample : MonoBehaviour
+    public class HelloWorld : MonoBehaviour
     {
-        // Chatdollコンポーネント
+        // Chatdoll component
         private Chatdoll chatdoll;
 
-        // メッセージウィンドウ
+        // Message window
         public SimpleMessageWindow MessageWindow;
 
         private void Awake()
         {
-            // ChatdollKitの取得
+            // Register handlers of Chatdoll
             chatdoll = gameObject.GetComponent<Chatdoll>();
-
-            // アイドル状態の定義
-            chatdoll.ModelController.AddIdleAnimation("Default");
-
-            // 音声
-            foreach (var ac in Resources.LoadAll<AudioClip>("Voices"))
-            {
-                chatdoll.ModelController.AddVoice(ac.name, ac);
-            }
-
-            // ステータス毎のアクションの登録
             chatdoll.OnPromptAsync = OnPromptAsync;
             chatdoll.OnNoIntentAsync = OnNoIntentAsync;
             chatdoll.OnErrorAsync = OnErrorAsync;
 
-            // リクエスト取得に関わるスタータス毎のアクションの登録
-            var rp = gameObject.GetComponent<DummyRequestProvider>();
+            // Register resources of ModelController
+            var modelController = gameObject.GetComponent<ModelController>();
+            // Idle animations
+            modelController.AddIdleAnimation("Default");
+            // Voices
+            foreach (var ac in Resources.LoadAll<AudioClip>("Voices"))
+            {
+                modelController.AddVoice(ac.name, ac);
+            }
+
+            // Register handlers of RequestProvider
+            var rp = gameObject.GetComponent<RequestProvider>();
             rp.OnStartListeningAsync = OnStartListeningAsync;
             rp.OnFinishListeningAsync = OnFinishListeningAsync;
             rp.OnErrorAsync = OnErrorAsync;
         }
 
-        // 対話
-        private async Task ChatAsync()
+        // Chat
+        public async Task ChatAsync()
         {
             try
             {
@@ -61,24 +58,7 @@ namespace ChatdollKit.Examples
 
         }
 
-        // インスペクター上のチャット開始ボタン
-        [CustomEditor(typeof(HelloWorldExample))]
-        public class AppEditorInterface : Editor
-        {
-            public override void OnInspectorGUI()
-            {
-                base.OnInspectorGUI();
-
-                var app = target as HelloWorldExample;
-
-                if (GUILayout.Button("Start Chat"))
-                {
-                    _ = app.ChatAsync();
-                }
-            }
-        }
-
-        // ステータス毎のアクション
+        // Model actions for each status
         public async Task OnPromptAsync(User user, Context context, CancellationToken token)
         {
             var request = new AnimatedVoiceRequest(startIdlingOnEnd: false);
@@ -92,12 +72,12 @@ namespace ChatdollKit.Examples
 
         public async Task OnStartListeningAsync(Request request, Context context, CancellationToken token)
         {
-            MessageWindow.Show("(Listening...)");
+            MessageWindow?.Show("(Listening...)");
         }
 
         public async Task OnFinishListeningAsync(Request request, Context context, CancellationToken token)
         {
-            _ = MessageWindow.SetMessageAsync(request.Text, token);
+            _ = MessageWindow?.SetMessageAsync(request.Text, token);
         }
 
         public async Task OnErrorAsync(Request request, Context context, CancellationToken token)
