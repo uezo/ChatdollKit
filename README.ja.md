@@ -6,6 +6,8 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 
 Watch this 2 minutes video to learn how ChatdollKit works and the way to use quickly. -->
 
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit_architecture.png" width="640">
+
 
 # インストール
 
@@ -27,12 +29,12 @@ Watch this 2 minutes video to learn how ChatdollKit works and the way to use qui
 
 モデル自体の設定が完了したら、リップシンクの設定もしておきます。モデルのオブジェクトまたは適当な場所に追加したオブジェクトに、インスペクターから以下2つのコンポーネントを追加してください。
 
-- OVR Lip Sync Context Morph Target
 - OVR Lip Sync Context
+- OVR Lip Sync Context Morph Target
 
-表情関連のシェイプキーを`OVR Lip Sync Context Morph Target`の`Skinned Mesh Renderer`に設定し、`OVR Lip Sync Context`の`Audio Loopback`のチェックをオンにすれば設定完了です。これによって3Dモデルにおしゃべりをさせると発話内容に応じて口が動くようになります。
+`OVR Lip Sync Context`の`Audio Loopback`のチェックをオンにします。続いて表情関連のシェイプキーを`OVR Lip Sync Context Morph Target`の`Skinned Mesh Renderer`に設定した後、単語の読み上げ時の口の形にそれぞれ適切なものを指定したら設定完了です。これによって3Dモデルにおしゃべりをさせると発話内容に応じて口が動くようになります。
 
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/02.png" width="640">
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/02_2.png" width="640">
 
 
 ## Voices
@@ -43,7 +45,7 @@ Watch this 2 minutes video to learn how ChatdollKit works and the way to use qui
 - 呼びました？: `line-girl1-yobimashita1.mp3`
 - はいは〜い: `line-girl1-haihaai1.mp3`
 
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/03.png" width="640">
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/03_2.png" width="640">
 
 
 ## Animations
@@ -54,7 +56,7 @@ Animator Controllerを作成してBase Layerに`Default`というステートを
 
 設定が完了したら、3Dモデルの`Animator`コンポーネントの`Controller`に設定しましょう。なおこの手順では[Anime Girls Idle Animations Free](https://assetstore.unity.com/packages/3d/animations/anime-girl-idle-animations-free-150406)というモーション集を利用しています。大変使い勝手が良いので気に入ったら有償版の購入をオススメします。
 
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/05.png" width="640">
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/05_2.png" width="640">
 
 
 # 基本的な設定
@@ -70,29 +72,33 @@ Animator Controllerを作成してBase Layerに`Default`というステートを
 
 LipSyncを設定したオブジェクトにはAudio Sourceが自動的に追加されているので、これを`ModelController`の`Audio Source`に設定します。また、表情関連のシェイプキーの設定されたオブジェクトを`Skinned Mesh Renderer`に設定します。最後に、まばたきをするため、目を閉じる表現のためのシェイプキーの名前を`Blink Blend Shape Name`に設定しましょう。
 
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/06.png" width="640">
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/06_2.png" width="640">
 
-以上で設定は完了です。3Dモデルを動かしたり喋らせたりする手順は、以下の"Hello world example"を参考にしてください。
+
+## 動作確認
+
+UnityのPlayボタンを押します。3Dモデルがまばたきをしながらアイドル時のアニメーションを行っていれば正しく設定できています。（音声周り以外）
+
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/07_2.png" width="640">
+
+以上で基本的な設定は完了です。3Dモデルを動かしたり喋らせたりする手順は、以下のHello worldの exampleを参考にしてください。
 
 
 # Hello world example
 
-"Hello world example"を動かすための手順は以下の通りです。
+"Hello world"のexampleを動かすための手順は以下の通りです。
 
-1. `Examples/HelloWorld/HelloWorldExample`を3DモデルのGameObjectに追加
+1. `Examples/HelloWorld/Scripts`の中にある`HelloWorld.cs`と`IntentExtractor.cs`を3DモデルのGameObjectに追加
 
-    <img src="https://uezo.blob.core.windows.net/github/chatdoll/07.png" width="640">
+    <img src="https://uezo.blob.core.windows.net/github/chatdoll/08_2.png" width="640">
 
-1. `Examples`の中にある`SimpleMessageWindow`プレファブをシーンに追加したら、`Font`を設定。デフォルトではArialが適用されています
+1. `Examples`の中にある`SimpleMessageWindow`プレファブをシーンに追加したら、`Font`を設定
 
-1. `Hello World Example`コンポーネントの`Message Window`に、今シーンに追加した`SimpleMessageWindow`を設定
+1. `Hello World`コンポーネントの`Message Window`に、今シーンに追加した`SimpleMessageWindow`を設定
 
-    <img src="https://uezo.blob.core.windows.net/github/chatdoll/08.png" width="640">
+    <img src="https://uezo.blob.core.windows.net/github/chatdoll/09_2.png" width="640">
 
-1. `Dummy Request Provider`の`Dummy Text`に、音声認識されたことにするダミーの文言を入力。ここで入力した内容がChatdollに送られます
-
-    <img src="https://uezo.blob.core.windows.net/github/chatdoll/09.png" width="640">
-
+1. `Request Provider`の`Dummy Text`に、音声認識されたことにするダミーの文言を入力。ここで入力した内容がChatdollに送られます
 
 以上で設定は完了です。ゲームを開始してインスペクター上の`Start Chat`ボタンをクリックしましょう。`呼びました？`と尋ねられると、ユーザーからの要求文言としてメッセージボックスにダミー入力テキストが表示され、`はいは〜い`と要求が受託された旨の応答があります。最後に（処理結果として）`こんにちは`と挨拶してくれます。
 
@@ -101,7 +107,7 @@ LipSyncを設定したオブジェクトにはAudio Sourceが自動的に追加�
 
 ## IntentExtractor
 
-`IntentExtractor`は`HelloWorldExample`追加時に自動的に追加されます。ここには、ユーザーが何を要求しているか（＝インテント）を抽出するロジックを実装します。初期状態では常に「hello」というインテントが抽出され、リクエストに設定されるようになっています。
+`IntentExtractor`は`HelloWorld`追加時に自動的に追加されます。ここには、ユーザーが何を要求しているか（＝インテント）を抽出するロジックを実装します。初期状態では常に「hello」というインテントが抽出され、リクエストに設定されるようになっています。
 
 ```Csharp
 request.Intent = "hello";
@@ -137,7 +143,7 @@ HelloWorldの例では`hello`という`DialogProcessor`＝対話処理部品が1
 
 ## RequestProvider
 
-`RequestProvider`はユーザーからの要求内容をモデルに伝えるための部品で、音声認識やカメラで撮影した画像などをリクエスト情報として引き渡すように実装します。なお`DummyRequestProvider`はHelloWorldのサンプルを動かすためのモック用の部品です。実用性のあるバーチャルアシスタントを開発するには、`AzureVoiceRequestProvider`や`GoogleCloudSpeechRequestProvider`、または`IRequestProvider`を実装した独自の部品を利用してください。実装方法は`AzureVoiceRequestProvider`などを参考にしていただけると幸いです。
+`RequestProvider`はユーザーからの要求内容をモデルに伝えるための部品で、音声認識やカメラで撮影した画像などをリクエスト情報として引き渡すように実装します。なお`RequestProvider`はHelloWorldのサンプルを動かすためのモック用の部品です。実用性のあるバーチャルアシスタントを開発するには、`AzureVoiceRequestProvider`や`GoogleCloudSpeechRequestProvider`、または`IRequestProvider`を実装した独自の部品を利用してください。実装方法は`AzureVoiceRequestProvider`などを参考にしていただけると幸いです。
 
 
 # Deep Dive
