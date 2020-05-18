@@ -2,15 +2,15 @@
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
-using UnityEditor;
 using ChatdollKit.Model;
 
-namespace ChatdollKit.Examples
+
+namespace ChatdollKit.Examples.ModelControl
 {
     public class ModelControllerExample : MonoBehaviour
     {
-        // Chatdollコンポーネント
-        private Chatdoll chatdoll;
+        // ModelControllerコンポーネント
+        private ModelController modelController;
 
         // CancellationToken
         private CancellationTokenSource cancelableTokenSource;
@@ -18,24 +18,24 @@ namespace ChatdollKit.Examples
 
         private void Awake()
         {
-            // ChatdollKitの取得
-            chatdoll = gameObject.GetComponent<Chatdoll>();
+            // ModelControllerの取得
+            modelController = gameObject.GetComponent<ModelController>();
 
             // アイドル状態の定義
-            chatdoll.ModelController.AddIdleAnimation("Default");
+            modelController.AddIdleAnimation("Default");
 
             // 音声の登録
             foreach (var ac in Resources.LoadAll<AudioClip>("Voices"))
             {
-                chatdoll.ModelController.AddVoice(ac.name, ac);
+                modelController.AddVoice(ac.name, ac);
             }
 
             // 笑顔の定義
-            chatdoll.ModelController.AddFace("Smile", new Dictionary<string, float>() {
+            modelController.AddFace("Smile", new Dictionary<string, float>() {
                 {"eyes_close_1", 100.0f }
             });
             // 悲しい顔の定義
-            chatdoll.ModelController.AddFace("Sad", new Dictionary<string, float>() {
+            modelController.AddFace("Sad", new Dictionary<string, float>() {
                 {"eyes_close_2", 15.0f },
                 {"mouth_:0", 60.0f },
                 {"mouth_:(", 70.0f },
@@ -47,7 +47,7 @@ namespace ChatdollKit.Examples
             cancelableTokenSource?.Cancel();
         }
 
-        private async Task Animate()
+        public async Task Animate()
         {
             // アニメーション要求の作成
             var request = new AnimationRequest();
@@ -63,10 +63,10 @@ namespace ChatdollKit.Examples
             //request.AddAnimation("AGIA_Layer_look_away_01", "Upper Body", 2.0f);
 
             // アニメーションの実行
-            await chatdoll.ModelController.Animate(request, GetToken());
+            await modelController.Animate(request, GetToken());
         }
 
-        private async Task Say()
+        public async Task Say()
         {
             // 発声要求の作成
             var request = new VoiceRequest();
@@ -76,18 +76,18 @@ namespace ChatdollKit.Examples
             //request.AddVoice("line-girl1-konnichiha1", preGap: 1.0f);
 
             // 発声の実行
-            await chatdoll.ModelController.Say(request, GetToken());
+            await modelController.Say(request, GetToken());
         }
 
-        private async Task Face()
+        public async Task Face()
         {
             // まばたきの停止・表情設定・まばたき再開
-            chatdoll.ModelController.StopBlink();
-            await chatdoll.ModelController.SetFace("Smile", 2.0f);
-            chatdoll.ModelController.StartBlinkAsync();
+            modelController.StopBlink();
+            await modelController.SetFace("Smile", 2.0f);
+            modelController.StartBlinkAsync();
         }
 
-        private async Task AnimatedSay()
+        public async Task AnimatedSay()
         {
             // 発話・アニメーション要求の作成
             var request = new AnimatedVoiceRequest();
@@ -107,7 +107,13 @@ namespace ChatdollKit.Examples
             //request.AddAnimation("Default");
 
             // 発話・アニメーションの実行
-            await chatdoll.ModelController.AnimatedSay(request, GetToken());
+            await modelController.AnimatedSay(request, GetToken());
+        }
+
+        public void CancelRequest()
+        {
+            cancelableTokenSource?.Cancel();
+            modelController.StartIdlingAsync();
         }
 
         private CancellationToken GetToken()
@@ -115,40 +121,6 @@ namespace ChatdollKit.Examples
             cancelableTokenSource?.Cancel();
             cancelableTokenSource = new CancellationTokenSource();
             return cancelableTokenSource.Token;
-        }
-
-        // 各種処理のボタン
-        [CustomEditor(typeof(ModelControllerExample))]
-        public class AppEditorInterface : Editor
-        {
-            public override void OnInspectorGUI()
-            {
-                base.OnInspectorGUI();
-
-                var app = target as ModelControllerExample;
-
-                if (GUILayout.Button("Animate"))
-                {
-                    _ = app.Animate();
-                }
-                else if (GUILayout.Button("Say"))
-                {
-                    _ = app.Say();
-                }
-                else if (GUILayout.Button("Face"))
-                {
-                    _ = app.Face();
-                }
-                else if (GUILayout.Button("AnimatedSay"))
-                {
-                    _ = app.AnimatedSay();
-                }
-                else if (GUILayout.Button("Stop"))
-                {
-                    app.cancelableTokenSource?.Cancel();
-                    _ = app.chatdoll.ModelController.StartIdlingAsync();
-                }
-            }
         }
     }
 }
