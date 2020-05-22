@@ -1,6 +1,8 @@
 # ChatdollKit
 ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャットボットを作るためのフレームワークです。
 
+[English version is here](https://github.com/uezo/ChatdollKit/blob/master/README.ja.md)
+
 <!-- 
 # Quick start guide
 
@@ -15,7 +17,6 @@ Watch this 2 minutes video to learn how ChatdollKit works and the way to use qui
 
 - [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347)
 - [Oculus Lipsync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/)
-- 音声認識機能を利用するためには[Azure Speech SDK for Unity](https://docs.microsoft.com/ja-jp/azure/cognitive-services/speech-service/speech-sdk?tabs=windows) または [Google Cloud Speech Recognition](https://assetstore.unity.com/packages/add-ons/machinelearning/google-cloud-speech-recognition-vr-ar-mobile-desktop-pro-72625?locale=ja-JP) をインストールしたのち、`ChatdollKit.Extension`の中の`AzureVoiceRequestProvider` か `GoogleCloudSpeechRequestProvider`を追加してください。Azure SDKはMacOSをサポートしていないので注意が必要です。`HelloWorldExample`を試すだけであれば音声認識ライブラリの導入は一旦スキップして大丈夫です。
 - Gateboxアプリを開発する場合は[GateboxSDK](https://developer.gatebox.biz/document) をプロジェクトに追加してください。SDKを入手するにはGatebox Developer Programへのサインアップが必要です。
 
 <img src="https://uezo.blob.core.windows.net/github/chatdoll/01.png" width="640">
@@ -143,8 +144,30 @@ HelloWorldの例では`hello`という`DialogProcessor`＝対話処理部品が1
 
 ## RequestProvider
 
-`RequestProvider`はユーザーからの要求内容をモデルに伝えるための部品で、音声認識やカメラで撮影した画像などをリクエスト情報として引き渡すように実装します。なお`RequestProvider`はHelloWorldのサンプルを動かすためのモック用の部品です。実用性のあるバーチャルアシスタントを開発するには、`AzureVoiceRequestProvider`や`GoogleCloudSpeechRequestProvider`、または`IRequestProvider`を実装した独自の部品を利用してください。実装方法は`AzureVoiceRequestProvider`などを参考にしていただけると幸いです。
+`RequestProvider`はユーザーからの要求内容をモデルに伝えるための部品で、音声認識やカメラで撮影した画像などをリクエスト情報として引き渡すように実装します。なお`RequestProvider`はHelloWorldのサンプルを動かすためのモック用の部品です。実用性のあるバーチャルアシスタントを開発するには、`AzureVoiceRequestProvider`や`GoogleVoiceRequestProvider`を使用するか、`VoiceRequestProviderBase`を継承してお好みのSpeech-to-Textサービスを利用したRequestProviderを作成してください。
 
+```csharp
+using System.Threading.Tasks;
+using UnityEngine;
+using ChatdollKit.Dialog;
+using ChatdollKit.IO;
+
+namespace YourApp
+{
+    public class MyVoiceRequestProvider : VoiceRequestProviderBase
+    {
+        protected override async Task<string> RecognizeSpeechAsync(AudioClip recordedVoice)
+        {
+            // Call Speech-to-Text service
+            var response = await client.PostBytesAsync<MyRecognitionResponse>(
+                $"https://my_stt_service", AudioConverter.AudioClipToPCM(recordedVoice));
+
+            // Return the recognized text
+            return response.recognizedText;
+        }
+    }
+}
+```
 
 # Deep Dive
 
