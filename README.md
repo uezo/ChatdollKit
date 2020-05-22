@@ -6,6 +6,8 @@ ChatdollKit enables you to make your 3D model into a voice-enabled chatbot.
 
 Watch this 2 minutes video to learn how ChatdollKit works and the way to use quickly. -->
 
+[日本語のREADMEはこちら](https://github.com/uezo/ChatdollKit/blob/master/README.ja.md)
+
 <img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit_architecture.png" width="640">
 
 # Install
@@ -14,8 +16,7 @@ Clone or download this repository and put `ChatdollKit` directory into your Unit
 
 - [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347)
 - [Oculus Lipsync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/)
-- To use Speech-to-Text service to recognize what you are saying, install [Azure Speech SDK for Unity](https://docs.microsoft.com/ja-jp/azure/cognitive-services/speech-service/speech-sdk?tabs=windows) or [Google Cloud Speech Recognition](https://assetstore.unity.com/packages/add-ons/machinelearning/google-cloud-speech-recognition-vr-ar-mobile-desktop-pro-72625?locale=ja-JP) then add `AzureVoiceRequestProvider` or `GoogleCloudSpeechRequestProvider` in `ChatdollKit.Extension` directory. Note that Azure SDK doesn't support Mac OSX for now (March 2020). Just trying the `HelloWorldExample`, you can skip to install speech recognition libraries.
-- To create Gatebox Application, install [GateboxSDK](https://developer.gatebox.biz/document). You have to sign up for Gatebox Developer Program to get the SDK.
+- (Optional) To create Gatebox Application, install [GateboxSDK](https://developer.gatebox.biz/document). You have to sign up for Gatebox Developer Program to get the SDK.
 
 <img src="https://uezo.blob.core.windows.net/github/chatdoll/01.png" width="640">
 
@@ -144,7 +145,30 @@ You can add your own skill to chatdoll by creating and adding the DialogProcesso
 
 ## RequestProvider
 
-`RequestProvider` is just a mock to walk through the HelloWorld example. To create a pratical chatdoll you should replace it to `AzureVoiceRequestProvider`, `GoogleCloudSpeechRequestProvider` or your own RequestProvider implements `IRequestProvider` to recognize what the user is saying. Please refer the RequestProviders in `Chatdoll.Extension` to create your own.
+`RequestProvider` is just a mock to walk through the HelloWorld example. To create a pratical chatdoll, replace it with `AzureVoiceRequestProvider`, `GoogleVoiceRequestProvider` or your own RequestProvider that extends `VoiceRequestProviderBase` like below.
+
+```csharp
+using System.Threading.Tasks;
+using UnityEngine;
+using ChatdollKit.Dialog;
+using ChatdollKit.IO;
+
+namespace YourApp
+{
+    public class MyVoiceRequestProvider : VoiceRequestProviderBase
+    {
+        protected override async Task<string> RecognizeSpeechAsync(AudioClip recordedVoice)
+        {
+            // Call Speech-to-Text service
+            var response = await client.PostBytesAsync<MyRecognitionResponse>(
+                $"https://my_stt_service", AudioConverter.AudioClipToPCM(recordedVoice));
+
+            // Return the recognized text
+            return response.recognizedText;
+        }
+    }
+}
+```
 
 
 # Deep Dive

@@ -1,124 +1,42 @@
-﻿using System;
-using System.Threading;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
-//using Microsoft.CognitiveServices.Speech;
 using ChatdollKit.Dialog;
+using ChatdollKit.IO;
 
 
 namespace ChatdollKit.Extension
 {
-    public class AzureVoiceRequestProvider : MonoBehaviour, IRequestProvider
+    public class AzureVoiceRequestProvider : VoiceRequestProviderBase
     {
-        // This provides voice request
-        public RequestType RequestType { get; } = RequestType.Voice;
+        public string ApiKey = string.Empty;
+        public string Region = string.Empty;
+        public string Language = "ja-JP";
 
-        // Azure configurations
-        public string ApiKey;
-        public string Region;
-        public string Language;
-
-        // Dummy for test
-        public bool UseDummy = false;
-        public string DummyText = string.Empty;
-
-        // Actions for each status
-        public Func<Request, Context, CancellationToken, Task> OnStartListeningAsync;
-        public Func<Request, Context, CancellationToken, Task> OnFinishListeningAsync;
-        public Func<Request, Context, CancellationToken, Task> OnErrorAsync;
-
-
-        private void Start()
+        protected override async Task<string> RecognizeSpeechAsync(AudioClip recordedVoice)
         {
-            // Don't remove this method to be able to inactivate this provider
+            var headers = new Dictionary<string, string>()
+            {
+                { "Ocp-Apim-Subscription-Key", ApiKey }
+            };
+
+            // TODO: Sending chunk is the better way
+            // https://docs.microsoft.com/ja-jp/azure/cognitive-services/speech-service/rest-speech-to-text#chunked-transfer
+            var response = await client.PostBytesAsync<SpeechRecognitionResponse>(
+                $"https://{Region}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language={Language}",
+                AudioConverter.AudioClipToPCM(recordedVoice),
+                headers);
+
+            return response.DisplayText;
         }
 
-        // Create request using voice recognition
-        public async Task<Request> GetRequestAsync(User user, Context context, CancellationToken token)
+        // Response from Azure STT
+        class SpeechRecognitionResponse
         {
-            var request = new Request(RequestType, user);
-
-            // Listen voice
-            try
-            {
-                // Invoke action before start recognition
-                await OnStartListeningAsync?.Invoke(request, context, token);
-
-                // Recognize speech
-                request.Text = await RecognizeOnceAsync();
-                if (request.IsSet())
-                {
-                    Debug.Log(request.Text);
-                }
-                else
-                {
-                    Debug.LogWarning("No speech recognized");
-                }
-            }
-            catch (TaskCanceledException)
-            {
-                Debug.Log("Canceled during recognizing speech");
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"Error occured in recognizing speech: {ex.Message}\n{ex.StackTrace}");
-                await OnErrorAsync?.Invoke(request, context, token);
-            }
-            finally
-            {
-                // Invoke action after recognition
-                await OnFinishListeningAsync?.Invoke(request, context, token);
-            }
-
-            return request;
-        }
-
-        // Speech to Text by Azure
-        public async Task<string> RecognizeOnceAsync()
-        {
-            // For debugging and testing
-            if (UseDummy)
-            {
-                await Task.Delay(1000);
-                return DummyText;
-            }
-
-            // Declare return value
-            var recognizedText = string.Empty;
-
-            //// Configure Azure STT
-            //var config = SpeechConfig.FromSubscription(ApiKey, Region);
-            //config.SpeechRecognitionLanguage = Language;
-
-            //// Call speech recognizer
-            //using (var recognizer = new SpeechRecognizer(config))
-            //{
-            //    var result = await recognizer.RecognizeOnceAsync().ConfigureAwait(false);
-
-            //    // Checks result
-            //    if (result.Reason == ResultReason.RecognizedSpeech)
-            //    {
-            //        // Successfully recognized
-            //        recognizedText = result.Text;
-            //    }
-            //    else if (result.Reason == ResultReason.NoMatch)
-            //    {
-            //        // Nothing recognized
-            //        Debug.Log("No speech recognized");
-            //    }
-            //    else if (result.Reason == ResultReason.Canceled)
-            //    {
-            //        // Canceled because error
-            //        var cancellation = CancellationDetails.FromResult(result);
-            //        Debug.LogError($"Speech recognition failed: Reason={cancellation.Reason} Details={cancellation.ErrorDetails}");
-            //    }
-            //    else
-            //    {
-            //        // Unknown error
-            //        Debug.LogError($"Unknown error in speech recognition: {result.Reason.ToString()}");
-            //    }
-            //}
-            return recognizedText;
+            public string RecognitionStatus;
+            public string DisplayText;
+            public int Offset;
+            public int Duration;
         }
     }
 }
