@@ -101,19 +101,20 @@ public class FaceClipEditor : Editor
 
             // Add or update face
             EditorGUILayout.BeginHorizontal();
+
             currentFaceName = GUILayout.TextField(currentFaceName);
+
+            EditorGUI.BeginDisabledGroup(string.IsNullOrEmpty(currentFaceName) || string.IsNullOrEmpty(currentFaceName.Trim()));
             if (GUILayout.Button("Capture", ButtonLayout))
             {
-                if (!string.IsNullOrEmpty(currentFaceName.Trim()))
+                // Update and save FaceClip with current weights of SkinnedMeshRenderer
+                if (UpdateFace(path, new FaceClip(currentFaceName, skinnedMeshRenderer)))
                 {
-                    // Update and save FaceClip with current weights of SkinnedMeshRenderer
-                    if (UpdateFace(path, new FaceClip(currentFaceName, skinnedMeshRenderer)))
-                    {
-                        // Change selected index to new item
-                        selectedFaceIndex = faceClips.Select(f => f.Name).ToList().IndexOf(currentFaceName);
-                    }
+                    // Change selected index to new item
+                    selectedFaceIndex = faceClips.Select(f => f.Name).ToList().IndexOf(currentFaceName);
                 }
             }
+            EditorGUI.EndDisabledGroup();
             EditorGUILayout.EndHorizontal();
 
             // Change current name and blend shapes when selection changed
