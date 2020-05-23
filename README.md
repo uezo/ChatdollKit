@@ -155,6 +155,7 @@ using ChatdollKit.IO;
 
 namespace YourApp
 {
+    [RequireComponent(typeof(VoiceRecorder))]
     public class MyVoiceRequestProvider : VoiceRequestProviderBase
     {
         protected override async Task<string> RecognizeSpeechAsync(AudioClip recordedVoice)

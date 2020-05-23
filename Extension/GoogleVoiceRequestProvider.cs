@@ -6,6 +6,7 @@ using ChatdollKit.IO;
 
 namespace ChatdollKit.Extension
 {
+    [RequireComponent(typeof(VoiceRecorder))]
     public class GoogleVoiceRequestProvider : VoiceRequestProviderBase
     {
         public string ApiKey = string.Empty;

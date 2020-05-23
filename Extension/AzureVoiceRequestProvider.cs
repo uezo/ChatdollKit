@@ -7,6 +7,7 @@ using ChatdollKit.IO;
 
 namespace ChatdollKit.Extension
 {
+    [RequireComponent(typeof(VoiceRecorder))]
     public class AzureVoiceRequestProvider : VoiceRequestProviderBase
     {
         public string ApiKey = string.Empty;
