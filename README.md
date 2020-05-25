@@ -78,6 +78,8 @@ Add `ChatdollKit/ChatdollKit/Scripts/chatdoll.cs` to the 3D model. These 2 compo
 
 Select `Setup ModelController` in the context menu of ModelController and set the name of shapekey for blink to `Blink Blend Shape Name`.
 
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/mceditor.png" width="640">
+
 If you want to setup manually, go to [Appendix1. Setup ModelController manually](#Appendix%201.%20Setup%20ModelController%20manually)
 
 ## Run

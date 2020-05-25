@@ -75,6 +75,8 @@ Animator Controllerを作成してBase Layerに`Default`というステートを
 
 インスペクターのコンテキストメニューから`Setup ModelController`を選択すると、LipSync等が自動的に設定されます。その後、まばたきをするために目を閉じる表現のシェイプキーの名前を`Blink Blend Shape Name`に設定しましょう。
 
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/mceditor.png" width="640">
+
 手動で設定したい場合は [Appendix1. ModelControllerの手動設定](#Appendix%201.%20ModelControllerの手動設定) を参照してください。
 
 
