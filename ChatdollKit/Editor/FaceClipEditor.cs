@@ -9,7 +9,7 @@ using ChatdollKit.Model;
 
 
 [CustomEditor(typeof(ModelController))]
-public class ModelControllerEditor : Editor
+public class FaceClipEditor : Editor
 {
     // For face configuration
     private List<FaceClip> faceClips;
