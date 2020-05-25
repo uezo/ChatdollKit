@@ -1,7 +1,7 @@
 # ChatdollKit
 ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャットボットを作るためのフレームワークです。
 
-[English version is here](https://github.com/uezo/ChatdollKit/blob/master/README.ja.md)
+[🇬🇧English version is here](https://github.com/uezo/ChatdollKit/blob/master/README.ja.md)
 
 <!-- 
 # Quick start guide
@@ -11,32 +11,34 @@ Watch this 2 minutes video to learn how ChatdollKit works and the way to use qui
 <img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit_architecture.png" width="640">
 
 
-# インストール
+# 🚀 クイックスタート
+
+1. 📦パッケージのインポート
+    - [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347) と [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/) のインポート
+    - ChatdollKit.unitypackage のインポート
+
+1. 🐟リソースの準備
+    - 3Dモデルをインポートしてシーンに追加
+    - 音声ファイルをリソースディレクトリに追加、AnimatorControllerを作成・設定して3Dモデルにセット
+
+1. 🍣セットアップ
+    - インスペクターのコンテキストメニューから`Setup ModelController`を実行
+    - まばたき用のシェイプキーの名前を設定
+
+
+# 📦 パッケージのインポート
 
 このリポジトリをクローンまたはダウンロードして、`ChatdollKit`ディレクトリを任意のUnityプロジェクトに追加してください。また依存ライブラリは以下の通りですので、事前にプロジェクトへのインポートが必要です。
 
 - [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347)
-- [Oculus Lipsync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/)
-- Gateboxアプリを開発する場合は[GateboxSDK](https://developer.gatebox.biz/document) をプロジェクトに追加してください。SDKを入手するにはGatebox Developer Programへのサインアップが必要です。
-
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/01.png" width="640">
+- [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/)
 
 
-# 関連リソースの準備
+# 🐟 リソースの準備
 
 ## 3Dモデル
 
 お好みの3Dモデルをシーンに配置してください。シェーダーやダイナミックボーンなど必要に応じてセットアップしておいてください。なおこの手順で使っているモデルはシグネットちゃんです。とてもかわいいですね。 https://booth.pm/ja/items/1870320
-
-モデル自体の設定が完了したら、リップシンクの設定もしておきます。モデルのオブジェクトまたは適当な場所に追加したオブジェクトに、インスペクターから以下2つのコンポーネントを追加してください。
-
-- OVR Lip Sync Context
-- OVR Lip Sync Context Morph Target
-
-`OVR Lip Sync Context`の`Audio Loopback`のチェックをオンにします。続いて表情関連のシェイプキーを`OVR Lip Sync Context Morph Target`の`Skinned Mesh Renderer`に設定した後、単語の読み上げ時の口の形にそれぞれ適切なものを指定したら設定完了です。これによって3Dモデルにおしゃべりをさせると発話内容に応じて口が動くようになります。
-
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/02_2.png" width="640">
-
 
 ## Voices
 
@@ -60,20 +62,22 @@ Animator Controllerを作成してBase Layerに`Default`というステートを
 <img src="https://uezo.blob.core.windows.net/github/chatdoll/05_2.png" width="640">
 
 
-# 基本的な設定
+# 🍣 セットアップ
 
 ## ChatdollKitの追加
 
-`Chatdoll/chatdoll.cs`を3Dモデルに追加してください。以下2つのコンポーネントも自動的に追加されます。
+`ChatdollKit/ChatdollKit/Scripts/chatdoll.cs`を3Dモデルに追加してください。以下2つのコンポーネントも自動的に追加されます。
 
 - `ModelController` 3Dモデルのアニメーション、発話、表情を制御。使い方は[ModelControllerの使い方](https://github.com/uezo/ChatdollKit/blob/master/ModelController.ja.md)を参照
 - `MicEnabler` 音声認識のためのマイクの利用権限を取得
 
 ## ModelControllerの設定
 
-LipSyncを設定したオブジェクトにはAudio Sourceが自動的に追加されているので、これを`ModelController`の`Audio Source`に設定します。また、表情関連のシェイプキーの設定されたオブジェクトを`Skinned Mesh Renderer`に設定します。最後に、まばたきをするため、目を閉じる表現のためのシェイプキーの名前を`Blink Blend Shape Name`に設定しましょう。
+インスペクターのコンテキストメニューから`Setup ModelController`を選択すると、LipSync等が自動的に設定されます。その後、まばたきをするために目を閉じる表現のシェイプキーの名前を`Blink Blend Shape Name`に設定しましょう。
 
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/06_2.png" width="640">
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/mceditor.png" width="640">
+
+手動で設定したい場合は [Appendix1. ModelControllerの手動設定](#Appendix%201.%20ModelControllerの手動設定) を参照してください。
 
 
 ## 動作確認
@@ -175,3 +179,27 @@ namespace YourApp
 ChatdollKitを利用した複雑で実用的なバーチャルアシスタントの開発方法については、現在コンテンツを準備中です。
 
 ChatdollKitの基本的な価値として、Unity初心者であっても簡単なコーディング（モーションやボイスの名前を指定するなど）だけで3Dモデルを制御することができるようにしていたり、チャットボット初心者であっても対話制御の作り込みをすることなく自然言語処理や機能開発に集中できるようにしています。より豊かな表現をするためには各シチュエーションで呼び出される3Dモデルの制御処理をUnityの機能を使いこなしてリッチにすることができますので、自身のスキル習得に応じて`ModelController`を卒業していただければと考えています。
+
+
+# Appendix 1. ModelControllerの手動設定
+
+モデルのオブジェクトまたは適当な場所に追加した空のオブジェクトに、インスペクターから以下2つのコンポーネントを追加してください。
+
+- OVR Lip Sync Context
+- OVR Lip Sync Context Morph Target
+
+また、その設定内容は以下の通りです。
+
+- `OVR Lip Sync Context`の`Audio Loopback`のチェックをオンにする
+- 表情関連のシェイプキーを`OVR Lip Sync Context Morph Target`の`Skinned Mesh Renderer`に設定
+- 単語の読み上げ時の口の形にそれぞれ適切なものを指定
+
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/02_2.png" width="640">
+
+その後、ModelControllerのインスペクターを表示して以下の通り設定します。
+
+- LipSyncを設定したオブジェクトを`ModelController`の`Audio Source`に設定
+- 表情関連のシェイプキーの設定されたオブジェクトを`Skinned Mesh Renderer`に設定
+- まばたきをするため、目を閉じる表現のためのシェイプキーの名前を`Blink Blend Shape Name`に設定
+
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/06_2.png" width="640">

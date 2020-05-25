@@ -6,37 +6,40 @@ ChatdollKit enables you to make your 3D model into a voice-enabled chatbot.
 
 Watch this 2 minutes video to learn how ChatdollKit works and the way to use quickly. -->
 
-[日本語のREADMEはこちら](https://github.com/uezo/ChatdollKit/blob/master/README.ja.md)
+[🇯🇵日本語のREADMEはこちら](https://github.com/uezo/ChatdollKit/blob/master/README.ja.md)
 
 <img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit_architecture.png" width="640">
 
-# Install
+
+# 🚀 Quick start
+
+1. 📦Import packages
+    - Import [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347) and [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/)
+    - Import ChatdollKit.unitypackage
+
+1. 🐟Resource preparation
+    - Import 3D model and put it on the scene
+    - Put voice files to resource directory and configure AnimatorController and set it to the 3D model
+
+1. 🍣Setup
+    - Run `Setup ModelController` in the context menu on inspector
+    - Set the name of ShapeKey for blink
+
+
+# 📦 Import packages
 
 Clone or download this repository and put `ChatdollKit` directory into your Unity project after install dependencies below;
 
 - [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347)
-- [Oculus Lipsync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/)
-- (Optional) To create Gatebox Application, install [GateboxSDK](https://developer.gatebox.biz/document). You have to sign up for Gatebox Developer Program to get the SDK.
-
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/01.png" width="640">
+- [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/)
 
 
-# Resource preparation
+# 🐟 Resource preparation
 
 ## 3D model
 
-Add 3D model to the scene and adjust as you like. Install required resources for the 3D model like shaders and Dynamic Bone at this time.
+Add 3D model to the scene and adjust as you like. Also install required resources for the 3D model like shaders, Dynamic Bone etc.
 In this README, I use Cygnet-chan that we can perchase at Booth. https://booth.pm/ja/items/1870320
-
-After adjustment, add following LipSync components using inspector.
-
-- OVR Lip Sync Context
-- OVR Lip Sync Context Morph Target
-
-Then turn on `Audio Loopback` in `OVR Lip Sync Context`, set the object that has the shapekeys for face expressions to `Skinned Mesh Renderer` in `OVR Lip Sync Context Morph Target` and configure viseme to blend targets.
-
-
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/02_2.png" width="640">
 
 
 ## Voices
@@ -62,20 +65,22 @@ In this README, I use [Anime Girls Idle Animations Free](https://assetstore.unit
 <img src="https://uezo.blob.core.windows.net/github/chatdoll/05_2.png" width="640">
 
 
-# Basic configuration
+# 🍣 Setup
 
 ## Add ChatdollKit
 
-Add `Chatdoll/chatdoll.cs` to the 3D model. These 2 components are added automatically at this time.
+Add `ChatdollKit/ChatdollKit/Scripts/chatdoll.cs` to the 3D model. These 2 components are also added automatically.
 
 - `ModelController` controls animations, voices and face expressions of 3D model.
 - `MicEnabler` gets the permission to use microphone for speech recognition.
 
-## ModelController configuration
+## Setup ModelController
 
-Set LipSync object to `Audio Source` and set the object that has the shape keys for face expression to `Skinned Mesh Renderer`. Lastly set the shape key that close the eyes for blink to `Blink Blend Shape Name`.
+Select `Setup ModelController` in the context menu of ModelController and set the name of shapekey for blink to `Blink Blend Shape Name`.
 
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/06_2.png" width="640">
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/mceditor.png" width="640">
+
+If you want to setup manually, go to [Appendix1. Setup ModelController manually](#Appendix%201.%20Setup%20ModelController%20manually)
 
 ## Run
 
@@ -171,7 +176,6 @@ namespace YourApp
 }
 ```
 
-
 # Deep Dive
 
 We are now preparing contents to create more complex virtual assistant using ChatdollKit.
@@ -179,3 +183,22 @@ We are now preparing contents to create more complex virtual assistant using Cha
 Basically, you can make the character more lively to improve the animations and set it to the idle animations and each situational actions. This activity requires the skill of Unity, so chatdoll provides the easy way for Unity beginner　(like me) to control the 3D model easily with just coding.
 
 You can make the more useful virtual assistant to improve the conversation logic and backend functions. This acticity requires the skill to build chatbot, so chatdoll provides the basic framework to build chatbot that allows you to concentrate in coding the rules of intent extraction and each logic of dialogs.
+
+
+# Appendix 1. Setup ModelController manually
+
+Create a new empty GameObject attach `OVR Lip Sync Context` and `OVR Lip Sync Context Morph Target`.
+
+- Then turn on `Audio Loopback` in `OVR Lip Sync Context`
+- Set the object that has the shapekeys for face expressions to `Skinned Mesh Renderer` in `OVR Lip Sync Context Morph Target`
+- Configure viseme to blend targets in `OVR Lip Sync Context Morph Target`
+
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/02_2.png" width="640">
+
+After that, select root GameObject to which ModelController is attached.
+
+- Set LipSync object to `Audio Source`
+- Set the object that has the shape keys for face expression to `Skinned Mesh Renderer`
+- Set the shape key that close the eyes for blink to `Blink Blend Shape Name`.
+
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/06_2.png" width="640">

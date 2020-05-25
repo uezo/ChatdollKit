@@ -4,7 +4,7 @@ ModelControllerは、3Dモデルにアニメーションをつけたりしゃべ
 
 # 初期設定
 
-READMEの内容にしたがってChatdollKitをセットアップしてください。また、モデルを操作するスクリプトとして`ModelControlExample.cs`を追加しましょう。
+[README](https://github.com/uezo/ChatdollKit/blob/master/README.ja.md)の内容にしたがってChatdollKitをセットアップしてください。また、モデルを操作するスクリプトとして`ModelControlExample.cs`を追加しましょう。
 
 # アニメーションの実行
 

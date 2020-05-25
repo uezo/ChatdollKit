@@ -11,12 +11,19 @@ using ChatdollKit.Model;
 [CustomEditor(typeof(ModelController))]
 public class FaceClipEditor : Editor
 {
+    // For face configuration
     private List<FaceClip> faceClips;
     private int previousSelectedFaceIndex;
     private int selectedFaceIndex;
     private string currentFaceName;
 
-    public override void OnInspectorGUI()
+    // For setup
+    private static string[] visemeNames = new string[] {
+            "sil", "PP", "FF", "TH", "DD",
+            "kk", "CH", "SS", "nn", "RR",
+            "aa", "E", "ih", "oh", "ou" };
+
+    public override void OnInspectorGUI()
     {
         base.OnInspectorGUI();
         var modelController = target as ModelController;
@@ -209,5 +216,139 @@ public class FaceClipEditor : Editor
         }
 
         return storedFaces;
+    }
+
+    // Setup ModelController
+    [MenuItem("CONTEXT/ModelController/Setup ModelController")]
+    private static void Setup(MenuCommand menuCommand)
+    {
+        var modelController = menuCommand.context as ModelController;
+
+        // Get viseme target as VRC FBX or VRM
+        var skinnedMeshRenderers = modelController.gameObject.GetComponentsInChildren<SkinnedMeshRenderer>();
+        var visemeTarget = GetVisemeTarget(skinnedMeshRenderers, false) ?? GetVisemeTarget(skinnedMeshRenderers, true);
+
+        if (visemeTarget == null)
+        {
+            Debug.LogError("Viseme target not found");
+            return;
+        }
+
+        // Configure LipSync viseme
+        var lipSyncObject = ConfigureViseme(modelController.gameObject, visemeTarget);
+
+        // Set face skinnedMeshRenderer
+        modelController.SkinnedMeshRenderer = visemeTarget.SkinnedMeshRenderer;
+
+        // Set audio source
+        modelController.AudioSource = lipSyncObject.GetComponent<AudioSource>();
+    }
+
+    private static VisemeTarget GetVisemeTarget(SkinnedMeshRenderer[] skinnedMeshRenderers, bool IsVRM = false)
+    {
+        var maxCount = 1;
+        var maxIndex = -1;
+        var visemeTargetShapeKeyIndexes = new List<int>();
+
+        for (var i = 0; i < skinnedMeshRenderers.Length; i++)
+        {
+            var temp = GetVisemeTargetShapeKeyIndexes(skinnedMeshRenderers[i].sharedMesh, visemeNames, IsVRM);
+            if (temp == null) continue;
+            var configuredCount = temp.Where(v => v >= 0).Count();
+            if (configuredCount >= maxCount)
+            {
+                maxCount = configuredCount;
+                maxIndex = i;
+                visemeTargetShapeKeyIndexes = temp;
+            }
+        }
+
+        if (maxIndex < 0)
+        {
+            // Return when no target indexes
+            return null;
+        }
+        else
+        {
+            return new VisemeTarget()
+            {
+                SkinnedMeshRenderer = skinnedMeshRenderers[maxIndex],
+                ShapeKeyIndexes = visemeTargetShapeKeyIndexes
+            };
+        }
+    }
+
+    private static List<int> GetVisemeTargetShapeKeyIndexes(Mesh mesh, string[] visemeNames, bool IsVRM = false)
+    {
+        var visemeTargetShapeKeyIndexes = new List<int>();
+
+        // Get shapekeys
+        var shapeKeys = new Dictionary<string, int>();
+        for (var i = 0; i < mesh.blendShapeCount; i++)
+        {
+            shapeKeys[mesh.GetBlendShapeName(i)] = i;
+        }
+
+        // Set index of shapekeys
+        for (var i = 0; i < visemeNames.Length; i++)
+        {
+            var visemeKey = visemeNames[i];
+            if (IsVRM)
+            {
+                if (visemeKey.ToLower() == "aa") visemeKey = "a";
+                else if (visemeKey.ToLower() == "ih") visemeKey = "i";
+                else if (visemeKey.ToLower() == "ou") visemeKey = "u";
+                else if (visemeKey.ToLower() == "e") visemeKey = "e";
+                else if (visemeKey.ToLower() == "oh") visemeKey = "o";
+                else visemeKey = "n";
+            }
+
+            var shapeKey = shapeKeys.Keys.Where(sk => sk.ToLower().EndsWith($"_{visemeKey}".ToLower())).FirstOrDefault();
+            if (!string.IsNullOrEmpty(shapeKey))
+            {
+                visemeTargetShapeKeyIndexes.Add(shapeKeys[shapeKey]);
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        return visemeTargetShapeKeyIndexes;
+    }
+
+    private static GameObject ConfigureViseme(GameObject rootGameObject, VisemeTarget visemeTarget)
+    {
+        var morphTarget = rootGameObject.GetComponentInChildren<OVRLipSyncContextMorphTarget>();
+        if (morphTarget == null)
+        {
+            var morphTargetGameObject = new GameObject("LipSync");
+            morphTarget = morphTargetGameObject.AddComponent<OVRLipSyncContextMorphTarget>();
+            morphTarget.transform.parent = visemeTarget.SkinnedMeshRenderer.gameObject.transform;
+        }
+
+        morphTarget.skinnedMeshRenderer = visemeTarget.SkinnedMeshRenderer;
+        for (var i = 0; i < visemeNames.Length; i++)
+        {
+            if (visemeTarget.ShapeKeyIndexes[i] >= 0)
+            {
+                morphTarget.visemeToBlendTargets[i] = visemeTarget.ShapeKeyIndexes[i];
+            }
+        }
+
+        var context = morphTarget.gameObject.GetComponent<OVRLipSyncContext>();
+        if (context == null)
+        {
+            context = morphTarget.gameObject.AddComponent<OVRLipSyncContext>();
+        }
+        context.audioLoopback = true;
+
+        return morphTarget.gameObject;
+    }
+
+    class VisemeTarget
+    {
+        public SkinnedMeshRenderer SkinnedMeshRenderer { get; set; }
+        public List<int> ShapeKeyIndexes { get; set; }
     }
 }
