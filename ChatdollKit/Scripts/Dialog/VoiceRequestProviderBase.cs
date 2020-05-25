@@ -21,9 +21,12 @@ namespace ChatdollKit.Dialog
         public bool PrintResult = false;
 
         // Actions for each status
-        public Func<Request, Context, CancellationToken, Task> OnStartListeningAsync;
-        public Func<Request, Context, CancellationToken, Task> OnFinishListeningAsync;
-        public Func<Request, Context, CancellationToken, Task> OnErrorAsync;
+        public Func<Request, Context, CancellationToken, Task> OnStartListeningAsync
+            = async (r, c, t) => { Debug.LogWarning("VoiceRequestProvider.OnStartListeningAsync is not implemented"); };
+        public Func<Request, Context, CancellationToken, Task> OnFinishListeningAsync
+            = async(r, c, t) => { Debug.LogWarning("VoiceRequestProvider.OnFinishListeningAsync is not implemented"); };
+        public Func<Request, Context, CancellationToken, Task> OnErrorAsync
+            = async (r, c, t) => { Debug.LogWarning("VoiceRequestProvider.OnErrorAsync is not implemented"); };
 
         // Private and protected members for recognize task
         private string recognitionId = string.Empty;
@@ -41,7 +44,7 @@ namespace ChatdollKit.Dialog
             try
             {
                 // Invoke action before start recognition
-                await OnStartListeningAsync?.Invoke(request, context, token);
+                await OnStartListeningAsync(request, context, token);
 
                 // For debugging and testing
                 if (UseDummy)
@@ -74,12 +77,12 @@ namespace ChatdollKit.Dialog
             catch (Exception ex)
             {
                 Debug.LogError($"Error occured in recognizing speech: {ex.Message}\n{ex.StackTrace}");
-                await OnErrorAsync?.Invoke(request, context, token);
+                await OnErrorAsync(request, context, token);
             }
             finally
             {
                 // Invoke action after recognition
-                await OnFinishListeningAsync?.Invoke(request, context, token);
+                await OnFinishListeningAsync(request, context, token);
             }
 
             return request;
