@@ -15,7 +15,7 @@ Watch this 2 minutes video to learn how ChatdollKit works and the way to use qui
 
 1. 📦パッケージのインポート
     - [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347) と [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/) のインポート
-    - ChatdollKit.unitypackage のインポート
+    - [ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases/tag/0.1.0) のインポート
 
 1. 🐟リソースの準備
     - 3Dモデルをインポートしてシーンに追加
@@ -28,7 +28,7 @@ Watch this 2 minutes video to learn how ChatdollKit works and the way to use qui
 
 # 📦 パッケージのインポート
 
-このリポジトリをクローンまたはダウンロードして、`ChatdollKit`ディレクトリを任意のUnityプロジェクトに追加してください。また依存ライブラリは以下の通りですので、事前にプロジェクトへのインポートが必要です。
+最新版の [ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases/tag/0.1.0) をダウンロードして、任意のUnityプロジェクトにインポートしてください。また、以下の依存ライブラリもインポートが必要です。
 
 - [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347)
 - [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/)

@@ -15,7 +15,7 @@ Watch this 2 minutes video to learn how ChatdollKit works and the way to use qui
 
 1. 📦Import packages
     - Import [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347) and [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/)
-    - Import ChatdollKit.unitypackage
+    - Import [ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases/tag/0.1.0)
 
 1. 🐟Resource preparation
     - Import 3D model and put it on the scene
@@ -28,7 +28,7 @@ Watch this 2 minutes video to learn how ChatdollKit works and the way to use qui
 
 # 📦 Import packages
 
-Clone or download this repository and put `ChatdollKit` directory into your Unity project after install dependencies below;
+Download the latest version of [ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases/tag/0.1.0) and import it into your Unity project after import dependencies;
 
 - [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347)
 - [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/)
