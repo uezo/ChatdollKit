@@ -15,7 +15,6 @@ namespace ChatdollKit.IO
         private List<float> recordedData;
         private float[] samplingData;
         private int previousPosition;
-        private float silenceStartTime;
 
         // Status
         public VoiceRecorderStatus Status { get; private set; }
@@ -27,7 +26,7 @@ namespace ChatdollKit.IO
         public float VoiceDetectionThreshold = 0.1f;
         public float VoiceDetectionMinimumLength = 0.3f;
         public float SilenceDurationToEndRecording = 1.0f;
-        public float RecordingStartTimeout = 5.0f;
+        public float RecordingStartTimeout = 0.0f;
         public float ListeningTimeout = 20.0f;
         public bool StopListeningOnDetectionEnd = false;
         public Action OnListeningStart = () => { Debug.Log("Listening start"); };
@@ -48,6 +47,7 @@ namespace ChatdollKit.IO
         private float listeningTimeout;
         private float recordingStartTimeout;
         private float listeningStartTime;
+        private float lastVoiceDetectedTime;
         private Action onListeningStart;
         private Action onListeningStop;
         private Action onRecordingStart;
@@ -98,10 +98,10 @@ namespace ChatdollKit.IO
                     }
                 }
 
-                if (recordingStartTimeout > 0.0f && silenceStartTime == 0.0f)
+                if (recordingStartTimeout > 0.0f && lastVoiceDetectedTime > 0.0f)
                 {
-                    // Timeout when keep silent from start
-                    var silenceDurationFromStart = Time.time - listeningStartTime;
+                    // Timeout when keep silent from recording start or continue
+                    var silenceDurationFromStart = Time.time - lastVoiceDetectedTime;
                     if (silenceDurationFromStart > recordingStartTimeout)
                     {
                         StopListening();
@@ -142,6 +142,10 @@ namespace ChatdollKit.IO
                 // Handle recorded voice
                 if (capturedData.Max(d => Math.Abs(d)) > voiceDetectionThreshold)
                 {
+                    // 初回にdetectされる問題あるので、何フレーム継続したら、みたいな閾値設けるか？
+
+                    Debug.Log($"detected: {capturedData.Max(d => Math.Abs(d))}");
+
                     onDetectVoice?.Invoke();
 
                     // Start or continue recording when the volume of captured sound is larger than threshold
@@ -152,13 +156,13 @@ namespace ChatdollKit.IO
                     }
                     IsRecording = true;
                     Status = VoiceRecorderStatus.Recording;
-                    silenceStartTime = Time.time;
+                    lastVoiceDetectedTime = Time.time;
                 }
                 else
                 {
                     if (IsRecording)
                     {
-                        if (Time.time - silenceStartTime >= silenceDurationToEndRecording)
+                        if (Time.time - lastVoiceDetectedTime >= silenceDurationToEndRecording)
                         {
                             // End recording when silence is longer than configured duration
                             IsRecording = false;
@@ -239,6 +243,7 @@ namespace ChatdollKit.IO
             previousPosition = 0;
             IsRecording = false;
             listeningStartTime = Time.time;
+            lastVoiceDetectedTime = 0.0f;
 
             // Recognized as listening started
             IsListening = true;
