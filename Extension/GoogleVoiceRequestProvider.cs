@@ -6,9 +6,9 @@ using ChatdollKit.IO;
 
 namespace ChatdollKit.Extension
 {
-    [RequireComponent(typeof(VoiceRecorder))]
     public class GoogleVoiceRequestProvider : VoiceRequestProviderBase
     {
+        [Header("Google Cloud Settings")]
         public string ApiKey = string.Empty;
         public string Language = "ja-JP";
         public bool UseEnhancedModel = false;
@@ -19,7 +19,7 @@ namespace ChatdollKit.Extension
                 $"https://speech.googleapis.com/v1/speech:recognize?key={ApiKey}",
                 new SpeechRecognitionRequest(recordedVoice, Language, UseEnhancedModel));
 
-            return response.results[0].alternatives[0].transcript;
+            return response.results[0].alternatives[0].transcript ?? string.Empty;
         }
 
         // Models for request and response

@@ -7,9 +7,9 @@ using ChatdollKit.IO;
 
 namespace ChatdollKit.Extension
 {
-    [RequireComponent(typeof(VoiceRecorder))]
     public class AzureVoiceRequestProvider : VoiceRequestProviderBase
     {
+        [Header("Azure Settings")]
         public string ApiKey = string.Empty;
         public string Region = string.Empty;
         public string Language = "ja-JP";
@@ -28,7 +28,7 @@ namespace ChatdollKit.Extension
                 AudioConverter.AudioClipToPCM(recordedVoice),
                 headers);
 
-            return response.DisplayText;
+            return response.DisplayText ?? string.Empty;
         }
 
         // Response from Azure STT
