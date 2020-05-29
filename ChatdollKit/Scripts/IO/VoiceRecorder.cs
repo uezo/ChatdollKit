@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 
 
@@ -15,101 +17,54 @@ namespace ChatdollKit.IO
         private List<float> recordedData;
         private float[] samplingData;
         private int previousPosition;
+        private VoiceRecorderResponse lastRecordedVoice;
 
-        // Status
+        // Status and timestamp
         public VoiceRecorderStatus Status { get; private set; }
         public bool IsListening { get; private set; }
         public bool IsRecording { get; private set; }
+        public bool IsEnabled;
+        private float lastVoiceDetectedTime;
+        private float recordingStartTime;
 
-        // Configurations
-        public int SamplingFrequency = 16000;
-        public float VoiceDetectionThreshold = 0.1f;
-        public float VoiceDetectionMinimumLength = 0.3f;
-        public float SilenceDurationToEndRecording = 1.0f;
-        public float RecordingStartTimeout = 0.0f;
-        public float ListeningTimeout = 20.0f;
-        public bool StopListeningOnDetectionEnd = false;
-        public Action OnListeningStart = () => { Debug.Log("Listening start"); };
-        public Action OnListeningStop = () => { Debug.Log("Listening stopped"); };
-        public Action OnRecordingStart = () => { Debug.Log("Recording start"); };
-        public Action OnDetectVoice;
-        public Action<AudioClip> OnRecordingEnd = (a) => { Debug.Log($"Recording end: {a.length}"); };
-        public Action<float> OnListeningTimeout = (s) => { Debug.Log($"Listening timeout: {s} sec"); };
-        public Action<float> OnRecordingStartTimeout = (s) => { Debug.Log($"Recording start timeout: {s} sec"); };
-        public Action<Exception> OnError = (e) => { Debug.LogError($"VoiceRecording error: {e.Message}\n{e.StackTrace}"); };
-
-        // Runtime configurations (updated on StartListening)
+        // Runtime configurations
         private int samplingFrequency;
         private float voiceDetectionThreshold;
-        private float silenceDurationToEndRecording;
         private float voiceDetectionMinimumLength;
-        private bool stopListeningOnDetectionEnd;
-        private float listeningTimeout;
-        private float recordingStartTimeout;
-        private float listeningStartTime;
-        private float lastVoiceDetectedTime;
+        private float silenceDurationToEndRecording;
         private Action onListeningStart;
         private Action onListeningStop;
         private Action onRecordingStart;
         private Action onDetectVoice;
         private Action<AudioClip> onRecordingEnd;
-        private Action<float> onListeningTimeout;
-        private Action<float> onRecordingStartTimeout;
         private Action<Exception> onError;
 
-        // Request flags
-        private bool startListeningRequested = false;
-        private bool stopListeningRequested = false;
+        // Request data
+        private VoiceRecorderRequest voiceRecorderRequest;
 
+        private void Start()
+        {
+            voiceRecorderRequest = new VoiceRecorderRequest();
+            Configure();
+            StartListening();
+        }
 
         private void Update()
         {
-            // Initialize and start listening
-            if (startListeningRequested)
+            // Apply configuration
+            if (voiceRecorderRequest != null)
             {
-                startListeningRequested = false;
-                StartListening();
+                Configure();
             }
 
-            // Finalize and stop listening
-            if (stopListeningRequested)
-            {
-                stopListeningRequested = false;
-                StopListening();
-            }
-
-            // Return if not listening
-            if (!IsListening)
+            // Return if disabled or not listening
+            if (!IsEnabled || !IsListening)
             {
                 return;
             }
 
             try
             {
-                if (listeningTimeout > 0.0f)
-                {
-                    // Timeout when listening duration is longer than timeout value
-                    var listeningDuration = Time.time - listeningStartTime;
-                    if (listeningDuration > listeningTimeout)
-                    {
-                        StopListening();
-                        onListeningTimeout?.Invoke(listeningDuration);
-                        return;
-                    }
-                }
-
-                if (recordingStartTimeout > 0.0f && lastVoiceDetectedTime > 0.0f)
-                {
-                    // Timeout when keep silent from recording start or continue
-                    var silenceDurationFromStart = Time.time - lastVoiceDetectedTime;
-                    if (silenceDurationFromStart > recordingStartTimeout)
-                    {
-                        StopListening();
-                        onRecordingStartTimeout?.Invoke(silenceDurationFromStart);
-                        return;
-                    }
-                }
-
                 // Get position
                 var currentPosition = Microphone.GetPosition(null);
                 if (currentPosition < 0 || previousPosition == currentPosition)
@@ -142,15 +97,13 @@ namespace ChatdollKit.IO
                 // Handle recorded voice
                 if (capturedData.Max(d => Math.Abs(d)) > voiceDetectionThreshold)
                 {
-                    // 初回にdetectされる問題あるので、何フレーム継続したら、みたいな閾値設けるか？
-
-                    Debug.Log($"detected: {capturedData.Max(d => Math.Abs(d))}");
-
                     onDetectVoice?.Invoke();
 
                     // Start or continue recording when the volume of captured sound is larger than threshold
                     if (!IsRecording)
                     {
+                        // Set recording starttime
+                        recordingStartTime = Time.time;
                         // Invoke recording start event handler
                         onRecordingStart?.Invoke();
                     }
@@ -174,21 +127,20 @@ namespace ChatdollKit.IO
                                 var audioClip = AudioClip.Create(string.Empty, recordedData.Count, microphoneInput.channels, microphoneInput.frequency, false);
                                 audioClip.SetData(recordedData.ToArray(), 0);
 
-                                // Invoke event handler
-                                onRecordingEnd?.Invoke(audioClip);
+                                // Give reference of audio clip to all audiences
+                                lastRecordedVoice = new VoiceRecorderResponse() { RecordingStartedAt = recordingStartTime, Voice = audioClip };
 
-                                // Stop listening
-                                if (stopListeningOnDetectionEnd)
-                                {
-                                    StopListening();
-                                }
+                                onRecordingEnd?.Invoke(audioClip);
+                            }
+                            else
+                            {
+                                onRecordingEnd?.Invoke(null);
                             }
                             recordedData.Clear();
                         }
                     }
                     else
                     {
-                        // Keep clean when not recording
                         recordedData.Clear();
                     }
                 }
@@ -205,31 +157,34 @@ namespace ChatdollKit.IO
             StopListening();
         }
 
-        public void StartRecorder()
+        private void Configure()
         {
-            startListeningRequested = true;
-            Status = VoiceRecorderStatus.StartRequestAccepted;
+            samplingFrequency = voiceRecorderRequest.SamplingFrequency;
+            voiceDetectionThreshold = voiceRecorderRequest.VoiceDetectionThreshold;
+            voiceDetectionMinimumLength = voiceRecorderRequest.VoiceDetectionMinimumLength;
+            silenceDurationToEndRecording = voiceRecorderRequest.SilenceDurationToEndRecording;
+            onListeningStart = voiceRecorderRequest.OnListeningStart;
+            onListeningStop = voiceRecorderRequest.OnListeningStop;
+            onRecordingStart = voiceRecorderRequest.OnRecordingStart;
+            onDetectVoice = voiceRecorderRequest.OnDetectVoice;
+            onRecordingEnd = voiceRecorderRequest.OnRecordingEnd;
+            onError = voiceRecorderRequest.OnError;
+            voiceRecorderRequest = null;
+        }
+
+        private async Task ConfigureAsync(VoiceRecorderRequest voiceRecorderRequest, CancellationToken token)
+        {
+            this.voiceRecorderRequest = voiceRecorderRequest;
+
+            // Wait for configuration applied
+            while (voiceRecorderRequest == null && !token.IsCancellationRequested)
+            {
+                await Task.Delay(10);
+            }
         }
 
         private void StartListening()
         {
-            // Update runtime configurations
-            samplingFrequency = SamplingFrequency;
-            voiceDetectionThreshold = VoiceDetectionThreshold;
-            silenceDurationToEndRecording = SilenceDurationToEndRecording;
-            voiceDetectionMinimumLength = VoiceDetectionMinimumLength;
-            stopListeningOnDetectionEnd = StopListeningOnDetectionEnd;
-            onListeningStart = OnListeningStart;
-            onListeningStop = OnListeningStop;
-            onListeningTimeout = OnListeningTimeout;
-            onRecordingStartTimeout = OnRecordingStartTimeout;
-            onDetectVoice = OnDetectVoice;
-            onRecordingStart = OnRecordingStart;
-            onRecordingEnd = OnRecordingEnd;
-            onError = OnError;
-            listeningTimeout = ListeningTimeout;
-            recordingStartTimeout = RecordingStartTimeout;
-
             // (Re)start microphone
             if (Microphone.IsRecording(null))
             {
@@ -242,19 +197,12 @@ namespace ChatdollKit.IO
             samplingData = new float[microphoneInput.samples * microphoneInput.channels];
             previousPosition = 0;
             IsRecording = false;
-            listeningStartTime = Time.time;
             lastVoiceDetectedTime = 0.0f;
 
             // Recognized as listening started
-            IsListening = true;
             Status = VoiceRecorderStatus.Listening;
+            IsListening = true;
             onListeningStart?.Invoke();
-        }
-
-        public void StopRecorder()
-        {
-            stopListeningRequested = true;
-            Status = VoiceRecorderStatus.StopRequestAccepted;
         }
 
         private void StopListening()
@@ -274,5 +222,74 @@ namespace ChatdollKit.IO
             Status = VoiceRecorderStatus.NotWorking;
             onListeningStop?.Invoke();
         }
+
+        public async Task RestartAsync(VoiceRecorderRequest voiceRecorderRequest, CancellationToken token)
+        {
+            // Stop before start
+            StopListening();
+
+            // Configure
+            await ConfigureAsync(voiceRecorderRequest, token);
+
+            // Start after configuration finished
+            StartListening();
+        }
+
+        public async Task<VoiceRecorderResponse> GetVoiceAsync(VoiceRecorderRequest voiceRecorderRequest, CancellationToken token)
+        {
+            try
+            {
+                // Update configuration before recording start
+                await ConfigureAsync(voiceRecorderRequest, token);
+
+                var requestTimestamp = Time.time;
+
+                IsEnabled = true;
+
+                // Wait for voice recorded or timeout
+                while (true)
+                {
+                    if (Status == VoiceRecorderStatus.NotWorking || token.IsCancellationRequested)
+                    {
+                        break;
+                    }
+                    if (lastRecordedVoice != null && lastRecordedVoice.RecordingStartedAt > requestTimestamp)
+                    {
+                        return lastRecordedVoice;
+                    }
+                    await Task.Delay(10);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Error occured while getting voice from recorder: {ex.Message}\n{ex.StackTrace}");
+            }
+            finally
+            {
+                IsEnabled = false;
+            }
+
+            return null;
+        }
+    }
+
+    public class VoiceRecorderRequest
+    {
+        public int SamplingFrequency = 16000;
+        public float VoiceDetectionThreshold = 0.1f;
+        public float VoiceDetectionMinimumLength = 0.3f;
+        public float SilenceDurationToEndRecording = 1.0f;
+        public Action OnListeningStart;
+        public Action OnListeningStop;
+        public Action OnRecordingStart;
+        public Action OnDetectVoice;
+        public Action<AudioClip> OnRecordingEnd;
+        public Action<Exception> OnError;
+    }
+
+    public class VoiceRecorderResponse
+    {
+        public float RecordingStartedAt { get; set; }
+        public AudioClip Voice { get; set; }
     }
 }
