@@ -30,7 +30,7 @@ namespace ChatdollKit.Dialog
         public Action OnListeningStart;
         public Action OnListeningStop;
         public Action OnRecordingStart = () => { Debug.Log("Recording voice request started"); };
-        public Action OnDetectVoice;
+        public Action<float> OnDetectVoice;
         public Action<AudioClip> OnRecordingEnd = (a) => { Debug.Log("Recording voice request ended"); };
         public Action<Exception> OnError = (e) => { Debug.LogError($"Recording voice request error: {e.Message}\n{e.StackTrace}"); };
 

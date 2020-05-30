@@ -6,7 +6,7 @@ using ChatdollKit.IO;
 
 namespace ChatdollKit.Extension
 {
-    public class GoogleVoiceRequestProvider : VoiceRequestProviderBase
+    public class GoogleWakeWordListener : WakeWordListenerBase
     {
         [Header("Google Cloud Settings")]
         public string ApiKey = string.Empty;

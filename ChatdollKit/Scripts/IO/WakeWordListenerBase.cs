@@ -26,7 +26,7 @@ namespace ChatdollKit.IO
         public Action OnListeningStart;
         public Action OnListeningStop;
         public Action OnRecordingStart = () => { Debug.Log("Recording wakeword started"); };
-        public Action OnDetectVoice;
+        public Action<float> OnDetectVoice;
         public Action<AudioClip> OnRecordingEnd = (a) => { Debug.Log("Recording wakeword ended"); };
         public Action<Exception> OnError = (e) => { Debug.LogError($"Recording wakeword error: {e.Message}\n{e.StackTrace}"); };
 

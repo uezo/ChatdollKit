@@ -27,7 +27,7 @@ namespace ChatdollKit.Extension
                 AudioConverter.AudioClipToPCM(recordedVoice),
                 headers);
 
-            return response.DisplayText ?? string.Empty;
+            return response?.DisplayText ?? string.Empty;
         }
 
         // Response from Azure STT
