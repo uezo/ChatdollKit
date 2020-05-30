@@ -35,7 +35,7 @@ namespace ChatdollKit.IO
         private Action onListeningStart;
         private Action onListeningStop;
         private Action onRecordingStart;
-        private Action onDetectVoice;
+        private Action<float> onDetectVoice;
         private Action<AudioClip> onRecordingEnd;
         private Action<Exception> onError;
 
@@ -95,9 +95,10 @@ namespace ChatdollKit.IO
                 previousPosition = currentPosition;
 
                 // Handle recorded voice
-                if (capturedData.Max(d => Math.Abs(d)) > voiceDetectionThreshold)
+                var maxVolume = capturedData.Max(d => Math.Abs(d));
+                if (maxVolume > voiceDetectionThreshold)
                 {
-                    onDetectVoice?.Invoke();
+                    onDetectVoice?.Invoke(maxVolume);
 
                     // Start or continue recording when the volume of captured sound is larger than threshold
                     if (!IsRecording)
@@ -282,7 +283,7 @@ namespace ChatdollKit.IO
         public Action OnListeningStart;
         public Action OnListeningStop;
         public Action OnRecordingStart;
-        public Action OnDetectVoice;
+        public Action<float> OnDetectVoice;
         public Action<AudioClip> OnRecordingEnd;
         public Action<Exception> OnError;
     }
