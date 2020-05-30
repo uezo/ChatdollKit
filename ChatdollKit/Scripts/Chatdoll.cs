@@ -5,13 +5,11 @@ using System.Threading.Tasks;
 using UnityEngine;
 using ChatdollKit.Dialog;
 using ChatdollKit.Model;
-using ChatdollKit.Device;
 
 
 namespace ChatdollKit
 {
     [RequireComponent(typeof(ModelController))]
-    [RequireComponent(typeof(MicEnabler))]
     public class Chatdoll : MonoBehaviour
     {
         // Conversation

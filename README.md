@@ -15,7 +15,7 @@ Watch this 2 minutes video to learn how ChatdollKit works and the way to use qui
 
 1. 📦Import packages
     - Import [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347) and [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/)
-    - Import [ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases/tag/0.1.0)
+    - Import [ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases)
 
 1. 🐟Resource preparation
     - Import 3D model and put it on the scene
@@ -28,7 +28,7 @@ Watch this 2 minutes video to learn how ChatdollKit works and the way to use qui
 
 # 📦 Import packages
 
-Download the latest version of [ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases/tag/0.1.0) and import it into your Unity project after import dependencies;
+Download the latest version of [ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases) and import it into your Unity project after import dependencies;
 
 - [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347)
 - [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/)
@@ -69,10 +69,9 @@ In this README, I use [Anime Girls Idle Animations Free](https://assetstore.unit
 
 ## Add ChatdollKit
 
-Add `ChatdollKit/ChatdollKit/Scripts/chatdoll.cs` to the 3D model. These 2 components are also added automatically.
+Add `ChatdollKit/ChatdollKit/Scripts/chatdoll.cs` to the 3D model. `ModelController` will be also added automatically.
 
 - `ModelController` controls animations, voices and face expressions of 3D model.
-- `MicEnabler` gets the permission to use microphone for speech recognition.
 
 ## Setup ModelController
 
