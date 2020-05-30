@@ -19,7 +19,7 @@ namespace ChatdollKit.Extension
                 $"https://speech.googleapis.com/v1/speech:recognize?key={ApiKey}",
                 new SpeechRecognitionRequest(recordedVoice, Language, UseEnhancedModel));
 
-            return response.results[0].alternatives[0].transcript ?? string.Empty;
+            return response?.results?[0]?.alternatives?[0]?.transcript ?? string.Empty;
         }
 
         // Models for request and response
