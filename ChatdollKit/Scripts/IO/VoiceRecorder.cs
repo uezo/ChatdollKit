@@ -176,8 +176,8 @@ namespace ChatdollKit.IO
         {
             this.voiceRecorderRequest = voiceRecorderRequest;
 
-            // Wait for configuration applied
-            while (voiceRecorderRequest == null && !token.IsCancellationRequested)
+            // Wait for configuration applied (this.voiceRecorderRequest should be null after config applied)
+            while (this.voiceRecorderRequest != null && !token.IsCancellationRequested)
             {
                 await Task.Delay(10);
             }
