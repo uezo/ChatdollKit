@@ -15,7 +15,7 @@ Watch this 2 minutes video to learn how ChatdollKit works and the way to use qui
 
 1. 📦パッケージのインポート
     - [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347) と [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/) のインポート
-    - [ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases/tag/0.1.0) のインポート
+    - [ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases) のインポート
 
 1. 🐟リソースの準備
     - 3Dモデルをインポートしてシーンに追加
@@ -28,7 +28,7 @@ Watch this 2 minutes video to learn how ChatdollKit works and the way to use qui
 
 # 📦 パッケージのインポート
 
-最新版の [ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases/tag/0.1.0) をダウンロードして、任意のUnityプロジェクトにインポートしてください。また、以下の依存ライブラリもインポートが必要です。
+最新版の [ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases) をダウンロードして、任意のUnityプロジェクトにインポートしてください。また、以下の依存ライブラリもインポートが必要です。
 
 - [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347)
 - [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/)
@@ -66,10 +66,9 @@ Animator Controllerを作成してBase Layerに`Default`というステートを
 
 ## ChatdollKitの追加
 
-`ChatdollKit/ChatdollKit/Scripts/chatdoll.cs`を3Dモデルに追加してください。以下2つのコンポーネントも自動的に追加されます。
+`ChatdollKit/ChatdollKit/Scripts/chatdoll.cs`を3Dモデルに追加してください。以下のコンポーネントも自動的に追加されます。
 
 - `ModelController` 3Dモデルのアニメーション、発話、表情を制御。使い方は[ModelControllerの使い方](https://github.com/uezo/ChatdollKit/blob/master/ModelController.ja.md)を参照
-- `MicEnabler` 音声認識のためのマイクの利用権限を取得
 
 ## ModelControllerの設定
 

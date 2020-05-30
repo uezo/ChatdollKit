@@ -4,6 +4,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+#if PLATFORM_ANDROID
+using UnityEngine.Android;
+#endif
 
 
 namespace ChatdollKit.IO
@@ -12,6 +15,8 @@ namespace ChatdollKit.IO
 
     public class VoiceRecorder : MonoBehaviour
     {
+        public bool IsMicrophoneEnabled { get; private set; } = false;
+
         // Data
         private AudioClip microphoneInput;
         private List<float> recordedData;
@@ -42,6 +47,17 @@ namespace ChatdollKit.IO
         // Request data
         private VoiceRecorderRequest voiceRecorderRequest;
 
+        private void Awake()
+        {
+#if PLATFORM_ANDROID
+            // Request permission if Android
+            if (!Permission.HasUserAuthorizedPermission(Permission.Microphone))
+            {
+                Permission.RequestUserPermission(Permission.Microphone);
+            }
+#endif
+        }
+
         private void Start()
         {
             voiceRecorderRequest = new VoiceRecorderRequest();
@@ -55,6 +71,25 @@ namespace ChatdollKit.IO
             if (voiceRecorderRequest != null)
             {
                 Configure();
+            }
+
+            //
+            if (!IsMicrophoneEnabled)
+            {
+#if PLATFORM_ANDROID
+                // Check permission if Android
+                if (Permission.HasUserAuthorizedPermission(Permission.Microphone))
+                {
+                    IsMicrophoneEnabled = true;
+                }
+                else
+                {
+                    return;
+                }
+#else
+                IsMicrophoneEnabled = true;
+#endif
+                Debug.Log("Permission for microphone is granted");
             }
 
             // Return if disabled or not listening
