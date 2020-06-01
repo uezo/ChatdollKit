@@ -37,6 +37,7 @@ namespace ChatdollKit.Dialog
         // Actions for each status
         public Func<Request, Context, CancellationToken, Task> OnStartListeningAsync
             = async (r, c, t) => { Debug.LogWarning("VoiceRequestProvider.OnStartListeningAsync is not implemented"); };
+        public Func<string, Task> OnRecognizedAsync;
         public Func<Request, Context, CancellationToken, Task> OnFinishListeningAsync
             = async(r, c, t) => { Debug.LogWarning("VoiceRequestProvider.OnFinishListeningAsync is not implemented"); };
         public Func<Request, Context, CancellationToken, Task> OnErrorAsync
@@ -100,9 +101,10 @@ namespace ChatdollKit.Dialog
                     else if (voiceRecorderResponse != null && voiceRecorderResponse.Voice != null)
                     {
                         request.Text = await RecognizeSpeechAsync(voiceRecorderResponse.Voice);
+                        await OnRecognizedAsync?.Invoke(request.Text);
                         if (PrintResult)
                         {
-                            Debug.Log($"Recognized: {request.Text}");
+                            Debug.Log($"Recognized(VoiceRequestProvider): {request.Text}");
                         }
                     }
                 }

@@ -12,6 +12,7 @@ namespace ChatdollKit.IO
     public class WakeWordListenerBase : MonoBehaviour
     {
         public List<string> WakeWords;
+        public Func<string, Task> OnRecognizedAsync;
         public Func<Task> OnWakeAsync;
 
         [Header("Test and Debug")]
@@ -78,9 +79,10 @@ namespace ChatdollKit.IO
                 {
                     // Recognize speech
                     var recognizedText = await RecognizeSpeechAsync(voiceRecorderResponse.Voice);
+                    await OnRecognizedAsync?.Invoke(recognizedText);
                     if (PrintResult)
                     {
-                        Debug.Log($"Voice detected: {recognizedText}");
+                        Debug.Log($"Recognized(WakeWordListener): {recognizedText}");
                     }
                     foreach (var ww in WakeWords)
                     {
