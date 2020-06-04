@@ -8,8 +8,7 @@ using ChatdollKit.Network;
 
 namespace ChatdollKit.Dialog
 {
-    [RequireComponent(typeof(VoiceRecorder))]
-    public class VoiceRequestProviderBase : MonoBehaviour, IRequestProvider
+    public class VoiceRequestProviderBase : VoiceRecorderBase, IRequestProvider
     {
         // This provides voice request
         public RequestType RequestType { get; } = RequestType.Voice;
@@ -20,11 +19,9 @@ namespace ChatdollKit.Dialog
         public bool PrintResult = false;
 
         [Header("Voice Recorder Settings")]
-        public int SamplingFrequency = 16000;
         public float VoiceDetectionThreshold = 0.1f;
         public float VoiceDetectionMinimumLength = 0.3f;
         public float SilenceDurationToEndRecording = 1.0f;
-        public float RecordingStartTimeout = 0.0f;
         public float ListeningTimeout = 20.0f;
 
         public Action OnListeningStart;
@@ -44,18 +41,24 @@ namespace ChatdollKit.Dialog
             = async (r, c, t) => { Debug.LogWarning("VoiceRequestProvider.OnErrorAsync is not implemented"); };
 
         // Private and protected members for recording voice and recognize task
-        private VoiceRecorder voiceRecorder;
         private string recognitionId = string.Empty;
         protected ChatdollHttp client = new ChatdollHttp();
-
-        private void Awake()
-        {
-            voiceRecorder = gameObject.GetComponent<VoiceRecorder>();
-        }
 
         // Create request using voice recognition
         public async Task<Request> GetRequestAsync(User user, Context context, CancellationToken token)
         {
+            voiceDetectionThreshold = VoiceDetectionThreshold;
+            voiceDetectionMinimumLength = VoiceDetectionMinimumLength;
+            silenceDurationToEndRecording = SilenceDurationToEndRecording;
+            onListeningStart = OnListeningStart;
+            onListeningStop = OnListeningStop;
+            onRecordingStart = OnRecordingStart;
+            onDetectVoice = OnDetectVoice;
+            onRecordingEnd = OnRecordingEnd;
+            onError = OnError;
+
+            StartListening();
+
             var request = new Request(RequestType, user)
             {
                 Text = string.Empty
@@ -78,20 +81,7 @@ namespace ChatdollKit.Dialog
                 }
                 else
                 {
-                    var voiceRecorderRequest = new VoiceRecorderRequest()
-                    {
-                        SamplingFrequency = SamplingFrequency,
-                        VoiceDetectionThreshold = VoiceDetectionThreshold,
-                        VoiceDetectionMinimumLength = VoiceDetectionMinimumLength,
-                        SilenceDurationToEndRecording = SilenceDurationToEndRecording,
-                        OnListeningStart = OnListeningStart,
-                        OnListeningStop = OnListeningStop,
-                        OnRecordingStart = OnRecordingStart,
-                        OnDetectVoice = OnDetectVoice,
-                        OnRecordingEnd = OnRecordingEnd,
-                        OnError = OnError,
-                    };
-                    var voiceRecorderResponse = await voiceRecorder.GetVoiceAsync(voiceRecorderRequest, token);
+                    var voiceRecorderResponse = await GetVoiceAsync(ListeningTimeout, token);
 
                     // Exit if RecognitionId is updated by another request
                     if (recognitionId != currentRecognitionId)
@@ -101,7 +91,10 @@ namespace ChatdollKit.Dialog
                     else if (voiceRecorderResponse != null && voiceRecorderResponse.Voice != null)
                     {
                         request.Text = await RecognizeSpeechAsync(voiceRecorderResponse.Voice);
-                        await OnRecognizedAsync?.Invoke(request.Text);
+                        if (OnRecognizedAsync != null)
+                        {
+                            await OnRecognizedAsync(request.Text);
+                        }
                         if (PrintResult)
                         {
                             Debug.Log($"Recognized(VoiceRequestProvider): {request.Text}");
