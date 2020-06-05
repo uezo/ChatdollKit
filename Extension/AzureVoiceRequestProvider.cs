@@ -31,6 +31,7 @@ namespace ChatdollKit.Extension
             return response?.DisplayText ?? string.Empty;
         }
 
+#pragma warning disable CS0649
         // Response from Azure STT
         class SpeechRecognitionResponse
         {

@@ -10,7 +10,12 @@ namespace ChatdollKit.IO
 {
     public class WakeWordListenerBase : VoiceRecorderBase
     {
+        [Header("WakeWord Settings")]
         public List<string> WakeWords;
+        public List<string> IgnoreWords = new List<string>() { "。", "、", "？", "！" };
+        public int PrefixAllowance = 4;
+        public int SuffixAllowance = 4;
+        public Func<string, string> ExtractWakeWord;
         public Func<string, Task> OnRecognizedAsync;
         public Func<Task> OnWakeAsync;
 
@@ -84,25 +89,49 @@ namespace ChatdollKit.IO
             {
                 Debug.Log($"Recognized(WakeWordListener): {recognizedText}");
             }
-            foreach (var ww in WakeWords)
+
+            if (!string.IsNullOrEmpty((ExtractWakeWord ?? ExtractWakeWordDefault).Invoke(recognizedText)))
             {
-                if (recognizedText.Contains(ww))
+                try
                 {
-                    try
-                    {
-                        await OnWakeAsync();
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.LogError($"OnWakeAsync failed: {ex.Message}\n{ex.StackTrace}");
-                    }
+                    await OnWakeAsync();
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"OnWakeAsync failed: {ex.Message}\n{ex.StackTrace}");
                 }
             }
         }
 
+        public string ExtractWakeWordDefault(string text)
+        {
+            foreach (var iw in IgnoreWords)
+            {
+                text = text.Replace(iw, string.Empty);
+            }
+
+            foreach (var ww in WakeWords)
+            {
+                if (text.Contains(ww))
+                {
+                    var prefix = text.Substring(0, text.IndexOf(ww));
+                    var suffix = text.Substring(text.IndexOf(ww) + ww.Length);
+
+                    if (prefix.Length <= 4 && suffix.Length <= 4)
+                    {
+                        return ww;
+                    }
+                }
+            }
+
+            return string.Empty;
+        }
+
+#pragma warning disable CS1998
         protected virtual async Task<string> RecognizeSpeechAsync(AudioClip recordedVoice)
         {
             throw new NotImplementedException("RecognizeSpeechAsync method should be implemented at the sub class of WakeWordListenerBase");
         }
+#pragma warning restore CS1998
     }
 }

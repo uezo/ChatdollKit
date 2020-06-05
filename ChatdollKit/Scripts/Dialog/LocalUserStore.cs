@@ -58,6 +58,7 @@ namespace ChatdollKit.Dialog
             }
         }
 
+#pragma warning disable CS1998
         // Clear user by removing file
         public async Task DeleteUserAsync(string userId)
         {
@@ -67,5 +68,6 @@ namespace ChatdollKit.Dialog
                 File.Delete(filePath);
             }
         }
+#pragma warning restore CS1998
     }
 }

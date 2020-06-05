@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 
 namespace ChatdollKit.Dialog
 {
+#pragma warning disable CS1998
     class StaticIntentExtractor : IIntentExtractor
     {
         private string intent { get; }

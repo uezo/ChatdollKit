@@ -26,12 +26,14 @@ namespace ChatdollKit
         private CancellationTokenSource chatTokenSource;
 
         // Actions for each status
+#pragma warning disable CS1998
         public Func<User, Context, CancellationToken, Task> OnPromptAsync
             = async (u, c, t) => { Debug.LogWarning("Chatdoll.OnPromptAsync is not implemented"); };
         public Func<Request, Context, CancellationToken, Task> OnNoIntentAsync
             = async (r, c, t) => { Debug.LogWarning("Chatdoll.OnNoIntentAsync is not implemented"); };
         public Func<Request, Context, CancellationToken, Task> OnErrorAsync
             = async (r, c, t) => { Debug.LogWarning("Chatdoll.OnErrorAsync is not implemented"); };
+#pragma warning restore CS1998
 
         // Awake
         private void Awake()
