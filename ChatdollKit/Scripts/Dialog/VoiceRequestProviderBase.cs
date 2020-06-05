@@ -32,6 +32,7 @@ namespace ChatdollKit.Dialog
         public Action<Exception> OnError = (e) => { Debug.LogError($"Recording voice request error: {e.Message}\n{e.StackTrace}"); };
 
         // Actions for each status
+#pragma warning disable CS1998
         public Func<Request, Context, CancellationToken, Task> OnStartListeningAsync
             = async (r, c, t) => { Debug.LogWarning("VoiceRequestProvider.OnStartListeningAsync is not implemented"); };
         public Func<string, Task> OnRecognizedAsync;
@@ -39,6 +40,7 @@ namespace ChatdollKit.Dialog
             = async(r, c, t) => { Debug.LogWarning("VoiceRequestProvider.OnFinishListeningAsync is not implemented"); };
         public Func<Request, Context, CancellationToken, Task> OnErrorAsync
             = async (r, c, t) => { Debug.LogWarning("VoiceRequestProvider.OnErrorAsync is not implemented"); };
+#pragma warning restore CS1998
 
         // Private and protected members for recording voice and recognize task
         private string recognitionId = string.Empty;
@@ -125,9 +127,11 @@ namespace ChatdollKit.Dialog
             return request;
         }
 
+#pragma warning disable CS1998
         protected virtual async Task<string> RecognizeSpeechAsync(AudioClip recordedVoice)
         {
             throw new NotImplementedException("RecognizeSpeechAsync method should be implemented at the sub class of VoiceRequestProviderBase");
         }
+#pragma warning restore CS1998
     }
 }

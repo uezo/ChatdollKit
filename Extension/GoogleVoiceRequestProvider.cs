@@ -22,6 +22,7 @@ namespace ChatdollKit.Extension
             return response?.results?[0]?.alternatives?[0]?.transcript ?? string.Empty;
         }
 
+#pragma warning disable CS0649
         // Models for request and response
         class SpeechRecognitionRequest
         {
