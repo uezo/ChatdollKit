@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using ChatdollKit.IO;
 using ChatdollKit.Network;
+using System.Collections.Generic;
 
 
 namespace ChatdollKit.Dialog
@@ -12,6 +13,10 @@ namespace ChatdollKit.Dialog
     {
         // This provides voice request
         public RequestType RequestType { get; } = RequestType.Voice;
+
+        [Header("Cancellation Settings")]
+        public List<string> CancelWords = new List<string>();
+        public List<string> IgnoreWords = new List<string>() { "。", "、", "？", "！" };
 
         [Header("Test and Debug")]
         public bool UseDummy = false;
@@ -107,6 +112,20 @@ namespace ChatdollKit.Dialog
                 if (!request.IsSet())
                 {
                     Debug.LogWarning("No speech recognized");
+                }
+
+                // Clean up to check cancel
+                var text = request.Text;
+                foreach (var iw in IgnoreWords)
+                {
+                    text = text.Replace(iw, string.Empty);
+                }
+
+                // Check cancellation
+                if (CancelWords.Contains(text))
+                {
+                    Debug.LogWarning("Request canceled");
+                    request.IsCanceled = true;
                 }
             }
             catch (TaskCanceledException)

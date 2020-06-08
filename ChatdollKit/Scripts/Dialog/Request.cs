@@ -27,6 +27,7 @@ namespace ChatdollKit.Dialog
         public Dictionary<string, object> Entities { get; set; }
         public List<WordNode> Words { get; set; }
         public bool IsAdhoc { get; set; }
+        public bool IsCanceled { get; set; }
 
         public Request(RequestType type, User user)
         {
@@ -37,6 +38,7 @@ namespace ChatdollKit.Dialog
             IntentPriority = Priority.Normal;
             Entities = new Dictionary<string, object>();
             IsAdhoc = false;
+            IsCanceled = false;
         }
 
         public bool IsSet()

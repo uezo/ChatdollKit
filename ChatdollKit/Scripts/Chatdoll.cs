@@ -162,15 +162,27 @@ namespace ChatdollKit
 
                 try
                 {
-                    if (!request.IsSet()) { break; }
+                    if (!request.IsSet()) {
+                        // Just exit loop without clearing context when request is not set
+                        return;
+                    }
+                    else if (request.IsCanceled)
+                    {
+                        // Clear context data and topic when canceled
+                        context.Clear();
+                        await ContextStore.SaveContextAsync(context);
+                        return;
+                    }
+
                     if (token.IsCancellationRequested) { return; }
 
                     // Extract intent
                     var intentResponse = await IntentExtractor.ExtractIntentAsync(request, context, token);
                     if (string.IsNullOrEmpty(request.Intent) && string.IsNullOrEmpty(context.Topic.Name))
                     {
+                        // Just exit loop without clearing context when NoIntent
                         await OnNoIntentAsync(request, context, token);
-                        break;
+                        return;
                     }
                     else
                     {
@@ -225,10 +237,10 @@ namespace ChatdollKit
                     }
                     else
                     {
-                        // Clear context data and topic then exit
+                        // Clear context data and topic when topic doesn't continue
                         context.Clear();
                         await ContextStore.SaveContextAsync(context);
-                        break;
+                        return;
                     }
                 }
                 catch (TaskCanceledException)
@@ -246,7 +258,7 @@ namespace ChatdollKit
                         await OnErrorAsync(request, context, token);
                         await ContextStore.DeleteContextAsync(user.Id);
                     }
-                    break;
+                    return;
                 }
                 finally
                 {
