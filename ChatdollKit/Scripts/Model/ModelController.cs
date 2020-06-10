@@ -5,9 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.Networking;
 using Newtonsoft.Json;
-using ChatdollKit.Network;
 
 
 namespace ChatdollKit.Model
@@ -21,7 +19,7 @@ namespace ChatdollKit.Model
         private Dictionary<string, AudioClip> voices = new Dictionary<string, AudioClip>();
         public Func<Voice, Task<AudioClip>> VoiceDownloadFunc;
         public Func<Voice, Task<AudioClip>> TextToSpeechFunc;
-        public AudioType WebAudioType = AudioType.WAV;
+        public bool UsePrefetch = true;
 
         // Animation
         private Animator animator;
@@ -247,6 +245,12 @@ namespace ChatdollKit.Model
                 StopBlink();
             }
 
+            // Prefetch Web/TTS voice
+            if (UsePrefetch)
+            {
+                PrefetchVoices(request.Voices);
+            }
+
             // Speak sequentially
             foreach (var v in request.Voices)
             {
@@ -277,7 +281,7 @@ namespace ChatdollKit.Model
                     AudioClip clip = null;
                     if (v.Source == VoiceSource.Web)
                     {
-                        clip = await (VoiceDownloadFunc ?? GetAudioClipFromWeb)(v);
+                        clip = await VoiceDownloadFunc?.Invoke(v);
                     }
                     else if (v.Source == VoiceSource.TTS)
                     {
@@ -315,45 +319,23 @@ namespace ChatdollKit.Model
             }
         }
 
-        // Get audio clip from web
-        public async Task<AudioClip> GetAudioClipFromWeb(Voice voice)
+        // Start downloading voices from web/TTS
+        private void PrefetchVoices(List<Voice> voices)
         {
-            if (!string.IsNullOrEmpty(voice.Name) && voices.ContainsKey(voice.Name))
+            foreach (var voice in voices)
             {
-                // Use cache when name is set and it's cached
-                return voices[voice.Name];
-            }
-
-            using (var www = UnityWebRequestMultimedia.GetAudioClip(voice.Url, WebAudioType))
-            {
-                www.timeout = 10;
-                await www.SendWebRequest();
-
-                if (www.isNetworkError || www.isHttpError)
+                if (!string.IsNullOrEmpty(voice.Name))
                 {
-                    Debug.LogError($"Error occured while downloading voice: {www.error}");
-                }
-                else if (www.isDone)
-                {
-                    var clip = DownloadHandlerAudioClip.GetContent(www);
-
-                    if (!string.IsNullOrEmpty(voice.Name) && clip != null)
+                    if (voice.Source == VoiceSource.Web)
                     {
-                        // Cache if name is set
-                        voices[voice.Name] = clip;
+                        VoiceDownloadFunc?.Invoke(voice);
                     }
-
-                    return clip;
+                    else if (voice.Source == VoiceSource.TTS)
+                    {
+                        TextToSpeechFunc?.Invoke(voice);
+                    }
                 }
             }
-            return null;
-        }
-
-        // Load audio clip from web
-        public async Task<bool> LoadAudioClipFromWeb(string name, string url)
-        {
-            var voice = new Voice(name, 0.0f, 0.0f, string.Empty, url, null, VoiceSource.Web);
-            return await GetAudioClipFromWeb(voice) == null ? false : true;
         }
 
         // Stop speech

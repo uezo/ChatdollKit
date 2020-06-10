@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
 using ChatdollKit.Model;
@@ -8,7 +7,7 @@ using ChatdollKit.Network;
 
 namespace ChatdollKit.Extension
 {
-    public class AzureTextToSpeech
+    public class AzureTTSLoader : WebVoiceLoaderBase
     {
         public string ApiKey { get; set; }
         public string Region { get; set; }
@@ -16,9 +15,8 @@ namespace ChatdollKit.Extension
         public string Gender { get; set; }
         public string SpeakerName { get; set; }
         public AudioType AudioType { get; set; }
-        private Dictionary<string, AudioClip> audioCache { get; set; }
 
-        public AzureTextToSpeech(string apiKey, string region = "japanwest", string language = "ja-JP", string gender = "Female", string speakerName = "ja-JP-HarukaRUS", AudioType audioType = AudioType.WAV)
+        public AzureTTSLoader(string apiKey, string region = "japanwest", string language = "ja-JP", string gender = "Female", string speakerName = "ja-JP-HarukaRUS", AudioType audioType = AudioType.WAV)
         {
             ApiKey = apiKey;
             Region = region;
@@ -26,18 +24,10 @@ namespace ChatdollKit.Extension
             Gender = gender;
             SpeakerName = speakerName;
             AudioType = audioType;
-            audioCache = new Dictionary<string, AudioClip>();
         }
 
-        // Get audio clip from using Azure Text-to-Speech
-        public async Task<AudioClip> GetAudioClipFromTTS(Voice voice)
+        protected override async Task<AudioClip> DownloadAudioClipAsync(Voice voice)
         {
-            if (!string.IsNullOrEmpty(voice.Name) && audioCache.ContainsKey(voice.Name))
-            {
-                // Use cache when name is set and it's cached
-                return audioCache[voice.Name];
-            }
-
             var url = $"https://{Region}.tts.speech.microsoft.com/cognitiveservices/v1";
             using (var www = UnityWebRequestMultimedia.GetAudioClip(url, AudioType))
             {
@@ -77,13 +67,6 @@ namespace ChatdollKit.Extension
                 }
             }
             return null;
-        }
-
-        // Load audio clip from web
-        public async Task<bool> LoadAudioClipFromTTS(string name, string text, Dictionary<string, string> ttsOptions = null)
-        {
-            var voice = new Voice(name, 0.0f, 0.0f, text, string.Empty, ttsOptions, VoiceSource.TTS);
-            return await GetAudioClipFromTTS(voice) == null ? false : true;
         }
     }
 }
