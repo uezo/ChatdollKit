@@ -83,7 +83,7 @@ If you want to setup manually, go to [Appendix1. Setup ModelController manually]
 
 ## Run
 
-Press Play button of Unity editor. You can see the model starts the idling animation and blinking.
+Press Play button of Unity editor. You can see the model starts with idling animation and blinking.
 
 <img src="https://uezo.blob.core.windows.net/github/chatdoll/07_2.png" width="640">
 

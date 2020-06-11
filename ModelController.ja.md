@@ -188,18 +188,18 @@ await chatdoll.ModelController.Say(request, GetToken());
 
 ## 事前準備
 
-シェイプキーの組み合わせによって作成した表情をあらかじめ`ModelController`に登録します。表情の名前をキーに、変更したいシェイプキーの名前と適用量（0〜1）のペアを`AddFace()`に渡します。
+シェイプキーの組み合わせによって作成した表情をあらかじめ`ModelController`に登録します。表情の名前をキーに、変更したいシェイプキーの名前と適用量（0〜100）のペアを`AddFace()`に渡します。
 
 ```Csharp
 // 笑顔の定義
 chatdoll.ModelController.AddFace("Smile", new Dictionary<string, float>() {
-    {"eyes_close_1", 1.0f }
+    {"eyes_close_1", 100.0f }
 });
 // 悲しい顔の定義
 chatdoll.ModelController.AddFace("Sad", new Dictionary<string, float>() {
-    {"eyes_close_2", 0.15f },
-    {"mouth_:0", 0.6f },
-    {"mouth_:(", 0.7f },
+    {"eyes_close_2", 15.0f },
+    {"mouth_:0", 60.0f },
+    {"mouth_:(", 70.0f },
 });
 ```
 
@@ -218,6 +218,13 @@ chatdoll.ModelController.StopBlink();
 await chatdoll.ModelController.SetFace("Smile", 2.0f);
 chatdoll.ModelController.StartBlink();
 ```
+
+## FaceClipEditorの利用
+
+シェイプキーを組み合わせをコードで定義したりあとで中身を確認するのは骨の折れる作業です。そこで、インスペクタで調整した表情のスナップショットをChatdollKitで読み込み可能な形式で保存することができるようにしました。是非ご活用ください。
+
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/faceclipeditor.png" width="640">
+
 
 # 発話・アニメーション・表情変更を組み合わせる
 
