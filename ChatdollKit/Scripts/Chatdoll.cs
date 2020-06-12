@@ -162,13 +162,9 @@ namespace ChatdollKit
 
                 try
                 {
-                    if (!request.IsSet()) {
-                        // Just exit loop without clearing context when request is not set
-                        return;
-                    }
-                    else if (request.IsCanceled)
+                    if (!request.IsSet() || request.IsCanceled)
                     {
-                        // Clear context data and topic when canceled
+                        // Clear context when request is not set or canceled
                         context.Clear();
                         await ContextStore.SaveContextAsync(context);
                         return;
