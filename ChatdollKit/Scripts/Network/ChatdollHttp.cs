@@ -12,17 +12,27 @@ namespace ChatdollKit.Network
     public class ChatdollHttp : IDisposable
     {
         private HttpClient httpClient { get; }
-        public int Timeout { get; }
+        public int Timeout
+        {
+            get
+            {
+                return (int)httpClient.Timeout.TotalMilliseconds;
+            }
+            set
+            {
+                httpClient.Timeout = TimeSpan.FromMilliseconds(value);
+            }
+
+        }
         public Action<string> DebugFunc { get; set; }
         public Func<HttpRequestMessage, Task> BeforeRequestFunc { get; set; }
         public Func<HttpResponseMessage, Task> AfterRequestFunc { get; set; }
 
         public ChatdollHttp(int timeout = 10000, Action<string> debugFunc = null, HttpClientHandler httpClientHandler = null)
         {
+            httpClient = httpClientHandler == null ? new HttpClient() : new HttpClient(httpClientHandler);
             Timeout = timeout;
             DebugFunc = debugFunc;
-            httpClient = httpClientHandler == null ? new HttpClient() : new HttpClient(httpClientHandler);
-            httpClient.Timeout = TimeSpan.FromMilliseconds(Timeout);
         }
 
         // Get
