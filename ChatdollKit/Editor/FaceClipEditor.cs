@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using UnityEditor.Animations;
 using UnityEditor;
 using Newtonsoft.Json;
 using ChatdollKit.Model;
@@ -242,6 +243,124 @@ public class FaceClipEditor : Editor
 
         // Set audio source
         modelController.AudioSource = lipSyncObject.GetComponent<AudioSource>();
+    }
+
+    // Setup ModelController
+    [MenuItem("CONTEXT/ModelController/Setup Animator")]
+    private static void CreateAnimationControllerWithClips(MenuCommand menuCommand)
+    {
+        var animationClipFolderPath = EditorUtility.OpenFolderPanel("Select animation clip parent folder", Application.dataPath, string.Empty);
+
+        if (!string.IsNullOrEmpty(animationClipFolderPath))
+        {
+            // Get animation clips from folder
+            var animationClips = GetLayeredAnimationClips(animationClipFolderPath);
+
+            // Return when no clips found
+            if (animationClips.Count == 0)
+            {
+                Debug.LogWarning("No animation clips found");
+                return;
+            }
+
+            // Make path to create new animator controller
+            var animatorControllerPath = "Assets" + animationClipFolderPath.Replace(Application.dataPath, string.Empty);
+            animatorControllerPath = Path.Combine(animatorControllerPath, "ChatdollAnimatorController.controller");
+
+            if (AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(animatorControllerPath) != null)
+            {
+                // Confirm overwrite when exists
+                if (!EditorUtility.DisplayDialog("AnimatorController exists", $"AnimatorController already exists at {animatorControllerPath}. Are you sure to overwrite?", "OK", "Cancel"))
+                {
+                    return;
+                }
+            }
+
+            // Create new animator controller
+            var animatorController = AnimatorController.CreateAnimatorControllerAtPath(animatorControllerPath);
+
+            foreach (var kv in animationClips)
+            {
+                // Select layer
+                var layerName = kv.Key;
+                var putOnBaseLayer = layerName == "Base layer" || EditorUtility.DisplayDialog("Select Layer", $"{kv.Value.Count} clips found in {layerName}. Put these clips on ...", "Base Layer", $"{layerName}");
+                if (!putOnBaseLayer)
+                {
+                    animatorController.AddLayer(layerName);
+                }
+                var layer = putOnBaseLayer ? animatorController.layers[0] : animatorController.layers.Last();
+
+                // Create default state
+                if (!layer.stateMachine.states.Select(st => st.state.name).Contains("Default"))
+                {
+                    var defaultState = layer.stateMachine.AddState("Default");
+                    if (putOnBaseLayer && kv.Value.Count > 0)
+                    {
+                        defaultState.motion = kv.Value[0];
+                    }
+
+                }
+
+                // Put animation clips on layer
+                foreach (var clip in kv.Value)
+                {
+                    var state = layer.stateMachine.AddState(clip.name);
+                    state.motion = clip;
+                }
+            }
+
+            // Set controller to animator
+            var modelController = menuCommand.context as ModelController;
+            var animator = modelController.gameObject.GetComponent<Animator>();
+            if (animator != null)
+            {
+                animator.runtimeAnimatorController = animatorController;
+            }
+        }
+    }
+
+    private static Dictionary<string, List<AnimationClip>> GetLayeredAnimationClips(string parentPath)
+    {
+        var animationClips = new Dictionary<string, List<AnimationClip>>();
+
+        var directories = Directory.GetDirectories(parentPath);
+        if (directories.Length > 0)
+        {
+            foreach (var d in directories)
+            {
+                var clips = GetAnimationClips(d);
+                if (clips.Count > 0)
+                {
+                    animationClips[d.Split('/').Last()] = clips;
+                }
+            }
+        }
+        else
+        {
+            var clips = GetAnimationClips(parentPath);
+            if (clips.Count > 0)
+            {
+                animationClips["Base Layer"] = clips;
+            }
+        }
+
+        return animationClips;
+    }
+
+    private static List<AnimationClip> GetAnimationClips(string folderPath)
+    {
+        var clips = new List<AnimationClip>();
+        var files = Directory.GetFiles(folderPath, "*", SearchOption.TopDirectoryOnly);
+        foreach (var f in files)
+        {
+            var assetPath = "Assets" + f.Replace(Application.dataPath, string.Empty);
+            var a = AssetDatabase.LoadAssetAtPath<AnimationClip>(assetPath);
+            if (a != null)
+            {
+                clips.Add(a);
+            }
+        }
+        return clips;
     }
 
     private static VisemeTarget GetVisemeTarget(SkinnedMeshRenderer[] skinnedMeshRenderers, bool IsVRM = false)

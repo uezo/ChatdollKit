@@ -19,10 +19,10 @@ Watch this 2 minutes video to learn how ChatdollKit works and the way to use qui
 
 1. 🐟リソースの準備
     - 3Dモデルをインポートしてシーンに追加
-    - 音声ファイルをリソースディレクトリに追加、AnimatorControllerを作成・設定して3Dモデルにセット
+    - 音声ファイルをリソースディレクトリに、アニメーションクリップをアニメーションディレクトリに配置
 
 1. 🍣セットアップ
-    - インスペクターのコンテキストメニューから`Setup ModelController`を実行
+    - インスペクターのコンテキストメニューから`Setup ModelController`と`Setup Animator`を実行
     - まばたき用のシェイプキーの名前を設定
 
 
@@ -53,14 +53,8 @@ Watch this 2 minutes video to learn how ChatdollKit works and the way to use qui
 
 ## Animations
 
-Animator Controllerを作成してBase Layerに`Default`というステートを追加し、各モーションを配置してください。そして`Default`ステートにも任意のアイドル状態のアニメーションを追加しましょう。Base Layer以外にも、たとえば上半身のマスクを適用したレイヤーを追加し、モーションを追加しておくこともできます。その場合は必ずすべてのレイヤーに`Default`ステートを追加し、モーションには何も設定しない（＝`None`のまま）ようにしてください。
-
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/04.png" width="640">
-
-設定が完了したら、3Dモデルの`Animator`コンポーネントの`Controller`に設定しましょう。なおこの手順では[Anime Girls Idle Animations Free](https://assetstore.unity.com/packages/3d/animations/anime-girl-idle-animations-free-150406)というモーション集を利用しています。大変使い勝手が良いので気に入ったら有償版の購入をオススメします。
-
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/05_2.png" width="640">
-
+`/Animations`ディレクトリを作成し、アニメーションクリップを配置してください。
+なおこの手順では[Anime Girls Idle Animations Free](https://assetstore.unity.com/packages/3d/animations/anime-girl-idle-animations-free-150406)というモーション集を利用しています。大変使い勝手が良いので気に入ったら有償版の購入をオススメします。
 
 # 🍣 セットアップ
 
@@ -77,6 +71,18 @@ Animator Controllerを作成してBase Layerに`Default`というステートを
 <img src="https://uezo.blob.core.windows.net/github/chatdoll/mceditor.png" width="640">
 
 手動で設定したい場合は [Appendix1. ModelControllerの手動設定](#Appendix%201.%20ModelControllerの手動設定) を参照してください。
+
+## Animatorの設定
+
+インスペクターのコンテキストメニューから`Setup Animator`を選択するとフォルダ選択ダイアログが表示されるので、アニメーションクリップが配置されたフォルダを選択してください。
+
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/setupanimator01.png" width="640">
+
+サブフォルダが含まれる場合には、サブフォルダと同じ名前のレイヤーがAnimatorControllerに作成され、そのレイヤーにサブフォルダ内のアニメーションクリップが配置されます。（下図のCase1）
+
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/setupanimator02.png" width="640">
+
+手動で設定したい場合は [Appendix2. Setup Animator manually](#Appendix%202.%20Animatorの手動設定)
 
 
 ## 動作確認
@@ -202,3 +208,14 @@ ChatdollKitの基本的な価値として、Unity初心者であっても簡単�
 - まばたきをするため、目を閉じる表現のためのシェイプキーの名前を`Blink Blend Shape Name`に設定
 
 <img src="https://uezo.blob.core.windows.net/github/chatdoll/06_2.png" width="640">
+
+
+# Appendix 2. Animatorの手動設定
+
+Animator Controllerを作成してBase Layerに`Default`というステートを追加し、各モーションを配置してください。そして`Default`ステートにも任意のアイドル状態のアニメーションを追加しましょう。Base Layer以外にも、たとえば上半身のマスクを適用したレイヤーを追加し、モーションを追加しておくこともできます。その場合は必ずすべてのレイヤーに`Default`ステートを追加し、モーションには何も設定しない（＝`None`のまま）ようにしてください。
+
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/04.png" width="640">
+
+設定が完了したら、3Dモデルの`Animator`コンポーネントの`Controller`に設定しましょう。
+
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/05_2.png" width="640">
