@@ -19,10 +19,10 @@ Watch this 2 minutes video to learn how ChatdollKit works and the way to use qui
 
 1. 🐟Resource preparation
     - Import 3D model and put it on the scene
-    - Put voice files to resource directory and configure AnimatorController and set it to the 3D model
+    - Put voice files to resource directory and animation clips to animations directory
 
 1. 🍣Setup
-    - Run `Setup ModelController` in the context menu on inspector
+    - Run `Setup ModelController` and `Setup Animator` in the context menu on inspector
     - Set the name of ShapeKey for blink
 
 
@@ -55,15 +55,8 @@ Create `/Resources/Voices` directory and put voices into there. If your don't ha
 
 ## Animations
 
-Create Animator Controller and create `Default` state on the Base Layer, then put animations. Lastly set a motion you like to the `Default` state. You can create other layers and put animations at this time. Note that every layers should have the `Default` state and `None` should be set to their motion except for the Base Layer.
-
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/04.png" width="640">
-
-After configuration set the Animator Controller as a `Controller` of Animator component of the 3D model.
+Create `/Animations` folder and put animation clips.
 In this README, I use [Anime Girls Idle Animations Free](https://assetstore.unity.com/packages/3d/animations/anime-girl-idle-animations-free-150406). I believe it is worth for you to purchase the pro edition.
-
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/05_2.png" width="640">
-
 
 # 🍣 Setup
 
@@ -80,6 +73,18 @@ Select `Setup ModelController` in the context menu of ModelController and set th
 <img src="https://uezo.blob.core.windows.net/github/chatdoll/mceditor.png" width="640">
 
 If you want to setup manually, go to [Appendix1. Setup ModelController manually](#Appendix%201.%20Setup%20ModelController%20manually)
+
+## Setup Animator
+
+Select `Setup Animator` in the context menu of ModelController and select the folder that contains animation clips.
+
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/setupanimator01.png" width="640">
+
+If subfolders are included, layers with the same name as the subfolders are created in the AnimatorController, and clips in each subfolders are put on each layers. (Case1. in the picture below)
+
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/setupanimator02.png" width="640">
+
+If you want to setup manually, go to [Appendix2. Setup Animator manually](#Appendix%202.%20Setup%20Animator%20manually)
 
 ## Run
 
@@ -201,3 +206,13 @@ After that, select root GameObject to which ModelController is attached.
 - Set the shape key that close the eyes for blink to `Blink Blend Shape Name`.
 
 <img src="https://uezo.blob.core.windows.net/github/chatdoll/06_2.png" width="640">
+
+# Appendix 2. Setup Animator manually
+
+Create Animator Controller and create `Default` state on the Base Layer, then put animations. Lastly set a motion you like to the `Default` state. You can create other layers and put animations at this time. Note that every layers should have the `Default` state and `None` should be set to their motion except for the Base Layer.
+
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/04.png" width="640">
+
+After configuration set the Animator Controller as a `Controller` of Animator component of the 3D model.
+
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/05_2.png" width="640">
