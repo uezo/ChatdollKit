@@ -1,8 +1,8 @@
 ﻿using System;
+using System.IO;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
-using System.Threading.Tasks;
-using System.IO;
 #if PLATFORM_ANDROID
 using UnityEngine.Android;
 #endif
@@ -19,7 +19,7 @@ namespace ChatdollKit.IO
         [Header("Camera Settings")]
         public Vector2Int Size = new Vector2Int(640, 480);
         public int Fps = 10;
-        public int PreviewTime = 2000;
+        public float PreviewTime = 2.0f;
         public AudioClip CaptureSound;
 
         // Preview show/hide control
@@ -27,6 +27,21 @@ namespace ChatdollKit.IO
         public Action<GameObject, GameObject> HidePreview;
         // Action called when captured photo
         public Action OnCaptured;
+
+        // Camera status
+        public bool IsAlreadyLaunched { get; private set; }
+
+        // Code reader settings
+        [Header("Code Reader Settings")]
+        public string CodeReaderCaption = "Scan Code";
+        public int CodeReaderFps = 10;
+        public float ReadTimeout = 60.0f;
+        public float LaunchTimeout = 10.0f;
+
+        // Function to decode
+        public Func<Texture2D, string> DecodeCode;
+        // Action called when decoded successfully
+        public Action<string> OnCodeRead;
 
         // Components
         private WebCamTexture webCamTexture;
@@ -102,12 +117,19 @@ namespace ChatdollKit.IO
             Close();
         }
 
-        public void Launch(string caption = null)
+        public bool Launch(string caption = null, int fps = 0)
         {
+            if (IsAlreadyLaunched)
+            {
+                return false;
+            }
+
+            IsAlreadyLaunched = true;
+
             try
             {
                 // Configure camera and launch
-                webCamTexture = new WebCamTexture(Size.x, Size.y, Fps);
+                webCamTexture = new WebCamTexture(Size.x, Size.y, fps > 0 ? fps : Fps);
                 previewWindow.texture = webCamTexture;
                 webCamTexture.Play();
 
@@ -116,19 +138,23 @@ namespace ChatdollKit.IO
 
                 // Show preview
                 (ShowPreview ?? ShowPreviewDefault).Invoke(previewWindow.gameObject, backgroundPanel);
+
+                return true;
             }
             catch (Exception ex)
             {
                 Debug.LogError($"Error occured in starting camera: {ex.Message}\n{ex.StackTrace}");
-                webCamTexture.Stop();
+                webCamTexture?.Stop();
             }
+
+            return false;
         }
 
         public void Close()
         {
             (HidePreview ?? HidePreviewDefault).Invoke(previewWindow.gameObject, backgroundPanel);
             webCamTexture?.Stop();
-            webCamTexture = null;
+            IsAlreadyLaunched = false;
         }
 
         public void ShowPreviewDefault(GameObject preview, GameObject background)
@@ -153,6 +179,11 @@ namespace ChatdollKit.IO
 
         public byte[] Capture()
         {
+            return CaptureAsTexture().EncodeToJPG();
+        }
+
+        public Texture2D CaptureAsTexture()
+        {
             if (!IsReadyToCapture())
             {
                 throw new Exception("Camera is not ready to capture");
@@ -164,22 +195,8 @@ namespace ChatdollKit.IO
             audioSource.Play();
             OnCaptured?.Invoke();
 
-            // Return byte array of JPEG
-            return photo.EncodeToJPG();
-        }
-
-        private bool IsReadyToCapture()
-        {
-            if (webCamTexture == null
-                || !webCamTexture.isPlaying
-                || !webCamTexture.isReadable
-                || webCamTexture.width != webCamTexture.requestedWidth
-                || webCamTexture.height != webCamTexture.requestedHeight
-                || previewWindow.texture != webCamTexture)
-            {
-                return false;
-            }
-            return true;
+            // Return texture
+            return photo;
         }
 
         public async Task CaptureAsync(string path)
@@ -196,7 +213,7 @@ namespace ChatdollKit.IO
                 // Preview captured photo when preview time is longer than zero
                 previewWindow.texture = photo;
             }
-            var waitTask = Task.Delay(PreviewTime);
+            var waitTask = Task.Delay((int)(PreviewTime * 1000));
 
             // Save as file
             var img = photo.EncodeToJPG();
@@ -209,5 +226,95 @@ namespace ChatdollKit.IO
             await Task.WhenAll(writeTask, waitTask);
             previewWindow.texture = webCamTexture;
         }
+
+        public async Task<bool> WaitForReadyAsync(float timeout)
+        {
+            var startTime = Time.time;
+            while (!IsReadyToCapture())
+            {
+                await Task.Delay(100);
+                if (Time.time - startTime > timeout)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private bool IsReadyToCapture()
+        {
+            if (webCamTexture == null
+                || !webCamTexture.isPlaying
+                || !webCamTexture.isReadable
+                || webCamTexture.width != webCamTexture.requestedWidth
+                || webCamTexture.height != webCamTexture.requestedHeight
+                || previewWindow.texture != webCamTexture)
+            {
+                return false;
+            }
+            return true;
+        }
+
+        // QRCode/Barcode reader
+        public async Task<string> ReadCodeAsync()
+        {
+            if (DecodeCode == null)
+            {
+                throw new Exception("ReadQRCode function is not implemented");
+            }
+
+            if (!Launch(CodeReaderCaption, CodeReaderFps))
+            {
+                Debug.LogWarning("Camera is busy");
+                return string.Empty;
+            }
+
+            var result = string.Empty;
+
+            try
+            {
+                if (!await WaitForReadyAsync(LaunchTimeout))
+                {
+                    Debug.LogError($"Failed to launch camera in {LaunchTimeout} seconds");
+                    return string.Empty;
+                }
+
+                var startTime = Time.time;
+                // Exit loop when camera is closed
+                while (IsAlreadyLaunched)
+                {
+                    var texture = GetTexture();
+                    result = DecodeCode(texture);
+
+                    if (!string.IsNullOrEmpty(result))
+                    {
+                        OnCodeRead?.Invoke(result);
+                        break;
+                    }
+                    if (ReadTimeout > 0.0f && Time.time - startTime > ReadTimeout)
+                    {
+                        return string.Empty;    // Timeout
+                    }
+
+                    await Task.Delay(1000 / CodeReaderFps);
+                }
+            }
+            catch (Exception ex)
+            {
+                if (IsAlreadyLaunched)
+                {
+                    // Debug error when camera is launched
+                    Debug.LogError($"Error occured in reading QRCode: {ex.Message}\n{ex.StackTrace}");
+                }
+            }
+            finally
+            {
+                Close();
+            }
+
+            return result;
+        }
+
     }
 }
