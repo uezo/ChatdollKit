@@ -20,13 +20,15 @@ namespace ChatdollKit.IO
         public Vector2Int Size = new Vector2Int(640, 480);
         public int Fps = 10;
         public float PreviewTime = 2.0f;
+        public float LaunchTimeout = 10.0f;
         public AudioClip CaptureSound;
 
         // Preview show/hide control
         public Action<GameObject, GameObject> ShowPreview;
         public Action<GameObject, GameObject> HidePreview;
-        // Action called when captured photo
+        // Action called when captured photo / self-timer decremented
         public Action OnCaptured;
+        public Action<int> OnTimer;
 
         // Camera status
         public bool IsAlreadyLaunched { get; private set; }
@@ -36,7 +38,6 @@ namespace ChatdollKit.IO
         public string CodeReaderCaption = "Scan Code";
         public int CodeReaderFps = 10;
         public float ReadTimeout = 60.0f;
-        public float LaunchTimeout = 10.0f;
 
         // Function to decode
         public Func<Texture2D, string> DecodeCode;
@@ -48,6 +49,7 @@ namespace ChatdollKit.IO
         private RawImage previewWindow;
         private GameObject backgroundPanel;
         private Text caption;
+        private Text selfTimerCounter;
         private AudioSource audioSource;
 
         private void Awake()
@@ -75,10 +77,24 @@ namespace ChatdollKit.IO
                 Debug.LogWarning("PreviewWindow is not found");
             }
 
-            caption = gameObject.GetComponentInChildren<Text>(true);
+            foreach (var text in gameObject.GetComponentsInChildren<Text>(true))
+            {
+                if (text.name == "Caption")
+                {
+                    caption = text;
+                }
+                else if (text.name == "SelfTimerCounter")
+                {
+                    selfTimerCounter = text;
+                }
+            }
             if (caption == null)
             {
                 Debug.LogWarning("Caption is not found");
+            }
+            if (selfTimerCounter == null)
+            {
+                Debug.LogWarning("SelfTimerCounter is not found");
             }
 
             audioSource = gameObject.GetComponentInChildren<AudioSource>(true);
@@ -256,6 +272,63 @@ namespace ChatdollKit.IO
             return true;
         }
 
+        public void SetCaption(string caption)
+        {
+            this.caption.text = caption;
+        }
+
+        // Self-timer
+        public async Task<Texture2D> CaptureTextureWithTimerAsync(string caption, int timerSeconds)
+        {
+            if (!Launch(caption))
+            {
+                Debug.LogWarning("Camera is busy");
+                return null;
+            }
+
+            try
+            {
+                if (!await WaitForReadyAsync(LaunchTimeout))
+                {
+                    Debug.LogError($"Failed to launch camera in {LaunchTimeout} seconds");
+                    return null;
+                }
+
+                for (var i = timerSeconds; i > 0; i--)
+                {
+                    selfTimerCounter.text = i.ToString();
+                    OnTimer?.Invoke(i);
+                    await Task.Delay(1000);
+                }
+                selfTimerCounter.text = string.Empty;
+
+                var photo = CaptureAsTexture();
+
+                if (PreviewTime > 0)
+                {
+                    // Preview captured photo when preview time is longer than zero
+                    previewWindow.texture = photo;
+                    await Task.Delay((int)(PreviewTime * 1000));
+                }
+
+                return photo;
+            }
+            catch (Exception ex)
+            {
+                if (IsAlreadyLaunched)
+                {
+                    // Debug error when camera is launched
+                    Debug.LogError($"Error occured in capturing photo with timer: {ex.Message}\n{ex.StackTrace}");
+                }
+            }
+            finally
+            {
+                Close();
+            }
+
+            return null;
+        }
+
         // QRCode/Barcode reader
         public async Task<string> ReadCodeAsync()
         {
@@ -315,6 +388,5 @@ namespace ChatdollKit.IO
 
             return result;
         }
-
     }
 }
