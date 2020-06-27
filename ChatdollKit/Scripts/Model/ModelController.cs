@@ -19,6 +19,7 @@ namespace ChatdollKit.Model
         private Dictionary<string, AudioClip> voices = new Dictionary<string, AudioClip>();
         public Func<Voice, Task<AudioClip>> VoiceDownloadFunc;
         public Func<Voice, Task<AudioClip>> TextToSpeechFunc;
+        public Dictionary<string, Func<Voice, Task<AudioClip>>> TextToSpeechFunctions = new Dictionary<string, Func<Voice, Task<AudioClip>>>();
         public bool UsePrefetch = true;
 
         // Animation
@@ -285,7 +286,8 @@ namespace ChatdollKit.Model
                     }
                     else if (v.Source == VoiceSource.TTS)
                     {
-                        clip = await TextToSpeechFunc?.Invoke(v);
+                        var ttsFunc = GetTTSFunction(v.GetTTSFunctionName());
+                        clip = await ttsFunc?.Invoke(v);
                     }
 
                     if (clip != null)
@@ -349,6 +351,26 @@ namespace ChatdollKit.Model
         public void AddVoice(string name, AudioClip audioClip)
         {
             voices[ReplaceDakuten(name)] = audioClip;
+        }
+
+        // Get registered TTS Function by name
+        public Func<Voice, Task<AudioClip>> GetTTSFunction(string name)
+        {
+            if (!string.IsNullOrEmpty(name) && TextToSpeechFunctions.ContainsKey(name))
+            {
+                return TextToSpeechFunctions[name];
+            }
+            return TextToSpeechFunc;
+        }
+
+        // Register TTS Function with name
+        public void RegisterTTSFunction(string name, Func<Voice, Task<AudioClip>> func, bool asDefault = false)
+        {
+            TextToSpeechFunctions[name] = func;
+            if (asDefault)
+            {
+                TextToSpeechFunc = func;
+            }
         }
 
         // Replace Japanese Dakuten from resource files

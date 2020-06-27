@@ -40,9 +40,9 @@ namespace ChatdollKit.Extension
                 www.SetRequestHeader("Ocp-Apim-Subscription-Key", ApiKey);
 
                 // Body
-                var ttsLanguage = voice.GetTTSOption("language") ?? Language;
-                var ttsGender = voice.GetTTSOption("gender") ?? Gender;
-                var ttsSpeakerName = voice.GetTTSOption("speakerName") ?? SpeakerName;
+                var ttsLanguage = voice.GetTTSParam("language") as string ?? Language;
+                var ttsGender = voice.GetTTSParam("gender") as string ?? Gender;
+                var ttsSpeakerName = voice.GetTTSParam("speakerName") as string ?? SpeakerName;
                 var text = $"<speak version='1.0' xml:lang='{ttsLanguage}'><voice xml:lang='{ttsLanguage}' xml:gender='{ttsGender}' name='{ttsSpeakerName}'>{voice.Text}</voice></speak>";
                 www.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(text));
 

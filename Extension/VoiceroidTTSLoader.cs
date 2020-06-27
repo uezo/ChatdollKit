@@ -67,35 +67,35 @@ namespace ChatdollKit.Extension
             public VoiceroidRequest(Voice voice)
             {
                 Text = voice.Text;
-                Kana = voice.GetTTSOption("Kana");
+                Kana = (string)voice.GetTTSParam("Kana");
                 Speaker = new Dictionary<string, float>();
-                if (!string.IsNullOrEmpty(voice.GetTTSOption("Volume")))
+                if (voice.GetTTSParam("Volume") != null)
                 {
-                    Speaker["Volume"] = float.Parse(voice.GetTTSOption("Volume"));
+                    Speaker["Volume"] = (float)voice.GetTTSParam("Volume");
                 }
-                if (!string.IsNullOrEmpty(voice.GetTTSOption("Speed")))
+                if (voice.GetTTSParam("Speed") != null)
                 {
-                    Speaker["Speed"] = float.Parse(voice.GetTTSOption("Speed"));
+                    Speaker["Speed"] = (float)voice.GetTTSParam("Speed");
                 }
-                if (!string.IsNullOrEmpty(voice.GetTTSOption("Pitch")))
+                if (voice.GetTTSParam("Pitch") != null)
                 {
-                    Speaker["Pitch"] = float.Parse(voice.GetTTSOption("Pitch"));
+                    Speaker["Pitch"] = (float)voice.GetTTSParam("Pitch");
                 }
-                if (!string.IsNullOrEmpty(voice.GetTTSOption("Emphasis")))
+                if (voice.GetTTSParam("Emphasis") != null)
                 {
-                    Speaker["Emphasis"] = float.Parse(voice.GetTTSOption("Emphasis"));
+                    Speaker["Emphasis"] = (float)voice.GetTTSParam("Emphasis");
                 }
-                if (!string.IsNullOrEmpty(voice.GetTTSOption("PauseMiddle")))
+                if (voice.GetTTSParam("PauseMiddle") != null)
                 {
-                    Speaker["PauseMiddle"] = float.Parse(voice.GetTTSOption("PauseMiddle"));
+                    Speaker["PauseMiddle"] = (float)voice.GetTTSParam("PauseMiddle");
                 }
-                if (!string.IsNullOrEmpty(voice.GetTTSOption("PauseLong")))
+                if (voice.GetTTSParam("PauseLong") != null)
                 {
-                    Speaker["PauseLong"] = float.Parse(voice.GetTTSOption("PauseLong"));
+                    Speaker["PauseLong"] = (float)voice.GetTTSParam("PauseLong");
                 }
-                if (!string.IsNullOrEmpty(voice.GetTTSOption("PauseSentence")))
+                if (voice.GetTTSParam("PauseSentence") != null)
                 {
-                    Speaker["PauseSentence"] = float.Parse(voice.GetTTSOption("PauseSentence"));
+                    Speaker["PauseSentence"] = (float)voice.GetTTSParam("PauseSentence");
                 }
             }
         }
