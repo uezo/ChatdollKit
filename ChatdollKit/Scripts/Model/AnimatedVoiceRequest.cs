@@ -60,13 +60,13 @@ namespace ChatdollKit.Model
             AnimatedVoices.Last().AddVoiceWeb(url, preGap, postGap, name, text);
         }
 
-        public void AddVoiceTTS(string text, float preGap = 0.0f, float postGap = 0.0f, string name = null, Dictionary<string, string> ttsOptions = null, bool asNewFrame = false)
+        public void AddVoiceTTS(string text, float preGap = 0.0f, float postGap = 0.0f, string name = null, TTSConfiguration ttsConfig = null, bool asNewFrame = false)
         {
             if (asNewFrame || AnimatedVoices.Count == 0)
             {
                 CreateNewFrame();
             }
-            AnimatedVoices.Last().AddVoiceTTS(text, preGap, postGap, name, ttsOptions);
+            AnimatedVoices.Last().AddVoiceTTS(text, preGap, postGap, name, ttsConfig);
         }
 
         public void AddAnimation(string name, float duration = 0.0f, float fadeLength = -1.0f, float weight = 1.0f, float preGap = 0.0f, string description = null, bool asNewFrame = false)
