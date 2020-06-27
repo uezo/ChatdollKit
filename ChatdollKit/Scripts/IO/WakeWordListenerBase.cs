@@ -12,12 +12,15 @@ namespace ChatdollKit.IO
     {
         [Header("WakeWord Settings")]
         public List<string> WakeWords;
+        public List<string> CancelWords;
         public List<string> IgnoreWords = new List<string>() { "。", "、", "？", "！" };
         public int PrefixAllowance = 4;
         public int SuffixAllowance = 4;
         public Func<string, string> ExtractWakeWord;
+        public Func<string, string> ExtractCancelWord;
         public Func<string, Task> OnRecognizedAsync;
         public Func<Task> OnWakeAsync;
+        public Func<Task> OnCancelAsync;
 
         [Header("Test and Debug")]
         public bool PrintResult = false;
@@ -101,6 +104,20 @@ namespace ChatdollKit.IO
                     Debug.LogError($"OnWakeAsync failed: {ex.Message}\n{ex.StackTrace}");
                 }
             }
+            else if (!string.IsNullOrEmpty((ExtractCancelWord ?? ExtractCancelWordDefault).Invoke(recognizedText)))
+            {
+                try
+                {
+                    if (OnCancelAsync != null)
+                    {
+                        await OnCancelAsync();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"OnCancelAsync failed: {ex.Message}\n{ex.StackTrace}");
+                }
+            }
         }
 
         public string ExtractWakeWordDefault(string text)
@@ -121,6 +138,24 @@ namespace ChatdollKit.IO
                     {
                         return ww;
                     }
+                }
+            }
+
+            return string.Empty;
+        }
+
+        public string ExtractCancelWordDefault(string text)
+        {
+            foreach (var iw in IgnoreWords)
+            {
+                text = text.Replace(iw, string.Empty);
+            }
+
+            foreach (var cw in CancelWords)
+            {
+                if (text == cw)
+                {
+                    return cw;
                 }
             }
 
