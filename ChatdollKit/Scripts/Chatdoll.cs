@@ -264,6 +264,12 @@ namespace ChatdollKit
                         _ = ModelController?.StartIdlingAsync();
                         _ = ModelController?.SetDefaultFace();
                     }
+                    else
+                    {
+                        // Clear context when canceled
+                        context.Clear();
+                        await ContextStore.SaveContextAsync(context);
+                    }
                 }
             }
         }
