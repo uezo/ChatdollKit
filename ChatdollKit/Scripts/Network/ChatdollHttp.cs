@@ -57,6 +57,15 @@ namespace ChatdollKit.Network
             return await SendRequestAsync(url, HttpMethod.Post, formContent, headers, parameters);
         }
 
+        // Post form data and parse JSON response
+        public async Task<TResponse> PostFormAsync<TResponse>(string url, Dictionary<string, string> data, Dictionary<string, string> headers = null, Dictionary<string, string> parameters = null)
+        {
+            var response = await PostFormAsync(url, data, headers, parameters);
+            var responseString = await response.Content.ReadAsStringAsync();
+            DebugFunc?.Invoke($"Response JSON: {responseString}");
+            return JsonConvert.DeserializeObject<TResponse>(responseString);
+        }
+
         // Post binary data
         public async Task<HttpResponseMessage> PostBytesAsync(string url, byte[] data, Dictionary<string, string> headers = null, Dictionary<string, string> parameters = null)
         {
