@@ -42,7 +42,7 @@ namespace ChatdollKit
             UserStore = gameObject.GetComponent<IUserStore>() ?? gameObject.AddComponent<LocalUserStore>();
 
             // Use local store when no ContextStore attached
-            ContextStore = gameObject.GetComponent<IContextStore>() ?? gameObject.AddComponent<LocalContextStore>();
+            ContextStore = gameObject.GetComponent<IContextStore>() ?? gameObject.AddComponent<MemoryContextStore>();
 
             // Register request providers for each input type
             RequestProviders = new Dictionary<RequestType, IRequestProvider>();
