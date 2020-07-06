@@ -282,12 +282,26 @@ namespace ChatdollKit.Model
                     AudioClip clip = null;
                     if (v.Source == VoiceSource.Web)
                     {
-                        clip = await VoiceDownloadFunc?.Invoke(v);
+                        if (VoiceDownloadFunc != null)
+                        {
+                            clip = await VoiceDownloadFunc(v);
+                        }
+                        else
+                        {
+                            Debug.LogError("Voice download function not found");
+                        }
                     }
                     else if (v.Source == VoiceSource.TTS)
                     {
                         var ttsFunc = GetTTSFunction(v.GetTTSFunctionName());
-                        clip = await ttsFunc?.Invoke(v);
+                        if (ttsFunc != null)
+                        {
+                            clip = await ttsFunc(v);
+                        }
+                        else
+                        {
+                            Debug.LogError($"TTS function not found: {v.GetTTSFunctionName()}");
+                        }
                     }
 
                     if (clip != null)
@@ -334,7 +348,8 @@ namespace ChatdollKit.Model
                     }
                     else if (voice.Source == VoiceSource.TTS)
                     {
-                        TextToSpeechFunc?.Invoke(voice);
+                        var ttsFunc = GetTTSFunction(voice.GetTTSFunctionName());
+                        ttsFunc?.Invoke(voice);
                     }
                 }
             }
