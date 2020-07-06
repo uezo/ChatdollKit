@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 5272824454214999204}
   - component: {fileID: 5272824454214999207}
   - component: {fileID: 5272824454214999206}
-  - component: {fileID: 5272824454214999226}
+  - component: {fileID: 6303937744460178431}
   m_Layer: 5
   m_Name: SimpleMessageWindow
   m_TagString: Untagged
@@ -101,7 +101,7 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
---- !u!114 &5272824454214999226
+--- !u!114 &6303937744460178431
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -110,7 +110,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 5272824454214999201}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b61fb68d7cba2408cabda30120ba952d, type: 3}
+  m_Script: {fileID: 11500000, guid: 28a8b05cb2dee4dd0b7cf4e76975f88a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   MessageSpeed: 0.05
