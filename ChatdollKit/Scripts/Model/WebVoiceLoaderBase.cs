@@ -7,8 +7,12 @@ using ChatdollKit.Network;
 
 namespace ChatdollKit.Model
 {
-    public class WebVoiceLoaderBase : IVoiceLoader
+    public class WebVoiceLoaderBase : MonoBehaviour, IVoiceLoader
     {
+        public virtual VoiceLoaderType Type { get; } = VoiceLoaderType.Web;
+        public virtual string Name { get; } = string.Empty;
+        public virtual bool IsDefault { get; set; } = false;
+
         protected Dictionary<string, AudioClip> audioCache { get; set; } = new Dictionary<string, AudioClip>();
         protected Dictionary<string, Task<AudioClip>> audioDownloadTasks { get; set; } = new Dictionary<string, Task<AudioClip>>();
 

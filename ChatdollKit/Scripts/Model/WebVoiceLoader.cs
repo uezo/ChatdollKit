@@ -8,12 +8,7 @@ namespace ChatdollKit.Model
 {
     public class WebVoiceLoader : WebVoiceLoaderBase
     {
-        public AudioType AudioType { get; set; }
-
-        public WebVoiceLoader(AudioType audioType = AudioType.WAV)
-        {
-            AudioType = audioType;
-        }
+        public AudioType AudioType = AudioType.WAV;
 
         protected override async Task<AudioClip> DownloadAudioClipAsync(Voice voice)
         {
