@@ -11,14 +11,29 @@ namespace ChatdollKit.Extension
 {
     public class VoiceroidTTSLoader : WebVoiceLoaderBase
     {
-        public string EndpointUrl { get; set; }
-        public AudioType AudioType { get; set; }
-
-        public VoiceroidTTSLoader(string endpointUrl, AudioType audioType = AudioType.WAV)
+        public override VoiceLoaderType Type { get; } = VoiceLoaderType.TTS;
+        public string _Name = "Voiceroid";
+        public override string Name
         {
-            EndpointUrl = endpointUrl;
-            AudioType = audioType;
+            get
+            {
+                return _Name;
+            }
         }
+        public bool _IsDefault = false;
+        public override bool IsDefault
+        {
+            get
+            {
+                return _IsDefault;
+            }
+            set
+            {
+                _IsDefault = value;
+            }
+        }
+        public string EndpointUrl;
+        public AudioType AudioType = AudioType.WAV;
 
         // Get audio clip from Voiceroid Daemon
         // https://github.com/Nkyoku/voiceroid_daemon

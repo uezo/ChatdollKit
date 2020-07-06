@@ -9,22 +9,34 @@ namespace ChatdollKit.Extension
 {
     public class AzureTTSLoader : WebVoiceLoaderBase
     {
-        public string ApiKey { get; set; }
-        public string Region { get; set; }
-        public string Language { get; set; }
-        public string Gender { get; set; }
-        public string SpeakerName { get; set; }
-        public AudioType AudioType { get; set; }
-
-        public AzureTTSLoader(string apiKey, string region = "japanwest", string language = "ja-JP", string gender = "Female", string speakerName = "ja-JP-HarukaRUS", AudioType audioType = AudioType.WAV)
+        public override VoiceLoaderType Type { get; } = VoiceLoaderType.TTS;
+        public string _Name = "Azure";
+        public override string Name
         {
-            ApiKey = apiKey;
-            Region = region;
-            Language = language;
-            Gender = gender;
-            SpeakerName = speakerName;
-            AudioType = audioType;
+            get
+            {
+                return _Name;
+            }
         }
+        public bool _IsDefault = false;
+        public override bool IsDefault
+        {
+            get
+            {
+                return _IsDefault;
+            }
+            set
+            {
+                _IsDefault = value;
+            }
+        }
+
+        public string ApiKey;
+        public string Region = "japanwest";
+        public string Language = "ja-JP";
+        public string Gender = "Female";
+        public string SpeakerName = "ja-JP-HarukaRUS";
+        public AudioType AudioType = AudioType.WAV;
 
         protected override async Task<AudioClip> DownloadAudioClipAsync(Voice voice)
         {
