@@ -29,6 +29,9 @@ namespace ChatdollKit.Dialog
         public float SilenceDurationToEndRecording = 1.0f;
         public float ListeningTimeout = 20.0f;
 
+        [Header("UI")]
+        public SimpleMessageWindow MessageWindow;
+
         public Action OnListeningStart;
         public Action OnListeningStop;
         public Action OnRecordingStart = () => { Debug.Log("Recording voice request started"); };
@@ -38,11 +41,9 @@ namespace ChatdollKit.Dialog
 
         // Actions for each status
 #pragma warning disable CS1998
-        public Func<Request, Context, CancellationToken, Task> OnStartListeningAsync
-            = async (r, c, t) => { Debug.LogWarning("VoiceRequestProvider.OnStartListeningAsync is not implemented"); };
+        public Func<Request, Context, CancellationToken, Task> OnStartListeningAsync;
         public Func<string, Task> OnRecognizedAsync;
-        public Func<Request, Context, CancellationToken, Task> OnFinishListeningAsync
-            = async(r, c, t) => { Debug.LogWarning("VoiceRequestProvider.OnFinishListeningAsync is not implemented"); };
+        public Func<Request, Context, CancellationToken, Task> OnFinishListeningAsync;
         public Func<Request, Context, CancellationToken, Task> OnErrorAsync
             = async (r, c, t) => { Debug.LogWarning("VoiceRequestProvider.OnErrorAsync is not implemented"); };
 #pragma warning restore CS1998
@@ -50,6 +51,32 @@ namespace ChatdollKit.Dialog
         // Private and protected members for recording voice and recognize task
         private string recognitionId = string.Empty;
         protected ChatdollHttp client = new ChatdollHttp();
+
+#pragma warning disable CS1998
+        private async Task OnStartListeningDefaultAsync(Request request, Context context, CancellationToken token)
+        {
+            if (MessageWindow != null)
+            {
+                MessageWindow.Show("(Listening...)");
+            }
+            else
+            {
+                Debug.LogWarning("VoiceRequestProvider.OnStartListeningAsync is not implemented");
+            }
+        }
+
+        private async Task OnFinishListeningDefaultAsync(Request request, Context context, CancellationToken token)
+        {
+            if (MessageWindow != null)
+            {
+                await MessageWindow.SetMessageAsync(request.Text, token);
+            }
+            else
+            {
+                Debug.LogWarning("VoiceRequestProvider.OnFinishListeningAsync is not implemented");
+            }
+        }
+#pragma warning restore CS1998
 
         // Create request using voice recognition
         public async Task<Request> GetRequestAsync(User user, Context context, CancellationToken token)
@@ -78,7 +105,7 @@ namespace ChatdollKit.Dialog
                 recognitionId = currentRecognitionId;
 
                 // Invoke action before start recognition
-                await OnStartListeningAsync(request, context, token);
+                await (OnStartListeningAsync ?? OnStartListeningDefaultAsync).Invoke(request, context, token);
 
                 // For debugging and testing
                 if (UseDummy)
@@ -140,7 +167,7 @@ namespace ChatdollKit.Dialog
             finally
             {
                 // Invoke action after recognition
-                await OnFinishListeningAsync(request, context, token);
+                await (OnFinishListeningAsync ?? OnFinishListeningDefaultAsync).Invoke(request, context, token);
             }
 
             return request;

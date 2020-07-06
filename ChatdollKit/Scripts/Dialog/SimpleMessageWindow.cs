@@ -62,8 +62,11 @@ namespace ChatdollKit.Dialog
             }
             finally
             {
-                Hide();
-                MessageText.text = "";
+                if (!token.IsCancellationRequested)
+                {
+                    Hide();
+                    MessageText.text = "";
+                }
             }
         }
 
