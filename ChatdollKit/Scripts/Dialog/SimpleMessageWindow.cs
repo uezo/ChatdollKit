@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 
-namespace ChatdollKit.Extension
+namespace ChatdollKit.Dialog
 {
     public class SimpleMessageWindow : MonoBehaviour
     {

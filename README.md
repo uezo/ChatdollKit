@@ -103,7 +103,7 @@ Here is how to configure and run "Hello world" example.
 
     <img src="https://uezo.blob.core.windows.net/github/chatdoll/08_2.png" width="640">
 
-1. Add `SimpleMessageWindow` prefab to the scene from `Examples` directory and set `Font`.
+1. Add `SimpleMessageWindow` prefab to the scene from `ChatdollKit/Prefabs/SimpleMessageWindow` directory.
 
 1. Set the `SimpleMessageWindow` to the `Message Window` of the `Hello World`.
 

@@ -102,7 +102,7 @@ UnityのPlayボタンを押します。3Dモデルがまばたきをしながら
 
     <img src="https://uezo.blob.core.windows.net/github/chatdoll/08_2.png" width="640">
 
-1. `Examples`の中にある`SimpleMessageWindow`プレファブをシーンに追加したら、`Font`を設定
+1. `ChatdollKit/Prefabs/SimpleMessageWindow`の中にある`SimpleMessageWindow`プレファブをシーンに追加
 
 1. `Hello World`コンポーネントの`Message Window`に、今シーンに追加した`SimpleMessageWindow`を設定
 
