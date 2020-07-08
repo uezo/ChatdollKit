@@ -13,6 +13,7 @@ namespace ChatdollKit.Dialog
         public float MessageSpeed = 0.05f;
         public float PreGap = 0.2f;
         public float PostGap = 1.0f;
+        private string CurrentMessageId;
 
         public void Show(string prompt = null)
         {
@@ -26,7 +27,7 @@ namespace ChatdollKit.Dialog
         public void Hide()
         {
             SetActive(false);
-            MessageText.text = "";
+            MessageText.text = string.Empty;
         }
 
         public void ShowPrompt(string prompt)
@@ -36,6 +37,9 @@ namespace ChatdollKit.Dialog
 
         public async Task SetMessageAsync(string message, CancellationToken token)
         {
+            var messageId = Guid.NewGuid().ToString();
+            CurrentMessageId = messageId;
+
             try
             {
                 if (string.IsNullOrEmpty(message))
@@ -62,10 +66,11 @@ namespace ChatdollKit.Dialog
             }
             finally
             {
-                if (!token.IsCancellationRequested)
+                // Do not hide when another message is begun to be shown
+                if (CurrentMessageId == messageId)
                 {
                     Hide();
-                    MessageText.text = "";
+                    MessageText.text = string.Empty;
                 }
             }
         }
