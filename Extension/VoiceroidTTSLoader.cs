@@ -35,6 +35,16 @@ namespace ChatdollKit.Extension
         public string EndpointUrl;
         public AudioType AudioType = AudioType.WAV;
 
+        [Header("Voice Settings")]
+        [Range(0.0f, 2.0f)]
+        public float Volume = 1.0f;
+        [Range(0.5f, 4.0f)]
+        public float Speed = 1.0f;
+        [Range(0.5f, 2.0f)]
+        public float Pitch = 1.0f;
+        [Range(0.0f, 2.0f)]
+        public float Emphasis = 1.0f;
+
         // Get audio clip from Voiceroid Daemon
         // https://github.com/Nkyoku/voiceroid_daemon
         protected override async Task<AudioClip> DownloadAudioClipAsync(Voice voice)
@@ -48,7 +58,7 @@ namespace ChatdollKit.Extension
                 www.SetRequestHeader("Content-Type", "application/json");
 
                 // Body
-                var request = new VoiceroidRequest(voice);
+                var request = new VoiceroidRequest(voice, this);
                 var text = JsonConvert.SerializeObject(request);
                 www.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(text));
 
@@ -79,39 +89,19 @@ namespace ChatdollKit.Extension
             public string Kana { get; set; }
             public Dictionary<string, float> Speaker { get; set; }
 
-            public VoiceroidRequest(Voice voice)
+            public VoiceroidRequest(Voice voice, VoiceroidTTSLoader loader)
             {
                 Text = voice.Text;
                 Kana = (string)voice.GetTTSParam("Kana");
-                Speaker = new Dictionary<string, float>();
-                if (voice.GetTTSParam("Volume") != null)
+                Speaker = new Dictionary<string, float>
                 {
-                    Speaker["Volume"] = (float)voice.GetTTSParam("Volume");
-                }
-                if (voice.GetTTSParam("Speed") != null)
-                {
-                    Speaker["Speed"] = (float)voice.GetTTSParam("Speed");
-                }
-                if (voice.GetTTSParam("Pitch") != null)
-                {
-                    Speaker["Pitch"] = (float)voice.GetTTSParam("Pitch");
-                }
-                if (voice.GetTTSParam("Emphasis") != null)
-                {
-                    Speaker["Emphasis"] = (float)voice.GetTTSParam("Emphasis");
-                }
-                if (voice.GetTTSParam("PauseMiddle") != null)
-                {
-                    Speaker["PauseMiddle"] = (float)voice.GetTTSParam("PauseMiddle");
-                }
-                if (voice.GetTTSParam("PauseLong") != null)
-                {
-                    Speaker["PauseLong"] = (float)voice.GetTTSParam("PauseLong");
-                }
-                if (voice.GetTTSParam("PauseSentence") != null)
-                {
-                    Speaker["PauseSentence"] = (float)voice.GetTTSParam("PauseSentence");
-                }
+                    ["Volume"] = (float)(voice.GetTTSParam("Volume") ?? loader.Volume),
+                    ["Speed"] = (float)(voice.GetTTSParam("Speed") ?? loader.Speed),
+                    ["Pitch"] = (float)(voice.GetTTSParam("Pitch") ?? loader.Pitch),
+                    ["Emphasis"] = (float)(voice.GetTTSParam("Emphasis") ?? loader.Emphasis),
+
+                    // PauseMiddle / PauseLong / PauseSentence doesn't work :(
+                };
             }
         }
     }
