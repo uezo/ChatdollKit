@@ -64,6 +64,12 @@ namespace ChatdollKit.Model
         {
             animator = gameObject.GetComponent<Animator>();
             blinkTokenSource = new CancellationTokenSource();
+
+            if (!string.IsNullOrEmpty(FaceConfigurationFile))
+            {
+                // Load at Await() to overwrite at Start()
+                LoadFacesFromFile();
+            }
         }
 
         private void Start()
@@ -552,16 +558,21 @@ namespace ChatdollKit.Model
             }
         }
 
-        // Register weights for face expression name
-        public void AddFace(string name, Dictionary<string, float> weights, bool asDefault = false)
+        // Register FaceClip
+        public void AddFace(FaceClip faceClip, bool asDefault = false)
         {
-            var faceClip = new FaceClip(name, SkinnedMeshRenderer, weights);
-            faceClips[name] = faceClip;
+            faceClips[faceClip.Name] = faceClip;
             if (asDefault)
             {
                 DefaultFace = new FaceRequest();
-                DefaultFace.AddFace(name, 0.0f, "default face");
+                DefaultFace.AddFace(faceClip.Name, 0.0f, "default face");
             }
+        }
+
+        // Register weights for face expression name
+        public void AddFace(string name, Dictionary<string, float> weights, bool asDefault = false)
+        {
+            AddFace(new FaceClip(name, SkinnedMeshRenderer, weights), asDefault);
         }
 
         // Load faces from config file
@@ -570,7 +581,8 @@ namespace ChatdollKit.Model
             var path = configFilePath ?? FaceConfigurationFile;
             foreach (var faceClip in JsonConvert.DeserializeObject<List<FaceClip>>(File.ReadAllText(path)))
             {
-                faceClips[faceClip.Name] = faceClip;
+                var asDefault = faceClip.Name.ToLower() == "default" || faceClip.Name.ToLower() == "neutral";
+                AddFace(faceClip, asDefault);
             }
         }
 
