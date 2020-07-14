@@ -21,6 +21,7 @@ namespace ChatdollKit.IO
         public Func<string, Task> OnRecognizedAsync;
         public Func<Task> OnWakeAsync;
         public Func<Task> OnCancelAsync;
+        public bool AutoStart = true;
 
         [Header("Test and Debug")]
         public bool PrintResult = false;
@@ -40,6 +41,16 @@ namespace ChatdollKit.IO
         // Private and protected members for recording voice and recognize task
         private CancellationTokenSource cancellationTokenSource;
         protected ChatdollHttp client = new ChatdollHttp();
+
+        private void Start()
+        {
+            if (AutoStart)
+            {
+#pragma warning disable CS4014
+                StartListeningAsync();
+#pragma warning restore CS4014
+            }
+        }
 
         protected override void OnDestroy()
         {
