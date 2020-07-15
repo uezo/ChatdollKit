@@ -21,6 +21,7 @@ namespace ChatdollKit.IO
         public Func<string, Task> OnRecognizedAsync;
         public Func<Task> OnWakeAsync;
         public Func<Task> OnCancelAsync;
+        public bool AutoStart = true;
 
         [Header("Test and Debug")]
         public bool PrintResult = false;
@@ -41,6 +42,16 @@ namespace ChatdollKit.IO
         private CancellationTokenSource cancellationTokenSource;
         protected ChatdollHttp client = new ChatdollHttp();
 
+        private void Start()
+        {
+            if (AutoStart)
+            {
+#pragma warning disable CS4014
+                StartListeningAsync();
+#pragma warning restore CS4014
+            }
+        }
+
         protected override void OnDestroy()
         {
             base.OnDestroy();
@@ -49,34 +60,53 @@ namespace ChatdollKit.IO
 
         public async Task StartListeningAsync()
         {
-            StartListening();   // Start recorder here to asure that GetVoiceAsync will be called after recorder started
-
-            if (OnWakeAsync == null)
+            if (IsListening)
             {
-                Debug.LogError("OnWakeAsync must be set");
+                Debug.LogWarning("WakeWordListener is already listening");
                 return;
             }
 
-            cancellationTokenSource = new CancellationTokenSource();
-            var token = cancellationTokenSource.Token;
+            StartListening();   // Start recorder here to asure that GetVoiceAsync will be called after recorder started
 
-            while (!token.IsCancellationRequested)
+            try
             {
-                voiceDetectionThreshold = VoiceDetectionThreshold;
-                voiceDetectionMinimumLength = VoiceDetectionMinimumLength;
-                silenceDurationToEndRecording = SilenceDurationToEndRecording;
-                onListeningStart = OnListeningStart;
-                onListeningStop = OnListeningStop;
-                onRecordingStart = OnRecordingStart;
-                onDetectVoice = OnDetectVoice;
-                onRecordingEnd = OnRecordingEnd;
-                onError = OnError;
-
-                var voiceRecorderResponse = await GetVoiceAsync(0.0f, token);
-                if (voiceRecorderResponse != null && voiceRecorderResponse.Voice != null)
+                if (OnWakeAsync == null)
                 {
-                    _ = ProcessVoiceAsync(voiceRecorderResponse.Voice); // Do not await to continue listening
+                    Debug.LogError("OnWakeAsync must be set");
+                    return;
                 }
+
+                cancellationTokenSource = new CancellationTokenSource();
+                var token = cancellationTokenSource.Token;
+
+                while (!token.IsCancellationRequested)
+                {
+                    voiceDetectionThreshold = VoiceDetectionThreshold;
+                    voiceDetectionMinimumLength = VoiceDetectionMinimumLength;
+                    silenceDurationToEndRecording = SilenceDurationToEndRecording;
+                    onListeningStart = OnListeningStart;
+                    onListeningStop = OnListeningStop;
+                    onRecordingStart = OnRecordingStart;
+                    onDetectVoice = OnDetectVoice;
+                    onRecordingEnd = OnRecordingEnd;
+                    onError = OnError;
+
+                    var voiceRecorderResponse = await GetVoiceAsync(0.0f, token);
+                    if (voiceRecorderResponse != null && voiceRecorderResponse.Voice != null)
+                    {
+#pragma warning disable CS4014
+                        ProcessVoiceAsync(voiceRecorderResponse.Voice); // Do not await to continue listening
+#pragma warning restore CS4014
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Error occured in listening wakeword: {ex.Message}\n{ex.StackTrace}");
+            }
+            finally
+            {
+                StopListening();
             }
         }
 
