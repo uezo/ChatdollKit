@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
@@ -278,7 +279,7 @@ namespace ChatdollKit.IO
         }
 
         // Self-timer
-        public async Task<Texture2D> CaptureTextureWithTimerAsync(string caption, int timerSeconds)
+        public async Task<Texture2D> CaptureTextureWithTimerAsync(string caption, int timerSeconds, CancellationToken token)
         {
             if (!Launch(caption))
             {
@@ -296,9 +297,18 @@ namespace ChatdollKit.IO
 
                 for (var i = timerSeconds; i > 0; i--)
                 {
+                    if (token.IsCancellationRequested)
+                    {
+                        break;
+                    }
                     selfTimerCounter.text = i.ToString();
                     OnTimer?.Invoke(i);
-                    await Task.Delay(1000);
+                    await Task.Delay(1000, token);
+                }
+
+                if (token.IsCancellationRequested)
+                {
+                    return null;
                 }
                 selfTimerCounter.text = string.Empty;
 
@@ -308,7 +318,12 @@ namespace ChatdollKit.IO
                 {
                     // Preview captured photo when preview time is longer than zero
                     previewWindow.texture = photo;
-                    await Task.Delay((int)(PreviewTime * 1000));
+                    await Task.Delay((int)(PreviewTime * 1000), token);
+                }
+
+                if (token.IsCancellationRequested)
+                {
+                    return null;
                 }
 
                 return photo;
@@ -330,7 +345,7 @@ namespace ChatdollKit.IO
         }
 
         // QRCode/Barcode reader
-        public async Task<string> ReadCodeAsync()
+        public async Task<string> ReadCodeAsync(CancellationToken token)
         {
             if (DecodeCode == null)
             {
@@ -354,8 +369,8 @@ namespace ChatdollKit.IO
                 }
 
                 var startTime = Time.time;
-                // Exit loop when camera is closed
-                while (IsAlreadyLaunched)
+                // Exit loop when camera is closed or cancel requested
+                while (IsAlreadyLaunched && !token.IsCancellationRequested)
                 {
                     var texture = GetTexture();
                     result = DecodeCode(texture);

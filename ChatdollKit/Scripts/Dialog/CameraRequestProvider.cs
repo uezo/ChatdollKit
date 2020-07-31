@@ -30,7 +30,7 @@ namespace ChatdollKit.Dialog
 
             if (chatdollCamera != null)
             {
-                payloads.Add(await chatdollCamera.CaptureTextureWithTimerAsync(CameraCaption, SelfTimerSeconds));
+                payloads.Add(await chatdollCamera.CaptureTextureWithTimerAsync(CameraCaption, SelfTimerSeconds, token));
             }
             else
             {

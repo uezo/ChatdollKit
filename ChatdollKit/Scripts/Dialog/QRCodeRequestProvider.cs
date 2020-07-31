@@ -27,7 +27,7 @@ namespace ChatdollKit.Dialog
 
             if (chatdollCamera != null)
             {
-                payloads.Add(await chatdollCamera.ReadCodeAsync());
+                payloads.Add(await chatdollCamera.ReadCodeAsync(token));
             }
             else
             {
