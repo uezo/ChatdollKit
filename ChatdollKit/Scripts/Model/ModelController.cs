@@ -231,6 +231,30 @@ namespace ChatdollKit.Model
             }
         }
 
+        // AnimatedSay from JSON file
+        public async Task AnimatedSay(string filePath, CancellationToken token)
+        {
+            AnimatedVoiceRequest animatedVoiceRequest;
+
+            try
+            {
+                var jsonString = string.Empty;
+                using (var reader = File.OpenText(filePath))
+                {
+                    jsonString = await reader.ReadToEndAsync();
+                }
+
+                animatedVoiceRequest = JsonConvert.DeserializeObject<AnimatedVoiceRequest>(jsonString);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Error occured in AnimatedSay from file {filePath}: {ex.Message}\n{ex.StackTrace}");
+                return;
+            }
+
+            await AnimatedSay(animatedVoiceRequest, token);
+        }
+
         // Speak one phrase
         public async Task Say(string voiceName, float preGap = 0f, float postGap = 0f)
         {
