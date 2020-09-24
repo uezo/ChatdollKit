@@ -13,10 +13,9 @@ namespace ChatdollKit
     public class Chatdoll : MonoBehaviour
     {
         // Conversation
-        public DialogRouter DialogRouter { get; } = new DialogRouter();
-        public IIntentExtractor IntentExtractor { get; private set; }
         public IUserStore UserStore { get; private set; }
         public IContextStore ContextStore { get; private set; }
+        public IDialogRouter DialogRouter { get; private set; }
         public Dictionary<RequestType, IRequestProvider> RequestProviders { get; private set; }
 
         // Model
@@ -62,6 +61,10 @@ namespace ChatdollKit
                 Debug.LogError("RequestProviders are missing");
             }
 
+            // Configure router
+            DialogRouter = gameObject.GetComponent<IDialogRouter>() ?? gameObject.AddComponent<StaticDialogRouter>();
+            DialogRouter.Configure();
+
             // Register intents and its processor
             var dialogProcessors = gameObject.GetComponents<IDialogProcessor>();
             if (dialogProcessors != null)
@@ -75,25 +78,6 @@ namespace ChatdollKit
             else
             {
                 Debug.LogError("DialogProcessors are missing");
-            }
-
-            // IntentExtractor
-            IntentExtractor = gameObject.GetComponent<IIntentExtractor>();
-            if (IntentExtractor != null)
-            {
-                IntentExtractor.Configure();
-            }
-            else
-            {
-                if (dialogProcessors != null && dialogProcessors.Length > 0)
-                {
-                    IntentExtractor = new StaticIntentExtractor(dialogProcessors[0].TopicName);
-                    Debug.LogWarning($"IntentExtractor is missing. '{dialogProcessors[0].TopicName}' will be set to Request.Intent for any request messages.");
-                }
-                else
-                {
-                    Debug.LogError("IntentExtractor is missing");
-                }
             }
 
             // ModelController
@@ -182,7 +166,7 @@ namespace ChatdollKit
                     if (token.IsCancellationRequested) { return; }
 
                     // Extract intent
-                    var intentResponse = await IntentExtractor.ExtractIntentAsync(request, context, token);
+                    var intentResponse = await DialogRouter.ExtractIntentAsync(request, context, token);
                     if (string.IsNullOrEmpty(request.Intent) && string.IsNullOrEmpty(context.Topic.Name))
                     {
                         // Just exit loop without clearing context when NoIntent
@@ -206,7 +190,7 @@ namespace ChatdollKit
                     if (token.IsCancellationRequested) { return; }
 
                     // Start show response
-                    var intentResponseTask = IntentExtractor.ShowResponseAsync(intentResponse, request, context, token);
+                    var intentResponseTask = DialogRouter.ShowResponseAsync(intentResponse, request, context, token);
                     if (token.IsCancellationRequested) { return; }
 
                     // Get dialog to process intent / topic
