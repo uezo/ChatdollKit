@@ -99,7 +99,7 @@ Then ChatdollKit is correctly configured except for voice settings!
 
 Here is how to configure and run "Hello world" example.
 
-1. Open `Examples/HelloWorld/Scripts` and add `HelloWorld.cs` and `IntentExtractor.cs` to the 3D model game object.
+1. Open `Examples/HelloWorld/Scripts` and add `HelloWorld.cs` to the 3D model game object.
 
     <img src="https://uezo.blob.core.windows.net/github/chatdoll/08_2.png" width="640">
 
@@ -116,9 +116,9 @@ Play and click the `Start Chat` button in inspector. Confirm that she asks `å‘¼ã
 
 # Customize Hello world
 
-## IntentExtractor
+## DialogRouter
 
-`IntentExtractor` is automatically added with `HelloWorld`. You implement the rules to extract the intent and entities from what the user is saying. You see the static rule by default.
+`DialogRouter` is automatically added with `HelloWorld`. You can implement `ExtractIntentAsync` method to extract the intent and entities from what the user is saying. You see can the static rule by default.
 
 ```Csharp
 request.Intent = "hello";
@@ -150,7 +150,7 @@ animatedVoiceRequest.AddAnimation("Default");
 
 HelloWorld example has a DialogProcessor named `hello` and it is implemented in `HelloDialog`. In this module, nothing is processed and just respond to say hello.
 
-You can add your own skill to chatdoll by creating and adding the DialogProcessors implements `IDialogProcessor`. When the value of `TopicName` property is set to the `request.Intent` in the `IntentExtractor`, the DialogProcessor is called and the `TopicName` is set to `Context.Topic.Name` to continue the successive conversation.
+You can add your own skill to chatdoll by creating and adding the DialogProcessors implements `IDialogProcessor`. When the value of `TopicName` property is set to the `request.Intent` in the `DialogRouter`, the DialogProcessor is called and the `TopicName` is set to `Context.Topic.Name` to continue the successive conversation.
 
 ## RequestProvider
 

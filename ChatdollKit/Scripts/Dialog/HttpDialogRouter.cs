@@ -1,36 +1,21 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using UnityEngine;
-using ChatdollKit.Model;
 using ChatdollKit.Network;
-
 
 namespace ChatdollKit.Dialog
 {
-    public class HttpIntentExtractorBase : MonoBehaviour, IIntentExtractor
+    public class HttpDialogRouter : DialogRouterBase
     {
         public string IntentExtractorUri;
-        protected ModelController modelController;
-        protected ChatdollHttp httpClient;
-
-        protected virtual void Awake()
-        {
-            modelController = gameObject.GetComponent<ModelController>();
-            httpClient = new ChatdollHttp();
-        }
+        protected ChatdollHttp httpClient = new ChatdollHttp();
 
         private void OnDestroy()
         {
             httpClient?.Dispose();
         }
 
-        public virtual void Configure()
-        {
-            //
-        }
-
-        public virtual async Task<Response> ExtractIntentAsync(Request request, Context context, CancellationToken token)
+        public override async Task<Response> ExtractIntentAsync(Request request, Context context, CancellationToken token)
         {
             var httpIntentResponse = await httpClient.PostJsonAsync<HttpIntentResponse>(
                 IntentExtractorUri, new HttpIntentRequest(request, context));
@@ -43,17 +28,6 @@ namespace ChatdollKit.Dialog
             request.IsAdhoc = httpIntentResponse.Request.IsAdhoc;
 
             return httpIntentResponse.Response;
-        }
-
-        // Show response
-        public virtual async Task ShowResponseAsync(Response response, Request request, Context context, CancellationToken token)
-        {
-            var animatedVoiceRequest = (response as AnimatedVoiceResponse).AnimatedVoiceRequest;
-
-            if (animatedVoiceRequest != null)
-            {
-                await modelController?.AnimatedSay(animatedVoiceRequest, token);
-            }
         }
 
         // Request message
@@ -74,15 +48,8 @@ namespace ChatdollKit.Dialog
         {
             public Request Request { get; set; }
             public Context Context { get; set; }
-            public AnimatedVoiceResponse Response { get; set; }
+            public Response Response { get; set; }
             public HttpIntentError Error { get; set; }
-        }
-
-        // Response with AnimatedRequest
-        public class AnimatedVoiceResponse : Response
-        {
-            public AnimatedVoiceRequest AnimatedVoiceRequest { get; set; }
-            public AnimatedVoiceResponse(string id) : base(id) { }
         }
 
         // Error info in response

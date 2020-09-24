@@ -98,7 +98,7 @@ UnityのPlayボタンを押します。3Dモデルがまばたきをしながら
 
 "Hello world"のexampleを動かすための手順は以下の通りです。
 
-1. `Examples/HelloWorld/Scripts`の中にある`HelloWorld.cs`と`IntentExtractor.cs`を3DモデルのGameObjectに追加
+1. `Examples/HelloWorld/Scripts`の中にある`HelloWorld.cs`を3DモデルのGameObjectに追加
 
     <img src="https://uezo.blob.core.windows.net/github/chatdoll/08_2.png" width="640">
 
@@ -115,9 +115,9 @@ UnityのPlayボタンを押します。3Dモデルがまばたきをしながら
 
 # Hello worldの改造方法
 
-## IntentExtractor
+## DialogRouter
 
-`IntentExtractor`は`HelloWorld`追加時に自動的に追加されます。ここには、ユーザーが何を要求しているか（＝インテント）を抽出するロジックを実装します。初期状態では常に「hello」というインテントが抽出され、リクエストに設定されるようになっています。
+`DialogRouter`は`HelloWorld`追加時に自動的に追加されます。このクラスの`ExtractIntentAsync`メソッドには、ユーザーが何を要求しているか（＝インテント）を抽出するロジックを実装します。初期状態では常に「hello」というインテントが抽出され、リクエストに設定されるようになっています。
 
 ```Csharp
 request.Intent = "hello";
@@ -149,7 +149,7 @@ animatedVoiceRequest.AddAnimation("Default");
 
 HelloWorldの例では`hello`という`DialogProcessor`＝対話処理部品が1つだけ追加されていますが、スタティックにこんにちはの発生を応答するだけですので例では何も処理を実装していません。
 天気予報やしりとり、雑談など各種機能をそれぞれ`IDialogProcessor`を実装したオブジェクトとして作成することでChatdollにさまざまな対話処理部品を追加することができます。対話処理部品はチャットボットやスマートスピーカーではスキルと呼ばれるものに相当します。
-なお`DialogProcessor`の`TopicName`に設定した値と同じものが`IntentExtractor`で`request.Intent`にセットされると、それを契機として対応する`DialogProcessor`が呼び出され、処理を開始します。この`TopicName`の値はコンテキストにも`Context.Topic.Name`として保持されるため、同一のトピックで継続して会話を続けることもできます。
+なお`DialogProcessor`の`TopicName`に設定した値と同じものが`DialogRouter.ExtractIntentAsync`で`request.Intent`にセットされると、それを契機として対応する`DialogProcessor`が呼び出され、処理を開始します。この`TopicName`の値はコンテキストにも`Context.Topic.Name`として保持されるため、同一のトピックで継続して会話を続けることもできます。
 
 ## RequestProvider
 

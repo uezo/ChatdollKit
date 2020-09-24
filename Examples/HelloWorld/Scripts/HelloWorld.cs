@@ -3,14 +3,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using ChatdollKit.Dialog;
-using ChatdollKit.Extension;
 using ChatdollKit.Model;
-
 
 namespace ChatdollKit.Examples.HelloWorld
 {
     [RequireComponent(typeof(RequestProvider))]
     [RequireComponent(typeof(HelloDialog))]
+    [RequireComponent(typeof(DialogRouter))]
     public class HelloWorld : MonoBehaviour
     {
         // Chatdoll component
