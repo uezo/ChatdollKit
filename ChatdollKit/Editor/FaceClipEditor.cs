@@ -425,7 +425,7 @@ public class FaceClipEditor : Editor
                 else visemeKey = "n";
             }
 
-            var shapeKey = shapeKeys.Keys.Where(sk => sk.ToLower().EndsWith($"_{visemeKey}".ToLower())).FirstOrDefault();
+            var shapeKey = shapeKeys.Keys.Where(sk => sk.ToLower().Trim().EndsWith($"_{visemeKey}".ToLower())).FirstOrDefault();
             if (!string.IsNullOrEmpty(shapeKey))
             {
                 visemeTargetShapeKeyIndexes.Add(shapeKeys[shapeKey]);
