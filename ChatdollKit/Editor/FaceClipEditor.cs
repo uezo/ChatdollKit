@@ -243,6 +243,9 @@ public class FaceClipEditor : Editor
 
         // Set audio source
         modelController.AudioSource = lipSyncObject.GetComponent<AudioSource>();
+
+        // Set blink target
+        modelController.BlinkBlendShapeName = GetBlinkTargetName(modelController.SkinnedMeshRenderer);
     }
 
     // Setup ModelController
@@ -463,6 +466,24 @@ public class FaceClipEditor : Editor
         context.audioLoopback = true;
 
         return morphTarget.gameObject;
+    }
+
+    private static string GetBlinkTargetName(SkinnedMeshRenderer skinnedMeshRenderer)
+    {
+        var mesh = skinnedMeshRenderer.sharedMesh;
+        for (var i = 0; i < mesh.blendShapeCount; i++)
+        {
+            var shapeName = mesh.GetBlendShapeName(i).ToLower();
+            if (!shapeName.Contains("left") && !shapeName.Contains("right"))
+            {
+                if (shapeName.Contains("blink") || (shapeName.Contains("eye") && shapeName.Contains("close")))
+                {
+                    return shapeName;
+                }
+            }
+        }
+
+        return string.Empty;
     }
 
     class VisemeTarget
