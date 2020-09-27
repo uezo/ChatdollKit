@@ -82,19 +82,6 @@ namespace ChatdollKit
 
             // ModelController
             ModelController = gameObject.GetComponent<ModelController>();
-
-            // Web and TTS voice loaders
-            foreach (var loader in gameObject.GetComponents<IVoiceLoader>())
-            {
-                if (loader.Type == VoiceLoaderType.Web)
-                {
-                    ModelController.VoiceDownloadFunc = loader.GetAudioClipAsync;
-                }
-                else if (loader.Type == VoiceLoaderType.TTS)
-                {
-                    ModelController.RegisterTTSFunction(loader.Name, loader.GetAudioClipAsync, loader.IsDefault);
-                }
-            }
         }
 
         // OnDestroy
