@@ -73,7 +73,9 @@ namespace ChatdollKit.IO
                 if (OnWakeAsync == null)
                 {
                     Debug.LogError("OnWakeAsync must be set");
-                    return;
+#pragma warning disable CS1998
+                    OnWakeAsync = async () => { Debug.LogWarning("Nothing is invoked by wakeword. Set Func to OnWakeAsync."); };
+#pragma warning restore CS1998
                 }
 
                 cancellationTokenSource = new CancellationTokenSource();
