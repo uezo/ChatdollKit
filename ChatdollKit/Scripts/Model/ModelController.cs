@@ -70,6 +70,19 @@ namespace ChatdollKit.Model
                 // Load at Await() to overwrite at Start()
                 LoadFacesFromFile();
             }
+
+            // Web and TTS voice loaders
+            foreach (var loader in gameObject.GetComponents<IVoiceLoader>())
+            {
+                if (loader.Type == VoiceLoaderType.Web)
+                {
+                    VoiceDownloadFunc = loader.GetAudioClipAsync;
+                }
+                else if (loader.Type == VoiceLoaderType.TTS)
+                {
+                    RegisterTTSFunction(loader.Name, loader.GetAudioClipAsync, loader.IsDefault);
+                }
+            }
         }
 
         private void Start()
