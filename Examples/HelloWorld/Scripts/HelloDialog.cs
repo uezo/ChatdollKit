@@ -7,22 +7,9 @@ using ChatdollKit.Model;
 
 namespace ChatdollKit.Examples.HelloWorld
 {
-    public class HelloDialog : MonoBehaviour, IDialogProcessor
+    public class HelloDialog : DialogProcessorBase
     {
-        public string TopicName { get; } = "hello";
-
-        private ModelController modelController;
-
-        protected virtual void Awake()
-        {
-            modelController = gameObject.GetComponent<ModelController>();
-        }
-
-        public void Configure()
-        {
-        }
-
-        public async Task<Response> ProcessAsync(Request request, Context context, CancellationToken token)
+        public override async Task<Response> ProcessAsync(Request request, Context context, CancellationToken token)
         {
             // 
             // Put your application logic here
@@ -35,14 +22,8 @@ namespace ChatdollKit.Examples.HelloWorld
 
             // Build and return response message
             var response = new Response(request.Id);
-            response.Payloads = animatedVoiceRequest;
+            response.AnimatedVoiceRequest = animatedVoiceRequest;
             return response;
-        }
-
-        public async Task ShowResponseAsync(Response response, Request request, Context context, CancellationToken token)
-        {
-            var animatedVoiceRequest = response.Payloads as AnimatedVoiceRequest;
-            await modelController.AnimatedSay(animatedVoiceRequest, token);
         }
     }
 }

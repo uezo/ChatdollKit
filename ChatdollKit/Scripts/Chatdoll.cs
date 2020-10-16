@@ -153,7 +153,7 @@ namespace ChatdollKit
                     if (token.IsCancellationRequested) { return; }
 
                     // Extract intent
-                    var intentResponse = await DialogRouter.ExtractIntentAsync(request, context, token);
+                    await DialogRouter.ExtractIntentAsync(request, context, token);
                     if (string.IsNullOrEmpty(request.Intent) && string.IsNullOrEmpty(context.Topic.Name))
                     {
                         // Just exit loop without clearing context when NoIntent
@@ -176,23 +176,20 @@ namespace ChatdollKit
                     }
                     if (token.IsCancellationRequested) { return; }
 
-                    // Start show response
-                    var intentResponseTask = DialogRouter.ShowResponseAsync(intentResponse, request, context, token);
-                    if (token.IsCancellationRequested) { return; }
-
                     // Get dialog to process intent / topic
                     var dialogProcessor = DialogRouter.Route(request, context, token);
                     if (token.IsCancellationRequested) { return; }
+
+                    // Start showing waiting animation
+                    var waitingAnimationTask = dialogProcessor.ShowWaitingAnimationAsync(request, context, token);
 
                     // Process dialog
                     var dialogResponse = await dialogProcessor.ProcessAsync(request, context, token);
                     if (token.IsCancellationRequested) { return; }
 
-                    // Wait for intentTask before show response of dialog
-                    if (intentResponseTask != null)
-                    {
-                        await intentResponseTask;
-                    }
+                    // Wait for waiting animation before show response of dialog
+                    // TODO: Enable to cancel waitingAnimation instead of await when ProcessAsync ends.
+                    await waitingAnimationTask;
                     if (token.IsCancellationRequested) { return; }
 
                     // Show response of dialog
