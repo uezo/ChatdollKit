@@ -37,19 +37,6 @@ namespace ChatdollKit.Dialog
         }
 #pragma warning restore CS1998
 
-        public virtual async Task ShowResponseAsync(Response response, Request request, Context context, CancellationToken token)
-        {
-            if (token.IsCancellationRequested)
-            {
-                return;
-            }
-
-            if (response.AnimatedVoiceRequest != null)
-            {
-                await modelController?.AnimatedSay(response.AnimatedVoiceRequest, token);
-            }
-        }
-
         public virtual IDialogProcessor Route(Request request, Context context, CancellationToken token)
         {
             // Update topic

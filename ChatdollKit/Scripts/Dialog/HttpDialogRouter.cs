@@ -8,6 +8,7 @@ namespace ChatdollKit.Dialog
     public class HttpDialogRouter : DialogRouterBase
     {
         public string IntentExtractorUri;
+        public string DialogProcessorUriBase;
         protected ChatdollHttp httpClient = new ChatdollHttp();
 
         private void OnDestroy()
@@ -28,6 +29,21 @@ namespace ChatdollKit.Dialog
             request.IsAdhoc = httpIntentResponse.Request.IsAdhoc;
 
             return httpIntentResponse.Response;
+        }
+
+        public override IDialogProcessor Route(Request request, Context context, CancellationToken token)
+        {
+            // Register DialogProcessor dynamically
+            if (!intentResolver.ContainsKey(request.Intent))
+            {
+                var dialogProcessor = gameObject.AddComponent<HttpDialogProcessor>();
+                dialogProcessor.Name = request.Intent;
+                dialogProcessor.DialogUri = DialogProcessorUriBase.EndsWith("/") ?
+                    DialogProcessorUriBase + request.Intent : DialogProcessorUriBase + "/" + request.Intent;
+                RegisterIntent(request.Intent, dialogProcessor);
+            }
+
+            return base.Route(request, context, token);
         }
 
         // Request message
