@@ -16,7 +16,7 @@ namespace ChatdollKit.Dialog
             httpClient?.Dispose();
         }
 
-        public override async Task<Response> ExtractIntentAsync(Request request, Context context, CancellationToken token)
+        public override async Task ExtractIntentAsync(Request request, Context context, CancellationToken token)
         {
             var httpIntentResponse = await httpClient.PostJsonAsync<HttpIntentResponse>(
                 IntentExtractorUri, new HttpIntentRequest(request, context));
@@ -27,8 +27,6 @@ namespace ChatdollKit.Dialog
             request.Words = httpIntentResponse.Request.Words ?? request.Words;
             request.Entities = httpIntentResponse.Request.Entities ?? request.Entities;
             request.IsAdhoc = httpIntentResponse.Request.IsAdhoc;
-
-            return httpIntentResponse.Response;
         }
 
         public override IDialogProcessor Route(Request request, Context context, CancellationToken token)

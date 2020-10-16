@@ -7,7 +7,7 @@ namespace ChatdollKit.Dialog
     {
         void Configure();
         void RegisterIntent(string intentName, IDialogProcessor dialogProcessor);
-        Task<Response> ExtractIntentAsync(Request request, Context context, CancellationToken token);
+        Task ExtractIntentAsync(Request request, Context context, CancellationToken token);
         IDialogProcessor Route(Request request, Context context, CancellationToken token);
     }
 }
