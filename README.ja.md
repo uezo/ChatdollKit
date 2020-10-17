@@ -46,7 +46,6 @@ Watch this 2 minutes video to learn how ChatdollKit works and the way to use qui
 
 - こんにちは: `line-girl1-konnichiha1.mp3`
 - 呼びました？: `line-girl1-yobimashita1.mp3`
-- はいは〜い: `line-girl1-haihaai1.mp3`
 
 <img src="https://uezo.blob.core.windows.net/github/chatdoll/03_2.png" width="640">
 
@@ -110,7 +109,7 @@ UnityのPlayボタンを押します。3Dモデルがまばたきをしながら
 
 1. `Request Provider`の`Dummy Text`に、音声認識されたことにするダミーの文言を入力。ここで入力した内容がChatdollに送られます
 
-以上で設定は完了です。ゲームを開始してインスペクター上の`Start Chat`ボタンをクリックしましょう。`呼びました？`と尋ねられると、ユーザーからの要求文言としてメッセージボックスにダミー入力テキストが表示され、`はいは〜い`と要求が受託された旨の応答があります。最後に（処理結果として）`こんにちは`と挨拶してくれます。
+以上で設定は完了です。ゲームを開始してインスペクター上の`Start Chat`ボタンをクリックしましょう。`呼びました？`と尋ねられると、ユーザーからの要求文言としてメッセージボックスにダミー入力テキストが表示され、`HelloDialog`の処理結果として`こんにちは`と挨拶してくれます。
 
 
 # Hello worldの改造方法

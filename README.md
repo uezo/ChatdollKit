@@ -44,11 +44,10 @@ In this README, I use Cygnet-chan that we can perchase at Booth. https://booth.p
 
 ## Voices
 
-Create `/Resources/Voices` directory and put voices into there. If your don't have voice audio files to run the example, download from [here](https://soundeffect-lab.info/sound/voice/line-girl1.html). I use these 3 files in the Hello world example.
+Create `/Resources/Voices` directory and put voices into there. If your don't have voice audio files to run the example, download from [here](https://soundeffect-lab.info/sound/voice/line-girl1.html). I use these 2 files in the Hello world example.
 
 - こんにちは: `line-girl1-konnichiha1.mp3`
 - 呼びました？: `line-girl1-yobimashita1.mp3`
-- はいは〜い: `line-girl1-haihaai1.mp3`
 
 <img src="https://uezo.blob.core.windows.net/github/chatdoll/03_2.png" width="640">
 
@@ -111,7 +110,7 @@ Here is how to configure and run "Hello world" example.
 
 1. Put something to say to the `Dummy Text` in the `Request Provider`. This text is sent to the Chatdoll as a request message instead of using speech recognition.
 
-Play and click the `Start Chat` button in inspector. Confirm that she asks `呼びました？`, the value put in the dummy text is shown in the message box, she recognizes it as the hello intent and says `はいは〜い`, lastly she says `こんにちは` as the result of hello dialog.
+Play and click the `Start Chat` button in inspector. Confirm that she asks `呼びました？`, the value put in the dummy text is shown in the message box, and she says `こんにちは` as the result of hello dialog.
 
 
 # Customize Hello world
