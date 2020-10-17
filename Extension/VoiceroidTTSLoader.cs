@@ -20,7 +20,7 @@ namespace ChatdollKit.Extension
                 return _Name;
             }
         }
-        public bool _IsDefault = false;
+        public bool _IsDefault = true;
         public override bool IsDefault
         {
             get
