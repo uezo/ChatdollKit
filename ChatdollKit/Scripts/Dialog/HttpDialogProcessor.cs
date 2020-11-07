@@ -21,20 +21,18 @@ namespace ChatdollKit.Dialog
             httpClient?.Dispose();
         }
 
-        // Get and play waiting animation on server
-        public override async Task ShowWaitingAnimationAsync(Request request, Context context, CancellationToken token)
+        public override async Task<Response> PreProcessAsync(Request request, Context context, CancellationToken token)
         {
             var httpDialogResponse = await httpClient.PostJsonAsync<HttpDialogResponse>(DialogUri, new HttpDialogRequest(request, context, true));
 
-            // Update status and data
-            context.Topic.Status = httpDialogResponse.Context.Topic.Status;
-            context.Data = httpDialogResponse.Context.Data;
-
-            if (httpDialogResponse.Response.AnimatedVoiceRequest != null)
+            if (httpDialogResponse.Context != null)
             {
-                // Show animation
-                await modelController.AnimatedSay(httpDialogResponse.Response.AnimatedVoiceRequest, token);
+                // Update status and data
+                context.Topic.Status = httpDialogResponse.Context.Topic.Status;
+                context.Data = httpDialogResponse.Context.Data;
             }
+
+            return httpDialogResponse.Response;
         }
 
         // Process dialog on server

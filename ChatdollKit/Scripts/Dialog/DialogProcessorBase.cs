@@ -47,11 +47,20 @@ namespace ChatdollKit.Dialog
         }
 
 #pragma warning disable CS1998
-        public virtual async Task ShowWaitingAnimationAsync(Request request, Context context, CancellationToken token)
+        public virtual async Task<Response> PreProcessAsync(Request request, Context context, CancellationToken token)
         {
-            // Do AnimatedSay or something when ProcessAsync is estimated to take much times in this method.
+            // Return AnimatedVoices or something to do when ProcessAsync is estimated to take much times in this method.
+            return null;
         }
 #pragma warning restore CS1998
+
+        public virtual async Task ShowWaitingAnimationAsync(Response response, Request request, Context context, CancellationToken token)
+        {
+            if (request != null)
+            {
+                await ShowResponseAsync(response, request, context, token);
+            }
+        }
 
         // Process dialog
 #pragma warning disable CS1998
