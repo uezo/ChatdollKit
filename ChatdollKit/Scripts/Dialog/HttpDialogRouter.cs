@@ -27,6 +27,9 @@ namespace ChatdollKit.Dialog
             request.Words = httpIntentResponse.Request.Words ?? request.Words;
             request.Entities = httpIntentResponse.Request.Entities ?? request.Entities;
             request.IsAdhoc = httpIntentResponse.Request.IsAdhoc;
+
+            // Update context data
+            context.Data = httpIntentResponse.Context.Data;
         }
 
         public override IDialogProcessor Route(Request request, Context context, CancellationToken token)
@@ -45,7 +48,7 @@ namespace ChatdollKit.Dialog
         }
 
         // Request message
-        public class HttpIntentRequest
+        private class HttpIntentRequest
         {
             public Request Request { get; set; }
             public Context Context { get; set; }
@@ -58,7 +61,7 @@ namespace ChatdollKit.Dialog
         }
 
         // Response message
-        public class HttpIntentResponse
+        private class HttpIntentResponse
         {
             public Request Request { get; set; }
             public Context Context { get; set; }
@@ -67,7 +70,7 @@ namespace ChatdollKit.Dialog
         }
 
         // Error info in response
-        public class HttpIntentError
+        private class HttpIntentError
         {
             public string Code { get; set; }
             public string Message { get; set; }
