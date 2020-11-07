@@ -24,13 +24,10 @@ namespace ChatdollKit.Model
                 else if (www.isDone)
                 {
                     var clip = DownloadHandlerAudioClip.GetContent(www);
-
-                    if (!string.IsNullOrEmpty(voice.Name) && clip != null)
+                    if (clip != null)
                     {
-                        // Cache if name is set
-                        audioCache[voice.Name] = clip;
+                        audioCache[voice.CacheKey] = clip;
                     }
-
                     return clip;
                 }
             }

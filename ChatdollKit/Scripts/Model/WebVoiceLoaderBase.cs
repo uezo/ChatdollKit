@@ -20,17 +20,22 @@ namespace ChatdollKit.Model
         {
             if (IsLoading(voice))
             {
-                await audioDownloadTasks[voice.Name];
+                await audioDownloadTasks[voice.CacheKey];
             }
 
             if (HasCache(voice))
             {
-                return audioCache[voice.Name];
+                var cachedClip = audioCache[voice.CacheKey];
+                if (!voice.UseCache)
+                {
+                    audioCache.Remove(voice.CacheKey);
+                }
+                return cachedClip;
             }
 
-            audioDownloadTasks[voice.Name] = DownloadAudioClipAsync(voice);
-            var clip = await audioDownloadTasks[voice.Name];
-            audioDownloadTasks.Remove(voice.Name);
+            audioDownloadTasks[voice.CacheKey] = DownloadAudioClipAsync(voice);
+            var clip = await audioDownloadTasks[voice.CacheKey];
+            audioDownloadTasks.Remove(voice.CacheKey);
             return clip;
         }
 
@@ -43,15 +48,14 @@ namespace ChatdollKit.Model
 
         public bool HasCache(Voice voice)
         {
-            // Return true when name is set and it's cached
-            return !string.IsNullOrEmpty(voice.Name) && audioCache.ContainsKey(voice.Name);
+            return audioCache.ContainsKey(voice.CacheKey);
         }
 
         public bool IsLoading(Voice voice)
         {
-            if (audioDownloadTasks.ContainsKey(voice.Name))
+            if (audioDownloadTasks.ContainsKey(voice.CacheKey))
             {
-                var task = audioDownloadTasks[voice.Name];
+                var task = audioDownloadTasks[voice.CacheKey];
                 if (task.Status < TaskStatus.RanToCompletion)
                 {
                     return true;

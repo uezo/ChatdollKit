@@ -383,17 +383,14 @@ namespace ChatdollKit.Model
         {
             foreach (var voice in voices)
             {
-                if (!string.IsNullOrEmpty(voice.Name))
+                if (voice.Source == VoiceSource.Web)
                 {
-                    if (voice.Source == VoiceSource.Web)
-                    {
-                        VoiceDownloadFunc?.Invoke(voice);
-                    }
-                    else if (voice.Source == VoiceSource.TTS)
-                    {
-                        var ttsFunc = GetTTSFunction(voice.GetTTSFunctionName());
-                        ttsFunc?.Invoke(voice);
-                    }
+                    VoiceDownloadFunc?.Invoke(voice);
+                }
+                else if (voice.Source == VoiceSource.TTS)
+                {
+                    var ttsFunc = GetTTSFunction(voice.GetTTSFunctionName());
+                    ttsFunc?.Invoke(voice);
                 }
             }
         }
