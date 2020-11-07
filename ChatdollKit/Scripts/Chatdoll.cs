@@ -180,8 +180,11 @@ namespace ChatdollKit
                     var dialogProcessor = DialogRouter.Route(request, context, token);
                     if (token.IsCancellationRequested) { return; }
 
+                    // PreProcess
+                    var preProcessResponse = await dialogProcessor.PreProcessAsync(request, context, token);
+
                     // Start showing waiting animation
-                    var waitingAnimationTask = dialogProcessor.ShowWaitingAnimationAsync(request, context, token);
+                    var waitingAnimationTask = dialogProcessor.ShowWaitingAnimationAsync(preProcessResponse, request, context, token);
 
                     // Process dialog
                     var dialogResponse = await dialogProcessor.ProcessAsync(request, context, token);
