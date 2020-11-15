@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -13,6 +13,8 @@ using ChatdollKit.Model;
 public class FaceClipEditor : Editor
 {
     // For face configuration
+    private string previousJsonPath;
+    private string currentJsonPath;
     private List<FaceClip> faceClips;
     private int previousSelectedFaceIndex;
     private int selectedFaceIndex;
@@ -33,7 +35,10 @@ public class FaceClipEditor : Editor
 
         if (skinnedMeshRenderer != null)
         {
-            if (string.IsNullOrEmpty(modelController.FaceConfigurationFile) || !File.Exists(modelController.FaceConfigurationFile))
+            previousJsonPath = currentJsonPath;
+            currentJsonPath = Path.Combine(Application.dataPath, modelController.FaceConfigurationFile);
+
+            if (string.IsNullOrEmpty(modelController.FaceConfigurationFile) || !File.Exists(currentJsonPath))
             {
                 EditorGUILayout.HelpBox("Create new face configuration file to use face capture tool.", MessageType.Info, true);
                 if (GUILayout.Button("Create"))
@@ -44,6 +49,10 @@ public class FaceClipEditor : Editor
                         if (!string.IsNullOrEmpty(newFilePath))
                         {
                             File.WriteAllText(newFilePath, JsonConvert.SerializeObject(new List<FaceClip>()));
+                            if (newFilePath.StartsWith(Application.dataPath))
+                            {
+                                newFilePath = newFilePath.Substring(Application.dataPath.Length + 1);
+                            }
                             modelController.FaceConfigurationFile = newFilePath;
                         }
                     }
@@ -55,18 +64,22 @@ public class FaceClipEditor : Editor
                 return;
             }
 
-            var path = modelController.FaceConfigurationFile;
-
             // Reset flag to determine selection changed
             var selectionChanged = false;
 
             // Initial load
-            if (faceClips == null)
+            if (faceClips == null || currentJsonPath != previousJsonPath)
             {
-                faceClips = GetFacesFromFile(path);
+                faceClips = GetFacesFromFile(currentJsonPath);
                 if (faceClips.Count > 0)
                 {
                     selectionChanged = true;
+                    selectedFaceIndex = 0;
+                }
+                else
+                {
+                    selectedFaceIndex = -1;
+                    currentFaceName = string.Empty;
                 }
             }
 
@@ -83,7 +96,7 @@ public class FaceClipEditor : Editor
             // Remove face
             if (GUILayout.Button("Remove", ButtonLayout))
             {
-                if (faceClips.Count > 0 && RemoveFace(path, faceClips[selectedFaceIndex].Name))
+                if (faceClips.Count > 0 && RemoveFace(currentJsonPath, faceClips[selectedFaceIndex].Name))
                 {
                     if (faceClips.Count == 0)
                     {
@@ -109,20 +122,19 @@ public class FaceClipEditor : Editor
 
             // Add or update face
             EditorGUILayout.BeginHorizontal();
-
             currentFaceName = GUILayout.TextField(currentFaceName);
-
-            EditorGUI.BeginDisabledGroup(string.IsNullOrEmpty(currentFaceName) || string.IsNullOrEmpty(currentFaceName.Trim()));
             if (GUILayout.Button("Capture", ButtonLayout))
             {
-                // Update and save FaceClip with current weights of SkinnedMeshRenderer
-                if (UpdateFace(path, new FaceClip(currentFaceName, skinnedMeshRenderer)))
+                if (!string.IsNullOrEmpty(currentFaceName.Trim()))
                 {
-                    // Change selected index to new item
-                    selectedFaceIndex = faceClips.Select(f => f.Name).ToList().IndexOf(currentFaceName);
+                    // Update and save FaceClip with current weights of SkinnedMeshRenderer
+                    if (UpdateFace(currentJsonPath, new FaceClip(currentFaceName, skinnedMeshRenderer)))
+                    {
+                        // Change selected index to new item
+                        selectedFaceIndex = faceClips.Select(f => f.Name).ToList().IndexOf(currentFaceName);
+                    }
                 }
             }
-            EditorGUI.EndDisabledGroup();
             EditorGUILayout.EndHorizontal();
 
             // Change current name and blend shapes when selection changed
@@ -208,8 +220,11 @@ public class FaceClipEditor : Editor
 
         try
         {
-            var facesJson = File.ReadAllText(path);
-            storedFaces = JsonConvert.DeserializeObject<List<FaceClip>>(facesJson);
+            var faceJsonString = File.ReadAllText(path);
+            if (faceJsonString != null)
+            {
+                storedFaces = JsonConvert.DeserializeObject<List<FaceClip>>(faceJsonString);
+            }
         }
         catch (Exception ex)
         {
