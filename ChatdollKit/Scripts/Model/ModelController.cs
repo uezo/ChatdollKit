@@ -612,7 +612,13 @@ namespace ChatdollKit.Model
         // Load faces from config file
         public void LoadFacesFromFile(string configFilePath = null)
         {
-            var path = configFilePath ?? FaceConfigurationFile;
+            var path = !string.IsNullOrEmpty(configFilePath) ? configFilePath : Application.dataPath + "/" + FaceConfigurationFile;
+            if (!File.Exists(path))
+            {
+                Debug.LogWarning("Face configuration file does not exist: " + path);
+                return;
+            }
+
             foreach (var faceClip in JsonConvert.DeserializeObject<List<FaceClip>>(File.ReadAllText(path)))
             {
                 var asDefault = faceClip.Name.ToLower() == "default" || faceClip.Name.ToLower() == "neutral";
