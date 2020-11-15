@@ -30,6 +30,7 @@ namespace ChatdollKit.IO
         public float VoiceDetectionThreshold = 0.1f;
         public float VoiceDetectionMinimumLength = 0.2f;
         public float SilenceDurationToEndRecording = 0.3f;
+        public float VoiceRecognitionMaximumLength = 3.0f;
 
         public Action OnListeningStart;
         public Action OnListeningStop;
@@ -96,9 +97,12 @@ namespace ChatdollKit.IO
                     var voiceRecorderResponse = await GetVoiceAsync(0.0f, token);
                     if (voiceRecorderResponse != null && voiceRecorderResponse.Voice != null)
                     {
+                        if (voiceRecorderResponse.Voice.length <= VoiceRecognitionMaximumLength)
+                        {
 #pragma warning disable CS4014
-                        ProcessVoiceAsync(voiceRecorderResponse.Voice); // Do not await to continue listening
+                            ProcessVoiceAsync(voiceRecorderResponse.Voice); // Do not await to continue listening
 #pragma warning restore CS4014
+                        }
                     }
                 }
             }
