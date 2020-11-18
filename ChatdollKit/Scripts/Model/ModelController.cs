@@ -16,6 +16,7 @@ namespace ChatdollKit.Model
         // Audio
         [Header("Voice")]
         public AudioSource AudioSource;
+        public OVRLipSyncContext LipSyncContext;
         private Dictionary<string, AudioClip> voices = new Dictionary<string, AudioClip>();
         public Func<Voice, Task<AudioClip>> VoiceDownloadFunc;
         public Func<Voice, Task<AudioClip>> TextToSpeechFunc;
@@ -353,7 +354,18 @@ namespace ChatdollKit.Model
                         var preGap = v.PreGap - (Time.time - downloadStartTime);
                         if (preGap > 0)
                         {
-                            await Task.Delay((int)(preGap * 1000), token);
+                            if (!token.IsCancellationRequested)
+                            {
+                                try
+                                {
+                                    await Task.Delay((int)(preGap * 1000), token);
+                                }
+                                catch (TaskCanceledException)
+                                {
+                                    // TaskCanceledException raises
+                                    Debug.Log("Task canceled in waiting PreGap");
+                                }
+                            }
                         }
                         // Play audio
                         History?.Add(v);
@@ -367,9 +379,22 @@ namespace ChatdollKit.Model
                     await Task.Delay(1);
                 }
 
-                // Wait for PostGap
-                await Task.Delay((int)(v.PostGap * 1000), token);
+                if (!token.IsCancellationRequested)
+                {
+                    try
+                    {
+                        // Wait for PostGap
+                        await Task.Delay((int)(v.PostGap * 1000), token);
+                    }
+                    catch (TaskCanceledException)
+                    {
+                        Debug.Log("Task canceled in waiting PostGap");
+                    }
+                }
             }
+
+            // Reset viseme
+            LipSyncContext?.ResetContext();
 
             // Restart blink
             if (request.DisableBlink && !token.IsCancellationRequested)
