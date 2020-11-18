@@ -259,6 +259,9 @@ public class FaceClipEditor : Editor
         // Set audio source
         modelController.AudioSource = lipSyncObject.GetComponent<AudioSource>();
 
+        // Set LipSyncContext
+        modelController.LipSyncContext = lipSyncObject.GetComponent<OVRLipSyncContext>();
+
         // Set blink target
         modelController.BlinkBlendShapeName = GetBlinkTargetName(modelController.SkinnedMeshRenderer);
     }
