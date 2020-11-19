@@ -256,8 +256,9 @@ public class FaceClipEditor : Editor
         // Set face skinnedMeshRenderer
         modelController.SkinnedMeshRenderer = visemeTarget.SkinnedMeshRenderer;
 
-        // Set audio source
+        // Set and configure audio source
         modelController.AudioSource = lipSyncObject.GetComponent<AudioSource>();
+        modelController.AudioSource.playOnAwake = false;
 
         // Set LipSyncContext
         modelController.LipSyncContext = lipSyncObject.GetComponent<OVRLipSyncContext>();
