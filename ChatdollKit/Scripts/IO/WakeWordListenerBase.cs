@@ -28,6 +28,7 @@ namespace ChatdollKit.IO
 
         [Header("Voice Recorder Settings")]
         public float VoiceDetectionThreshold = 0.1f;
+        public float VoiceDetectionRaisedThreshold = 0.5f;
         public float VoiceDetectionMinimumLength = 0.2f;
         public float SilenceDurationToEndRecording = 0.3f;
         public float VoiceRecognitionMaximumLength = 3.0f;
@@ -38,6 +39,7 @@ namespace ChatdollKit.IO
         public Action<float> OnDetectVoice;
         public Action<AudioClip> OnRecordingEnd = (a) => { Debug.Log("Recording wakeword ended"); };
         public Action<Exception> OnError = (e) => { Debug.LogError($"Recording wakeword error: {e.Message}\n{e.StackTrace}"); };
+        public Func<bool> ShouldRaiseThreshold = () => { return false; };
 
         // Private and protected members for recording voice and recognize task
         private CancellationTokenSource cancellationTokenSource;
@@ -51,6 +53,12 @@ namespace ChatdollKit.IO
                 StartListeningAsync();
 #pragma warning restore CS4014
             }
+        }
+
+        private void Update()
+        {
+            // Observe which threshold should be applied in every frames
+            voiceDetectionThreshold = ShouldRaiseThreshold() ? VoiceDetectionRaisedThreshold : VoiceDetectionThreshold;
         }
 
         protected override void OnDestroy()

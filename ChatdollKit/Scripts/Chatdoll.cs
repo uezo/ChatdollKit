@@ -13,6 +13,7 @@ namespace ChatdollKit
     public class Chatdoll : MonoBehaviour
     {
         // Conversation
+        public bool IsChatting { get; private set; }
         public IUserStore UserStore { get; private set; }
         public IContextStore ContextStore { get; private set; }
         public IDialogRouter DialogRouter { get; private set; }
@@ -114,34 +115,24 @@ namespace ChatdollKit
                 return;
             }
 
-            // Prompt
+            // Request
+            Request request = null;
+
             try
             {
+                IsChatting = true;
+
+                // Prompt
                 await OnPromptAsync(user, context, token);
-            }
-            catch (TaskCanceledException)
-            {
-                return;
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"Error occured in speaking prompt: {ex.Message}\n{ex.StackTrace}");
-                // Restart idling animation and reset face expression
-                _ = ModelController?.StartIdlingAsync();
-                _ = ModelController?.SetDefaultFace();
-                return;
-            }
 
-            // Chat loop. Exit when session ends, canceled or error occures
-            while (true)
-            {
-                if (token.IsCancellationRequested) { return; }
-
-                // Get request (microphone / camera / QR code, etc)
-                var request = await RequestProviders[context.Topic.RequiredRequestType].GetRequestAsync(user, context, token);
-
-                try
+                // Chat loop. Exit when session ends, canceled or error occures
+                while (true)
                 {
+                    if (token.IsCancellationRequested) { return; }
+
+                    // Get request (microphone / camera / QR code, etc)
+                    request = await RequestProviders[context.Topic.RequiredRequestType].GetRequestAsync(user, context, token);
+
                     if (!request.IsSet() || request.IsCanceled)
                     {
                         // Clear context when request is not set or canceled
@@ -216,41 +207,38 @@ namespace ChatdollKit
                         // Clear context data and topic when topic doesn't continue
                         context.Clear();
                         await ContextStore.SaveContextAsync(context);
-                        return;
+                        break;
                     }
                 }
-                catch (TaskCanceledException)
-                {
-                    await ContextStore.DeleteContextAsync(user.Id);
-                    return;
-                }
-                catch (Exception ex)
+            }
+            catch (Exception ex)
+            {
+                await ContextStore.DeleteContextAsync(user.Id);
+                if (!token.IsCancellationRequested)
                 {
                     Debug.LogError($"Error occured in processing chat: {ex.Message}\n{ex.StackTrace}");
-                    if (!token.IsCancellationRequested)
-                    {
-                        // Stop running animation and voice then get new token to say error
-                        token = GetChatToken();
-                        await OnErrorAsync(request, context, token);
-                        await ContextStore.DeleteContextAsync(user.Id);
-                    }
-                    return;
+                    // Stop running animation and voice then get new token to say error
+                    token = GetChatToken();
+                    await OnErrorAsync(request, context, token);
                 }
-                finally
+            }
+            finally
+            {
+                if (!token.IsCancellationRequested)
                 {
-                    if (!token.IsCancellationRequested)
-                    {
-                        // Restart idling animation and reset face expression 
-                        _ = ModelController?.StartIdlingAsync();
-                        _ = ModelController?.SetDefaultFace();
-                    }
-                    else
-                    {
-                        // Clear context when canceled
-                        context.Clear();
-                        await ContextStore.SaveContextAsync(context);
-                    }
+                    // NOTE: Cancel is triggered not only when just canceled but when invoked another chat session
+                    // Restart idling animation and reset face expression
+                    _ = ModelController?.StartIdlingAsync();
+                    _ = ModelController?.SetDefaultFace();
                 }
+                else
+                {
+                    // Clear context when canceled
+                    context.Clear();
+                    await ContextStore.SaveContextAsync(context);
+                }
+
+                IsChatting = false;
             }
         }
 
@@ -271,10 +259,12 @@ namespace ChatdollKit
                 ModelController?.StopSpeech();
             }
 
-            // Stop animation (and start idling if startDefaultAnimation is true)
             if (startIdling)
             {
+                // Start idling, default face and blink. `startIdling` is true when no successive animated voice
                 _ = ModelController?.StartIdlingAsync();
+                _ = ModelController?.SetDefaultFace();
+                _ = ModelController?.StartBlinkAsync();
             }
         }
 
@@ -287,6 +277,6 @@ namespace ChatdollKit
             // Create new TokenSource and return its token
             chatTokenSource = new CancellationTokenSource();
             return chatTokenSource.Token;
-        }
+        } 
     }
 }
