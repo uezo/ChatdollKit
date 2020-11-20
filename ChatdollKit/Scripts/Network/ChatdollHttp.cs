@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
@@ -36,71 +37,71 @@ namespace ChatdollKit.Network
         }
 
         // Get
-        public async Task<HttpResponseMessage> GetAsync(string url, Dictionary<string, string> parameters = null, Dictionary<string, string> headers = null)
+        public async Task<HttpResponseMessage> GetAsync(string url, Dictionary<string, string> parameters = null, Dictionary<string, string> headers = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             return await SendRequestAsync(url, HttpMethod.Get, null, headers, parameters);
         }
 
         // Get and parse JSON response
-        public async Task<TResponse> GetJsonAsync<TResponse>(string url, Dictionary<string, string> parameters = null, Dictionary<string, string> headers = null)
+        public async Task<TResponse> GetJsonAsync<TResponse>(string url, Dictionary<string, string> parameters = null, Dictionary<string, string> headers = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var response = await SendRequestAsync(url, HttpMethod.Get, null, headers, parameters);
+            var response = await SendRequestAsync(url, HttpMethod.Get, null, headers, parameters, cancellationToken);
             var responseString = await response.Content.ReadAsStringAsync();
             DebugFunc?.Invoke($"Response JSON: {responseString}");
             return JsonConvert.DeserializeObject<TResponse>(responseString);
         }
 
         // Post form data as Key-Values
-        public async Task<HttpResponseMessage> PostFormAsync(string url, Dictionary<string, string> data, Dictionary<string, string> headers = null, Dictionary<string, string> parameters = null)
+        public async Task<HttpResponseMessage> PostFormAsync(string url, Dictionary<string, string> data, Dictionary<string, string> headers = null, Dictionary<string, string> parameters = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             var formContent = new FormUrlEncodedContent(data);
-            return await SendRequestAsync(url, HttpMethod.Post, formContent, headers, parameters);
+            return await SendRequestAsync(url, HttpMethod.Post, formContent, headers, parameters, cancellationToken);
         }
 
         // Post form data and parse JSON response
-        public async Task<TResponse> PostFormAsync<TResponse>(string url, Dictionary<string, string> data, Dictionary<string, string> headers = null, Dictionary<string, string> parameters = null)
+        public async Task<TResponse> PostFormAsync<TResponse>(string url, Dictionary<string, string> data, Dictionary<string, string> headers = null, Dictionary<string, string> parameters = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var response = await PostFormAsync(url, data, headers, parameters);
+            var response = await PostFormAsync(url, data, headers, parameters, cancellationToken);
             var responseString = await response.Content.ReadAsStringAsync();
             DebugFunc?.Invoke($"Response JSON: {responseString}");
             return JsonConvert.DeserializeObject<TResponse>(responseString);
         }
 
         // Post binary data
-        public async Task<HttpResponseMessage> PostBytesAsync(string url, byte[] data, Dictionary<string, string> headers = null, Dictionary<string, string> parameters = null)
+        public async Task<HttpResponseMessage> PostBytesAsync(string url, byte[] data, Dictionary<string, string> headers = null, Dictionary<string, string> parameters = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             var bytesContent = new ByteArrayContent(data);
-            return await SendRequestAsync(url, HttpMethod.Post, bytesContent, headers, parameters);
+            return await SendRequestAsync(url, HttpMethod.Post, bytesContent, headers, parameters, cancellationToken);
         }
 
         // Post binary data and parse JSON response
-        public async Task<TResponse> PostBytesAsync<TResponse>(string url, byte[] data, Dictionary<string, string> headers = null, Dictionary<string, string> parameters = null)
+        public async Task<TResponse> PostBytesAsync<TResponse>(string url, byte[] data, Dictionary<string, string> headers = null, Dictionary<string, string> parameters = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var response = await PostBytesAsync(url, data, headers, parameters);
+            var response = await PostBytesAsync(url, data, headers, parameters, cancellationToken);
             var responseString = await response.Content.ReadAsStringAsync();
             DebugFunc?.Invoke($"Response JSON: {responseString}");
             return JsonConvert.DeserializeObject<TResponse>(responseString);
         }
 
         // Post JSON data
-        public async Task<HttpResponseMessage> PostJsonAsync(string url, object data, Dictionary<string, string> headers = null, Dictionary<string, string> parameters = null)
+        public async Task<HttpResponseMessage> PostJsonAsync(string url, object data, Dictionary<string, string> headers = null, Dictionary<string, string> parameters = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             var json = JsonConvert.SerializeObject(data);
             var jsonContent = new StringContent(json, Encoding.UTF8, "application/json");
-            return await SendRequestAsync(url, HttpMethod.Post, jsonContent, headers, parameters);
+            return await SendRequestAsync(url, HttpMethod.Post, jsonContent, headers, parameters, cancellationToken);
         }
 
         // Post JSON data and parse JSON response
-        public async Task<TResponse> PostJsonAsync<TResponse>(string url, object data, Dictionary<string, string> headers = null, Dictionary<string, string> parameters = null)
+        public async Task<TResponse> PostJsonAsync<TResponse>(string url, object data, Dictionary<string, string> headers = null, Dictionary<string, string> parameters = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var response = await PostJsonAsync(url, data, headers, parameters);
+            var response = await PostJsonAsync(url, data, headers, parameters, cancellationToken);
             var responseString = await response.Content.ReadAsStringAsync();
             DebugFunc?.Invoke($"Response JSON: {responseString}");
             return JsonConvert.DeserializeObject<TResponse>(responseString);
         }
 
         // Send http request
-        public async Task<HttpResponseMessage> SendRequestAsync(string url, HttpMethod httpMethod, HttpContent content, Dictionary<string, string> headers = null, Dictionary<string, string> parameters = null)
+        public async Task<HttpResponseMessage> SendRequestAsync(string url, HttpMethod httpMethod, HttpContent content, Dictionary<string, string> headers = null, Dictionary<string, string> parameters = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             // Create request
             var request = new HttpRequestMessage(
@@ -141,7 +142,7 @@ namespace ChatdollKit.Network
             }
 
             // Send request
-            var response = await httpClient.SendAsync(request);
+            var response = await httpClient.SendAsync(request, cancellationToken);
 
             // Inject user function just after receiving response
             if (AfterRequestFunc != null)
