@@ -18,9 +18,9 @@ namespace ChatdollKit.Model
         public AudioSource AudioSource;
         public OVRLipSyncContext LipSyncContext;
         private Dictionary<string, AudioClip> voices = new Dictionary<string, AudioClip>();
-        public Func<Voice, Task<AudioClip>> VoiceDownloadFunc;
-        public Func<Voice, Task<AudioClip>> TextToSpeechFunc;
-        public Dictionary<string, Func<Voice, Task<AudioClip>>> TextToSpeechFunctions = new Dictionary<string, Func<Voice, Task<AudioClip>>>();
+        public Func<Voice, CancellationToken, Task<AudioClip>> VoiceDownloadFunc;
+        public Func<Voice, CancellationToken, Task<AudioClip>> TextToSpeechFunc;
+        public Dictionary<string, Func<Voice, CancellationToken, Task<AudioClip>>> TextToSpeechFunctions = new Dictionary<string, Func<Voice, CancellationToken, Task<AudioClip>>>();
         public bool UsePrefetch = true;
 
         // Animation
@@ -293,7 +293,7 @@ namespace ChatdollKit.Model
             // Prefetch Web/TTS voice
             if (UsePrefetch)
             {
-                PrefetchVoices(request.Voices);
+                PrefetchVoices(request.Voices, token);
             }
 
             // Speak sequentially
@@ -328,7 +328,7 @@ namespace ChatdollKit.Model
                     {
                         if (VoiceDownloadFunc != null)
                         {
-                            clip = await VoiceDownloadFunc(v);
+                            clip = await VoiceDownloadFunc(v, token);
                         }
                         else
                         {
@@ -340,7 +340,7 @@ namespace ChatdollKit.Model
                         var ttsFunc = GetTTSFunction(v.GetTTSFunctionName());
                         if (ttsFunc != null)
                         {
-                            clip = await ttsFunc(v);
+                            clip = await ttsFunc(v, token);
                         }
                         else
                         {
@@ -404,18 +404,18 @@ namespace ChatdollKit.Model
         }
 
         // Start downloading voices from web/TTS
-        private void PrefetchVoices(List<Voice> voices)
+        private void PrefetchVoices(List<Voice> voices, CancellationToken token)
         {
             foreach (var voice in voices)
             {
                 if (voice.Source == VoiceSource.Web)
                 {
-                    VoiceDownloadFunc?.Invoke(voice);
+                    VoiceDownloadFunc?.Invoke(voice, token);
                 }
                 else if (voice.Source == VoiceSource.TTS)
                 {
                     var ttsFunc = GetTTSFunction(voice.GetTTSFunctionName());
-                    ttsFunc?.Invoke(voice);
+                    ttsFunc?.Invoke(voice, token);
                 }
             }
         }
@@ -434,7 +434,7 @@ namespace ChatdollKit.Model
         }
 
         // Get registered TTS Function by name
-        public Func<Voice, Task<AudioClip>> GetTTSFunction(string name)
+        public Func<Voice, CancellationToken, Task<AudioClip>> GetTTSFunction(string name)
         {
             if (!string.IsNullOrEmpty(name) && TextToSpeechFunctions.ContainsKey(name))
             {
@@ -444,7 +444,7 @@ namespace ChatdollKit.Model
         }
 
         // Register TTS Function with name
-        public void RegisterTTSFunction(string name, Func<Voice, Task<AudioClip>> func, bool asDefault = false)
+        public void RegisterTTSFunction(string name, Func<Voice, CancellationToken, Task<AudioClip>> func, bool asDefault = false)
         {
             TextToSpeechFunctions[name] = func;
             if (asDefault)
