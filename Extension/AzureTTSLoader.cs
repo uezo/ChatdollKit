@@ -1,9 +1,9 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
 using ChatdollKit.Model;
 using ChatdollKit.Network;
-
 
 namespace ChatdollKit.Extension
 {
@@ -38,12 +38,14 @@ namespace ChatdollKit.Extension
         public string SpeakerName = "ja-JP-HarukaRUS";
         public AudioType AudioType = AudioType.WAV;
 
-        protected override async Task<AudioClip> DownloadAudioClipAsync(Voice voice)
+        protected override async Task<AudioClip> DownloadAudioClipAsync(Voice voice, CancellationToken token)
         {
+            if (token.IsCancellationRequested) { return null; };
+
             var url = $"https://{Region}.tts.speech.microsoft.com/cognitiveservices/v1";
             using (var www = UnityWebRequestMultimedia.GetAudioClip(url, AudioType))
             {
-                www.timeout = 10;
+                www.timeout = Timeout;
                 www.method = "POST";
 
                 // Header
@@ -67,15 +69,7 @@ namespace ChatdollKit.Extension
                 }
                 else if (www.isDone)
                 {
-                    var clip = DownloadHandlerAudioClip.GetContent(www);
-
-                    if (!string.IsNullOrEmpty(voice.Name) && clip != null)
-                    {
-                        // Cache if name is set
-                        audioCache[voice.Name] = clip;
-                    }
-
-                    return clip;
+                    return DownloadHandlerAudioClip.GetContent(www);
                 }
             }
             return null;

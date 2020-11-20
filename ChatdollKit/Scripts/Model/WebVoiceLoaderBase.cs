@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using ChatdollKit.Network;
-
 
 namespace ChatdollKit.Model
 {
@@ -12,19 +12,23 @@ namespace ChatdollKit.Model
         public virtual VoiceLoaderType Type { get; } = VoiceLoaderType.Web;
         public virtual string Name { get; } = string.Empty;
         public virtual bool IsDefault { get; set; } = false;
+        public int Timeout = 10;
 
         protected Dictionary<string, AudioClip> audioCache { get; set; } = new Dictionary<string, AudioClip>();
         protected Dictionary<string, Task<AudioClip>> audioDownloadTasks { get; set; } = new Dictionary<string, Task<AudioClip>>();
 
-        public async Task<AudioClip> GetAudioClipAsync(Voice voice)
+        public async Task<AudioClip> GetAudioClipAsync(Voice voice, CancellationToken cancellationToken)
         {
             if (IsLoading(voice))
             {
-                await audioDownloadTasks[voice.CacheKey];
+                // Wait complete download task if download is now in progress.
+                // Cache is controlled by another task that originally invoked the download task
+                await WaitDownloadCancellable(audioDownloadTasks[voice.CacheKey], cancellationToken);
             }
 
             if (HasCache(voice))
             {
+                // Return cache if exists
                 var cachedClip = audioCache[voice.CacheKey];
                 if (!voice.UseCache)
                 {
@@ -33,18 +37,35 @@ namespace ChatdollKit.Model
                 return cachedClip;
             }
 
-            audioDownloadTasks[voice.CacheKey] = DownloadAudioClipAsync(voice);
-            var clip = await audioDownloadTasks[voice.CacheKey];
-            audioDownloadTasks.Remove(voice.CacheKey);
-            return clip;
+            // Start download when download in not in progress and cache doesn't exist
+            audioDownloadTasks[voice.CacheKey] = DownloadAudioClipAsync(voice, cancellationToken);
+            await WaitDownloadCancellable(audioDownloadTasks[voice.CacheKey], cancellationToken);
+            if (audioDownloadTasks[voice.CacheKey].IsCompleted)
+            {
+                var clip = audioDownloadTasks[voice.CacheKey].Result;
+                // Cache once regardless of UseCache to enable PreFetch
+                audioCache[voice.CacheKey] = clip;
+                audioDownloadTasks.Remove(voice.CacheKey);
+                return clip;
+            }
+
+            return null;
         }
 
 #pragma warning disable CS1998
-        protected virtual async Task<AudioClip> DownloadAudioClipAsync(Voice voice)
+        protected virtual async Task<AudioClip> DownloadAudioClipAsync(Voice voice, CancellationToken cancellationToken)
         {
             throw new NotImplementedException("DownloadAudioClipAsync must be implemented");
         }
 #pragma warning restore CS1998
+
+        protected async Task WaitDownloadCancellable(Task<AudioClip> downloadTask, CancellationToken cancellationToken)
+        {
+            if (cancellationToken.IsCancellationRequested) { return; };
+
+            var cancellableTask = Task.Delay((Timeout + 1) * 1000, cancellationToken);
+            await Task.WhenAny(downloadTask, cancellableTask);  // WhenAny doesn't throw TaskCanceledException
+        }
 
         public bool HasCache(Voice voice)
         {

@@ -1,11 +1,11 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
 using Newtonsoft.Json;
 using ChatdollKit.Model;
 using ChatdollKit.Network;
-
 
 namespace ChatdollKit.Extension
 {
@@ -47,11 +47,13 @@ namespace ChatdollKit.Extension
 
         // Get audio clip from Voiceroid Daemon
         // https://github.com/Nkyoku/voiceroid_daemon
-        protected override async Task<AudioClip> DownloadAudioClipAsync(Voice voice)
+        protected override async Task<AudioClip> DownloadAudioClipAsync(Voice voice, CancellationToken token)
         {
+            if (token.IsCancellationRequested) { return null; };
+
             using (var www = UnityWebRequestMultimedia.GetAudioClip(EndpointUrl, AudioType))
             {
-                www.timeout = 10;
+                www.timeout = Timeout;
                 www.method = "POST";
 
                 // Header
@@ -71,12 +73,7 @@ namespace ChatdollKit.Extension
                 }
                 else if (www.isDone)
                 {
-                    var clip = DownloadHandlerAudioClip.GetContent(www);
-                    if (clip != null)
-                    {
-                        audioCache[voice.CacheKey] = clip;
-                    }
-                    return clip;
+                    return DownloadHandlerAudioClip.GetContent(www);
                 }
             }
             return null;
