@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -6,10 +7,13 @@ using UnityEngine;
 namespace ChatdollKit.Model
 {
     // Face clip
+    [Serializable]
     public class FaceClip
     {
-        public string Name { get; set; }
-        public List<BlendShapeValue> Values { get; set; }
+        [SerializeField]
+        public string Name;
+        [SerializeField]
+        public List<BlendShapeValue> Values;
 
         public FaceClip()
         {
@@ -53,10 +57,14 @@ namespace ChatdollKit.Model
         }
     }
 
+    [Serializable]
     public class BlendShapeValue
     {
-        public int Index { get; set; }
-        public string Name { get; set; }
-        public float Weight { get; set; }
+        [SerializeField]
+        public string Name;
+        [SerializeField]
+        public int Index;
+        [SerializeField]
+        public float Weight;
     }
 }

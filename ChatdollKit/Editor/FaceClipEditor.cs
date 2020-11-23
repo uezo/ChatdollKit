@@ -8,13 +8,12 @@ using UnityEditor;
 using Newtonsoft.Json;
 using ChatdollKit.Model;
 
-
 [CustomEditor(typeof(ModelController))]
 public class FaceClipEditor : Editor
 {
     // For face configuration
-    private string previousJsonPath;
-    private string currentJsonPath;
+    private string previousConfigName;
+    private string currentConfigName;
     private List<FaceClip> faceClips;
     private int previousSelectedFaceIndex;
     private int selectedFaceIndex;
@@ -35,42 +34,29 @@ public class FaceClipEditor : Editor
 
         if (skinnedMeshRenderer != null)
         {
-            previousJsonPath = currentJsonPath;
-            currentJsonPath = Path.Combine(Application.dataPath, modelController.FaceConfigurationFile);
-
-            if (string.IsNullOrEmpty(modelController.FaceConfigurationFile) || !File.Exists(currentJsonPath))
+            if (modelController.FaceClipConfiguration == null)
             {
-                EditorGUILayout.HelpBox("Create new face configuration file to use face capture tool.", MessageType.Info, true);
-                if (GUILayout.Button("Create"))
+                // Clear local list
+                faceClips = null;
+
+                if (GUILayout.Button("Import JSON (migration)"))
                 {
-                    try
-                    {
-                        var newFilePath = EditorUtility.SaveFilePanel("Create new face configuration file", Application.dataPath, "faceConfig", "json");
-                        if (!string.IsNullOrEmpty(newFilePath))
-                        {
-                            File.WriteAllText(newFilePath, JsonConvert.SerializeObject(new List<FaceClip>()));
-                            if (newFilePath.StartsWith(Application.dataPath))
-                            {
-                                newFilePath = newFilePath.Substring(Application.dataPath.Length + 1);
-                            }
-                            modelController.FaceConfigurationFile = newFilePath;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.LogError($"Failed to create face configuration file: {ex.Message}\n{ex.StackTrace}");
-                    }
+                    LoadFacesFromJson();
                 }
+
                 return;
             }
+
+            previousConfigName = currentConfigName;
+            currentConfigName = modelController.FaceClipConfiguration.name;
 
             // Reset flag to determine selection changed
             var selectionChanged = false;
 
-            // Initial load
-            if (faceClips == null || currentJsonPath != previousJsonPath)
+            // Load data on started or configuration changed
+            if (faceClips == null || currentConfigName != previousConfigName)
             {
-                faceClips = GetFacesFromFile(currentJsonPath);
+                faceClips = modelController.FaceClipConfiguration.FaceClips;
                 if (faceClips.Count > 0)
                 {
                     selectionChanged = true;
@@ -96,11 +82,20 @@ public class FaceClipEditor : Editor
             // Remove face
             if (GUILayout.Button("Remove", ButtonLayout))
             {
-                if (faceClips.Count > 0 && RemoveFace(currentJsonPath, faceClips[selectedFaceIndex].Name))
+                if (faceClips.Count > 0)
                 {
+                    // Remove from list
+                    var faceToRemove = faceClips.Where(f => f.Name == currentFaceName).First();
+                    faceClips.Remove(faceToRemove);
+
+                    // Save to asset
+                    EditorUtility.SetDirty(modelController.FaceClipConfiguration);
+                    AssetDatabase.SaveAssets();
+
+                    // Select item
                     if (faceClips.Count == 0)
                     {
-                        // nothing to be selected when no item exists
+                        // Nothing to be selected when no item exists
                         selectedFaceIndex = -1;
                         currentFaceName = string.Empty;
                     }
@@ -127,12 +122,23 @@ public class FaceClipEditor : Editor
             {
                 if (!string.IsNullOrEmpty(currentFaceName.Trim()))
                 {
-                    // Update and save FaceClip with current weights of SkinnedMeshRenderer
-                    if (UpdateFace(currentJsonPath, new FaceClip(currentFaceName, skinnedMeshRenderer)))
+                    // Update or add to list
+                    var faceToUpdate = faceClips.Where(f => f.Name == currentFaceName).FirstOrDefault();
+                    if (faceToUpdate == null)
                     {
-                        // Change selected index to new item
-                        selectedFaceIndex = faceClips.Select(f => f.Name).ToList().IndexOf(currentFaceName);
+                        faceClips.Add(new FaceClip(currentFaceName, skinnedMeshRenderer));
                     }
+                    else
+                    {
+                        faceToUpdate = new FaceClip(currentFaceName, skinnedMeshRenderer);
+                    }
+
+                    // Select item
+                    selectedFaceIndex = faceClips.Select(f => f.Name).ToList().IndexOf(currentFaceName);
+
+                    // Save to asset
+                    EditorUtility.SetDirty(modelController.FaceClipConfiguration);
+                    AssetDatabase.SaveAssets();
                 }
             }
             EditorGUILayout.EndHorizontal();
@@ -149,68 +155,41 @@ public class FaceClipEditor : Editor
         }
     }
 
-    // Update face
-    private bool UpdateFace(string path, FaceClip face)
+    // Migrate face configuration from JSON
+    public void LoadFacesFromJson()
     {
+        var path = EditorUtility.OpenFilePanel("Select FaceClip configuration", "", "json");
+        if (path.Length == 0)
+        {
+            return;
+        }
+
         try
         {
-            // Add or update face to JSON
-            var storedFaces = GetFacesFromFile(path);
-            var faceToUpdate = storedFaces.Where(f => f.Name == face.Name).FirstOrDefault();
-            if (faceToUpdate == null)
-            {
-                storedFaces.Add(face);
-            }
-            else
-            {
-                faceToUpdate.Values = face.Values;
-            }
+            var modelController = target as ModelController;
 
-            // Save face list
-            File.WriteAllText(path, JsonConvert.SerializeObject(storedFaces));
+            // Load faces from JSON
+            var faces = GetFacesFromFile(path);
 
-            // Refresh face list on memory
-            faceClips.Clear();
-            faceClips = storedFaces;
+            // Create ScriptableObject and set face clips
+            var faceClipConfiguration = CreateInstance<FaceClipConfiguration>();
+            modelController.FaceClipConfiguration = faceClipConfiguration;
+            modelController.FaceClipConfiguration.FaceClips = faces;
 
-            // Return true when done successfully
-            return true;
+            // Create face configuration asset
+            AssetDatabase.CreateAsset(
+                faceClipConfiguration,
+                $"Assets/Resources/Faces-{modelController.gameObject.name}-{DateTime.Now.ToString("yyyyMMddHHmmSS")}.asset");
+            EditorUtility.SetDirty(modelController.FaceClipConfiguration);
+            AssetDatabase.SaveAssets();
+
+            // Set face clips to local list
+            faceClips = modelController.FaceClipConfiguration.FaceClips;
         }
         catch (Exception ex)
         {
-            Debug.LogError($"Failed to update face clip: {ex.Message}\n{ex.StackTrace}");
+            Debug.LogError($"Failed to import face clips from JSON: {ex.Message}\n{ex.StackTrace}");
         }
-
-        return false;
-    }
-
-    // Remove face
-    private bool RemoveFace(string path, string faceName)
-    {
-        try
-        {
-            // Remove face from JSON
-            var storedFaces = GetFacesFromFile(path);
-            var faceToRemove = storedFaces.Where(f => f.Name == faceName).First();
-            storedFaces.Remove(faceToRemove);
-
-            // Save removed face list
-            File.WriteAllText(path, JsonConvert.SerializeObject(storedFaces));
-
-            // Refresh face list on memory
-            faceClips.Clear();
-            faceClips = storedFaces;
-
-            // Return true when done successfully
-            return true;
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError($"Failed to remove face clip: {ex.Message}\n{ex.StackTrace}");
-        }
-
-        // Return false when error occured
-        return false;
     }
 
     // Get faces from JSON file
@@ -218,17 +197,10 @@ public class FaceClipEditor : Editor
     {
         var storedFaces = new List<FaceClip>();
 
-        try
+        var faceJsonString = File.ReadAllText(path);
+        if (faceJsonString != null)
         {
-            var faceJsonString = File.ReadAllText(path);
-            if (faceJsonString != null)
-            {
-                storedFaces = JsonConvert.DeserializeObject<List<FaceClip>>(faceJsonString);
-            }
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError($"Failed to get face clips from file: {ex.Message}\n{ex.StackTrace}");
+            storedFaces = JsonConvert.DeserializeObject<List<FaceClip>>(faceJsonString);
         }
 
         return storedFaces;
@@ -265,9 +237,16 @@ public class FaceClipEditor : Editor
 
         // Set blink target
         modelController.BlinkBlendShapeName = GetBlinkTargetName(modelController.SkinnedMeshRenderer);
+
+        // Create and set face configuration
+        var faceClipConfiguration = CreateInstance<FaceClipConfiguration>();
+        AssetDatabase.CreateAsset(
+            faceClipConfiguration,
+            $"Assets/Resources/Faces-{modelController.gameObject.name}-{DateTime.Now.ToString("yyyyMMddHHmmSS")}.asset");
+        modelController.FaceClipConfiguration = faceClipConfiguration;
     }
 
-    // Setup ModelController
+    // Setup Animator
     [MenuItem("CONTEXT/ModelController/Setup Animator")]
     private static void CreateAnimationControllerWithClips(MenuCommand menuCommand)
     {
