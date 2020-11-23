@@ -54,7 +54,7 @@ namespace ChatdollKit.Model
         // Face Expression
         [Header("Face")]
         public SkinnedMeshRenderer SkinnedMeshRenderer;
-        public string FaceConfigurationFile;
+        public FaceClipConfiguration FaceClipConfiguration;
         private Dictionary<string, FaceClip> faceClips = new Dictionary<string, FaceClip>();
         private FaceRequest DefaultFace;
 
@@ -66,11 +66,8 @@ namespace ChatdollKit.Model
             animator = gameObject.GetComponent<Animator>();
             blinkTokenSource = new CancellationTokenSource();
 
-            if (!string.IsNullOrEmpty(FaceConfigurationFile))
-            {
-                // Load at Await() to overwrite at Start()
-                LoadFacesFromFile();
-            }
+            // Load at Await() to overwrite at Start()
+            LoadFaces();
 
             // Web and TTS voice loaders
             foreach (var loader in gameObject.GetComponents<IVoiceLoader>())
@@ -634,17 +631,16 @@ namespace ChatdollKit.Model
             AddFace(new FaceClip(name, SkinnedMeshRenderer, weights), asDefault);
         }
 
-        // Load faces from config file
-        public void LoadFacesFromFile(string configFilePath = null)
+        // Load faces from config
+        public void LoadFaces()
         {
-            var path = !string.IsNullOrEmpty(configFilePath) ? configFilePath : Application.dataPath + "/" + FaceConfigurationFile;
-            if (!File.Exists(path))
+            if (FaceClipConfiguration == null)
             {
-                Debug.LogWarning("Face configuration file does not exist: " + path);
+                Debug.LogWarning("Face configuration is not set");
                 return;
             }
 
-            foreach (var faceClip in JsonConvert.DeserializeObject<List<FaceClip>>(File.ReadAllText(path)))
+            foreach (var faceClip in FaceClipConfiguration.FaceClips)
             {
                 var asDefault = faceClip.Name.ToLower() == "default" || faceClip.Name.ToLower() == "neutral";
                 AddFace(faceClip, asDefault);
