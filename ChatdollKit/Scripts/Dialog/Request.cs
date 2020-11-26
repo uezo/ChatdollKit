@@ -6,7 +6,7 @@ namespace ChatdollKit.Dialog
 {
     public enum RequestType
     {
-        Voice, Camera, QRCode
+        None, Voice, Camera, QRCode
     }
 
     public enum Priority

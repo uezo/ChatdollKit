@@ -92,7 +92,7 @@ namespace ChatdollKit
         }
 
         // Start chatting loop
-        public async Task StartChatAsync(string userId, Dictionary<string, object> payloads = null)
+        public async Task StartChatAsync(string userId, bool skipPrompt = false, Request preRequest = null, Dictionary<string, object> payloads = null)
         {
             // Get cancellation token
             var token = GetChatToken();
@@ -116,22 +116,29 @@ namespace ChatdollKit
             }
 
             // Request
-            Request request = null;
+            var request = preRequest;
 
             try
             {
                 IsChatting = true;
 
                 // Prompt
-                await OnPromptAsync(user, context, token);
+                if (!skipPrompt)
+                {
+                    await OnPromptAsync(user, context, token);
+                }
 
                 // Chat loop. Exit when session ends, canceled or error occures
                 while (true)
                 {
                     if (token.IsCancellationRequested) { return; }
 
-                    // Get request (microphone / camera / QR code, etc)
-                    request = await RequestProviders[context.Topic.RequiredRequestType].GetRequestAsync(user, context, token);
+                    var requestProvider = preRequest == null || preRequest.Type == RequestType.None ?
+                        RequestProviders[context.Topic.RequiredRequestType] :
+                        RequestProviders[preRequest.Type];
+
+                    // Get or update request (microphone / camera / QR code, etc)
+                    request = await requestProvider.GetRequestAsync(user, context, token, preRequest);
 
                     if (!request.IsSet() || request.IsCanceled)
                     {
@@ -144,7 +151,11 @@ namespace ChatdollKit
                     if (token.IsCancellationRequested) { return; }
 
                     // Extract intent
-                    await DialogRouter.ExtractIntentAsync(request, context, token);
+                    if (preRequest == null || string.IsNullOrEmpty(preRequest.Intent))
+                    {
+                        await DialogRouter.ExtractIntentAsync(request, context, token);
+                    }
+
                     if (string.IsNullOrEmpty(request.Intent) && string.IsNullOrEmpty(context.Topic.Name))
                     {
                         // Just exit loop without clearing context when NoIntent
@@ -193,6 +204,8 @@ namespace ChatdollKit
                     // Post process
                     if (context.Topic.ContinueTopic)
                     {
+                        // Clear pre-request
+                        preRequest = null;
                         // Save user
                         await UserStore.SaveUserAsync(user);
                         // Save context
