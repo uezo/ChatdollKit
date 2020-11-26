@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+using ChatdollKit.Dialog;
 using ChatdollKit.Network;
 
 
@@ -11,15 +12,13 @@ namespace ChatdollKit.IO
     public class WakeWordListenerBase : VoiceRecorderBase
     {
         [Header("WakeWord Settings")]
-        public List<string> WakeWords;
+        public List<WakeWord> WakeWords;
         public List<string> CancelWords;
         public List<string> IgnoreWords = new List<string>() { "。", "、", "？", "！" };
-        public int PrefixAllowance = 4;
-        public int SuffixAllowance = 4;
-        public Func<string, string> ExtractWakeWord;
+        public Func<string, WakeWord> ExtractWakeWord;
         public Func<string, string> ExtractCancelWord;
         public Func<string, Task> OnRecognizedAsync;
-        public Func<Task> OnWakeAsync;
+        public Func<WakeWord, string, Task> OnWakeAsync;
         public Func<Task> OnCancelAsync;
         public bool AutoStart = true;
 
@@ -83,7 +82,7 @@ namespace ChatdollKit.IO
                 {
                     Debug.LogError("OnWakeAsync must be set");
 #pragma warning disable CS1998
-                    OnWakeAsync = async () => { Debug.LogWarning("Nothing is invoked by wakeword. Set Func to OnWakeAsync."); };
+                    OnWakeAsync = async (ww, text) => { Debug.LogWarning("Nothing is invoked by wakeword. Set Func to OnWakeAsync."); };
 #pragma warning restore CS1998
                 }
 
@@ -137,11 +136,14 @@ namespace ChatdollKit.IO
                 Debug.Log($"Recognized(WakeWordListener): {recognizedText}");
             }
 
-            if (!string.IsNullOrEmpty((ExtractWakeWord ?? ExtractWakeWordDefault).Invoke(recognizedText)))
+            // これだと「妹ちゃん」の後が長すぎるから認識されない
+            var extractedWakeWord = (ExtractWakeWord ?? ExtractWakeWordDefault).Invoke(recognizedText);
+
+            if (extractedWakeWord != null)
             {
                 try
                 {
-                    await OnWakeAsync();
+                    await OnWakeAsync(extractedWakeWord, recognizedText);
                 }
                 catch (Exception ex)
                 {
@@ -164,7 +166,7 @@ namespace ChatdollKit.IO
             }
         }
 
-        public string ExtractWakeWordDefault(string text)
+        public WakeWord ExtractWakeWordDefault(string text)
         {
             foreach (var iw in IgnoreWords)
             {
@@ -173,19 +175,19 @@ namespace ChatdollKit.IO
 
             foreach (var ww in WakeWords)
             {
-                if (text.Contains(ww))
+                if (text.Contains(ww.Text))
                 {
-                    var prefix = text.Substring(0, text.IndexOf(ww));
-                    var suffix = text.Substring(text.IndexOf(ww) + ww.Length);
+                    var prefix = text.Substring(0, text.IndexOf(ww.Text));
+                    var suffix = text.Substring(text.IndexOf(ww.Text) + ww.Text.Length);
 
-                    if (prefix.Length <= 4 && suffix.Length <= 4)
+                    if (prefix.Length <= ww.PrefixAllowance && suffix.Length <= ww.SuffixAllowance)
                     {
                         return ww;
                     }
                 }
             }
 
-            return string.Empty;
+            return null;
         }
 
         public string ExtractCancelWordDefault(string text)
@@ -212,5 +214,15 @@ namespace ChatdollKit.IO
             throw new NotImplementedException("RecognizeSpeechAsync method should be implemented at the sub class of WakeWordListenerBase");
         }
 #pragma warning restore CS1998
+    }
+
+    [Serializable]
+    public class WakeWord
+    {
+        public string Text;
+        public int PrefixAllowance = 4;
+        public int SuffixAllowance = 4;
+        public string Intent;
+        public RequestType RequestType = RequestType.None;
     }
 }
