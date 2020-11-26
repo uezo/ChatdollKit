@@ -24,9 +24,10 @@ namespace ChatdollKit.Examples.HelloWorld
             = async (r, c, t) => { Debug.LogWarning("RequestProvider.OnErrorAsync is not implemented"); };
 
         // Create request using voice recognition
-        public async Task<Request> GetRequestAsync(User user, Context context, CancellationToken token)
+        public async Task<Request> GetRequestAsync(User user, Context context, CancellationToken token, Request preRequest = null)
         {
-            var request = new Request(RequestType, user);
+            var request = preRequest ?? new Request(RequestType);
+            request.User = user;
 
             // Listen voice
             try

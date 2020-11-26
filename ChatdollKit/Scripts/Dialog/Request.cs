@@ -6,7 +6,7 @@ namespace ChatdollKit.Dialog
 {
     public enum RequestType
     {
-        Voice, Camera, QRCode
+        None, Voice, Camera, QRCode
     }
 
     public enum Priority
@@ -19,7 +19,7 @@ namespace ChatdollKit.Dialog
         public string Id { get; }
         public RequestType Type { get; }
         public DateTime Timestamp { get; }
-        public User User { get; }
+        public User User { get; set; }
         public string Text { get; set; }
         public object Payloads { get; set; }
         public string Intent { get; set; }
@@ -29,12 +29,13 @@ namespace ChatdollKit.Dialog
         public bool IsAdhoc { get; set; }
         public bool IsCanceled { get; set; }
 
-        public Request(RequestType type, User user)
+        public Request(RequestType type)
         {
             Id = Guid.NewGuid().ToString();
             Type = type;
             Timestamp = DateTime.UtcNow;
-            User = user;
+            User = null;
+            Text = string.Empty;
             IntentPriority = Priority.Normal;
             Entities = new Dictionary<string, object>();
             IsAdhoc = false;

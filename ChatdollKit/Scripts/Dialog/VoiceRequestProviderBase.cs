@@ -79,8 +79,14 @@ namespace ChatdollKit.Dialog
 #pragma warning restore CS1998
 
         // Create request using voice recognition
-        public async Task<Request> GetRequestAsync(User user, Context context, CancellationToken token)
+        public async Task<Request> GetRequestAsync(User user, Context context, CancellationToken token, Request preRequest = null)
         {
+            if (preRequest != null && !string.IsNullOrEmpty(preRequest.Text))
+            {
+                preRequest.User = user;
+                return preRequest;
+            }
+
             voiceDetectionThreshold = VoiceDetectionThreshold;
             voiceDetectionMinimumLength = VoiceDetectionMinimumLength;
             silenceDurationToEndRecording = SilenceDurationToEndRecording;
@@ -93,10 +99,8 @@ namespace ChatdollKit.Dialog
 
             StartListening();
 
-            var request = new Request(RequestType, user)
-            {
-                Text = string.Empty
-            };
+            var request = preRequest ?? new Request(RequestType);
+            request.User = user;
 
             try
             {
