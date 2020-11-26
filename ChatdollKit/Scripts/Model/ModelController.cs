@@ -28,7 +28,8 @@ namespace ChatdollKit.Model
         [Header("Animation")]
         public float AnimationFadeLength = 0.5f;
         public float IdleAnimationDefaultDuration = 10.0f;
-        private List<AnimationRequest> idleAnimationRequests = new List<AnimationRequest>();
+        private AnimatedVoiceRequest idleAnimatedVoiceRequest = new AnimatedVoiceRequest();
+        private List<int> idleWeightedIndexes = new List<int>();
         public Func<CancellationToken, Task> IdleFunc;
         private CancellationTokenSource idleTokenSource;
         public string AnimatorDefaultState = "Default";
@@ -94,7 +95,7 @@ namespace ChatdollKit.Model
             _ = SetDefaultFace();
 
             // Start default animation
-            if (idleAnimationRequests.Count == 0)
+            if (idleAnimatedVoiceRequest.AnimatedVoices.Count == 0)
             {
                 // Set idle animation if not registered
                 Debug.LogWarning("Idle animations are not registered. Temprarily use dafault state as idle animation.");
@@ -140,13 +141,15 @@ namespace ChatdollKit.Model
             {
                 while (!token.IsCancellationRequested)
                 {
-                    var i = UnityEngine.Random.Range(0, idleAnimationRequests.Count);
-                    var request = idleAnimationRequests[i];
+                    var i = UnityEngine.Random.Range(0, idleWeightedIndexes.Count);
+                    var animatedVoice = idleAnimatedVoiceRequest.AnimatedVoices[idleWeightedIndexes[i]];
+                    var request = new AnimatedVoiceRequest();
+                    request.AnimatedVoices.Add(animatedVoice);
                     request.DisableBlink = false;
                     request.StartIdlingOnEnd = false;
                     request.StopIdlingOnStart = false;
                     request.StopLayeredAnimations = true;
-                    await Animate(request, token);
+                    await AnimatedSay(request, token);
                 }
             }
             else
@@ -169,23 +172,78 @@ namespace ChatdollKit.Model
         }
 
         // Shortcut method to register idling animation
-        public void AddIdleAnimation(string name, float duration = 0.0f, float fadeLength = -1.0f, float weight = 1.0f, float preGap = 0.0f, bool addToLastRequest = false)
+        public void AddIdleAnimation(string name, float duration = 0.0f, float fadeLength = -1.0f, float blendWeight = 1.0f, float preGap = 0.0f, bool asNewFrame = false, int weight = 1)
         {
-            AddIdleAnimation(name, null, duration, fadeLength, weight, preGap, addToLastRequest);
+            AddIdleAnimation(name, null, duration, fadeLength, blendWeight, preGap, asNewFrame, weight);
         }
 
-        public void AddIdleAnimation(string name, string layerName, float duration = 0.0f, float fadeLength = -1.0f, float weight = 1.0f, float preGap = 0.0f, bool addToLastRequest = false)
+        // Register idling animation
+        public void AddIdleAnimation(string name, string layerName, float duration = 0.0f, float fadeLength = -1.0f, float blendWeight = 1.0f, float preGap = 0.0f, bool asNewFrame = false, int weight = 1)
         {
-            if (addToLastRequest)
+            if (idleAnimatedVoiceRequest.AnimatedVoices.Count == 0)
             {
-                var request = idleAnimationRequests.Last();
-                request.AddAnimation(name, layerName ?? request.BaseLayerName, duration == 0.0f ? IdleAnimationDefaultDuration : duration, fadeLength, weight, preGap, "idle");
+                asNewFrame = true;
             }
-            else
+            idleAnimatedVoiceRequest.AddAnimation(
+                name, layerName ?? idleAnimatedVoiceRequest.BaseLayerName,
+                duration == 0.0f ? IdleAnimationDefaultDuration : duration,
+                fadeLength, blendWeight, preGap, "idle", asNewFrame);
+            AddIdleWeightedIndex(weight, asNewFrame);
+        }
+
+        // Register idling face
+        public void AddIdleFace(string name, float duration = 0.0f, bool defaultOnEnd = true)
+        {
+            idleAnimatedVoiceRequest.AddFace(name, duration, "idle", false);
+            if (defaultOnEnd)
             {
-                var request = new AnimationRequest();
-                request.AddAnimation(name, layerName ?? request.BaseLayerName, duration == 0.0f ? IdleAnimationDefaultDuration : duration, fadeLength, weight, preGap, "idle");
-                idleAnimationRequests.Add(request);
+                idleAnimatedVoiceRequest.AddFace(DefaultFace.Faces[0].Name);
+            }
+        }
+
+        // Register idling voice
+        public void AddIdleVoice(string name, float preGap = 0.0f, float postGap = 0.0f, bool asNewFrame = false, int weight = 1)
+        {
+            if (idleAnimatedVoiceRequest.AnimatedVoices.Count == 0)
+            {
+                asNewFrame = true;
+            }
+            idleAnimatedVoiceRequest.AddVoice(name, preGap, postGap, asNewFrame);
+            AddIdleWeightedIndex(weight, asNewFrame);
+        }
+
+        // Register idling voice Web
+        public void AddIdleVoiceWeb(string url, float preGap = 0.0f, float postGap = 0.0f, string name = null, string text = null, bool asNewFrame = false, int weight = 1)
+        {
+            if (idleAnimatedVoiceRequest.AnimatedVoices.Count == 0)
+            {
+                asNewFrame = true;
+            }
+            idleAnimatedVoiceRequest.AddVoiceWeb(url, preGap, postGap, name, text, asNewFrame);
+            AddIdleWeightedIndex(weight, asNewFrame);
+        }
+
+        // Register idling voice TTS
+        public void AddIdleVoiceTTS(string text, float preGap = 0.0f, float postGap = 0.0f, string name = null, TTSConfiguration ttsConfig = null, bool asNewFrame = false, int weight = 1)
+        {
+            if (idleAnimatedVoiceRequest.AnimatedVoices.Count == 0)
+            {
+                asNewFrame = true;
+            }
+            idleAnimatedVoiceRequest.AddVoiceTTS(text, preGap, postGap, name, ttsConfig, asNewFrame);
+            AddIdleWeightedIndex(weight, asNewFrame);
+        }
+
+        // Add weighted index
+        private void AddIdleWeightedIndex(int weight, bool asNewFrame)
+        {
+            if (asNewFrame)
+            {
+                var index = idleAnimatedVoiceRequest.AnimatedVoices.Count - 1;
+                for (var i = 0; i < weight; i++)
+                {
+                    idleWeightedIndexes.Add(index);
+                }
             }
         }
 
@@ -211,16 +269,27 @@ namespace ChatdollKit.Model
                 {
                     return;
                 }
+
+                Task animationTask = null;
                 if (animatedVoice.Animations != null && animatedVoice.Animations.Count > 0)
                 {
-                    _ = Animate(new AnimationRequest(animatedVoice.Animations, false, false, false, request.StopLayeredAnimations), token);
+                    animationTask = Animate(new AnimationRequest(animatedVoice.Animations, false, false, false, request.StopLayeredAnimations), token);
                 }
                 if (animatedVoice.Faces != null && animatedVoice.Faces.Count > 0)
                 {
                     _ = SetFace(new FaceRequest(animatedVoice.Faces, false));
                 }
-                // Wait for the requested voices end
-                await Say(new VoiceRequest(animatedVoice.Voices, false), token);
+
+                if (animatedVoice.Voices.Count > 0)
+                {
+                    // Wait for the requested voices end
+                    await Say(new VoiceRequest(animatedVoice.Voices, false), token);
+                }
+                else if (animationTask != null)
+                {
+                    // Wait for the requested animations end
+                    await animationTask;
+                }
             }
 
             // Restart idling and reset face
