@@ -12,14 +12,14 @@ namespace ChatdollKit.Dialog
         public string DeviceId { get; }
         public string Name { get; set; }
         public string Nickname { get; set; }
-        public Dictionary<string, object> Data { get; set; }
+        public Dictionary<string, string> Data { get; set; }
         [JsonIgnore]
         public Func<User, Task> saveFunc { get; set; }
 
         public User(string id = null, Func<User, Task> saveFunc = null)
         {
-            Id = id == null ? Guid.NewGuid().ToString() : id;
-            Data = new Dictionary<string, object>();
+            Id = id ?? Guid.NewGuid().ToString();
+            Data = new Dictionary<string, string>();
             this.saveFunc = saveFunc;
         }
 
