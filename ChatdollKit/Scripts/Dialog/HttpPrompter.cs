@@ -1,17 +1,18 @@
-﻿using System;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using ChatdollKit.Model;
 using ChatdollKit.Network;
+using System.Collections.Generic;
 
 namespace ChatdollKit.Dialog
 {
     public class HttpPrompter : MonoBehaviour
     {
         public string PromptUri;
+        private string defaultPromptKey = "DEFAULT_PROMPT_KEY";
         public string PingUri;
-        protected AnimatedVoiceRequest promptAnimatedVoice;
+        protected Dictionary<string, AnimatedVoiceRequest> promptAnimatedVoices = new Dictionary<string, AnimatedVoiceRequest>();
         protected RequestType promptRequestType = RequestType.Voice;
         protected ChatdollHttp httpClient;
         protected ModelController modelController;
@@ -31,12 +32,14 @@ namespace ChatdollKit.Dialog
             httpClient?.Dispose();
         }
 
-        public async Task OnPromptAsync(User user, Context context, CancellationToken token)
+        public async Task OnPromptAsync(Request preRequest, User user, Context context, CancellationToken token)
         {
+            var promptKey = preRequest != null && !string.IsNullOrEmpty(preRequest.Intent) ? preRequest.Intent : defaultPromptKey;
+            var promptAnimatedVoice = promptAnimatedVoices.ContainsKey(promptKey) ? promptAnimatedVoices[promptKey] : null;
             if (promptAnimatedVoice == null)
             {
                 // Update prompt animated voice and request type
-                var httpPromptResponse = await httpClient.PostJsonAsync<HttpPromptResponse>(PromptUri, new HttpPromptRequest(context));
+                var httpPromptResponse = await httpClient.PostJsonAsync<HttpPromptResponse>(PromptUri, new HttpPromptRequest(preRequest, context));
                 if (httpPromptResponse.Response != null)
                 {
                     promptAnimatedVoice = httpPromptResponse.Response.AnimatedVoiceRequest;
@@ -59,22 +62,26 @@ namespace ChatdollKit.Dialog
             if (promptAnimatedVoice != null)
             {
                 await modelController.AnimatedSay(promptAnimatedVoice, token);
+                // Add cache after finish successfully
+                promptAnimatedVoices[promptKey] = promptAnimatedVoice;
             }
         }
 
         public void ResetPrompt()
         {
-            promptAnimatedVoice = null;
+            promptAnimatedVoices.Clear();
             promptRequestType = RequestType.Voice;
         }
 
         // Request message
         private class HttpPromptRequest
         {
+            public Request Request { get; set; }
             public Context Context { get; set; }
 
-            public HttpPromptRequest(Context context)
+            public HttpPromptRequest(Request request, Context context)
             {
+                Request = request;
                 Context = context;
             }
         }
@@ -82,6 +89,7 @@ namespace ChatdollKit.Dialog
         // Response message
         private class HttpPromptResponse
         {
+            public Request Request { get; set; }
             public Context Context { get; set; }
             public Response Response { get; set; }
             public HttpPromptError Error { get; set; }

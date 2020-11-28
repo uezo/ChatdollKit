@@ -58,7 +58,7 @@ namespace ChatdollKit.Examples.HelloWorld
         }
 
         // Model actions for each status
-        public async Task OnPromptAsync(User user, Context context, CancellationToken token)
+        public async Task OnPromptAsync(Request preRequest, User user, Context context, CancellationToken token)
         {
             var request = new AnimatedVoiceRequest(startIdlingOnEnd: false);
             request.AddAnimatedVoice("line-girl1-yobimashita1", "AGIA_Idle_angry_01_hands_on_waist", voicePreGap: 0.5f);

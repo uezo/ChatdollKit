@@ -27,8 +27,8 @@ namespace ChatdollKit
 
         // Actions for each status
 #pragma warning disable CS1998
-        public Func<User, Context, CancellationToken, Task> OnPromptAsync
-            = async (u, c, t) => { Debug.LogWarning("Chatdoll.OnPromptAsync is not implemented"); };
+        public Func<Request, User, Context, CancellationToken, Task> OnPromptAsync
+            = async (r, u, c, t) => { Debug.LogWarning("Chatdoll.OnPromptAsync is not implemented"); };
         public Func<Request, Context, CancellationToken, Task> OnNoIntentAsync
             = async (r, c, t) => { Debug.LogWarning("Chatdoll.OnNoIntentAsync is not implemented"); };
         public Func<Request, Context, CancellationToken, Task> OnErrorAsync
@@ -116,7 +116,7 @@ namespace ChatdollKit
             }
 
             // Request
-            var request = preRequest;
+            Request request = null;
 
             try
             {
@@ -125,7 +125,7 @@ namespace ChatdollKit
                 // Prompt
                 if (!skipPrompt)
                 {
-                    await OnPromptAsync(user, context, token);
+                    await OnPromptAsync(preRequest, user, context, token);
                 }
 
                 // Chat loop. Exit when session ends, canceled or error occures
