@@ -48,6 +48,11 @@ namespace ChatdollKit.Dialog
             // Update data
             context.Data = httpDialogResponse.Context.Data;
 
+            // Update user info
+            request.User.Name = httpDialogResponse.Request.User.Name;
+            request.User.Nickname = httpDialogResponse.Request.User.Nickname;
+            request.User.Data = httpDialogResponse.Request.User.Data;
+
             return httpDialogResponse.Response;
         }
 
