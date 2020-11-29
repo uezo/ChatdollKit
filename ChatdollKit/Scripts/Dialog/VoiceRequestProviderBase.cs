@@ -170,6 +170,7 @@ namespace ChatdollKit.Dialog
             }
             finally
             {
+                StopListening();
                 // Invoke action after recognition
                 await (OnFinishListeningAsync ?? OnFinishListeningDefaultAsync).Invoke(request, context, token);
             }
