@@ -14,6 +14,7 @@ namespace ChatdollKit
     {
         // Conversation
         public bool IsChatting { get; private set; }
+        public bool IsError { get; private set; }
         public IUserStore UserStore { get; private set; }
         public IContextStore ContextStore { get; private set; }
         public IDialogRouter DialogRouter { get; private set; }
@@ -229,6 +230,7 @@ namespace ChatdollKit
                 await ContextStore.DeleteContextAsync(user.Id);
                 if (!token.IsCancellationRequested)
                 {
+                    IsError = true;
                     Debug.LogError($"Error occured in processing chat: {ex.Message}\n{ex.StackTrace}");
                     // Stop running animation and voice then get new token to say error
                     token = GetChatToken();
@@ -237,6 +239,9 @@ namespace ChatdollKit
             }
             finally
             {
+                IsError = false;
+                IsChatting = false;
+
                 if (!token.IsCancellationRequested)
                 {
                     // NOTE: Cancel is triggered not only when just canceled but when invoked another chat session
@@ -250,8 +255,6 @@ namespace ChatdollKit
                     context.Clear();
                     await ContextStore.SaveContextAsync(context);
                 }
-
-                IsChatting = false;
             }
         }
 
