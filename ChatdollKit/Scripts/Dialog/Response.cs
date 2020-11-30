@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using ChatdollKit.Model;
 
 namespace ChatdollKit.Dialog
@@ -12,7 +9,18 @@ namespace ChatdollKit.Dialog
         public string Id { get; }
         public DateTime Timestamp { get; }
         public string Text { get; set; }
-        public AnimatedVoiceRequest AnimatedVoiceRequest { get; set; }
+        public List<AnimatedVoiceRequest> AnimatedVoiceRequests { get; set; }
+        public AnimatedVoiceRequest AnimatedVoiceRequest
+        {
+            get
+            {
+                return AnimatedVoiceRequests[AnimatedVoiceRequests.Count - 1];
+            }
+            set
+            {
+                AnimatedVoiceRequests[AnimatedVoiceRequests.Count - 1] = value;
+            }
+        }
         public virtual object Payloads { get; set; }
 
         public Response(string id)
@@ -20,7 +28,33 @@ namespace ChatdollKit.Dialog
             Id = id;
             Timestamp = DateTime.UtcNow;
             Text = string.Empty;
-            AnimatedVoiceRequest = new AnimatedVoiceRequest();
+            AnimatedVoiceRequests = new List<AnimatedVoiceRequest>();
+            AnimatedVoiceRequests.Add(new AnimatedVoiceRequest());
+        }
+
+        public void AddVoice(string name, float preGap = 0.0f, float postGap = 0.0f, bool asNewFrame = false)
+        {
+            AnimatedVoiceRequest.AddVoice(name, preGap, postGap, asNewFrame);
+        }
+
+        public void AddVoiceWeb(string url, float preGap = 0.0f, float postGap = 0.0f, string name = null, string text = null, bool asNewFrame = false)
+        {
+            AnimatedVoiceRequest.AddVoiceWeb(url, preGap, postGap, name, text);
+        }
+
+        public void AddVoiceTTS(string text, float preGap = 0.0f, float postGap = 0.0f, string name = null, TTSConfiguration ttsConfig = null, bool asNewFrame = false)
+        {
+            AnimatedVoiceRequest.AddVoiceTTS(text, preGap, postGap, name, ttsConfig);
+        }
+
+        public void AddAnimation(string name, string layerName = null, float duration = 0.0f, float fadeLength = -1.0f, float weight = 1.0f, float preGap = 0.0f, string description = null, bool asNewFrame = false)
+        {
+            AnimatedVoiceRequest.AddAnimation(name, layerName, duration, fadeLength, weight, preGap, description, asNewFrame);
+        }
+
+        public void AddFace(string name, float duration = 0.0f, string description = null, bool asNewFrame = false)
+        {
+            AnimatedVoiceRequest.AddFace(name, duration, description);
         }
     }
 }
