@@ -58,6 +58,7 @@ namespace ChatdollKit.Model
         public FaceClipConfiguration FaceClipConfiguration;
         private Dictionary<string, FaceClip> faceClips = new Dictionary<string, FaceClip>();
         private FaceRequest DefaultFace;
+        public int FaceFadeStep = 5;
 
         // History recorder for debug and test
         public ActionHistoryRecorder History;
@@ -611,10 +612,39 @@ namespace ChatdollKit.Model
                 History?.Add(face);
                 if (faceClips.ContainsKey(face.Name))
                 {
-                    foreach (var blendShapeValue in faceClips[face.Name].Values)
+                    if (FaceFadeStep == 0)
                     {
+                        // Change immediately when step is 0
+                        foreach (var blendShapeValue in faceClips[face.Name].Values)
+                        {
+                            SkinnedMeshRenderer.SetBlendShapeWeight(blendShapeValue.Index, blendShapeValue.Weight);
+                        }
+                    }
+                    else
+                    {
+                        // Calculate the weights to be added at each steps
+                        var weightsForEachSteps = new Dictionary<int, List<float>>();
+                        foreach (var blendShapeValue in faceClips[face.Name].Values)
+                        {
+                            var currentWeight = SkinnedMeshRenderer.GetBlendShapeWeight(blendShapeValue.Index);
+                            weightsForEachSteps.Add(blendShapeValue.Index, new List<float>());
+                            var weightToAdd = (blendShapeValue.Weight - currentWeight) / FaceFadeStep;
+                            for (var i = 0; i < FaceFadeStep - 1; i++)
+                            {
+                                weightsForEachSteps[blendShapeValue.Index].Add(currentWeight + weightToAdd * (i + 1));
+                            }
+                            weightsForEachSteps[blendShapeValue.Index].Add(blendShapeValue.Weight);
+                        }
+
                         // Apply weights
-                        SkinnedMeshRenderer.SetBlendShapeWeight(blendShapeValue.Index, blendShapeValue.Weight);
+                        for (var i = 0; i < FaceFadeStep; i++)
+                        {
+                            foreach (var blendShapeValue in faceClips[face.Name].Values)
+                            {
+                                SkinnedMeshRenderer.SetBlendShapeWeight(blendShapeValue.Index, weightsForEachSteps[blendShapeValue.Index][i]);
+                            }
+                            await Task.Delay(10);
+                        }
                     }
                     await Task.Delay((int)(face.Duration * 1000));
                 }
