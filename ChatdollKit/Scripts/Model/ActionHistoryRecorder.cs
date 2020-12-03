@@ -47,6 +47,23 @@ namespace ChatdollKit.Model
             }
         }
 
+        public ActionHistory GetHistoryByDescription(string description)
+        {
+            return GetHistoriesByDescription(description).First();
+        }
+
+        public List<ActionHistory> GetHistoriesByDescription(string description)
+        {
+            return Histories.Where(h => h.Description == description).ToList();
+        }
+
+        public int GetGapOfHistories(string description1, string description2, bool abs = true)
+        {
+            var history1 = GetHistoriesByDescription(description1).First();
+            var history2 = GetHistoriesByDescription(description2).First();
+            var gap = (history2.Timestamp - history1.Timestamp).TotalMilliseconds;
+            return abs ? Math.Abs((int)gap) : (int)gap;
+        }
     }
 
     public class ActionHistory
@@ -72,14 +89,17 @@ namespace ChatdollKit.Model
             if (action is Voice)
             {
                 ActionType = "voice";
+                Description = ((Voice)action).Description;
             }
             else if (action is Animation)
             {
                 ActionType = "animation";
+                Description = ((Animation)action).Description;
             }
             else if (action is FaceExpression)
             {
                 ActionType = "face";
+                Description = ((FaceExpression)action).Description;
             }
             else if (action is string)
             {
