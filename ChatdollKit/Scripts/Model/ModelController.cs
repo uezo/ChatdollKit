@@ -213,7 +213,7 @@ namespace ChatdollKit.Model
             {
                 if (token.IsCancellationRequested)
                 {
-                    return;
+                    break;
                 }
 
                 Task animationTask = null;
