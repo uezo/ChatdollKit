@@ -32,19 +32,19 @@ namespace ChatdollKit.Dialog
             AnimatedVoiceRequests.Add(new AnimatedVoiceRequest());
         }
 
-        public void AddVoice(string name, float preGap = 0.0f, float postGap = 0.0f, bool asNewFrame = false)
+        public void AddVoice(string name, float preGap = 0.0f, float postGap = 0.0f, string description = null, bool asNewFrame = false)
         {
-            AnimatedVoiceRequest.AddVoice(name, preGap, postGap, asNewFrame);
+            AnimatedVoiceRequest.AddVoice(name, preGap, postGap, description, asNewFrame);
         }
 
-        public void AddVoiceWeb(string url, float preGap = 0.0f, float postGap = 0.0f, string name = null, string text = null, bool asNewFrame = false)
+        public void AddVoiceWeb(string url, float preGap = 0.0f, float postGap = 0.0f, string name = null, string text = null, string description = null, bool asNewFrame = false)
         {
-            AnimatedVoiceRequest.AddVoiceWeb(url, preGap, postGap, name, text);
+            AnimatedVoiceRequest.AddVoiceWeb(url, preGap, postGap, name, text, description, asNewFrame);
         }
 
-        public void AddVoiceTTS(string text, float preGap = 0.0f, float postGap = 0.0f, string name = null, TTSConfiguration ttsConfig = null, bool asNewFrame = false)
+        public void AddVoiceTTS(string text, float preGap = 0.0f, float postGap = 0.0f, string name = null, TTSConfiguration ttsConfig = null, string description = null, bool asNewFrame = false)
         {
-            AnimatedVoiceRequest.AddVoiceTTS(text, preGap, postGap, name, ttsConfig);
+            AnimatedVoiceRequest.AddVoiceTTS(text, preGap, postGap, name, ttsConfig, description, asNewFrame);
         }
 
         public void AddAnimation(string name, string layerName = null, float duration = 0.0f, float fadeLength = -1.0f, float weight = 1.0f, float preGap = 0.0f, string description = null, bool asNewFrame = false)

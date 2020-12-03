@@ -18,6 +18,7 @@ namespace ChatdollKit.Model
         public TTSConfiguration TTSConfig { get; set; }
         public VoiceSource Source { get; set; }
         public bool UseCache { get; set; }
+        public string Description { get; set; }
         public string CacheKey
         {
             get
@@ -26,7 +27,7 @@ namespace ChatdollKit.Model
             }
         }
 
-        public Voice(string name, float preGap, float postGap, string text, string url, TTSConfiguration ttsConfig, VoiceSource source, bool useCache)
+        public Voice(string name, float preGap, float postGap, string text, string url, TTSConfiguration ttsConfig, VoiceSource source, bool useCache, string description)
         {
             Name = name;
             PreGap = preGap;
@@ -36,6 +37,7 @@ namespace ChatdollKit.Model
             TTSConfig = ttsConfig;
             Source = source;
             UseCache = useCache;
+            Description = description;
         }
 
         public object GetTTSParam(string key)
