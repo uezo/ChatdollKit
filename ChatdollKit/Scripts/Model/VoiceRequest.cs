@@ -23,19 +23,19 @@ namespace ChatdollKit.Model
             }
         }
 
-        public void AddVoice(string name, float preGap = 0.0f, float postGap = 0.0f, string text = null, string url = null, TTSConfiguration ttsConfig = null, VoiceSource source = VoiceSource.Local)
+        public void AddVoice(string name, float preGap = 0.0f, float postGap = 0.0f, string text = null, string url = null, TTSConfiguration ttsConfig = null, VoiceSource source = VoiceSource.Local, string description = null)
         {
-            Voices.Add(new Voice(name, preGap, postGap, text, url, ttsConfig, source, false));
+            Voices.Add(new Voice(name, preGap, postGap, text ?? string.Empty, url ?? string.Empty, ttsConfig, source, false, description));
         }
 
-        public void AddVoiceWeb(string url, float preGap = 0.0f, float postGap = 0.0f, string name = null, string text = null, bool useCache = true)
+        public void AddVoiceWeb(string url, float preGap = 0.0f, float postGap = 0.0f, string name = null, string text = null, bool useCache = true, string description = null)
         {
-            Voices.Add(new Voice(name ?? string.Empty, preGap, postGap, text, url, null, VoiceSource.Web, useCache));
+            Voices.Add(new Voice(name ?? string.Empty, preGap, postGap, text ?? string.Empty, url ?? string.Empty, null, VoiceSource.Web, useCache, description));
         }
 
-        public void AddVoiceTTS(string text, float preGap = 0.0f, float postGap = 0.0f, string name = null, TTSConfiguration ttsConfig = null, bool useCache = true)
+        public void AddVoiceTTS(string text, float preGap = 0.0f, float postGap = 0.0f, string name = null, TTSConfiguration ttsConfig = null, bool useCache = true, string description = null)
         {
-            Voices.Add(new Voice(name ?? string.Empty, preGap, postGap, text, string.Empty, ttsConfig, VoiceSource.TTS, useCache));
+            Voices.Add(new Voice(name ?? string.Empty, preGap, postGap, text, string.Empty, ttsConfig, VoiceSource.TTS, useCache, description));
         }
     }
 }

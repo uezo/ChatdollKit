@@ -21,8 +21,6 @@ namespace ChatdollKit.Model
             AnimatedVoices = animatedVoice ?? new List<AnimatedVoice>();
             DisableBlink = disableBlink;
             StartIdlingOnEnd = startIdlingOnEnd;
-            DisableBlink = disableBlink;
-            StartIdlingOnEnd = startIdlingOnEnd;
             StopIdlingOnStart = stopIdlingOnStart;
             StopLayeredAnimations = stopLayeredAnimations;
             BaseLayerName = baseLayerName ?? string.Empty;
@@ -42,31 +40,31 @@ namespace ChatdollKit.Model
             }
         }
 
-        public void AddVoice(string name, float preGap = 0.0f, float postGap = 0.0f, bool asNewFrame = false)
+        public void AddVoice(string name, float preGap = 0.0f, float postGap = 0.0f, string description = null, bool asNewFrame = false)
         {
             if (asNewFrame || AnimatedVoices.Count == 0)
             {
                 CreateNewFrame();
             }
-            AnimatedVoices.Last().AddVoice(name, preGap, postGap);
+            AnimatedVoices.Last().AddVoice(name, preGap, postGap, description: description);
         }
 
-        public void AddVoiceWeb(string url, float preGap = 0.0f, float postGap = 0.0f, string name = null, string text = null, bool asNewFrame = false)
+        public void AddVoiceWeb(string url, float preGap = 0.0f, float postGap = 0.0f, string name = null, string text = null, string description = null, bool asNewFrame = false)
         {
             if (asNewFrame || AnimatedVoices.Count == 0)
             {
                 CreateNewFrame();
             }
-            AnimatedVoices.Last().AddVoiceWeb(url, preGap, postGap, name, text);
+            AnimatedVoices.Last().AddVoiceWeb(url, preGap, postGap, name, text, description: description);
         }
 
-        public void AddVoiceTTS(string text, float preGap = 0.0f, float postGap = 0.0f, string name = null, TTSConfiguration ttsConfig = null, bool asNewFrame = false)
+        public void AddVoiceTTS(string text, float preGap = 0.0f, float postGap = 0.0f, string name = null, TTSConfiguration ttsConfig = null, string description = null, bool asNewFrame = false)
         {
             if (asNewFrame || AnimatedVoices.Count == 0)
             {
                 CreateNewFrame();
             }
-            AnimatedVoices.Last().AddVoiceTTS(text, preGap, postGap, name, ttsConfig);
+            AnimatedVoices.Last().AddVoiceTTS(text, preGap, postGap, name, ttsConfig, description: description);
         }
 
         public void AddAnimation(string name, float duration = 0.0f, float fadeLength = -1.0f, float weight = 1.0f, float preGap = 0.0f, string description = null, bool asNewFrame = false)
