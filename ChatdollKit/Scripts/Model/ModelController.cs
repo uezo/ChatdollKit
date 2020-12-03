@@ -48,7 +48,7 @@ namespace ChatdollKit.Model
         private float blinkIntervalToOpen;
         private float blinkWeight = 0.0f;
         private float blinkVelocity = 0.0f;
-        private bool isBlinkEnabled = false;
+        public bool IsBlinkEnabled { get; private set; } = false;
         private Action blinkAction;
         private CancellationTokenSource blinkTokenSource;
 
@@ -698,7 +698,7 @@ namespace ChatdollKit.Model
         public async Task StartBlinkAsync(bool startNew = false)
         {
             // Return with doing nothing when already blinking
-            if (isBlinkEnabled && startNew == false)
+            if (IsBlinkEnabled && startNew == false)
             {
                 return;
             }
@@ -713,7 +713,7 @@ namespace ChatdollKit.Model
             SkinnedMeshRenderer.SetBlendShapeWeight(blinkShapeIndex, 0);
 
             // Enable blink
-            isBlinkEnabled = true;
+            IsBlinkEnabled = true;
 
             if (!startNew)
             {
@@ -728,6 +728,7 @@ namespace ChatdollKit.Model
                 {
                     break;
                 }
+
                 // Close eyes
                 blinkIntervalToClose = UnityEngine.Random.Range(MinBlinkIntervalToClose, MaxBlinkIntervalToClose);
                 await Task.Delay((int)(blinkIntervalToClose * 1000));
@@ -743,14 +744,14 @@ namespace ChatdollKit.Model
         public void StopBlink()
         {
             History?.Add("Stop blink");
-            isBlinkEnabled = false;
+            IsBlinkEnabled = false;
             SkinnedMeshRenderer.SetBlendShapeWeight(blinkShapeIndex, 0);
         }
 
         // Action for closing eyes called on every updates
         private void CloseEyesOnUpdate()
         {
-            if (!isBlinkEnabled)
+            if (!IsBlinkEnabled)
             {
                 return;
             }
@@ -761,7 +762,7 @@ namespace ChatdollKit.Model
         // Action for opening eyes called on every updates
         private void OpenEyesOnUpdate()
         {
-            if (!isBlinkEnabled)
+            if (!IsBlinkEnabled)
             {
                 return;
             }
