@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
-using Newtonsoft.Json;
-
 
 namespace ChatdollKit.Model
 {
@@ -258,30 +255,6 @@ namespace ChatdollKit.Model
             {
                 _ = StartBlinkAsync();
             }
-        }
-
-        // AnimatedSay from JSON file
-        public async Task AnimatedSay(string filePath, CancellationToken token)
-        {
-            AnimatedVoiceRequest animatedVoiceRequest;
-
-            try
-            {
-                var jsonString = string.Empty;
-                using (var reader = File.OpenText(filePath))
-                {
-                    jsonString = await reader.ReadToEndAsync();
-                }
-
-                animatedVoiceRequest = JsonConvert.DeserializeObject<AnimatedVoiceRequest>(jsonString);
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"Error occured in AnimatedSay from file {filePath}: {ex.Message}\n{ex.StackTrace}");
-                return;
-            }
-
-            await AnimatedSay(animatedVoiceRequest, token);
         }
 
         // Speak one phrase
