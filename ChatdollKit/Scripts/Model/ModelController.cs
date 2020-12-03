@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+using Newtonsoft.Json;
+
 
 namespace ChatdollKit.Model
 {
@@ -45,7 +48,7 @@ namespace ChatdollKit.Model
         private float blinkIntervalToOpen;
         private float blinkWeight = 0.0f;
         private float blinkVelocity = 0.0f;
-        public bool IsBlinkEnabled { get; private set; } = false;
+        private bool isBlinkEnabled = false;
         private Action blinkAction;
         private CancellationTokenSource blinkTokenSource;
 
@@ -213,7 +216,7 @@ namespace ChatdollKit.Model
             {
                 if (token.IsCancellationRequested)
                 {
-                    break;
+                    return;
                 }
 
                 Task animationTask = null;
@@ -255,6 +258,30 @@ namespace ChatdollKit.Model
             {
                 _ = StartBlinkAsync();
             }
+        }
+
+        // AnimatedSay from JSON file
+        public async Task AnimatedSay(string filePath, CancellationToken token)
+        {
+            AnimatedVoiceRequest animatedVoiceRequest;
+
+            try
+            {
+                var jsonString = string.Empty;
+                using (var reader = File.OpenText(filePath))
+                {
+                    jsonString = await reader.ReadToEndAsync();
+                }
+
+                animatedVoiceRequest = JsonConvert.DeserializeObject<AnimatedVoiceRequest>(jsonString);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Error occured in AnimatedSay from file {filePath}: {ex.Message}\n{ex.StackTrace}");
+                return;
+            }
+
+            await AnimatedSay(animatedVoiceRequest, token);
         }
 
         // Speak one phrase
@@ -671,7 +698,7 @@ namespace ChatdollKit.Model
         public async Task StartBlinkAsync(bool startNew = false)
         {
             // Return with doing nothing when already blinking
-            if (IsBlinkEnabled && startNew == false)
+            if (isBlinkEnabled && startNew == false)
             {
                 return;
             }
@@ -686,7 +713,7 @@ namespace ChatdollKit.Model
             SkinnedMeshRenderer.SetBlendShapeWeight(blinkShapeIndex, 0);
 
             // Enable blink
-            IsBlinkEnabled = true;
+            isBlinkEnabled = true;
 
             if (!startNew)
             {
@@ -701,7 +728,6 @@ namespace ChatdollKit.Model
                 {
                     break;
                 }
-
                 // Close eyes
                 blinkIntervalToClose = UnityEngine.Random.Range(MinBlinkIntervalToClose, MaxBlinkIntervalToClose);
                 await Task.Delay((int)(blinkIntervalToClose * 1000));
@@ -717,14 +743,14 @@ namespace ChatdollKit.Model
         public void StopBlink()
         {
             History?.Add("Stop blink");
-            IsBlinkEnabled = false;
+            isBlinkEnabled = false;
             SkinnedMeshRenderer.SetBlendShapeWeight(blinkShapeIndex, 0);
         }
 
         // Action for closing eyes called on every updates
         private void CloseEyesOnUpdate()
         {
-            if (!IsBlinkEnabled)
+            if (!isBlinkEnabled)
             {
                 return;
             }
@@ -735,7 +761,7 @@ namespace ChatdollKit.Model
         // Action for opening eyes called on every updates
         private void OpenEyesOnUpdate()
         {
-            if (!IsBlinkEnabled)
+            if (!isBlinkEnabled)
             {
                 return;
             }
