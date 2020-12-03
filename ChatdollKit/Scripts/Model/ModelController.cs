@@ -422,7 +422,7 @@ namespace ChatdollKit.Model
         }
 
         // Get registered TTS Function by name
-        public Func<Voice, CancellationToken, Task<AudioClip>> GetTTSFunction(string name)
+        private Func<Voice, CancellationToken, Task<AudioClip>> GetTTSFunction(string name)
         {
             if (!string.IsNullOrEmpty(name) && TextToSpeechFunctions.ContainsKey(name))
             {
@@ -442,7 +442,7 @@ namespace ChatdollKit.Model
         }
 
         // Replace Japanese Dakuten from resource files
-        public string ReplaceDakuten(string value)
+        private string ReplaceDakuten(string value)
         {
             var ret = value;
             var dt = "゙";
@@ -515,7 +515,7 @@ namespace ChatdollKit.Model
             }
         }
 
-        public async Task PlayAnimations(List<Animation> animations, string layerName, CancellationToken token)
+        private async Task PlayAnimations(List<Animation> animations, string layerName, CancellationToken token)
         {
             var layerIndex = layerName == string.Empty ? 0 : animator.GetLayerIndex(layerName);
             foreach (var a in animations)
@@ -549,7 +549,7 @@ namespace ChatdollKit.Model
             }
         }
 
-        public void ResetLayers(List<string> excludeLayerNames)
+        private void ResetLayers(List<string> excludeLayerNames)
         {
             for (var i = 0; i < animator.layerCount; i++)
             {
@@ -652,7 +652,7 @@ namespace ChatdollKit.Model
         }
 
         // Load faces from config
-        public void LoadFaces()
+        private void LoadFaces()
         {
             if (FaceClipConfiguration == null)
             {
