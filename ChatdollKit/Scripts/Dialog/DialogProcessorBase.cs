@@ -56,7 +56,7 @@ namespace ChatdollKit.Dialog
 
         public virtual async Task ShowWaitingAnimationAsync(Response response, Request request, Context context, CancellationToken token)
         {
-            if (request != null)
+            if (response != null)
             {
                 await ShowResponseAsync(response, request, context, token);
             }
