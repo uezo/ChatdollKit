@@ -61,9 +61,11 @@ namespace ChatdollKit.Model
 
         protected async Task WaitDownloadCancellable(Task<AudioClip> downloadTask, CancellationToken cancellationToken)
         {
+            // NOTE: downloadTask continues (= IsLoading() is true) after cancel because it doesn't have cancellation token
+
             if (cancellationToken.IsCancellationRequested) { return; };
 
-            var cancellableTask = Task.Delay((Timeout + 1) * 1000, cancellationToken);
+            var cancellableTask = Task.Delay(Timeout * 1000, cancellationToken);
             await Task.WhenAny(downloadTask, cancellableTask);  // WhenAny doesn't throw TaskCanceledException
         }
 
