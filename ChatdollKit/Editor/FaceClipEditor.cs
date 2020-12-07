@@ -376,6 +376,10 @@ public class FaceClipEditor : Editor
 
         for (var i = 0; i < skinnedMeshRenderers.Length; i++)
         {
+            if (skinnedMeshRenderers[i].sharedMesh == null)
+            {
+                continue;
+            }
             var temp = GetVisemeTargetShapeKeyIndexes(skinnedMeshRenderers[i].sharedMesh, visemeNames, IsVRM);
             if (temp == null) continue;
             var configuredCount = temp.Where(v => v >= 0).Count();
