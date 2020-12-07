@@ -14,12 +14,11 @@ namespace ChatdollKit.Dialog
         public string PingUri;
         protected Dictionary<string, AnimatedVoiceRequest> promptAnimatedVoices = new Dictionary<string, AnimatedVoiceRequest>();
         protected RequestType promptRequestType = RequestType.Voice;
-        protected ChatdollHttp httpClient;
+        protected ChatdollHttp httpClient = new ChatdollHttp();
         protected ModelController modelController;
 
         protected void Awake()
         {
-            httpClient = new ChatdollHttp();
             modelController = gameObject.GetComponent<ModelController>();
             if (modelController == null)
             {
