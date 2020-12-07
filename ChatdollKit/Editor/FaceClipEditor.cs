@@ -240,6 +240,10 @@ public class FaceClipEditor : Editor
 
         // Create and set face configuration
         var faceClipConfiguration = CreateInstance<FaceClipConfiguration>();
+        if (!AssetDatabase.IsValidFolder("Assets/Resources"))
+        {
+            AssetDatabase.CreateFolder("Assets", "Resources");
+        }
         AssetDatabase.CreateAsset(
             faceClipConfiguration,
             $"Assets/Resources/Faces-{modelController.gameObject.name}-{DateTime.Now.ToString("yyyyMMddHHmmSS")}.asset");
@@ -372,6 +376,10 @@ public class FaceClipEditor : Editor
 
         for (var i = 0; i < skinnedMeshRenderers.Length; i++)
         {
+            if (skinnedMeshRenderers[i].sharedMesh == null)
+            {
+                continue;
+            }
             var temp = GetVisemeTargetShapeKeyIndexes(skinnedMeshRenderers[i].sharedMesh, visemeNames, IsVRM);
             if (temp == null) continue;
             var configuredCount = temp.Where(v => v >= 0).Count();
