@@ -23,6 +23,10 @@ namespace ChatdollKit.IO
         public bool IsEnabled = true;
         public bool IsUpdatedOnThisFrame { get; private set; }
 
+        // Microphone device
+        public string DeviceName;
+        private string listeningDeviceName;
+
         // Runtime configurations
         public int SamplingFrequency = 16000;
 
@@ -76,7 +80,7 @@ namespace ChatdollKit.IO
             try
             {
                 // Get position
-                var currentPosition = Microphone.GetPosition(null);
+                var currentPosition = Microphone.GetPosition(listeningDeviceName);
                 if (currentPosition < 0 || previousPosition == currentPosition)
                 {
                     return;
@@ -122,12 +126,12 @@ namespace ChatdollKit.IO
         public void StartListening()
         {
             // (Re)start microphone
-            if (Microphone.IsRecording(null))
+            if (Microphone.IsRecording(listeningDeviceName))
             {
-                Microphone.End(null);
+                Microphone.End(listeningDeviceName);
             }
-            microphoneInput = Microphone.Start(null, true, 1, SamplingFrequency);
-
+            listeningDeviceName = DeviceName == string.Empty ? null : DeviceName;
+            microphoneInput = Microphone.Start(listeningDeviceName, true, 1, SamplingFrequency);
             // Initialize data and status
             samplingData = new float[microphoneInput.samples * microphoneInput.channels];
             previousPosition = 0;
@@ -139,7 +143,7 @@ namespace ChatdollKit.IO
             IsListening = false;
 
             // Stop microphone
-            Microphone.End(null);
+            Microphone.End(listeningDeviceName);
 
             // Clear data
             if (samplingData != null)
