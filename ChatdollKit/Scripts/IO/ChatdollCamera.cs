@@ -62,10 +62,7 @@ namespace ChatdollKit.IO
                 Permission.RequestUserPermission(Permission.Camera);
             }
 #endif
-        }
 
-        private void Start()
-        {
             backgroundPanel = gameObject.GetComponentInChildren<Image>(true)?.gameObject;
             if (backgroundPanel == null)
             {

@@ -8,13 +8,7 @@ namespace ChatdollKit.Dialog
     public class HttpDialogProcessor : DialogProcessorBase
     {
         public string DialogUri;
-        protected ChatdollHttp httpClient;
-
-        protected override void Awake()
-        {
-            base.Awake();
-            httpClient = new ChatdollHttp();
-        }
+        protected ChatdollHttp httpClient = new ChatdollHttp();
 
         private void OnDestroy()
         {

@@ -14,9 +14,13 @@ namespace ChatdollKit.Dialog
 
         private ChatdollCamera chatdollCamera;
 
-        private void Start()
+        private void Awake()
         {
-            chatdollCamera = GameObject.Find("ChatdollCamera").GetComponent<ChatdollCamera>();
+            chatdollCamera = GameObject.Find("ChatdollCamera")?.GetComponent<ChatdollCamera>();
+            if (chatdollCamera == null)
+            {
+                Debug.LogError("ChatdollCamera not found. CameraRequestProvider doesn't work.");
+            }
         }
 
         // Create request using voice recognition

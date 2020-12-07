@@ -11,12 +11,6 @@ namespace ChatdollKit.Dialog
     {
         protected Dictionary<string, IDialogProcessor> intentResolver = new Dictionary<string, IDialogProcessor>();
         protected Dictionary<string, IDialogProcessor> topicResolver = new Dictionary<string, IDialogProcessor>();
-        protected ModelController modelController;
-
-        protected virtual void Awake()
-        {
-            modelController = gameObject.GetComponent<ModelController>();
-        }
 
         public virtual void Configure()
         {
