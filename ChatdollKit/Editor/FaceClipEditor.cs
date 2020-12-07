@@ -240,6 +240,10 @@ public class FaceClipEditor : Editor
 
         // Create and set face configuration
         var faceClipConfiguration = CreateInstance<FaceClipConfiguration>();
+        if (!AssetDatabase.IsValidFolder("Assets/Resources"))
+        {
+            AssetDatabase.CreateFolder("Assets", "Resources");
+        }
         AssetDatabase.CreateAsset(
             faceClipConfiguration,
             $"Assets/Resources/Faces-{modelController.gameObject.name}-{DateTime.Now.ToString("yyyyMMddHHmmSS")}.asset");
