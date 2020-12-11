@@ -136,9 +136,7 @@ namespace ChatdollKit.IO
                 Debug.Log($"Recognized(WakeWordListener): {recognizedText}");
             }
 
-            // これだと「妹ちゃん」の後が長すぎるから認識されない
             var extractedWakeWord = (ExtractWakeWord ?? ExtractWakeWordDefault).Invoke(recognizedText);
-
             if (extractedWakeWord != null)
             {
                 try
