@@ -18,7 +18,7 @@ namespace ChatdollKit.IO
         public Func<string, WakeWord> ExtractWakeWord;
         public Func<string, string> ExtractCancelWord;
         public Func<string, Task> OnRecognizedAsync;
-        public Func<WakeWord, string, Task> OnWakeAsync;
+        public Func<WakeWord, Task> OnWakeAsync;
         public Func<Task> OnCancelAsync;
         public bool AutoStart = true;
 
@@ -82,7 +82,7 @@ namespace ChatdollKit.IO
                 {
                     Debug.LogError("OnWakeAsync must be set");
 #pragma warning disable CS1998
-                    OnWakeAsync = async (ww, text) => { Debug.LogWarning("Nothing is invoked by wakeword. Set Func to OnWakeAsync."); };
+                    OnWakeAsync = async (ww) => { Debug.LogWarning("Nothing is invoked by wakeword. Set Func to OnWakeAsync."); };
 #pragma warning restore CS1998
                 }
 
@@ -141,7 +141,7 @@ namespace ChatdollKit.IO
             {
                 try
                 {
-                    await OnWakeAsync(extractedWakeWord, recognizedText);
+                    await OnWakeAsync(extractedWakeWord);
                 }
                 catch (Exception ex)
                 {
@@ -180,7 +180,7 @@ namespace ChatdollKit.IO
 
                     if (prefix.Length <= ww.PrefixAllowance && suffix.Length <= ww.SuffixAllowance)
                     {
-                        return ww;
+                        return ww.CloneWithRecognizedText(text);
                     }
                 }
             }
@@ -222,5 +222,34 @@ namespace ChatdollKit.IO
         public int SuffixAllowance = 4;
         public string Intent;
         public RequestType RequestType = RequestType.None;
+        public int InlineRequestMinimumLength = 0;
+        public string RecognizedText { get; private set; }
+        public string InlineRequestText { get; private set; }
+
+        public WakeWord CloneWithRecognizedText(string recognizedText)
+        {
+            var ww = new WakeWord
+            {
+                Text = Text,
+                PrefixAllowance = PrefixAllowance,
+                SuffixAllowance = SuffixAllowance,
+                Intent = Intent,
+                RequestType = RequestType,
+                InlineRequestMinimumLength = InlineRequestMinimumLength,
+                RecognizedText = recognizedText,
+                InlineRequestText = string.Empty
+            };
+
+            if (InlineRequestMinimumLength > 0 && RecognizedText != null)
+            {
+                var requestText = RecognizedText.Substring(RecognizedText.IndexOf(Text) + Text.Length);
+                if (requestText.Length >= InlineRequestMinimumLength)
+                {
+                    InlineRequestText = requestText;
+                }
+            }
+
+            return ww;
+        }
     }
 }
