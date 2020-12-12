@@ -15,16 +15,7 @@ namespace ChatdollKit.Dialog
         public string CameraCaption;
         public int SelfTimerSeconds = 3;
 
-        private ChatdollCamera chatdollCamera;
-
-        private void Awake()
-        {
-            chatdollCamera = GameObject.Find("ChatdollCamera")?.GetComponent<ChatdollCamera>();
-            if (chatdollCamera == null)
-            {
-                Debug.LogError("ChatdollCamera not found. CameraRequestProvider doesn't work.");
-            }
-        }
+        public ChatdollCamera ChatdollCamera;
 
         // Create request using voice recognition
         public async Task<Request> GetRequestAsync(User user, Context context, CancellationToken token, Request preRequest = null)
@@ -34,13 +25,13 @@ namespace ChatdollKit.Dialog
 
             var payloads = new List<Texture2D>();
 
-            if (chatdollCamera != null)
+            if (ChatdollCamera != null)
             {
-                payloads.Add(await chatdollCamera.CaptureTextureWithTimerAsync(CameraCaption, SelfTimerSeconds, token));
+                payloads.Add(await ChatdollCamera.CaptureTextureWithTimerAsync(CameraCaption, SelfTimerSeconds, token));
             }
             else
             {
-                Debug.LogWarning("ChatdollCamera is not found");
+                Debug.LogError("ChatdollCamera is not set to CameraRequestProvider");
             }
 
             request.Payloads = payloads;
