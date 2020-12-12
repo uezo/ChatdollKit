@@ -12,16 +12,7 @@ namespace ChatdollKit.Dialog
         // This provides decoded QRCode data
         public RequestType RequestType { get; } = RequestType.QRCode;
 
-        private ChatdollCamera chatdollCamera;
-
-        private void Awake()
-        {
-            chatdollCamera = GameObject.Find("ChatdollCamera")?.GetComponent<ChatdollCamera>();
-            if (chatdollCamera == null)
-            {
-                Debug.LogError("ChatdollCamera not found. CameraRequestProvider doesn't work.");
-            }
-        }
+        public ChatdollCamera ChatdollCamera;
 
         // Create request using voice recognition
         public async Task<Request> GetRequestAsync(User user, Context context, CancellationToken token, Request preRequest = null)
@@ -31,13 +22,13 @@ namespace ChatdollKit.Dialog
 
             var payloads = new List<string>();
 
-            if (chatdollCamera != null)
+            if (ChatdollCamera != null)
             {
-                payloads.Add(await chatdollCamera.ReadCodeAsync(token));
+                payloads.Add(await ChatdollCamera.ReadCodeAsync(token));
             }
             else
             {
-                Debug.LogWarning("ChatdollCamera is not found");
+                Debug.LogWarning("ChatdollCamera is not set to QRCodeRequestProvider");
             }
 
             request.Payloads = payloads;
