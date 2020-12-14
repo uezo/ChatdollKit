@@ -10,7 +10,7 @@ namespace ChatdollKit.Extension.Gatebox
         // LED Colors for each status
         [Header("LED Colors for each status")]
         public Color DefaultColor = Color.cyan;
-        public Color ListeningColor = Color.magenta;
+        public Color ListeningColor = Color.green;
         public Color ChattingColor = Color.white;
         public Color ErrorColor = Color.red;
 
