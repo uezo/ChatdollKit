@@ -125,7 +125,8 @@ namespace ChatdollKit.Extension.Gatebox
 
         protected override string GetUserId()
         {
-            return GateboxDevices.GetCustomerID() ?? base.GetUserId();
+            var gateboxCustomerId = GateboxDevices.GetCustomerID();
+            return !string.IsNullOrEmpty(gateboxCustomerId) ? gateboxCustomerId : base.GetUserId();
         }
 
         protected virtual void SetLEDColors()
