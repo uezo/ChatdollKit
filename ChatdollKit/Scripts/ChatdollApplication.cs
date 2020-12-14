@@ -20,6 +20,10 @@ namespace ChatdollKit
         protected AnimatedVoiceRequest PromptAnimatedVoiceRequest = new AnimatedVoiceRequest() { StartIdlingOnEnd = false };
         protected AnimatedVoiceRequest ErrorAnimatedVoiceRequest = new AnimatedVoiceRequest();
 
+        [Header("Wake Word and Cancel Word")]
+        public string WakeWord;
+        public string CancelWord;
+
         [Header("Prompt")]
         public string PromptVoice;
         public VoiceSource PromptVoiceType;
@@ -89,6 +93,24 @@ namespace ChatdollKit
             // Wakeword Listener
             if (wakeWordListener != null)
             {
+                // Register wakeword
+                if (wakeWordListener.WakeWords.Count == 0)
+                {
+                    if (!string.IsNullOrEmpty(WakeWord))
+                    {
+                        wakeWordListener.WakeWords.Add(new WakeWord() { Text = WakeWord, Intent = string.Empty });
+                    }
+                }
+
+                // Register cancel word
+                if (wakeWordListener.CancelWords.Count == 0)
+                {
+                    if (!string.IsNullOrEmpty(CancelWord))
+                    {
+                        wakeWordListener.CancelWords.Add(CancelWord);
+                    }
+                }
+
                 // Awaken
                 wakeWordListener.OnWakeAsync = async (wakeword) =>
                 {
@@ -123,9 +145,16 @@ namespace ChatdollKit
             // Voice Request Provider
             if (voiceRequestProvider != null)
             {
+                // Message window
                 if (voiceRequestProvider.MessageWindow == null)
                 {
                     voiceRequestProvider.MessageWindow = MessageWindow;
+                }
+
+                // Register cancel word to request provider
+                if (voiceRequestProvider.CancelWords.Count == 0)
+                {
+                    voiceRequestProvider.CancelWords.Add(CancelWord);
                 }
             }
 
