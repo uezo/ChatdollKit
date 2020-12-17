@@ -4,10 +4,9 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 
-
 namespace ChatdollKit.Dialog
 {
-    public class SimpleMessageWindow : MonoBehaviour
+    public class SimpleMessageWindow : MessageWindowBase
     {
         private Text MessageText;
         public float MessageSpeed = 0.05f;
@@ -15,27 +14,28 @@ namespace ChatdollKit.Dialog
         public float PostGap = 1.0f;
         private string CurrentMessageId;
 
-        public void Show(string prompt = null)
+        public override void Show(string prompt = null)
         {
             SetActive(true);
             if (prompt != null)
             {
-                ShowPrompt(prompt);
+                MessageText.text = prompt;
             }
         }
 
-        public void Hide()
+        public override void Hide()
         {
             SetActive(false);
             MessageText.text = string.Empty;
         }
 
-        public void ShowPrompt(string prompt)
+        public override async Task ShowMessageAsync(string message, CancellationToken token)
         {
-            MessageText.text = prompt;
+            Show();
+            await SetMessageAsync(message, token);
         }
 
-        public async Task SetMessageAsync(string message, CancellationToken token)
+        public override async Task SetMessageAsync(string message, CancellationToken token)
         {
             var messageId = Guid.NewGuid().ToString();
             CurrentMessageId = messageId;

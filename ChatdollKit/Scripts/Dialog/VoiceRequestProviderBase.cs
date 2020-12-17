@@ -30,7 +30,7 @@ namespace ChatdollKit.Dialog
         public float ListeningTimeout = 20.0f;
 
         [Header("UI")]
-        public SimpleMessageWindow MessageWindow;
+        public MessageWindowBase MessageWindow;
 
         public Action OnListeningStart;
         public Action OnListeningStop;
