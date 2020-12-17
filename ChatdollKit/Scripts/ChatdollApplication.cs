@@ -30,8 +30,8 @@ namespace ChatdollKit
         public string PromptFace;
         public string PromptAnimation;
 
-        [Header("Message Window")]
-        public SimpleMessageWindow MessageWindow;
+        [Header("Voice Request Provider")]
+        public MessageWindowBase MessageWindow;
 
         [Header("Camera")]
         public ChatdollCamera ChatdollCamera;
@@ -145,9 +145,10 @@ namespace ChatdollKit
             // Voice Request Provider
             if (voiceRequestProvider != null)
             {
-                // Message window
+                // Set message window
                 if (voiceRequestProvider.MessageWindow == null)
                 {
+                    InstantiateMessageWindos();
                     voiceRequestProvider.MessageWindow = MessageWindow;
                 }
 
@@ -159,8 +160,45 @@ namespace ChatdollKit
             }
 
             // Camera and QRCode Request Provider
-            cameraRequestProvider.ChatdollCamera = ChatdollCamera;
-            qrcodeRequestProvider.ChatdollCamera = ChatdollCamera;
+            if (cameraRequestProvider.ChatdollCamera == null)
+            {
+                InstantiateCamera();
+                cameraRequestProvider.ChatdollCamera = ChatdollCamera;
+            }
+            if (qrcodeRequestProvider.ChatdollCamera == null)
+            {
+                InstantiateCamera();
+                qrcodeRequestProvider.ChatdollCamera = ChatdollCamera;
+            }
+        }
+
+        protected virtual void InstantiateMessageWindos()
+        {
+            if (MessageWindow == null)
+            {
+                // Create instance of SimpleMessageWindow
+                var messageWindowGameObject = Resources.Load<GameObject>("Prefabs/SimpleMessageWindow/SimpleMessageWindow");
+                if (messageWindowGameObject != null)
+                {
+                    var messageWindowGameObjectInstance = Instantiate(messageWindowGameObject);
+                    messageWindowGameObjectInstance.name = messageWindowGameObject.name;
+                    MessageWindow = messageWindowGameObjectInstance.GetComponent<SimpleMessageWindow>();
+                }
+            }
+        }
+
+        protected virtual void InstantiateCamera()
+        {
+            if (ChatdollCamera == null)
+            {
+                var cameraGameObject = Resources.Load<GameObject>("Prefabs/ChatdollCamera");
+                if (cameraGameObject != null)
+                {
+                    var cameraGameObjectInstance = Instantiate(cameraGameObject);
+                    cameraGameObjectInstance.name = cameraGameObject.name;
+                    ChatdollCamera = cameraGameObjectInstance.GetComponent<ChatdollCamera>();
+                }
+            }
         }
 
         protected virtual string GetUserId()
