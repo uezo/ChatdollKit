@@ -254,8 +254,9 @@ public class FaceClipEditor : Editor
     [MenuItem("CONTEXT/ModelController/Setup Animator")]
     private static void CreateAnimationControllerWithClips(MenuCommand menuCommand)
     {
-        var animationClipFolderPath = EditorUtility.OpenFolderPanel("Select animation clip parent folder", Application.dataPath, string.Empty);
+        var modelController = menuCommand.context as ModelController;
 
+        var animationClipFolderPath = EditorUtility.OpenFolderPanel("Select animation clip parent folder", Application.dataPath, string.Empty);
         if (!string.IsNullOrEmpty(animationClipFolderPath))
         {
             // Get animation clips from folder
@@ -270,7 +271,7 @@ public class FaceClipEditor : Editor
 
             // Make path to create new animator controller
             var animatorControllerPath = "Assets" + animationClipFolderPath.Replace(Application.dataPath, string.Empty);
-            animatorControllerPath = Path.Combine(animatorControllerPath, "ChatdollAnimatorController.controller");
+            animatorControllerPath = Path.Combine(animatorControllerPath, $"{modelController.gameObject.name}.controller");
 
             if (AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(animatorControllerPath) != null)
             {
@@ -315,7 +316,6 @@ public class FaceClipEditor : Editor
             }
 
             // Set controller to animator
-            var modelController = menuCommand.context as ModelController;
             var animator = modelController.gameObject.GetComponent<Animator>();
             if (animator != null)
             {
