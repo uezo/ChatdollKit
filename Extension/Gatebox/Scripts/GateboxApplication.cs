@@ -5,7 +5,7 @@ using com.gateboxlab.gateboxsdk;
 namespace ChatdollKit.Extension.Gatebox
 {
     [RequireComponent(typeof(GateboxSDK))]
-    public class GateboxApplication : AzureApplication
+    public class GateboxApplication : ChatdollApplication
     {
         // LED Colors for each status
         [Header("LED Colors for each status")]
