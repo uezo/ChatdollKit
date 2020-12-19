@@ -201,6 +201,16 @@ namespace ChatdollKit
             }
         }
 
+        public async void StartChatAsync()
+        {
+            await chatdoll.StartChatAsync(GetUserId());
+        }
+
+        public void StopChat()
+        {
+            chatdoll.StopChat();
+        }
+
         protected virtual string GetUserId()
         {
             return "user0123456789";
