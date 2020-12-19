@@ -4,7 +4,7 @@ using UnityEngine;
 using ChatdollKit.IO;
 
 
-namespace ChatdollKit.Extension
+namespace ChatdollKit.Extension.Azure
 {
     public class AzureWakeWordListener : WakeWordListenerBase
     {

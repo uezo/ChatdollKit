@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using ChatdollKit.Extension.Azure;
 
 namespace ChatdollKit.Extension.Gatebox
 {

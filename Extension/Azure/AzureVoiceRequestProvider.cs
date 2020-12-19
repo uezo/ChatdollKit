@@ -5,7 +5,7 @@ using ChatdollKit.Dialog;
 using ChatdollKit.IO;
 
 
-namespace ChatdollKit.Extension
+namespace ChatdollKit.Extension.Azure
 {
     public class AzureVoiceRequestProvider : VoiceRequestProviderBase
     {

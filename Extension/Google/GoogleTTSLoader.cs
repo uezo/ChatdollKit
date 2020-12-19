@@ -6,7 +6,7 @@ using ChatdollKit.IO;
 using ChatdollKit.Model;
 using ChatdollKit.Network;
 
-namespace ChatdollKit.Extension
+namespace ChatdollKit.Extension.Google
 {
     public class GoogleTTSLoader : WebVoiceLoaderBase
     {

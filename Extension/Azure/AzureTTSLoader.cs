@@ -5,7 +5,7 @@ using UnityEngine.Networking;
 using ChatdollKit.Model;
 using ChatdollKit.Network;
 
-namespace ChatdollKit.Extension
+namespace ChatdollKit.Extension.Azure
 {
     public class AzureTTSLoader : WebVoiceLoaderBase
     {
