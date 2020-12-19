@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 
 
-namespace ChatdollKit.Extension
+namespace ChatdollKit.Extension.Google
 {
     public class GoogleTranslator
     {

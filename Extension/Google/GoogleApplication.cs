@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace ChatdollKit.Extension
+namespace ChatdollKit.Extension.Google
 {
     [RequireComponent(typeof(GoogleWakeWordListener))]
     [RequireComponent(typeof(GoogleVoiceRequestProvider))]

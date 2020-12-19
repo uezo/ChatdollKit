@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ChatdollKit.Extension
+namespace ChatdollKit.Extension.Azure
 {
     public class AzureLanguage
     {

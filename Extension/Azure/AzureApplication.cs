@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace ChatdollKit.Extension
+namespace ChatdollKit.Extension.Azure
 {
     [RequireComponent(typeof(AzureWakeWordListener))]
     [RequireComponent(typeof(AzureVoiceRequestProvider))]

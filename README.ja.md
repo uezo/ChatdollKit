@@ -19,11 +19,12 @@ Watch this 2 minutes video to learn how ChatdollKit works and the way to use qui
 
 1. 🐟リソースの準備
     - 3Dモデルをインポートしてシーンに追加
-    - 音声ファイルをリソースディレクトリに、アニメーションクリップをアニメーションディレクトリに配置
+    - アニメーションクリップをアニメーションディレクトリに配置 👉チュートリアル用 [Anime Girls Idle Animations Free](https://assetstore.unity.com/packages/3d/animations/anime-girl-idle-animations-free-150406)
+    - [Azure Speech Services](https://azure.microsoft.com/ja-jp/services/cognitive-services/speech-services/) または [Google Cloud Speech API](https://cloud.google.com/speech-to-text/) のAPIキーの取得
 
 1. 🍣セットアップ
+    - おうむ返し（Echo）のExampleを3Dモデルに追加してインスペクターでAPIキーなどを設定
     - インスペクターのコンテキストメニューから`Setup ModelController`と`Setup Animator`を実行
-    - まばたき用のシェイプキーの名前を設定
 
 
 # 📦 パッケージのインポート
@@ -33,6 +34,7 @@ Watch this 2 minutes video to learn how ChatdollKit works and the way to use qui
 - [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347)
 - [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/)
 
+[Gatebox](https://www.gatebox.ai/)アプリを作る場合、ChatdollKitのリリースパッケージと一緒に公開されている[ChatdollKit Gatebox Extension](https://github.com/uezo/ChatdollKit/releases)もインポートしてください。
 
 # 🐟 リソースの準備
 
@@ -40,20 +42,13 @@ Watch this 2 minutes video to learn how ChatdollKit works and the way to use qui
 
 お好みの3Dモデルをシーンに配置してください。シェーダーやダイナミックボーンなど必要に応じてセットアップしておいてください。なおこの手順で使っているモデルはシグネットちゃんです。とてもかわいいですね。 https://booth.pm/ja/items/1870320
 
-## Voices
-
-`/Resources/Voices`ディレクトリを作成し、モデルにしゃべらせたい音声ファイルを配置してください。とりあえずHelloWorldを動かしたい場合は、[ここ](https://soundeffect-lab.info/sound/voice/line-girl1.html)から以下3つの音声をダウンロードするとよいでしょう。
-
-- こんにちは: `line-girl1-konnichiha1.mp3`
-- 呼びました？: `line-girl1-yobimashita1.mp3`
-
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/03_2.png" width="640">
-
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/camera_light.png" width="640">
 
 ## Animations
 
 `/Animations`ディレクトリを作成し、アニメーションクリップを配置してください。
 なおこの手順では[Anime Girls Idle Animations Free](https://assetstore.unity.com/packages/3d/animations/anime-girl-idle-animations-free-150406)というモーション集を利用しています。大変使い勝手が良いので気に入ったら有償版の購入をオススメします。
+
 
 # 🍣 セットアップ
 
@@ -63,126 +58,58 @@ Watch this 2 minutes video to learn how ChatdollKit works and the way to use qui
 
 - `ModelController` 3Dモデルのアニメーション、発話、表情を制御。使い方は[ModelControllerの使い方](https://github.com/uezo/ChatdollKit/blob/master/ModelController.ja.md)を参照
 
+`ChatdollKit/Excamples/Echo` から `EchoAppAzure` または `EchoAppGoogle` を3Dモデルに追加してください。アニメーション、音声、表情をコントロールする`ModelController`やその他必要なコンポーネントが合わせて追加されます。
+
+## Configure Application
+
+必要最小限の設定としては、APIキー、リージョン（Azureの場合のみ）、言語のみ設定すればOKです。
+
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/add_echoapp_mark.png" width="640">
+
+
 ## ModelControllerの設定
 
 インスペクターのコンテキストメニューから`Setup ModelController`を選択すると、LipSync等が自動的に設定されます。その後、まばたきをするために目を閉じる表現のシェイプキーの名前を`Blink Blend Shape Name`に設定しましょう。
 
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/mceditor.png" width="640">
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/setup_mc.png" width="640">
 
 手動で設定したい場合は [Appendix1. ModelControllerの手動設定](#Appendix%201.%20ModelControllerの手動設定) を参照してください。
 
 ## Animatorの設定
 
-インスペクターのコンテキストメニューから`Setup Animator`を選択するとフォルダ選択ダイアログが表示されるので、アニメーションクリップが配置されたフォルダを選択してください。
+インスペクターのコンテキストメニューから`Setup Animator`を選択するとフォルダ選択ダイアログが表示されるので、アニメーションクリップが配置されたフォルダを選択してください。サブフォルダが含まれる場合、それらと同名のレイヤーが`AnimatorController`に作成され、サブフォルダ内のアニメーションクリップはそのレイヤーに配置されます。
 
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/setupanimator01.png" width="640">
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/choose_animation_dir.png" width="640">
 
-サブフォルダが含まれる場合には、サブフォルダと同じ名前のレイヤーがAnimatorControllerに作成され、そのレイヤーにサブフォルダ内のアニメーションクリップが配置されます。（下図のCase1）
+このケースでは、フォルダを選択したのちにベースレイヤー（`Base Layer`）またはそれぞれのレイヤー（`01_Idles`、`02_Layers`、`03_Others`）に配置するか確認ダイアログが表示され、配置先を選択することができます。
 
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/setupanimator02.png" width="640">
+デフォルトのアイドルアニメーションを変更したい場合はアニメーターコントローラーの`Default`ステートに紐づけられたアニメーションクリップを変更しましょう。
 
-手動で設定したい場合は [Appendix2. Setup Animator manually](#Appendix%202.%20Animatorの手動設定)
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/change_idle.png" width="640">
 
 
 ## 動作確認
 
-UnityのPlayボタンを押します。3Dモデルがまばたきをしながらアイドル時のアニメーションを行っていれば正しく設定できています。（音声周り以外）
+UnityのPlayボタンを押します。3Dモデルがまばたきをしながらアイドル時のアニメーションを行っていることを確認してください。
 
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/07_2.png" width="640">
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/run_echo.png" width="640">
 
-以上で基本的な設定は完了です。3Dモデルを動かしたり喋らせたりする手順は、以下のHello worldの exampleを参考にしてください。
+それでは準備が整いましたので、3Dモデルと会話してみましょう。
 
-
-# Hello world example
-
-"Hello world"のexampleを動かすための手順は以下の通りです。
-
-1. `Examples/HelloWorld/Scripts`の中にある`HelloWorld.cs`を3DモデルのGameObjectに追加
-
-    <img src="https://uezo.blob.core.windows.net/github/chatdoll/08_2.png" width="640">
-
-1. `ChatdollKit/Prefabs/SimpleMessageWindow`の中にある`SimpleMessageWindow`プレファブをシーンに追加
-
-1. `Hello World`コンポーネントの`Message Window`に、今シーンに追加した`SimpleMessageWindow`を設定
-
-    <img src="https://uezo.blob.core.windows.net/github/chatdoll/09_2.png" width="640">
-
-1. `Request Provider`の`Dummy Text`に、音声認識されたことにするダミーの文言を入力。ここで入力した内容がChatdollに送られます
-
-以上で設定は完了です。ゲームを開始してインスペクター上の`Start Chat`ボタンをクリックしましょう。`呼びました？`と尋ねられると、ユーザーからの要求文言としてメッセージボックスにダミー入力テキストが表示され、`HelloDialog`の処理結果として`こんにちは`と挨拶してくれます。
+- 「こんにちは」またはインスペクターの`Wake Word`に設定した文言を話しかける
+- 「どうしたの？」または`Prompt Voice`に設定した文言で応答
+- 「ハローワールド！」など、話しかけたい言葉をしゃべる
+- 「ハローワールド」と、話しかけたのと同じ内容を応答
 
 
-# Hello worldの改造方法
+# カスタムアプリケーションの作り方
 
-## DialogRouter
+Examplesに同梱の`MultiDialog`の実装サンプルを確認ください。
 
-`DialogRouter`は`HelloWorld`追加時に自動的に追加されます。このクラスの`ExtractIntentAsync`メソッドには、ユーザーが何を要求しているか（＝インテント）を抽出するロジックを実装します。初期状態では常に「hello」というインテントが抽出され、リクエストに設定されるようになっています。
-
-```Csharp
-request.Intent = "hello";
-```
-
-以下のように条件式で設定するように書き換えたり、LUISなどのNLUサービスを利用した結果を設定するように改造するとよいでしょう。
-
-```Csharp
-if (request.Text.ToLower().Contains("weather"))
-{
-    request.Intent = "weather";
-    request.Entities["LocationName"] = ParseLocation(request.Text);
-}
-else if (...)
-{
-
-}
-```
-
-これに加えて、抽出されたインテント＝処理要求を受諾した旨の応答内容をカスタマイズすることもできます。例では`response.Payloads`にアニメーションや発話内容を設定した`animatedVoiceRequest`を設定し、これを`ShowResponseAsync()`で3Dモデルに演じさせていますが、必ずしも`ModelController`を通じてモデルを操作する必要はありません。なお処理要求受諾後の応答は、後続の処理で時間がかかる場合の体感上の時間稼ぎにもなります。
-
-```Csharp
-var animatedVoiceRequest = new AnimatedVoiceRequest();
-animatedVoiceRequest.AddVoice("line-girl1-haihaai1", preGap: 1.0f, postGap: 2.0f);
-animatedVoiceRequest.AddAnimation("Default");
-```
-
-## DialogProcessor
-
-HelloWorldの例では`hello`という`DialogProcessor`＝対話処理部品が1つだけ追加されていますが、スタティックにこんにちはの発生を応答するだけですので例では何も処理を実装していません。
-天気予報やしりとり、雑談など各種機能をそれぞれ`IDialogProcessor`を実装したオブジェクトとして作成することでChatdollにさまざまな対話処理部品を追加することができます。対話処理部品はチャットボットやスマートスピーカーではスキルと呼ばれるものに相当します。
-なお`DialogProcessor`の`TopicName`に設定した値と同じものが`DialogRouter.ExtractIntentAsync`で`request.Intent`にセットされると、それを契機として対応する`DialogProcessor`が呼び出され、処理を開始します。この`TopicName`の値はコンテキストにも`Context.Topic.Name`として保持されるため、同一のトピックで継続して会話を続けることもできます。
-
-## RequestProvider
-
-`RequestProvider`はユーザーからの要求内容をモデルに伝えるための部品で、音声認識やカメラで撮影した画像などをリクエスト情報として引き渡すように実装します。なお`RequestProvider`はHelloWorldのサンプルを動かすためのモック用の部品です。実用性のあるバーチャルアシスタントを開発するには、`AzureVoiceRequestProvider`や`GoogleVoiceRequestProvider`を使用するか、`VoiceRequestProviderBase`を継承してお好みのSpeech-to-Textサービスを利用したRequestProviderを作成してください。
-
-```csharp
-using System.Threading.Tasks;
-using UnityEngine;
-using ChatdollKit.Dialog;
-using ChatdollKit.IO;
-
-namespace YourApp
-{
-    [RequireComponent(typeof(VoiceRecorder))]
-    public class MyVoiceRequestProvider : VoiceRequestProviderBase
-    {
-        protected override async Task<string> RecognizeSpeechAsync(AudioClip recordedVoice)
-        {
-            // Call Speech-to-Text service
-            var response = await client.PostBytesAsync<MyRecognitionResponse>(
-                $"https://my_stt_service", AudioConverter.AudioClipToPCM(recordedVoice));
-
-            // Return the recognized text
-            return response.recognizedText;
-        }
-    }
-}
-```
-
-# Deep Dive
+- 対話のルーティング：`Router`には、発話内容からユーザーが話したいトピックを選択するロジックの例が実装されています
+- 対話の処理：`TranslateDialog`をみると、リクエスト文言を利用して翻訳APIを叩き、結果を応答する一連の例が実装されています
 
 ChatdollKitを利用した複雑で実用的なバーチャルアシスタントの開発方法については、現在コンテンツを準備中です。
-
-ChatdollKitの基本的な価値として、Unity初心者であっても簡単なコーディング（モーションやボイスの名前を指定するなど）だけで3Dモデルを制御することができるようにしていたり、チャットボット初心者であっても対話制御の作り込みをすることなく自然言語処理や機能開発に集中できるようにしています。より豊かな表現をするためには各シチュエーションで呼び出される3Dモデルの制御処理をUnityの機能を使いこなしてリッチにすることができますので、自身のスキル習得に応じて`ModelController`を卒業していただければと考えています。
 
 
 # Appendix 1. ModelControllerの手動設定
