@@ -42,5 +42,25 @@ namespace ChatdollKit.IO
 
             return pcm;
         }
+
+        public static AudioClip PCMToAudioClip(byte[] pcm, string name = "AudioClip from PCM")
+        {
+            // Get wave info
+            var channels = BitConverter.ToUInt16(pcm, 22);
+            var sampleRate = BitConverter.ToInt32(pcm, 24);
+            var sampleLength = BitConverter.ToInt32(pcm, 40) / 2;
+
+            // Convert to sample data
+            var samples = new float[sampleLength];
+            for (var i = 0; i < sampleLength; i++)
+            {
+                samples[i] = (float)BitConverter.ToInt16(pcm, i * 2 + 44) / UInt16.MaxValue;
+            }
+
+            // Create AudioClip
+            var audioClip = AudioClip.Create(name, sampleLength, channels, sampleRate, false);
+            audioClip.SetData(samples, 0);
+            return audioClip;
+        }
     }
 }
