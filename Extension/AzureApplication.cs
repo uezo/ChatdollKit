@@ -4,6 +4,7 @@ namespace ChatdollKit.Extension
 {
     [RequireComponent(typeof(AzureWakeWordListener))]
     [RequireComponent(typeof(AzureVoiceRequestProvider))]
+    [RequireComponent(typeof(AzureTTSLoader))]
     public class AzureApplication : ChatdollApplication
     {
         [Header("Azure Speech Services")]
@@ -14,36 +15,46 @@ namespace ChatdollKit.Extension
         [Header("Remote Log")]
         public string LogTableUri;
 
-        protected override void Awake() 
+        protected override void Awake()
+        {
+            Configure(gameObject, ApiKey, Region, Language, LogTableUri);
+            base.Awake();
+        }
+
+        public static void Configure(GameObject gameObject, string apiKey, string region, string language, string logTableUri = null) 
         {
             // Remote log
-            if (!string.IsNullOrEmpty(LogTableUri))
+            if (!string.IsNullOrEmpty(logTableUri))
             {
                 Debug.unityLogger.filterLogType = LogType.Warning;
-                var azureHandler = new AzureTableStorageHandler(LogTableUri, LogType.Warning);
+                var azureHandler = new AzureTableStorageHandler(logTableUri, LogType.Warning);
                 Application.logMessageReceived += azureHandler.HandleLog;
             }
 
-            // Set API key and region to each component
+            // Set API key, region and language to each component
             var wakewordListener = gameObject.GetComponent<AzureWakeWordListener>();
-            wakewordListener.ApiKey = string.IsNullOrEmpty(wakewordListener.ApiKey) ? ApiKey : wakewordListener.ApiKey;
-            wakewordListener.Region = string.IsNullOrEmpty(wakewordListener.Region) ? Region : wakewordListener.Region;
-            wakewordListener.Language = string.IsNullOrEmpty(wakewordListener.Language) ? Language : wakewordListener.Language;
+            if (wakewordListener != null)
+            {
+                wakewordListener.ApiKey = string.IsNullOrEmpty(wakewordListener.ApiKey) ? apiKey : wakewordListener.ApiKey;
+                wakewordListener.Region = string.IsNullOrEmpty(wakewordListener.Region) ? region : wakewordListener.Region;
+                wakewordListener.Language = string.IsNullOrEmpty(wakewordListener.Language) ? language : wakewordListener.Language;
+            }
 
             var voiceRequestProvider = gameObject.GetComponent<AzureVoiceRequestProvider>();
-            voiceRequestProvider.ApiKey = string.IsNullOrEmpty(voiceRequestProvider.ApiKey) ? ApiKey : voiceRequestProvider.ApiKey;
-            voiceRequestProvider.Region = string.IsNullOrEmpty(voiceRequestProvider.Region) ? Region : voiceRequestProvider.Region;
-            voiceRequestProvider.Language = string.IsNullOrEmpty(voiceRequestProvider.Language) ? Language : voiceRequestProvider.Language;
+            if (voiceRequestProvider != null)
+            {
+                voiceRequestProvider.ApiKey = string.IsNullOrEmpty(voiceRequestProvider.ApiKey) ? apiKey : voiceRequestProvider.ApiKey;
+                voiceRequestProvider.Region = string.IsNullOrEmpty(voiceRequestProvider.Region) ? region : voiceRequestProvider.Region;
+                voiceRequestProvider.Language = string.IsNullOrEmpty(voiceRequestProvider.Language) ? language : voiceRequestProvider.Language;
+            }
 
             var ttsLoader = gameObject.GetComponent<AzureTTSLoader>();
             if (ttsLoader != null)
             {
-                ttsLoader.ApiKey = string.IsNullOrEmpty(ttsLoader.ApiKey) ? ApiKey : ttsLoader.ApiKey;
-                ttsLoader.Region = string.IsNullOrEmpty(ttsLoader.Region) ? Region : ttsLoader.Region;
-                ttsLoader.Language = string.IsNullOrEmpty(ttsLoader.Language) ? Language : ttsLoader.Language;
+                ttsLoader.ApiKey = string.IsNullOrEmpty(ttsLoader.ApiKey) ? apiKey : ttsLoader.ApiKey;
+                ttsLoader.Region = string.IsNullOrEmpty(ttsLoader.Region) ? region : ttsLoader.Region;
+                ttsLoader.Language = string.IsNullOrEmpty(ttsLoader.Language) ? language : ttsLoader.Language;
             }
-
-            base.Awake();
         }
     }
 }
