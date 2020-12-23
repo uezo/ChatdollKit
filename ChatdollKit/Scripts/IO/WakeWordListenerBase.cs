@@ -166,17 +166,19 @@ namespace ChatdollKit.IO
 
         public WakeWord ExtractWakeWordDefault(string text)
         {
+            var textLower = text.ToLower();
             foreach (var iw in IgnoreWords)
             {
-                text = text.Replace(iw, string.Empty);
+                textLower = textLower.Replace(iw.ToLower(), string.Empty);
             }
 
             foreach (var ww in WakeWords)
             {
-                if (text.Contains(ww.Text))
+                var wwText = ww.Text.ToLower();
+                if (textLower.Contains(wwText))
                 {
-                    var prefix = text.Substring(0, text.IndexOf(ww.Text));
-                    var suffix = text.Substring(text.IndexOf(ww.Text) + ww.Text.Length);
+                    var prefix = textLower.Substring(0, textLower.IndexOf(wwText));
+                    var suffix = textLower.Substring(textLower.IndexOf(wwText) + wwText.Length);
 
                     if (prefix.Length <= ww.PrefixAllowance && suffix.Length <= ww.SuffixAllowance)
                     {
@@ -190,14 +192,15 @@ namespace ChatdollKit.IO
 
         public string ExtractCancelWordDefault(string text)
         {
+            var textLower = text.ToLower();
             foreach (var iw in IgnoreWords)
             {
-                text = text.Replace(iw, string.Empty);
+                textLower = textLower.Replace(iw.ToLower(), string.Empty);
             }
 
             foreach (var cw in CancelWords)
             {
-                if (text == cw)
+                if (textLower == cw.ToLower())
                 {
                     return cw;
                 }
