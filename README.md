@@ -1,17 +1,14 @@
 # ChatdollKit
 ChatdollKit enables you to make your 3D model into a voice-enabled chatbot.
 
-<!-- 
-# Quick start guide
-
-Watch this 2 minutes video to learn how ChatdollKit works and the way to use quickly. -->
-
 [🇯🇵日本語のREADMEはこちら](https://github.com/uezo/ChatdollKit/blob/master/README.ja.md)
 
 <img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit_architecture.png" width="640">
 
 
 # 🚀 Quick start
+
+You can learn how to setup ChatdollKit by watching this 2 minutes video: https://www.youtube.com/watch?v=aJ0iDZ0o4Es
 
 1. 📦Import packages
     - Import [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347) and [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/)

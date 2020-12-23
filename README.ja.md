@@ -3,15 +3,11 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 
 [🇬🇧English version is here](https://github.com/uezo/ChatdollKit/blob/master/README.ja.md)
 
-<!-- 
-# Quick start guide
-
-Watch this 2 minutes video to learn how ChatdollKit works and the way to use quickly. -->
-
 <img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit_architecture.png" width="640">
 
-
 # 🚀 クイックスタート
+
+セットアップ手順についてはこちらの2分程度の動画をご覧いただくとより簡単に理解できます: https://www.youtube.com/watch?v=aJ0iDZ0o4Es
 
 1. 📦パッケージのインポート
     - [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347) と [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/) のインポート
@@ -25,6 +21,8 @@ Watch this 2 minutes video to learn how ChatdollKit works and the way to use qui
 1. 🍣セットアップ
     - おうむ返し（Echo）のExampleを3Dモデルに追加してインスペクターでAPIキーなどを設定
     - インスペクターのコンテキストメニューから`Setup ModelController`と`Setup Animator`を実行
+
+本READMEのほか、[ChatdollKit マニュアル](https://github.com/uezo/ChatdollKit/blob/master/manual.ja.md)に各機能の網羅的な説明がありますので参照ください。
 
 
 # 📦 パッケージのインポート
@@ -53,10 +51,6 @@ Watch this 2 minutes video to learn how ChatdollKit works and the way to use qui
 # 🍣 セットアップ
 
 ## ChatdollKitの追加
-
-`ChatdollKit/ChatdollKit/Scripts/chatdoll.cs`を3Dモデルに追加してください。以下のコンポーネントも自動的に追加されます。
-
-- `ModelController` 3Dモデルのアニメーション、発話、表情を制御。使い方は[ModelControllerの使い方](https://github.com/uezo/ChatdollKit/blob/master/ModelController.ja.md)を参照
 
 `ChatdollKit/Excamples/Echo` から `EchoAppAzure` または `EchoAppGoogle` を3Dモデルに追加してください。アニメーション、音声、表情をコントロールする`ModelController`やその他必要なコンポーネントが合わせて追加されます。
 
