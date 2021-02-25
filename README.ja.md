@@ -3,6 +3,25 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 
 [🇬🇧English version is here](https://github.com/uezo/ChatdollKit/blob/master/README.ja.md)
 
+# ✨ 主な特長
+
+- モデル制御
+    - 発話とアニメーションの同期実行
+    - 表情の制御
+    - まばたきと口パク
+
+- 対話制御
+    - 音声認識（Speech-to-Text。Azure、Google等）
+    - テキスト読み上げ（Text-to-Speech。Azure、Google、Voiceroid等）
+    - 対話の文脈・ステート管理
+    - 発話意図の抽出と対話トピックのルーティング
+
+- 入出力
+    - ウェイクワードによる起動
+    - カメラとQRコードリーダー
+
+... などなど！
+
 <img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit_architecture.png" width="640">
 
 # 🚀 クイックスタート

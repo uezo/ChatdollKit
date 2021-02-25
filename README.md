@@ -3,8 +3,26 @@ ChatdollKit enables you to make your 3D model into a voice-enabled chatbot.
 
 [🇯🇵日本語のREADMEはこちら](https://github.com/uezo/ChatdollKit/blob/master/README.ja.md)
 
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit_architecture.png" width="640">
+# ✨ Features
 
+- Model
+    - Speech and motion synchronization
+    - Face expression control
+    - Blink and lipsync
+
+- Dialog
+    - Speech-to-Text (Azure, Google etc)
+    - Text-to-Speech (Azure, Google, Voiceroid etc)
+    - Dialog context management
+    - Intent extraction and topic routing
+
+- I/O
+    - Wakeword
+    - Camera and QR Code
+
+... and more!
+
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit_architecture.png" width="640">
 
 # 🚀 Quick start
 
