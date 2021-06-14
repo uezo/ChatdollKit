@@ -3,6 +3,25 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 
 [🇬🇧English version is here](https://github.com/uezo/ChatdollKit/blob/master/README.ja.md)
 
+# ✨ 主な特長
+
+- モデル制御
+    - 発話とアニメーションの同期実行
+    - 表情の制御
+    - まばたきと口パク
+
+- 対話制御
+    - 音声認識（Speech-to-Text。Azure、Google、Watson等）
+    - テキスト読み上げ（Text-to-Speech。Azure、Google、Watson、Voiceroid等）
+    - 対話の文脈・ステート管理
+    - 発話意図の抽出と対話トピックのルーティング
+
+- 入出力
+    - ウェイクワードによる起動
+    - カメラとQRコードリーダー
+
+... などなど！
+
 <img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit_architecture.png" width="640">
 
 # 🚀 クイックスタート
@@ -16,7 +35,7 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 1. 🐟リソースの準備
     - 3Dモデルをインポートしてシーンに追加
     - アニメーションクリップをアニメーションディレクトリに配置 👉チュートリアル用 [Anime Girls Idle Animations Free](https://assetstore.unity.com/packages/3d/animations/anime-girl-idle-animations-free-150406)
-    - [Azure Speech Services](https://azure.microsoft.com/ja-jp/services/cognitive-services/speech-services/) または [Google Cloud Speech API](https://cloud.google.com/speech-to-text/) のAPIキーの取得
+    - [Azure Speech Services](https://azure.microsoft.com/ja-jp/services/cognitive-services/speech-services/)、[Google Cloud Speech API](https://cloud.google.com/speech-to-text/) または [Watson](https://cloud.ibm.com/) のAPIキーの取得
 
 1. 🍣セットアップ
     - おうむ返し（Echo）のExampleを3Dモデルに追加してインスペクターでAPIキーなどを設定
@@ -52,11 +71,11 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 
 ## ChatdollKitの追加
 
-`ChatdollKit/Excamples/Echo` から `EchoAppAzure` または `EchoAppGoogle` を3Dモデルに追加してください。アニメーション、音声、表情をコントロールする`ModelController`やその他必要なコンポーネントが合わせて追加されます。
+`ChatdollKit/Excamples/Echo` から `EchoAppAzure`、 `EchoAppGoogle` または `EchoAppWatson` を3Dモデルに追加してください。アニメーション、音声、表情をコントロールする`ModelController`やその他必要なコンポーネントが合わせて追加されます。
 
 ## Configure Application
 
-必要最小限の設定としては、APIキー、リージョン（Azureの場合のみ）、言語のみ設定すればOKです。
+必要最小限の設定としては、APIキーやリージョン、ベースURLなどいくつかの項目のみ設定すればOKです。
 
 <img src="https://uezo.blob.core.windows.net/github/chatdoll/add_echoapp_mark.png" width="640">
 

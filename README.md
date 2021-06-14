@@ -3,8 +3,26 @@ ChatdollKit enables you to make your 3D model into a voice-enabled chatbot.
 
 [🇯🇵日本語のREADMEはこちら](https://github.com/uezo/ChatdollKit/blob/master/README.ja.md)
 
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit_architecture.png" width="640">
+# ✨ Features
 
+- Model
+    - Speech and motion synchronization
+    - Face expression control
+    - Blink and lipsync
+
+- Dialog
+    - Speech-to-Text (Azure, Google, Watson etc)
+    - Text-to-Speech (Azure, Google, Watson, Voiceroid etc)
+    - Dialog context management
+    - Intent extraction and topic routing
+
+- I/O
+    - Wakeword
+    - Camera and QR Code
+
+... and more!
+
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit_architecture.png" width="640">
 
 # 🚀 Quick start
 
@@ -17,7 +35,7 @@ You can learn how to setup ChatdollKit by watching this 2 minutes video: https:/
 1. 🐟Resource preparation
     - Import 3D model and put it on the scene
     - Put animation clips to animations directory 👉 For tutorial [Anime Girls Idle Animations Free](https://assetstore.unity.com/packages/3d/animations/anime-girl-idle-animations-free-150406)
-    - Get API Key for [Azure Speech Services](https://azure.microsoft.com/ja-jp/services/cognitive-services/speech-services/) or [Google Cloud Speech API](https://cloud.google.com/speech-to-text/)
+    - Get API Key for [Azure Speech Services](https://azure.microsoft.com/ja-jp/services/cognitive-services/speech-services/), [Google Cloud Speech API](https://cloud.google.com/speech-to-text/) or [Watson](https://cloud.ibm.com/)
 
 1. 🍣Setup
     - Add Echo example to your 3D model and set API key on inspector
@@ -52,11 +70,11 @@ In this README, I use [Anime Girls Idle Animations Free](https://assetstore.unit
 
 ## Add ChatdollKit
 
-Add `EchoAppAzure` or `EchoAppGoogle` from `ChatdollKit/Excamples/Echo` to the 3D model. The required components will be added automatically, including `ModelController`, that controls animations, voices and face expressions of 3D model.
+Add `EchoAppAzure`, `EchoAppGoogle` or `EchoAppWatson` from `ChatdollKit/Excamples/Echo` to the 3D model. The required components will be added automatically, including `ModelController`, that controls animations, voices and face expressions of 3D model.
 
 ## Configure Application
 
-At least API Key, Region (e.g. japanwest, only Azure) and Language (e.g. ja-JP) should be set on inspector of `EchoAppAzure` or `EchoAppGoogle`.
+At least API Key and some properties like Region and BaseUrl should be set on inspector of `EchoAppAzure`, `EchoAppGoogle` or `EchoAppWatson`.
 
 <img src="https://uezo.blob.core.windows.net/github/chatdoll/add_echoapp_mark.png" width="640">
 
