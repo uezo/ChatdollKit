@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 
 namespace ChatdollKit.Dialog
 {
-    public class Context
+    public class State
     {
         public string Id { get; }
         public string UserId { get; }
@@ -15,9 +15,9 @@ namespace ChatdollKit.Dialog
         public Topic Topic { get; set; }
         public Dictionary<string, object> Data { get; set; }
         [JsonIgnore]
-        public Func<Context, Task> saveFunc { get; set; }
+        public Func<State, Task> saveFunc { get; set; }
 
-        public Context(string userId, string id = null, Func<Context, Task> saveFunc = null)
+        public State(string userId, string id = null, Func<State, Task> saveFunc = null)
         {
             Id = id == null ? Guid.NewGuid().ToString() : id;
             UserId = userId;

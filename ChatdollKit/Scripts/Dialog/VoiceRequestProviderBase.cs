@@ -41,10 +41,10 @@ namespace ChatdollKit.Dialog
 
         // Actions for each status
 #pragma warning disable CS1998
-        public Func<Request, Context, CancellationToken, Task> OnStartListeningAsync;
+        public Func<Request, State, CancellationToken, Task> OnStartListeningAsync;
         public Func<string, Task> OnRecognizedAsync;
-        public Func<Request, Context, CancellationToken, Task> OnFinishListeningAsync;
-        public Func<Request, Context, CancellationToken, Task> OnErrorAsync
+        public Func<Request, State, CancellationToken, Task> OnFinishListeningAsync;
+        public Func<Request, State, CancellationToken, Task> OnErrorAsync
             = async (r, c, t) => { Debug.LogWarning("VoiceRequestProvider.OnErrorAsync is not implemented"); };
 #pragma warning restore CS1998
 
@@ -53,7 +53,7 @@ namespace ChatdollKit.Dialog
         protected ChatdollHttp client = new ChatdollHttp();
 
 #pragma warning disable CS1998
-        private async Task OnStartListeningDefaultAsync(Request request, Context context, CancellationToken token)
+        private async Task OnStartListeningDefaultAsync(Request request, State state, CancellationToken token)
         {
             if (MessageWindow != null)
             {
@@ -65,7 +65,7 @@ namespace ChatdollKit.Dialog
             }
         }
 
-        private async Task OnFinishListeningDefaultAsync(Request request, Context context, CancellationToken token)
+        private async Task OnFinishListeningDefaultAsync(Request request, State state, CancellationToken token)
         {
             if (MessageWindow != null)
             {
@@ -79,7 +79,7 @@ namespace ChatdollKit.Dialog
 #pragma warning restore CS1998
 
         // Create request using voice recognition
-        public async Task<Request> GetRequestAsync(User user, Context context, CancellationToken token, Request preRequest = null)
+        public async Task<Request> GetRequestAsync(User user, State state, CancellationToken token, Request preRequest = null)
         {
             if (preRequest != null && !string.IsNullOrEmpty(preRequest.Text))
             {
@@ -109,7 +109,7 @@ namespace ChatdollKit.Dialog
                 recognitionId = currentRecognitionId;
 
                 // Invoke action before start recognition
-                await (OnStartListeningAsync ?? OnStartListeningDefaultAsync).Invoke(request, context, token);
+                await (OnStartListeningAsync ?? OnStartListeningDefaultAsync).Invoke(request, state, token);
 
                 // For debugging and testing
                 if (UseDummy)
@@ -166,13 +166,13 @@ namespace ChatdollKit.Dialog
             catch (Exception ex)
             {
                 Debug.LogError($"Error occured in recognizing speech: {ex.Message}\n{ex.StackTrace}");
-                await OnErrorAsync(request, context, token);
+                await OnErrorAsync(request, state, token);
             }
             finally
             {
                 StopListening();
                 // Invoke action after recognition
-                await (OnFinishListeningAsync ?? OnFinishListeningDefaultAsync).Invoke(request, context, token);
+                await (OnFinishListeningAsync ?? OnFinishListeningDefaultAsync).Invoke(request, state, token);
             }
 
             return request;

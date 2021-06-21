@@ -16,10 +16,10 @@ namespace ChatdollKit.Dialog
             httpClient?.Dispose();
         }
 
-        public override async Task ExtractIntentAsync(Request request, Context context, CancellationToken token)
+        public override async Task ExtractIntentAsync(Request request, State state, CancellationToken token)
         {
             var httpIntentResponse = await httpClient.PostJsonAsync<HttpIntentResponse>(
-                IntentExtractorUri, new HttpIntentRequest(request, context));
+                IntentExtractorUri, new HttpIntentRequest(request, state));
 
             // Update request
             request.Intent = httpIntentResponse.Request.Intent;
@@ -28,11 +28,11 @@ namespace ChatdollKit.Dialog
             request.Entities = httpIntentResponse.Request.Entities ?? request.Entities;
             request.IsAdhoc = httpIntentResponse.Request.IsAdhoc;
 
-            // Update context data
-            context.Data = httpIntentResponse.Context.Data;
+            // Update state data
+            state.Data = httpIntentResponse.State.Data;
         }
 
-        public override IDialogProcessor Route(Request request, Context context, CancellationToken token)
+        public override IDialogProcessor Route(Request request, State state, CancellationToken token)
         {
             // Register DialogProcessor dynamically
             if (!intentResolver.ContainsKey(request.Intent))
@@ -44,19 +44,19 @@ namespace ChatdollKit.Dialog
                 RegisterIntent(request.Intent, dialogProcessor);
             }
 
-            return base.Route(request, context, token);
+            return base.Route(request, state, token);
         }
 
         // Request message
         private class HttpIntentRequest
         {
             public Request Request { get; set; }
-            public Context Context { get; set; }
+            public State State { get; set; }
 
-            public HttpIntentRequest(Request request, Context context)
+            public HttpIntentRequest(Request request, State state)
             {
                 Request = request;
-                Context = context;
+                State = state;
             }
         }
 
@@ -64,7 +64,7 @@ namespace ChatdollKit.Dialog
         private class HttpIntentResponse
         {
             public Request Request { get; set; }
-            public Context Context { get; set; }
+            public State State { get; set; }
             public Response Response { get; set; }
             public HttpIntentError Error { get; set; }
         }

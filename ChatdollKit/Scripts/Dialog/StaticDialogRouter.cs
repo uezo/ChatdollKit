@@ -7,7 +7,7 @@ namespace ChatdollKit.Dialog
     public class StaticDialogRouter : DialogRouterBase
     {
 #pragma warning disable CS1998
-        public override async Task ExtractIntentAsync(Request request, Context context, CancellationToken token)
+        public override async Task ExtractIntentAsync(Request request, State state, CancellationToken token)
         {
             if (intentResolver.Count == 1)
             {

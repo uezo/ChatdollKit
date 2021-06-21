@@ -6,7 +6,7 @@ namespace ChatdollKit.Examples.Dialogs
 {
     public class EchoDialog : DialogProcessorBase
     {
-        public override async Task<Response> ProcessAsync(Request request, Context context, CancellationToken token)
+        public override async Task<Response> ProcessAsync(Request request, State state, CancellationToken token)
         {
             // Build and return response message
             var response = new Response(request.Id);

@@ -1,4 +1,4 @@
-# ChatdollKit
+﻿# ChatdollKit
 ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャットボットを作るためのフレームワークです。
 
 [🇬🇧English version is here](https://github.com/uezo/ChatdollKit/blob/master/README.ja.md)

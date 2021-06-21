@@ -9,9 +9,9 @@ namespace ChatdollKit.Examples.MultiDialog
         public string WeatherKeyword = "天気";
         public string TranslateKeyword = "翻訳";
 
-        // Extract intent and entities from request and context
+        // Extract intent and entities from request and state
 #pragma warning disable CS1998
-        public override async Task ExtractIntentAsync(Request request, Context context, CancellationToken token)
+        public override async Task ExtractIntentAsync(Request request, State state, CancellationToken token)
         {
             if (request.Text.Contains(WeatherKeyword))
             {

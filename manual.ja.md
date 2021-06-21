@@ -1,6 +1,6 @@
-# ChatdollKit マニュアル
+﻿# ChatdollKit マニュアル
 
-version 0.2.0 | December 23, 2020 | &copy;2020 uezo
+version 0.3.0 | June 21, 2021 | &copy;2020 uezo
 
 
 - [セットアップ](#セットアップ)
@@ -29,9 +29,9 @@ version 0.2.0 | December 23, 2020 | &copy;2020 uezo
 
 - [対話の制御](#対話の制御)
     - [カスタムスキル追加の基本](#カスタムスキル追加の基本)
-    - [リクエストとコンテキスト](#リクエストとコンテキスト)
+    - [リクエストとステート](#リクエストとステート)
         - [Request](#request)
-        - [Context](#context)
+        - [State](#state)
     - [話題の継続](#話題の継続)
     - [事前処理](#事前処理)
     - [対話処理のルーティング](#対話処理のルーティング)
@@ -388,7 +388,7 @@ namespace ChatdollKit.Examples.Dialogs
 {
     public class EchoDialog : DialogProcessorBase
     {
-        public override async Task<Response> ProcessAsync(Request request, Context context, CancellationToken token)
+        public override async Task<Response> ProcessAsync(Request request, State state, CancellationToken token)
         {
             // レスポンスの生成
             var response = new Response(request.Id);
@@ -404,9 +404,9 @@ namespace ChatdollKit.Examples.Dialogs
 
 なお`response`には`AnimatedVoiceRequest`の各種Addメソッド群が用意されいるため、上記例は`response.AnimatedVoiceRequest.AddVoiceTTS`と同義です。`response`に設定した発話やアニメーションはChatdollKitにより自動的に実行されます。
 
-## リクエストとコンテキスト
+## リクエストとステート
 
-`ProcessAsync`の引数として渡される`request`と`context`には、それぞれ今回のターンの要求情報とこれまでの文脈に関する情報が格納されています。これはWebアプリケーションにおけるリクエストとセッションとの関係と同じです。
+`ProcessAsync`の引数として渡される`request`と`state`には、それぞれ今回のターンの要求情報とこれまでの文脈に関する情報が格納されています。これはWebアプリケーションにおけるリクエストとセッションとの関係と同じです。
 
 ### Request
 
@@ -438,14 +438,14 @@ request.User.Nickname = "うえぞうちゃん";
 request.User.Data["FavoriteFood"] = "そば";
 ```
 
-### Context
+### State
 
 複数のリクエストを跨いで一定時間維持される情報。このうち`Topic`については話題の終了時に破棄されます。
 
 - Data: 文脈データ
-- Id: コンテキストを一意に特定するID
+- Id: ステートを一意に特定するID
 - IsNew: 対話処理がちょうど今始まったところかどうか
-- Timestamp: コンテキストが最後に更新された日時
+- Timestamp: ステートが最後に更新された日時
 - Topic: 対話中の話題
     - ContinueTopic: 次のリクエストにおいても話題を継続するかどうか
     - IsNew: この話題が今始まったところかどうか
@@ -454,7 +454,7 @@ request.User.Data["FavoriteFood"] = "そば";
     - Priority: 話題の優先度。インテントの優先度がセットされる。また、話題を継続しているとき、インテントの優先度がこの値よりも大きければ話題が切り替わる
     - RequiredRequestType: 次回リクエストの形式を指定。詳細はカメラによる要求・QRコードによる要求を参照
     - Status: 話題のステータス。対話シナリオの進行管理のために自由に利用
-- UserId: ユーザーのID。コンテキストの取得・永続化キー
+- UserId: ユーザーのID。ステートの取得・永続化キー
 
 なお`Topic.Status`の利用例は以下の通り。
 
@@ -462,11 +462,11 @@ request.User.Data["FavoriteFood"] = "そば";
 // 何らかの処理。この処理結果に応じてStatusを更新
 　：
 // ステータスに応じた応答の組み立て
-if (context.Topic.Status == "Success")
+if (state.Topic.Status == "Success")
 {
-    response.AddVoiceTTS($"今日の{context.Data["place"]}の天気は{context.Data["weather"]}だよ。");
+    response.AddVoiceTTS($"今日の{state.Data["place"]}の天気は{state.Data["weather"]}だよ。");
 }
-else if (context.Topic.Status == "NoPlace")
+else if (state.Topic.Status == "NoPlace")
 {
     response.AddVoiceTTS("どこの天気が知りたいの？");
 }
@@ -474,15 +474,15 @@ else if (context.Topic.Status == "NoPlace")
 
 ## 話題の継続
 
-リクエスト・レスポンスの1ターンで終わらせず文脈を維持して話題を継続したい場合、`context.Topic.ContinueTopic`を`true`にします。
+リクエスト・レスポンスの1ターンで終わらせず文脈を維持して話題を継続したい場合、`state.Topic.ContinueTopic`を`true`にします。
 
 ```csharp
-if (context.Topic.IsNew)
+if (state.Topic.IsNew)
 {
     // 初回ターンでは翻訳すべき文言の問いかけ
     response.AddVoiceTTS("翻訳ですね？何を翻訳しますか？");
     // 次回の発話も翻訳として処理されるように継続フラグを立てる
-    context.Topic.ContinueTopic = true;
+    state.Topic.ContinueTopic = true;
 }
 else
 {
@@ -523,7 +523,7 @@ namespace ChatdollKit.Examples.MultiDialog
 {
     public class Router : DialogRouterBase
     {
-        public override async Task ExtractIntentAsync(Request request, Context context, CancellationToken token)
+        public override async Task ExtractIntentAsync(Request request, State state, CancellationToken token)
         {
             if (request.Text.Contains("天気"))
             {
@@ -663,14 +663,14 @@ WakeWordListenerにウェイクワードを登録する際、Request Typeに`Cam
 
 ### Dialogの中でリクエストタイプを指定
 
-対話処理の中で`context.Topic.RequiredRequestType`に`RequestType.Camera`を指定することで、次回のリクエストをカメラによる撮影にすることができます。
+対話処理の中で`state.Topic.RequiredRequestType`に`RequestType.Camera`を指定することで、次回のリクエストをカメラによる撮影にすることができます。
 
 ```csharp
-if (context.Topic.IsNew)
+if (state.Topic.IsNew)
 {
     // 次のリクエストの形式をカメラに設定して話題を継続
-    context.Topic.RequiredRequestType = RequestType.Camera;
-    context.Topic.ContinueTopic = True;
+    state.Topic.RequiredRequestType = RequestType.Camera;
+    state.Topic.ContinueTopic = True;
     response.AddVoiceTTS("いいよ。笑ってね。");
 }
 else
@@ -711,14 +711,14 @@ WakeWordListenerにウェイクワードを登録する際、Request Typeに`QRC
 
 ### Dialogの中でリクエストタイプを指定
 
-対話処理の中で`context.Topic.RequiredRequestType`に`RequestType.QRCode`を指定することで、次回のリクエストをQRコードリーダーによる読み取りにすることができます。
+対話処理の中で`state.Topic.RequiredRequestType`に`RequestType.QRCode`を指定することで、次回のリクエストをQRコードリーダーによる読み取りにすることができます。
 
 ```csharp
-if (context.Topic.IsNew)
+if (state.Topic.IsNew)
 {
     // 次のリクエストの形式をQRコードリーダーに設定して話題を継続
-    context.Topic.RequiredRequestType = RequestType.QRCode;
-    context.Topic.ContinueTopic = True;
+    state.Topic.RequiredRequestType = RequestType.QRCode;
+    state.Topic.ContinueTopic = True;
     response.AddVoiceTTS("いらっしゃいませ。受付用のQRコードを見せてください。");
 }
 else
@@ -802,7 +802,7 @@ promptAnimatedVoiceRequest.AddFace("Smile");
 　：
 
 // プロンプトの処理に割当
-chatdoll.OnPromptAsync = async (preRequest, user, context, token) =>
+chatdoll.OnPromptAsync = async (preRequest, user, state, token) =>
 {
     await modelController.AnimatedSay(promptAnimatedVoiceRequest, token);
 };

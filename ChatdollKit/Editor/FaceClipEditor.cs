@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -232,7 +232,7 @@ public class FaceClipEditor : Editor
         modelController.AudioSource = lipSyncObject.GetComponent<AudioSource>();
         modelController.AudioSource.playOnAwake = false;
 
-        // Set LipSyncContext
+        // Set LipSyncState
         modelController.LipSyncContext = lipSyncObject.GetComponent<OVRLipSyncContext>();
 
         // Set blink target
@@ -464,12 +464,12 @@ public class FaceClipEditor : Editor
             }
         }
 
-        var context = morphTarget.gameObject.GetComponent<OVRLipSyncContext>();
-        if (context == null)
+        var state = morphTarget.gameObject.GetComponent<OVRLipSyncContext>();
+        if (state == null)
         {
-            context = morphTarget.gameObject.AddComponent<OVRLipSyncContext>();
+            state = morphTarget.gameObject.AddComponent<OVRLipSyncContext>();
         }
-        context.audioLoopback = true;
+        state.audioLoopback = true;
 
         return morphTarget.gameObject;
     }

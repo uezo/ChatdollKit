@@ -15,32 +15,32 @@ namespace ChatdollKit.Dialog
             httpClient?.Dispose();
         }
 
-        public override async Task<Response> PreProcessAsync(Request request, Context context, CancellationToken token)
+        public override async Task<Response> PreProcessAsync(Request request, State state, CancellationToken token)
         {
-            var httpDialogResponse = await httpClient.PostJsonAsync<HttpDialogResponse>(DialogUri, new HttpDialogRequest(request, context, true));
+            var httpDialogResponse = await httpClient.PostJsonAsync<HttpDialogResponse>(DialogUri, new HttpDialogRequest(request, state, true));
 
-            if (httpDialogResponse.Context != null)
+            if (httpDialogResponse.State != null)
             {
                 // Update status and data
-                context.Topic.Status = httpDialogResponse.Context.Topic.Status;
-                context.Data = httpDialogResponse.Context.Data;
+                state.Topic.Status = httpDialogResponse.State.Topic.Status;
+                state.Data = httpDialogResponse.State.Data;
             }
 
             return httpDialogResponse.Response;
         }
 
         // Process dialog on server
-        public override async Task<Response> ProcessAsync(Request request, Context context, CancellationToken token)
+        public override async Task<Response> ProcessAsync(Request request, State state, CancellationToken token)
         {
-            var httpDialogResponse = await httpClient.PostJsonAsync<HttpDialogResponse>(DialogUri, new HttpDialogRequest(request, context));
+            var httpDialogResponse = await httpClient.PostJsonAsync<HttpDialogResponse>(DialogUri, new HttpDialogRequest(request, state));
 
             // Update topic
-            context.Topic.Status = httpDialogResponse.Context.Topic.Status;
-            context.Topic.ContinueTopic = httpDialogResponse.Context.Topic.ContinueTopic;
-            context.Topic.RequiredRequestType = httpDialogResponse.Context.Topic.RequiredRequestType;
+            state.Topic.Status = httpDialogResponse.State.Topic.Status;
+            state.Topic.ContinueTopic = httpDialogResponse.State.Topic.ContinueTopic;
+            state.Topic.RequiredRequestType = httpDialogResponse.State.Topic.RequiredRequestType;
 
             // Update data
-            context.Data = httpDialogResponse.Context.Data;
+            state.Data = httpDialogResponse.State.Data;
 
             // Update user info
             request.User.Name = httpDialogResponse.Request.User.Name;
@@ -54,13 +54,13 @@ namespace ChatdollKit.Dialog
         private class HttpDialogRequest
         {
             public Request Request { get; set; }
-            public Context Context { get; set; }
+            public State State { get; set; }
             public bool PreProcess { get; set; }
 
-            public HttpDialogRequest(Request request, Context context, bool preProcess = false)
+            public HttpDialogRequest(Request request, State state, bool preProcess = false)
             {
                 Request = request;
-                Context = context;
+                State = state;
                 PreProcess = preProcess;
             }
         }
@@ -69,7 +69,7 @@ namespace ChatdollKit.Dialog
         private class HttpDialogResponse
         {
             public Request Request { get; set; }
-            public Context Context { get; set; }
+            public State State { get; set; }
             public Response Response { get; set; }
             public HttpDialogError Error { get; set; }
         }

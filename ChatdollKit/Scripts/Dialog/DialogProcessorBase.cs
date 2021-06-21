@@ -47,31 +47,31 @@ namespace ChatdollKit.Dialog
         }
 
 #pragma warning disable CS1998
-        public virtual async Task<Response> PreProcessAsync(Request request, Context context, CancellationToken token)
+        public virtual async Task<Response> PreProcessAsync(Request request, State state, CancellationToken token)
         {
             // Return AnimatedVoices or something to do when ProcessAsync is estimated to take much times in this method.
             return null;
         }
 #pragma warning restore CS1998
 
-        public virtual async Task ShowWaitingAnimationAsync(Response response, Request request, Context context, CancellationToken token)
+        public virtual async Task ShowWaitingAnimationAsync(Response response, Request request, State state, CancellationToken token)
         {
             if (response != null)
             {
-                await ShowResponseAsync(response, request, context, token);
+                await ShowResponseAsync(response, request, state, token);
             }
         }
 
         // Process dialog
 #pragma warning disable CS1998
-        public virtual async Task<Response> ProcessAsync(Request request, Context context, CancellationToken token)
+        public virtual async Task<Response> ProcessAsync(Request request, State state, CancellationToken token)
         {
             throw new NotImplementedException("DialogProcessorBase.ProcessAsync must be implemented");
         }
 #pragma warning restore CS1998
 
         // Show response
-        public virtual async Task ShowResponseAsync(Response response, Request request, Context context, CancellationToken token)
+        public virtual async Task ShowResponseAsync(Response response, Request request, State state, CancellationToken token)
         {
             if (token.IsCancellationRequested)
             {

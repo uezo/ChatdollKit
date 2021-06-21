@@ -16,7 +16,7 @@ namespace ChatdollKit.Examples.Dialogs
             client?.Dispose();
         }
 
-        public override async Task<Response> ProcessAsync(Request request, Context context, CancellationToken token)
+        public override async Task<Response> ProcessAsync(Request request, State state, CancellationToken token)
         {
             var response = new Response(request.Id);
 
@@ -32,7 +32,7 @@ namespace ChatdollKit.Examples.Dialogs
             response.AddVoiceTTS((a3rtResponse?.results?[0]?.reply ?? string.Empty) + "。");
 
             // Set true to continue chatting after this response
-            context.Topic.ContinueTopic = true;
+            state.Topic.ContinueTopic = true;
 
             return response;
         }

@@ -7,9 +7,9 @@ namespace ChatdollKit.Dialog
     {
         string TopicName { get; }
         void Configure();
-        Task<Response> PreProcessAsync(Request request, Context context, CancellationToken token);
-        Task ShowWaitingAnimationAsync(Response response, Request request, Context context, CancellationToken token);
-        Task<Response> ProcessAsync(Request request, Context context, CancellationToken token);
-        Task ShowResponseAsync(Response response, Request request, Context context, CancellationToken token);
+        Task<Response> PreProcessAsync(Request request, State state, CancellationToken token);
+        Task ShowWaitingAnimationAsync(Response response, Request request, State state, CancellationToken token);
+        Task<Response> ProcessAsync(Request request, State state, CancellationToken token);
+        Task ShowResponseAsync(Response response, Request request, State state, CancellationToken token);
     }
 }

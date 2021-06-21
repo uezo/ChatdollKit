@@ -17,7 +17,7 @@ namespace ChatdollKit.Examples.MultiDialog
             azureTranslator = new AzureTranslator(AzureSubscriptionKey);
         }
 
-        public override async Task<Response> ProcessAsync(Request request, Context context, CancellationToken token)
+        public override async Task<Response> ProcessAsync(Request request, State state, CancellationToken token)
         {
             // Translate
             var translatedText = await TranslateAsync(request.Text);
@@ -25,7 +25,7 @@ namespace ChatdollKit.Examples.MultiDialog
             // Build and return response message
             var response = new Response(request.Id);
 
-            if (context.Topic.IsNew)
+            if (state.Topic.IsNew)
             {
                 response.AddVoiceTTS("何を翻訳しますか？");
                 response.AddAnimation("Default");
@@ -37,7 +37,7 @@ namespace ChatdollKit.Examples.MultiDialog
             }
 
             // Continue until stop
-            context.Topic.ContinueTopic = true;
+            state.Topic.ContinueTopic = true;
 
             return response;
         }

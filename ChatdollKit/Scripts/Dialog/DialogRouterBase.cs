@@ -25,47 +25,47 @@ namespace ChatdollKit.Dialog
         }
 
 #pragma warning disable CS1998
-        public virtual async Task ExtractIntentAsync(Request request, Context context, CancellationToken token)
+        public virtual async Task ExtractIntentAsync(Request request, State state, CancellationToken token)
         {
             throw new NotImplementedException("DialogRouterBase.ProcessAsync must be implemented");
         }
 #pragma warning restore CS1998
 
-        public virtual IDialogProcessor Route(Request request, Context context, CancellationToken token)
+        public virtual IDialogProcessor Route(Request request, State state, CancellationToken token)
         {
             // Update topic
             IDialogProcessor dialogProcessor;
-            if (intentResolver.ContainsKey(request.Intent) && (request.IntentPriority > context.Topic.Priority || string.IsNullOrEmpty(context.Topic.Name)))
+            if (intentResolver.ContainsKey(request.Intent) && (request.IntentPriority > state.Topic.Priority || string.IsNullOrEmpty(state.Topic.Name)))
             {
                 dialogProcessor = intentResolver[request.Intent];
                 if (!request.IsAdhoc)
                 {
-                    context.Topic.Name = dialogProcessor.TopicName;
-                    context.Topic.Status = "";
+                    state.Topic.Name = dialogProcessor.TopicName;
+                    state.Topic.Status = "";
                     if (request.IntentPriority >= Priority.Highest)
                     {
                         // Set slightly lower priority to enable to update Highest priority intent
-                        context.Topic.Priority = Priority.Highest - 1;
+                        state.Topic.Priority = Priority.Highest - 1;
                     }
                     else
                     {
-                        context.Topic.Priority = request.IntentPriority;
+                        state.Topic.Priority = request.IntentPriority;
                     }
-                    context.Topic.IsNew = true;
+                    state.Topic.IsNew = true;
                 }
                 else
                 {
                     // Do not update topic when request is adhoc
-                    if (!string.IsNullOrEmpty(context.Topic.Name))
+                    if (!string.IsNullOrEmpty(state.Topic.Name))
                     {
-                        context.Topic.ContinueTopic = true;
+                        state.Topic.ContinueTopic = true;
                     }
                 }
             }
-            else if (!string.IsNullOrEmpty(context.Topic.Name))
+            else if (!string.IsNullOrEmpty(state.Topic.Name))
             {
                 // Continue topic
-                dialogProcessor = topicResolver[context.Topic.Name];
+                dialogProcessor = topicResolver[state.Topic.Name];
             }
             else
             {

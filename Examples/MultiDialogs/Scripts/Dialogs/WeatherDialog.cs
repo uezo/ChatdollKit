@@ -10,7 +10,7 @@ namespace ChatdollKit.Examples.MultiDialog
     {
 
 #pragma warning disable CS1998
-        public override async Task<Response> ProcessAsync(Request request, Context context, CancellationToken token)
+        public override async Task<Response> ProcessAsync(Request request, State state, CancellationToken token)
         {
             // Get weather
             var weather = GetWeather(request);

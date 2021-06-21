@@ -1,4 +1,4 @@
-# ChatdollKit
+﻿# ChatdollKit
 ChatdollKit enables you to make your 3D model into a voice-enabled chatbot.
 
 [🇯🇵日本語のREADMEはこちら](https://github.com/uezo/ChatdollKit/blob/master/README.ja.md)
@@ -13,7 +13,7 @@ ChatdollKit enables you to make your 3D model into a voice-enabled chatbot.
 - Dialog
     - Speech-to-Text (Azure, Google, Watson etc)
     - Text-to-Speech (Azure, Google, Watson, Voiceroid etc)
-    - Dialog context management
+    - Dialog state management
     - Intent extraction and topic routing
 
 - I/O
