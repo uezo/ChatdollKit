@@ -8,7 +8,7 @@ namespace ChatdollKit.Dialog
     public class HttpSkillRouter : SkillRouterBase
     {
         public string IntentExtractorUri;
-        public string DialogProcessorUriBase;
+        public string SkillUriBase;
         protected ChatdollHttp httpClient = new ChatdollHttp();
 
         private void OnDestroy()
@@ -34,13 +34,13 @@ namespace ChatdollKit.Dialog
 
         public override ISkill Route(Request request, State state, CancellationToken token)
         {
-            // Register DialogProcessor dynamically
+            // Register skill dynamically
             if (!topicResolver.ContainsKey(request.Intent))
             {
                 var skill = gameObject.AddComponent<HttpSkillBase>();
                 skill.Name = request.Intent;
-                skill.DialogUri = DialogProcessorUriBase.EndsWith("/") ?
-                    DialogProcessorUriBase + request.Intent : DialogProcessorUriBase + "/" + request.Intent;
+                skill.DialogUri = SkillUriBase.EndsWith("/") ?
+                    SkillUriBase + request.Intent : SkillUriBase + "/" + request.Intent;
                 RegisterSkill(skill);
             }
 

@@ -62,7 +62,7 @@ namespace ChatdollKit.Dialog
 #pragma warning disable CS1998
         public virtual async Task<Response> ProcessAsync(Request request, State state, CancellationToken token)
         {
-            throw new NotImplementedException("DialogProcessorBase.ProcessAsync must be implemented");
+            throw new NotImplementedException("SkillBase.ProcessAsync must be implemented");
         }
 #pragma warning restore CS1998
 

@@ -64,7 +64,7 @@ namespace ChatdollKit
             }
 
             // Configure router
-            SkillRouter = gameObject.GetComponent<ISkillRouter>() ?? gameObject.AddComponent<StaticDialogRouter>();
+            SkillRouter = gameObject.GetComponent<ISkillRouter>() ?? gameObject.AddComponent<StaticSkillRouter>();
             SkillRouter.Configure();
 
             // Register intents and its processor
@@ -79,7 +79,7 @@ namespace ChatdollKit
             }
             else
             {
-                Debug.LogError("DialogProcessors are missing");
+                Debug.LogError("Skills are missing");
             }
 
             // ModelController
@@ -180,17 +180,17 @@ namespace ChatdollKit
                     if (token.IsCancellationRequested) { return; }
 
                     // Get dialog to process intent / topic
-                    var dialogProcessor = SkillRouter.Route(request, state, token);
+                    var skill = SkillRouter.Route(request, state, token);
                     if (token.IsCancellationRequested) { return; }
 
                     // PreProcess
-                    var preProcessResponse = await dialogProcessor.PreProcessAsync(request, state, token);
+                    var preProcessResponse = await skill.PreProcessAsync(request, state, token);
 
                     // Start showing waiting animation
-                    var waitingAnimationTask = dialogProcessor.ShowWaitingAnimationAsync(preProcessResponse, request, state, token);
+                    var waitingAnimationTask = skill.ShowWaitingAnimationAsync(preProcessResponse, request, state, token);
 
                     // Process dialog
-                    var dialogResponse = await dialogProcessor.ProcessAsync(request, state, token);
+                    var dialogResponse = await skill.ProcessAsync(request, state, token);
                     if (token.IsCancellationRequested) { return; }
 
                     // Wait for waiting animation before show response of dialog
@@ -199,7 +199,7 @@ namespace ChatdollKit
                     if (token.IsCancellationRequested) { return; }
 
                     // Show response of dialog
-                    await dialogProcessor.ShowResponseAsync(dialogResponse, request, state, token);
+                    await skill.ShowResponseAsync(dialogResponse, request, state, token);
                     if (token.IsCancellationRequested) { return; }
 
                     // Post process

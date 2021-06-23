@@ -48,10 +48,10 @@ version 0.3.0 | June 21, 2021 | &copy;2020 uezo
         - [UI](#ui)
     - [カメラによる処理要求](#カメラによる処理要求)
         - [WakeWordにリクエストタイプを指定](#wakewordにリクエストタイプを指定)
-        - [Dialogの中でリクエストタイプを指定](#dialogの中でリクエストタイプを指定)
+        - [Skillの中でリクエストタイプを指定](#skillの中でリクエストタイプを指定)
     - [QRコードによる処理要求](#qrコードによる処理要求)
         - [WakeWordにリクエストタイプを指定](#wakewordにリクエストタイプを指定-1)
-        - [Dialogの中でリクエストタイプを指定](#dialogの中でリクエストタイプを指定-1)
+        - [Skillの中でリクエストタイプを指定](#skillの中でリクエストタイプを指定-1)
         - [QRコードのデコード処理](#qrコードのデコード処理)
     - [ウェイクワード](#ウェイクワード)
         - [WakeWord Settings](#wakeword-settings)
@@ -126,7 +126,7 @@ namespace MyChatdollApp
 
 ## 動作確認
 
-動作確認用に`ChatdollKit/Examples/Dialogs`から`EchoDialog`を3Dモデルにアタッチして、Unityエディタの実行ボタンを押下してください。以下の通り対話を進行できるか確認してみましょう。
+動作確認用に`ChatdollKit/Examples/Dialogs`から`EchoSkill`を3Dモデルにアタッチして、Unityエディタの実行ボタンを押下してください。以下の通り対話を進行できるか確認してみましょう。
 
 - ユーザー「こんにちは」
 - Chatdoll「どうしたの？」
@@ -373,11 +373,11 @@ modelController.AddIdleAnimation(animatedVoiceRequest);
 
 # 対話の制御
 
-話題に応じた対話処理を、ChatdollKitでは`Dialog`と呼んでおり、作成するには`IDialogProcessor`インターフェイスを実装します。また、基本的な処理を実装済みの`DialogProcessorBase`を継承することでより簡単な手順で作成することもできます。
+話題に応じた対話処理を、ChatdollKitでは`Skill`と呼んでおり、作成するには`ISkill`インターフェイスを実装します。また、基本的な処理を実装済みの`SkillBase`を継承することでより簡単な手順で作成することもできます。
 
 ## カスタムスキル追加の基本
 
-以下はおうむ返しのDialogの実装です。最小限の実装としては、この例のように`ProcessAsync`をオーバーライドして各種処理の実行やその結果に応じたレスポンスメッセージの組み立てを行います。
+以下はおうむ返しのSkillの実装です。最小限の実装としては、この例のように`ProcessAsync`をオーバーライドして各種処理の実行やその結果に応じたレスポンスメッセージの組み立てを行います。
 
 ```csharp
 using System.Threading;
@@ -386,7 +386,7 @@ using ChatdollKit.Dialog;
 
 namespace ChatdollKit.Examples.Dialogs
 {
-    public class EchoDialog : DialogProcessorBase
+    public class EchoSkill : SkillBase
     {
         public override async Task<Response> ProcessAsync(Request request, State state, CancellationToken token)
         {
@@ -506,7 +506,7 @@ else
 
 ## 対話処理のルーティング
 
-ユーザーが何の話題について話そうとしているかを理解し適切な`Dialog`を呼び出す機能を、ChatdollKitでは`DialogRouter`と呼んでおり、作成するには`IDialogRouter`インターフェイスを実装します。また、基本的な処理を実装済みの`DialogRouterBase`を継承することでより簡単な手順で作成することもできます。その場合に実装すべきメソッドは`ExtractIntentAsync`のみです。
+ユーザーが何の話題について話そうとしているかを理解し適切な`Skill`を呼び出す機能を、ChatdollKitでは`SkillRouter`と呼んでおり、作成するには`ISkillRouter`インターフェイスを実装します。また、基本的な処理を実装済みの`SkillRouterBase`を継承することでより簡単な手順で作成することもできます。その場合に実装すべきメソッドは`ExtractIntentAsync`のみです。
 
 ### インテントの抽出
 
@@ -521,7 +521,7 @@ using ChatdollKit.Dialog;
 
 namespace ChatdollKit.Examples.MultiDialog
 {
-    public class Router : DialogRouterBase
+    public class Router : SkillRouterBase
     {
         public override async Task ExtractIntentAsync(Request request, State state, CancellationToken token)
         {
@@ -661,7 +661,7 @@ WakeWordListenerにウェイクワードを登録する際、Request Typeに`Cam
 - カメラ起動、撮影（リクエスト）
 - 「笑えって言ったのに。」（レスポンス）
 
-### Dialogの中でリクエストタイプを指定
+### Skillの中でリクエストタイプを指定
 
 対話処理の中で`state.Topic.RequiredRequestType`に`RequestType.Camera`を指定することで、次回のリクエストをカメラによる撮影にすることができます。
 
@@ -709,7 +709,7 @@ WakeWordListenerにウェイクワードを登録する際、Request Typeに`QRC
 - QRコードリーダー起動、読み取り（リクエスト）
 - 「沼津銀行の国木田さんですね。お待ちしておりました。」（レスポンス）
 
-### Dialogの中でリクエストタイプを指定
+### Skillの中でリクエストタイプを指定
 
 対話処理の中で`state.Topic.RequiredRequestType`に`RequestType.QRCode`を指定することで、次回のリクエストをQRコードリーダーによる読み取りにすることができます。
 
@@ -842,9 +842,9 @@ public class WordNode
 
 ## 対話処理のサーバーサイド実装
 
-実機のアプリケーションを差し替えてのデバッグ作業に時間がかかる場合や対話処理の変更を直ちに反映させたい場合には、対話処理（DialogRouterおよびDialogProcessor）をサーバーサイドに配置することができます。
+実機のアプリケーションを差し替えてのデバッグ作業に時間がかかる場合や対話処理の変更を直ちに反映させたい場合には、対話処理（SkillRouterおよびSkill）をサーバーサイドに配置することができます。
 
-このコンポーネントは実験的なものですが、`HttpDialogRouter`をアタッチすることで対話処理APIと連携できるようになります。
+このコンポーネントは実験的なものですが、`HttpSkillRouter`をアタッチすることで対話処理APIと連携できるようになります。
 
 サーバーサイドのSDKについてはPythonベースのものを公開していますので参考にしてください。
 https://github.com/uezo/chatdollkit-server-python/blob/main/README.ja.md

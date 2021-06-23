@@ -25,7 +25,7 @@ namespace ChatdollKit.Dialog
 #pragma warning disable CS1998
         public virtual async Task ExtractIntentAsync(Request request, State state, CancellationToken token)
         {
-            throw new NotImplementedException("DialogRouterBase.ProcessAsync must be implemented");
+            throw new NotImplementedException("SkillRouterBase.ProcessAsync must be implemented");
         }
 #pragma warning restore CS1998
 
