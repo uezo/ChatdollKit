@@ -68,13 +68,13 @@ namespace ChatdollKit
             SkillRouter.Configure();
 
             // Register intents and its processor
-            var dialogProcessors = gameObject.GetComponents<ISkill>();
-            if (dialogProcessors != null)
+            var skills = gameObject.GetComponents<ISkill>();
+            if (skills != null)
             {
-                foreach (var dp in dialogProcessors)
+                foreach (var skill in skills)
                 {
-                    SkillRouter.RegisterIntent(dp.TopicName, dp);
-                    Debug.Log($"Intent '{dp.TopicName}' registered successfully");
+                    SkillRouter.RegisterSkill(skill);
+                    Debug.Log($"Skill '{skill.TopicName}' registered successfully");
                 }
             }
             else

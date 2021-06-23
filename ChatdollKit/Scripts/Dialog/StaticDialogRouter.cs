@@ -9,9 +9,9 @@ namespace ChatdollKit.Dialog
 #pragma warning disable CS1998
         public override async Task ExtractIntentAsync(Request request, State state, CancellationToken token)
         {
-            if (intentResolver.Count == 1)
+            if (topicResolver.Count == 1)
             {
-                request.Intent = intentResolver.First().Key;
+                request.Intent = topicResolver.First().Key;
             }
             else
             {

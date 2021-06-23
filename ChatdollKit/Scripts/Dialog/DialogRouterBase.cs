@@ -9,7 +9,6 @@ namespace ChatdollKit.Dialog
 {
     public class SkillRouterBase : MonoBehaviour, ISkillRouter
     {
-        protected Dictionary<string, ISkill> intentResolver = new Dictionary<string, ISkill>();
         protected Dictionary<string, ISkill> topicResolver = new Dictionary<string, ISkill>();
 
         public virtual void Configure()
@@ -17,10 +16,9 @@ namespace ChatdollKit.Dialog
             
         }
 
-        public void RegisterIntent(string intentName, ISkill skill)
+        public void RegisterSkill(ISkill skill)
         {
             skill.Configure();
-            intentResolver.Add(intentName, skill);
             topicResolver.Add(skill.TopicName, skill);
         }
 
@@ -35,9 +33,9 @@ namespace ChatdollKit.Dialog
         {
             // Update topic
             ISkill skill;
-            if (intentResolver.ContainsKey(request.Intent) && (request.IntentPriority > state.Topic.Priority || string.IsNullOrEmpty(state.Topic.Name)))
+            if (topicResolver.ContainsKey(request.Intent) && (request.IntentPriority > state.Topic.Priority || string.IsNullOrEmpty(state.Topic.Name)))
             {
-                skill = intentResolver[request.Intent];
+                skill = topicResolver[request.Intent];
                 if (!request.IsAdhoc)
                 {
                     state.Topic.Name = skill.TopicName;

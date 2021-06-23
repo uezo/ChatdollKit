@@ -35,13 +35,13 @@ namespace ChatdollKit.Dialog
         public override ISkill Route(Request request, State state, CancellationToken token)
         {
             // Register DialogProcessor dynamically
-            if (!intentResolver.ContainsKey(request.Intent))
+            if (!topicResolver.ContainsKey(request.Intent))
             {
                 var skill = gameObject.AddComponent<HttpSkillBase>();
                 skill.Name = request.Intent;
                 skill.DialogUri = DialogProcessorUriBase.EndsWith("/") ?
                     DialogProcessorUriBase + request.Intent : DialogProcessorUriBase + "/" + request.Intent;
-                RegisterIntent(request.Intent, skill);
+                RegisterSkill(skill);
             }
 
             return base.Route(request, state, token);
