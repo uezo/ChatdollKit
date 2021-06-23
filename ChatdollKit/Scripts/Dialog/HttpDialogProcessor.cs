@@ -5,7 +5,7 @@ using ChatdollKit.Network;
 
 namespace ChatdollKit.Dialog
 {
-    public class HttpDialogProcessor : DialogProcessorBase
+    public class HttpSkillBase : SkillBase
     {
         public string DialogUri;
         protected ChatdollHttp httpClient = new ChatdollHttp();

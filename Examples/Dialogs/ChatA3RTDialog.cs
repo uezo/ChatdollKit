@@ -6,7 +6,7 @@ using ChatdollKit.Network;
 
 namespace ChatdollKit.Examples.Dialogs
 {
-    public class ChatA3RTDialog : DialogProcessorBase
+    public class ChatA3RTDialog : SkillBase
     {
         public string A3RTApiKey;
         private ChatdollHttp client = new ChatdollHttp();

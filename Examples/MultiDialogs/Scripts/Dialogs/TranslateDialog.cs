@@ -5,7 +5,7 @@ using ChatdollKit.Extension.Azure;
 
 namespace ChatdollKit.Examples.MultiDialog
 {
-    public class TranslateDialog : DialogProcessorBase
+    public class TranslateDialog : SkillBase
     {
         public string AzureSubscriptionKey;
         private AzureTranslator azureTranslator;

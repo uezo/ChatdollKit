@@ -4,7 +4,7 @@ using ChatdollKit.Dialog;
 
 namespace ChatdollKit.Examples.MultiDialog
 {
-    public class Router : DialogRouterBase
+    public class Router : SkillRouterBase
     {
         public string WeatherKeyword = "天気";
         public string TranslateKeyword = "翻訳";

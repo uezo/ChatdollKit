@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace ChatdollKit.Dialog
 {
-    public interface IDialogProcessor
+    public interface ISkill
     {
         string TopicName { get; }
         void Configure();

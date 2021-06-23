@@ -7,21 +7,21 @@ using ChatdollKit.Model;
 
 namespace ChatdollKit.Dialog
 {
-    public class DialogRouterBase : MonoBehaviour, IDialogRouter
+    public class SkillRouterBase : MonoBehaviour, ISkillRouter
     {
-        protected Dictionary<string, IDialogProcessor> intentResolver = new Dictionary<string, IDialogProcessor>();
-        protected Dictionary<string, IDialogProcessor> topicResolver = new Dictionary<string, IDialogProcessor>();
+        protected Dictionary<string, ISkill> intentResolver = new Dictionary<string, ISkill>();
+        protected Dictionary<string, ISkill> topicResolver = new Dictionary<string, ISkill>();
 
         public virtual void Configure()
         {
             
         }
 
-        public void RegisterIntent(string intentName, IDialogProcessor dialogProcessor)
+        public void RegisterIntent(string intentName, ISkill skill)
         {
-            dialogProcessor.Configure();
-            intentResolver.Add(intentName, dialogProcessor);
-            topicResolver.Add(dialogProcessor.TopicName, dialogProcessor);
+            skill.Configure();
+            intentResolver.Add(intentName, skill);
+            topicResolver.Add(skill.TopicName, skill);
         }
 
 #pragma warning disable CS1998
@@ -31,16 +31,16 @@ namespace ChatdollKit.Dialog
         }
 #pragma warning restore CS1998
 
-        public virtual IDialogProcessor Route(Request request, State state, CancellationToken token)
+        public virtual ISkill Route(Request request, State state, CancellationToken token)
         {
             // Update topic
-            IDialogProcessor dialogProcessor;
+            ISkill skill;
             if (intentResolver.ContainsKey(request.Intent) && (request.IntentPriority > state.Topic.Priority || string.IsNullOrEmpty(state.Topic.Name)))
             {
-                dialogProcessor = intentResolver[request.Intent];
+                skill = intentResolver[request.Intent];
                 if (!request.IsAdhoc)
                 {
-                    state.Topic.Name = dialogProcessor.TopicName;
+                    state.Topic.Name = skill.TopicName;
                     state.Topic.Status = "";
                     if (request.IntentPriority >= Priority.Highest)
                     {
@@ -65,7 +65,7 @@ namespace ChatdollKit.Dialog
             else if (!string.IsNullOrEmpty(state.Topic.Name))
             {
                 // Continue topic
-                dialogProcessor = topicResolver[state.Topic.Name];
+                skill = topicResolver[state.Topic.Name];
             }
             else
             {
@@ -73,7 +73,7 @@ namespace ChatdollKit.Dialog
                 throw new Exception("No dialog processor found");
             }
 
-            return dialogProcessor;
+            return skill;
         }
     }
 }

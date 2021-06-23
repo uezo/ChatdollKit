@@ -6,7 +6,7 @@ using ChatdollKit.Dialog;
 
 namespace ChatdollKit.Examples.MultiDialog
 {
-    public class WeatherDialog : DialogProcessorBase
+    public class WeatherDialog : SkillBase
     {
 
 #pragma warning disable CS1998

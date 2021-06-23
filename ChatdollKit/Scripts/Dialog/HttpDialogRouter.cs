@@ -5,7 +5,7 @@ using ChatdollKit.Network;
 
 namespace ChatdollKit.Dialog
 {
-    public class HttpDialogRouter : DialogRouterBase
+    public class HttpSkillRouter : SkillRouterBase
     {
         public string IntentExtractorUri;
         public string DialogProcessorUriBase;
@@ -32,16 +32,16 @@ namespace ChatdollKit.Dialog
             state.Data = httpIntentResponse.State.Data;
         }
 
-        public override IDialogProcessor Route(Request request, State state, CancellationToken token)
+        public override ISkill Route(Request request, State state, CancellationToken token)
         {
             // Register DialogProcessor dynamically
             if (!intentResolver.ContainsKey(request.Intent))
             {
-                var dialogProcessor = gameObject.AddComponent<HttpDialogProcessor>();
-                dialogProcessor.Name = request.Intent;
-                dialogProcessor.DialogUri = DialogProcessorUriBase.EndsWith("/") ?
+                var skill = gameObject.AddComponent<HttpSkillBase>();
+                skill.Name = request.Intent;
+                skill.DialogUri = DialogProcessorUriBase.EndsWith("/") ?
                     DialogProcessorUriBase + request.Intent : DialogProcessorUriBase + "/" + request.Intent;
-                RegisterIntent(request.Intent, dialogProcessor);
+                RegisterIntent(request.Intent, skill);
             }
 
             return base.Route(request, state, token);

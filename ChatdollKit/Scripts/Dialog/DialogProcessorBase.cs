@@ -6,7 +6,7 @@ using ChatdollKit.Model;
 
 namespace ChatdollKit.Dialog
 {
-    public class DialogProcessorBase : MonoBehaviour, IDialogProcessor
+    public class SkillBase : MonoBehaviour, ISkill
     {
         public string Name;
         protected ModelController modelController;
@@ -29,13 +29,9 @@ namespace ChatdollKit.Dialog
 
                 // Create name from ClassName
                 var name = GetType().Name;
-                if (name.ToLower().EndsWith("dialogprocessor"))
+                if (name.ToLower().EndsWith("skill"))
                 {
-                    name = name.Substring(0, name.Length - 15);
-                }
-                else if (name.ToLower().EndsWith("dialog"))
-                {
-                    name = name.Substring(0, name.Length - 6);
+                    name = name.Substring(0, name.Length - 5);
                 }
                 return name.ToLower();
             }

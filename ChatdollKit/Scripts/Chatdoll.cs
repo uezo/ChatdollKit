@@ -17,7 +17,7 @@ namespace ChatdollKit
         public bool IsError { get; private set; }
         public IUserStore UserStore { get; private set; }
         public IStateStore StateStore { get; private set; }
-        public IDialogRouter DialogRouter { get; private set; }
+        public ISkillRouter SkillRouter { get; private set; }
         public Dictionary<RequestType, IRequestProvider> RequestProviders { get; private set; }
 
         // Model
@@ -64,16 +64,16 @@ namespace ChatdollKit
             }
 
             // Configure router
-            DialogRouter = gameObject.GetComponent<IDialogRouter>() ?? gameObject.AddComponent<StaticDialogRouter>();
-            DialogRouter.Configure();
+            SkillRouter = gameObject.GetComponent<ISkillRouter>() ?? gameObject.AddComponent<StaticDialogRouter>();
+            SkillRouter.Configure();
 
             // Register intents and its processor
-            var dialogProcessors = gameObject.GetComponents<IDialogProcessor>();
+            var dialogProcessors = gameObject.GetComponents<ISkill>();
             if (dialogProcessors != null)
             {
                 foreach (var dp in dialogProcessors)
                 {
-                    DialogRouter.RegisterIntent(dp.TopicName, dp);
+                    SkillRouter.RegisterIntent(dp.TopicName, dp);
                     Debug.Log($"Intent '{dp.TopicName}' registered successfully");
                 }
             }
@@ -154,7 +154,7 @@ namespace ChatdollKit
                     // Extract intent
                     if (preRequest == null || string.IsNullOrEmpty(preRequest.Intent))
                     {
-                        await DialogRouter.ExtractIntentAsync(request, state, token);
+                        await SkillRouter.ExtractIntentAsync(request, state, token);
                     }
 
                     if (string.IsNullOrEmpty(request.Intent) && string.IsNullOrEmpty(state.Topic.Name))
@@ -180,7 +180,7 @@ namespace ChatdollKit
                     if (token.IsCancellationRequested) { return; }
 
                     // Get dialog to process intent / topic
-                    var dialogProcessor = DialogRouter.Route(request, state, token);
+                    var dialogProcessor = SkillRouter.Route(request, state, token);
                     if (token.IsCancellationRequested) { return; }
 
                     // PreProcess

@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace ChatdollKit.Dialog
 {
-    public class StaticDialogRouter : DialogRouterBase
+    public class StaticDialogRouter : SkillRouterBase
     {
 #pragma warning disable CS1998
         public override async Task ExtractIntentAsync(Request request, State state, CancellationToken token)
