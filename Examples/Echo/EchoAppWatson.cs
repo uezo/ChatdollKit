@@ -4,7 +4,7 @@ using ChatdollKit.Extension.Watson;
 
 namespace ChatdollKit.Examples.Echo
 {
-    [RequireComponent(typeof(EchoDialog))]
+    [RequireComponent(typeof(EchoSkill))]
     public class EchoAppWatson : WatsonApplication
     {
         [Header("Application Language")]

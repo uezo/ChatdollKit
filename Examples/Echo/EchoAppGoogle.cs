@@ -4,7 +4,7 @@ using ChatdollKit.Extension.Google;
 
 namespace ChatdollKit.Examples.Echo
 {
-    [RequireComponent(typeof(EchoDialog))]
+    [RequireComponent(typeof(EchoSkill))]
     public class EchoAppGoogle : GoogleApplication
     {
         [Header("Application Language")]

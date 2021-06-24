@@ -4,7 +4,7 @@ using ChatdollKit.Dialog;
 
 namespace ChatdollKit.Examples.Dialogs
 {
-    public class EchoDialog : SkillBase
+    public class EchoSkill : SkillBase
     {
         public override async Task<Response> ProcessAsync(Request request, State state, CancellationToken token)
         {
