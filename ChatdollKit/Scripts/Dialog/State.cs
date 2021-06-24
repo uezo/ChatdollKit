@@ -46,7 +46,6 @@ namespace ChatdollKit.Dialog
         public string Status { get; set; }
         public bool IsNew { get; set; }
         public bool ContinueTopic { get; set; }
-        public Topic Previous { get; }
         public Priority Priority { get; set; }
         public RequestType RequiredRequestType { get; set; }
 
