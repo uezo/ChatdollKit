@@ -33,7 +33,7 @@ namespace ChatdollKit.Dialog
 
         public async Task OnPromptAsync(Request preRequest, User user, State state, CancellationToken token)
         {
-            var promptKey = preRequest != null && !string.IsNullOrEmpty(preRequest.Intent) ? preRequest.Intent : defaultPromptKey;
+            var promptKey = preRequest != null && preRequest.HasIntent() ? preRequest.Intent.Name : defaultPromptKey;
             var promptAnimatedVoice = promptAnimatedVoices.ContainsKey(promptKey) ? promptAnimatedVoices[promptKey] : null;
             if (promptAnimatedVoice == null)
             {

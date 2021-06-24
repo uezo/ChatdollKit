@@ -7,7 +7,7 @@ namespace ChatdollKit.Dialog
     {
         void Configure();
         void RegisterSkill(ISkill skill);
-        Task ExtractIntentAsync(Request request, State state, CancellationToken token);
+        Task<IntentExtractionResult> ExtractIntentAsync(Request request, State state, CancellationToken token);
         ISkill Route(Request request, State state, CancellationToken token);
     }
 }

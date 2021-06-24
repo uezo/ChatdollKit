@@ -23,7 +23,7 @@ namespace ChatdollKit.Dialog
         }
 
 #pragma warning disable CS1998
-        public virtual async Task ExtractIntentAsync(Request request, State state, CancellationToken token)
+        public virtual async Task<IntentExtractionResult> ExtractIntentAsync(Request request, State state, CancellationToken token)
         {
             throw new NotImplementedException("SkillRouterBase.ProcessAsync must be implemented");
         }
@@ -31,23 +31,20 @@ namespace ChatdollKit.Dialog
 
         public virtual ISkill Route(Request request, State state, CancellationToken token)
         {
-            // Update topic
-            ISkill skill;
-            if (topicResolver.ContainsKey(request.Intent) && (request.IntentPriority > state.Topic.Priority || string.IsNullOrEmpty(state.Topic.Name)))
+            if (shouldStartTopic(request, state))
             {
-                skill = topicResolver[request.Intent];
-                if (!request.IsAdhoc)
+                if (!request.Intent.IsAdhoc)
                 {
-                    state.Topic.Name = skill.TopicName;
+                    state.Topic.Name = request.Intent.Name;
                     state.Topic.Status = "";
-                    if (request.IntentPriority >= Priority.Highest)
+                    if (request.Intent.Priority >= Priority.Highest)
                     {
                         // Set slightly lower priority to enable to update Highest priority intent
                         state.Topic.Priority = Priority.Highest - 1;
                     }
                     else
                     {
-                        state.Topic.Priority = request.IntentPriority;
+                        state.Topic.Priority = request.Intent.Priority;
                     }
                     state.Topic.IsNew = true;
                 }
@@ -59,19 +56,43 @@ namespace ChatdollKit.Dialog
                         state.Topic.ContinueTopic = true;
                     }
                 }
+
+                return topicResolver[request.Intent.Name];
             }
             else if (!string.IsNullOrEmpty(state.Topic.Name))
             {
                 // Continue topic
-                skill = topicResolver[state.Topic.Name];
+                return topicResolver[state.Topic.Name];
             }
             else
             {
-                // Use default when the intent is not determined
-                throw new Exception("No dialog processor found");
+                throw new Exception("No skill found");
+            }
+        }
+
+        private bool shouldStartTopic(Request request, State state)
+        {
+            if (!request.HasIntent())
+            {
+                // Return false if intent is not set
+                return false;
             }
 
-            return skill;
+            if (!topicResolver.ContainsKey(request.Intent.Name))
+            {
+                // Return false if no skills found match to the intent
+                return false;
+            }
+
+            if (request.Intent.Priority > state.Topic.Priority || string.IsNullOrEmpty(state.Topic.Name))
+            {
+                // Return true if the priority of intent is higher than that of topic or topic is not set
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
     }
 }

@@ -11,19 +11,20 @@ namespace ChatdollKit.Examples.MultiDialog
 
         // Extract intent and entities from request and state
 #pragma warning disable CS1998
-        public override async Task ExtractIntentAsync(Request request, State state, CancellationToken token)
+        public override async Task<IntentExtractionResult> ExtractIntentAsync(Request request, State state, CancellationToken token)
         {
             if (request.Text.Contains(WeatherKeyword))
             {
-                request.Intent = "weather";
+                return new IntentExtractionResult("weather");
+
             }
             else if (request.Text.Contains(TranslateKeyword))
             {
-                request.Intent = "translate";
+                return new IntentExtractionResult("translate");
             }
             else
             {
-                request.Intent = "echo";
+                return new IntentExtractionResult("echo");
             }
         }
 #pragma warning restore CS1998

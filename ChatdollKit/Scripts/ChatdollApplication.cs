@@ -123,7 +123,7 @@ namespace ChatdollKit
                         || !string.IsNullOrEmpty(wakeword.InlineRequestText))
                     {
                         preRequest = new Request(wakeword.RequestType);
-                        preRequest.Intent = wakeword.Intent;
+                        preRequest.Intent = new Intent(wakeword.Intent);
                         if (!string.IsNullOrEmpty(wakeword.InlineRequestText))
                         {
                             preRequest.Text = wakeword.InlineRequestText;

@@ -16,31 +16,28 @@ namespace ChatdollKit.Dialog
             httpClient?.Dispose();
         }
 
-        public override async Task ExtractIntentAsync(Request request, State state, CancellationToken token)
+        public override async Task<IntentExtractionResult> ExtractIntentAsync(Request request, State state, CancellationToken token)
         {
             var httpIntentResponse = await httpClient.PostJsonAsync<HttpIntentResponse>(
                 IntentExtractorUri, new HttpIntentRequest(request, state));
 
-            // Update request
-            request.Intent = httpIntentResponse.Request.Intent;
-            request.IntentPriority = httpIntentResponse.Request.IntentPriority;
-            request.Words = httpIntentResponse.Request.Words ?? request.Words;
-            request.Entities = httpIntentResponse.Request.Entities ?? request.Entities;
-            request.IsAdhoc = httpIntentResponse.Request.IsAdhoc;
+            if (httpIntentResponse.Error != null)
+            {
+                throw httpIntentResponse.Error.Exception;
+            }
 
-            // Update state data
-            state.Data = httpIntentResponse.State.Data;
+            return httpIntentResponse.IntentExtractionResult;
         }
 
         public override ISkill Route(Request request, State state, CancellationToken token)
         {
             // Register skill dynamically
-            if (!topicResolver.ContainsKey(request.Intent))
+            if (!topicResolver.ContainsKey(request.Intent.Name))
             {
                 var skill = gameObject.AddComponent<HttpSkillBase>();
-                skill.Name = request.Intent;
+                skill.Name = request.Intent.Name;
                 skill.DialogUri = SkillUriBase.EndsWith("/") ?
-                    SkillUriBase + request.Intent : SkillUriBase + "/" + request.Intent;
+                    SkillUriBase + request.Intent.Name : SkillUriBase + "/" + request.Intent.Name;
                 RegisterSkill(skill);
             }
 
@@ -63,9 +60,7 @@ namespace ChatdollKit.Dialog
         // Response message
         private class HttpIntentResponse
         {
-            public Request Request { get; set; }
-            public State State { get; set; }
-            public Response Response { get; set; }
+            public IntentExtractionResult IntentExtractionResult { get; set; }
             public HttpIntentError Error { get; set; }
         }
 

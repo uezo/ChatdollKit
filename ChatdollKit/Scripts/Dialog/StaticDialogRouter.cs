@@ -7,15 +7,15 @@ namespace ChatdollKit.Dialog
     public class StaticSkillRouter : SkillRouterBase
     {
 #pragma warning disable CS1998
-        public override async Task ExtractIntentAsync(Request request, State state, CancellationToken token)
+        public override async Task<IntentExtractionResult> ExtractIntentAsync(Request request, State state, CancellationToken token)
         {
             if (topicResolver.Count == 1)
             {
-                request.Intent = topicResolver.First().Key;
+                return new IntentExtractionResult(topicResolver.First().Key);
             }
             else
             {
-                request.Intent = string.Empty;
+                return null;
             }
         }
 #pragma warning restore CS1998

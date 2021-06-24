@@ -151,13 +151,17 @@ namespace ChatdollKit
 
                     if (token.IsCancellationRequested) { return; }
 
-                    // Extract intent
-                    if (preRequest == null || string.IsNullOrEmpty(preRequest.Intent))
+                    // Extract intent when request doesn't have intent (pre-request didn't set intent)
+                    if (!request.HasIntent())
                     {
-                        await SkillRouter.ExtractIntentAsync(request, state, token);
+                        var intentExtractionResult = await SkillRouter.ExtractIntentAsync(request, state, token);
+                        if (intentExtractionResult != null)
+                        {
+                            request.SetExtractionResult(intentExtractionResult);
+                        }
                     }
 
-                    if (string.IsNullOrEmpty(request.Intent) && string.IsNullOrEmpty(state.Topic.Name))
+                    if (!request.HasIntent() && string.IsNullOrEmpty(state.Topic.Name))
                     {
                         // Just exit loop without clearing state when NoIntent
                         await OnNoIntentAsync(request, state, token);
@@ -165,7 +169,7 @@ namespace ChatdollKit
                     }
                     else
                     {
-                        Debug.Log($"Intent:{request.Intent}({request.IntentPriority.ToString()})");
+                        Debug.Log($"Intent:{request.Intent.Name}({request.Intent.Priority.ToString()})");
                         if (request.Entities.Count > 0)
                         {
                             var entitiesString = "Entities:";
