@@ -224,6 +224,7 @@ namespace ChatdollKit.IO
         public int PrefixAllowance = 4;
         public int SuffixAllowance = 4;
         public string Intent;
+        public Priority IntentPriority = Priority.Normal;
         public RequestType RequestType = RequestType.None;
         public int InlineRequestMinimumLength = 0;
         public string RecognizedText { get; private set; }
@@ -237,6 +238,7 @@ namespace ChatdollKit.IO
                 PrefixAllowance = PrefixAllowance,
                 SuffixAllowance = SuffixAllowance,
                 Intent = Intent,
+                IntentPriority = IntentPriority,
                 RequestType = RequestType,
                 InlineRequestMinimumLength = InlineRequestMinimumLength,
                 RecognizedText = recognizedText,
