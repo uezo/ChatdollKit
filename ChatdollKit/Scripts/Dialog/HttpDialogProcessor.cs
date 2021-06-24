@@ -36,7 +36,7 @@ namespace ChatdollKit.Dialog
 
             // Update topic
             state.Topic.Status = httpDialogResponse.State.Topic.Status;
-            state.Topic.ContinueTopic = httpDialogResponse.State.Topic.ContinueTopic;
+            state.Topic.IsFinished = httpDialogResponse.State.Topic.IsFinished;
             state.Topic.RequiredRequestType = httpDialogResponse.State.Topic.RequiredRequestType;
 
             // Update data

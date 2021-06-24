@@ -25,7 +25,7 @@ namespace ChatdollKit.Examples.MultiDialog
             // Build and return response message
             var response = new Response(request.Id);
 
-            if (state.Topic.IsNew)
+            if (state.Topic.IsFirstTurn)
             {
                 response.AddVoiceTTS("何を翻訳しますか？");
                 response.AddAnimation("Default");
@@ -37,7 +37,7 @@ namespace ChatdollKit.Examples.MultiDialog
             }
 
             // Continue until stop
-            state.Topic.ContinueTopic = true;
+            state.Topic.IsFinished = false;
 
             return response;
         }

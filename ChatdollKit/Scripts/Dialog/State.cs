@@ -44,15 +44,15 @@ namespace ChatdollKit.Dialog
     {
         public string Name { get; set; }
         public string Status { get; set; }
-        public bool IsNew { get; set; }
-        public bool ContinueTopic { get; set; }
+        public bool IsFirstTurn { get; set; }
+        public bool IsFinished { get; set; }
         public Priority Priority { get; set; }
         public RequestType RequiredRequestType { get; set; }
 
         public Topic()
         {
-            IsNew = true;
-            ContinueTopic = false;
+            IsFirstTurn = true;
+            IsFinished = true;
             RequiredRequestType = RequestType.Voice;
         }
     }

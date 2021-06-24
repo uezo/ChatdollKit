@@ -141,6 +141,9 @@ namespace ChatdollKit
                     // Get or update request (microphone / camera / QR code, etc)
                     request = await requestProvider.GetRequestAsync(user, state, token, preRequest);
 
+                    // Clear preRequest for the next turn
+                    preRequest = null;
+
                     if (!request.IsSet() || request.IsCanceled)
                     {
                         // Clear state when request is not set or canceled
@@ -206,26 +209,25 @@ namespace ChatdollKit
                     await skill.ShowResponseAsync(dialogResponse, request, state, token);
                     if (token.IsCancellationRequested) { return; }
 
-                    // Post process
-                    if (state.Topic.ContinueTopic)
+                    // Save user
+                    await UserStore.SaveUserAsync(user);
+
+                    // Sava state
+                    if (state.Topic.IsFinished)
                     {
-                        // Clear pre-request
-                        preRequest = null;
-                        // Save user
-                        await UserStore.SaveUserAsync(user);
-                        // Save state
-                        await StateStore.SaveStateAsync(state);
-                        // Update properties for next
-                        state.IsNew = false;
-                        state.Topic.IsNew = false;
-                        state.Topic.ContinueTopic = false;
-                    }
-                    else
-                    {
-                        // Clear state data and topic when topic doesn't continue
+                        // Clear state before save when topic doesn't continue
                         state.Clear();
                         await StateStore.SaveStateAsync(state);
                         break;
+                    }
+                    else
+                    {
+                        // Save state
+                        await StateStore.SaveStateAsync(state);
+                        // Update properties for the next turn
+                        state.IsNew = false;
+                        state.Topic.IsFirstTurn = false;
+                        state.Topic.IsFinished = true;
                     }
                 }
             }

@@ -31,8 +31,8 @@ namespace ChatdollKit.Examples.Dialogs
             // Set api result to response
             response.AddVoiceTTS((a3rtResponse?.results?[0]?.reply ?? string.Empty) + "。");
 
-            // Set true to continue chatting after this response
-            state.Topic.ContinueTopic = true;
+            // Set false to continue chatting after this response
+            state.Topic.IsFinished = false;
 
             return response;
         }

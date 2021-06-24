@@ -46,14 +46,14 @@ namespace ChatdollKit.Dialog
                     {
                         state.Topic.Priority = request.Intent.Priority;
                     }
-                    state.Topic.IsNew = true;
+                    state.Topic.IsFirstTurn = true;
                 }
                 else
                 {
                     // Do not update topic when request is adhoc
                     if (!string.IsNullOrEmpty(state.Topic.Name))
                     {
-                        state.Topic.ContinueTopic = true;
+                        state.Topic.IsFinished = false;
                     }
                 }
 

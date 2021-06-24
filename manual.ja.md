@@ -474,15 +474,15 @@ else if (state.Topic.Status == "NoPlace")
 
 ## 話題の継続
 
-リクエスト・レスポンスの1ターンで終わらせず文脈を維持して話題を継続したい場合、`state.Topic.ContinueTopic`を`true`にします。
+リクエスト・レスポンスの1ターンで終わらせず文脈を維持して話題を継続したい場合、`state.Topic.IsFinished`を`false`にします。
 
 ```csharp
-if (state.Topic.IsNew)
+if (state.Topic.IsFirstTurn)
 {
     // 初回ターンでは翻訳すべき文言の問いかけ
     response.AddVoiceTTS("翻訳ですね？何を翻訳しますか？");
-    // 次回の発話も翻訳として処理されるように継続フラグを立てる
-    state.Topic.ContinueTopic = true;
+    // 次回の発話も翻訳として処理されるように話題終了フラグを下げる
+    state.Topic.IsFinished = false;
 }
 else
 {
@@ -666,11 +666,11 @@ WakeWordListenerにウェイクワードを登録する際、Request Typeに`Cam
 対話処理の中で`state.Topic.RequiredRequestType`に`RequestType.Camera`を指定することで、次回のリクエストをカメラによる撮影にすることができます。
 
 ```csharp
-if (state.Topic.IsNew)
+if (state.Topic.IsFirstTurn)
 {
     // 次のリクエストの形式をカメラに設定して話題を継続
     state.Topic.RequiredRequestType = RequestType.Camera;
-    state.Topic.ContinueTopic = True;
+    state.Topic.IsFinished = false;
     response.AddVoiceTTS("いいよ。笑ってね。");
 }
 else
@@ -714,11 +714,11 @@ WakeWordListenerにウェイクワードを登録する際、Request Typeに`QRC
 対話処理の中で`state.Topic.RequiredRequestType`に`RequestType.QRCode`を指定することで、次回のリクエストをQRコードリーダーによる読み取りにすることができます。
 
 ```csharp
-if (state.Topic.IsNew)
+if (state.Topic.IsFirstTurn)
 {
     // 次のリクエストの形式をQRコードリーダーに設定して話題を継続
     state.Topic.RequiredRequestType = RequestType.QRCode;
-    state.Topic.ContinueTopic = True;
+    state.Topic.IsFinished = false;
     response.AddVoiceTTS("いらっしゃいませ。受付用のQRコードを見せてください。");
 }
 else
