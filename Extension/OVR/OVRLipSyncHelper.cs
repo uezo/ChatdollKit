@@ -25,6 +25,11 @@ namespace ChatdollKit.Extension.OVR
         {
             // Get GameObjects
             var modelController = gameObject.GetComponent<ModelController>();
+            if (modelController == null || modelController.AudioSource == null)
+            {
+                Debug.LogError("Add and setup ModelController before. You can retry setting up LipSync by selecting `Reset` in the context menu of OVRLipSyncHelper.");
+                return;
+            }
             var voiceAudioObject = modelController.AudioSource.gameObject;
 
             // Get/Add OVRLipSyncContextMorphTarget
