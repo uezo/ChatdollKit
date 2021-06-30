@@ -43,9 +43,9 @@ namespace ChatdollKit.Dialog
             state.Data = httpDialogResponse.State.Data;
 
             // Update user info
-            request.User.Name = httpDialogResponse.Request.User.Name;
-            request.User.Nickname = httpDialogResponse.Request.User.Nickname;
-            request.User.Data = httpDialogResponse.Request.User.Data;
+            request.User.Name = httpDialogResponse.User.Name;
+            request.User.Nickname = httpDialogResponse.User.Nickname;
+            request.User.Data = httpDialogResponse.User.Data;
 
             return httpDialogResponse.Response;
         }
@@ -68,9 +68,9 @@ namespace ChatdollKit.Dialog
         // Response message
         private class HttpDialogResponse
         {
-            public Request Request { get; set; }
-            public State State { get; set; }
             public Response Response { get; set; }
+            public State State { get; set; }
+            public User User { get; set; }
             public HttpDialogError Error { get; set; }
         }
 
