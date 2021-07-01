@@ -22,7 +22,7 @@ ChatdollKit enables you to make your 3D model into a voice-enabled chatbot.
 
 ... and more!
 
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit_architecture.png" width="640">
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit-overview.png" width="720">
 
 # 🚀 Quick start
 

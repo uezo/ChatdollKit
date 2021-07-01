@@ -22,7 +22,7 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 
 ... などなど！
 
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit_architecture.png" width="640">
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit-overview.png" width="720">
 
 # 🚀 クイックスタート
 
