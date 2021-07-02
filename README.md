@@ -40,7 +40,6 @@ You can learn how to setup ChatdollKit by watching this 2 minutes video: https:/
 1. 🍣Setup
     - Add Echo example to your 3D model and set API key on inspector
     - Run `Setup ModelController` and `Setup Animator` in the context menu on inspector
-    - Add `Extension/OVR/OVRLipSyncHelper` to your 3D model
 
 
 # 📦 Import packages
@@ -102,9 +101,6 @@ After creating Animator Controller you can select default idle animation by edit
 
 If you want to setup manually, go to [Appendix2. Setup Animator manually](#Appendix%202.%20Setup%20Animator%20manually)
 
-## Setup LipSync
-
-Add `OVRLipSyncHelper` from `Extension/OVR` to the 3D model. If the model is built as VRC FBX format or VRM format the configuration will complete automatically.
 
 ## Run
 

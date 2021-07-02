@@ -217,10 +217,18 @@ public class FaceClipEditor : Editor
         modelController.SkinnedMeshRenderer = facialSkinnedMeshRenderer;
 
         // Add VoiceAudio object to the one that may have viseme
-        var voiceAudioObject = new GameObject("VoiceAudio");
-        voiceAudioObject.transform.parent = facialSkinnedMeshRenderer.gameObject.transform;
+        var voiceAudioObject = facialSkinnedMeshRenderer.gameObject.transform.Find("VoiceAudio")?.gameObject;
+        if (voiceAudioObject == null)
+        {
+            voiceAudioObject = new GameObject("VoiceAudio");
+            voiceAudioObject.transform.parent = facialSkinnedMeshRenderer.gameObject.transform;
+        }
         // Add and configure AudioSource
-        var voiceAudio = voiceAudioObject.AddComponent<AudioSource>();
+        var voiceAudio = voiceAudioObject.GetComponent<AudioSource>();
+        if (voiceAudio == null)
+        {
+            voiceAudio = voiceAudioObject.AddComponent<AudioSource>();
+        }
         voiceAudio.playOnAwake = false;
         // Set AudioSource to ModelController
         modelController.AudioSource = voiceAudio;
@@ -238,6 +246,16 @@ public class FaceClipEditor : Editor
             faceClipConfiguration,
             $"Assets/Resources/Faces-{modelController.gameObject.name}-{DateTime.Now.ToString("yyyyMMddHHmmSS")}.asset");
         modelController.FaceClipConfiguration = faceClipConfiguration;
+
+        // Add OVRLipSyncHelper
+        var lipSyncHelperType = GetTypeByClassName("OVRLipSyncHelper");
+        if (lipSyncHelperType != null)
+        {
+            if (modelController.gameObject.GetComponent(lipSyncHelperType) == null)
+            {
+                modelController.gameObject.AddComponent(lipSyncHelperType);
+            }
+        }
     }
 
     // Setup Animator
@@ -405,5 +423,20 @@ public class FaceClipEditor : Editor
         }
 
         return string.Empty;
+    }
+
+    public static Type GetTypeByClassName(string className)
+    {
+        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+        {
+            foreach (Type type in assembly.GetTypes())
+            {
+                if (type.Name == className)
+                {
+                    return type;
+                }
+            }
+        }
+        return null;
     }
 }

@@ -40,7 +40,6 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 1. 🍣セットアップ
     - おうむ返し（Echo）のExampleを3Dモデルに追加してインスペクターでAPIキーなどを設定
     - インスペクターのコンテキストメニューから`Setup ModelController`と`Setup Animator`を実行
-    - `Extension/OVR/OVRLipSyncHelper`を3Dモデルに追加
 
 本READMEのほか、[ChatdollKit マニュアル](https://github.com/uezo/ChatdollKit/blob/master/manual.ja.md)に各機能の網羅的な説明がありますので参照ください。
 
@@ -101,9 +100,6 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 
 <img src="https://uezo.blob.core.windows.net/github/chatdoll/change_idle.png" width="640">
 
-## リップシンクの設定
-
-`Extension/OVR` フォルダから `OVRLipSyncHelper` を3Dモデルに追加します。VRC FBX形式またはVRM形式であれば、アタッチするだけで自動的に設定が完了します。
 
 ## 動作確認
 
@@ -171,4 +167,4 @@ OVRLipSyncのかわりにuLipSyncを使用する場合は、以下の公式READM
 - https://github.com/hecomi/uLipSync
 - https://tips.hecomi.com/entry/2021/02/27/144722
 
-uLipSyncが表情をリセットするための機能を提供していないようなのでChatdollKitとしてヘルパーを提供していませんが、特に問題なく動くと思います。
+uLipSyncを利用する場合、ModelControllerのセットアップで3Dモデルに自動でアタッチされる`OVRLipSyncHelper`を3Dモデルから削除してください。なおuLipSyncは表情をリセットするための機能を提供していないようなのでChatdollKitとしてヘルパーを提供していませんが、特に問題なく動くと思います。
