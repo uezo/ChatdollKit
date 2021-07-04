@@ -216,6 +216,26 @@ public class FaceClipEditor : Editor
         }
         modelController.SkinnedMeshRenderer = facialSkinnedMeshRenderer;
 
+        // Create and set face configuration
+        if (modelController.FaceClipConfiguration == null)
+        {
+            // Create new FaceClipConfiguration and add Neutral face
+            var faceClipConfiguration = CreateInstance<FaceClipConfiguration>();
+            faceClipConfiguration.FaceClips.Add(new FaceClip("Neutral", facialSkinnedMeshRenderer, new Dictionary<string, float>()));
+
+            if (!AssetDatabase.IsValidFolder("Assets/Resources"))
+            {
+                AssetDatabase.CreateFolder("Assets", "Resources");
+            }
+            AssetDatabase.CreateAsset(
+                faceClipConfiguration,
+                $"Assets/Resources/Faces-{modelController.gameObject.name}-{DateTime.Now.ToString("yyyyMMddHHmmss")}.asset");
+            modelController.FaceClipConfiguration = faceClipConfiguration;
+        }
+
+        // Set blink target
+        modelController.BlinkBlendShapeName = GetBlinkTargetName(modelController.SkinnedMeshRenderer);
+
         // Add VoiceAudio object to the one that may have viseme
         var voiceAudioObject = facialSkinnedMeshRenderer.gameObject.transform.Find("VoiceAudio")?.gameObject;
         if (voiceAudioObject == null)
@@ -232,20 +252,6 @@ public class FaceClipEditor : Editor
         voiceAudio.playOnAwake = false;
         // Set AudioSource to ModelController
         modelController.AudioSource = voiceAudio;
-
-        // Set blink target
-        modelController.BlinkBlendShapeName = GetBlinkTargetName(modelController.SkinnedMeshRenderer);
-
-        // Create and set face configuration
-        var faceClipConfiguration = CreateInstance<FaceClipConfiguration>();
-        if (!AssetDatabase.IsValidFolder("Assets/Resources"))
-        {
-            AssetDatabase.CreateFolder("Assets", "Resources");
-        }
-        AssetDatabase.CreateAsset(
-            faceClipConfiguration,
-            $"Assets/Resources/Faces-{modelController.gameObject.name}-{DateTime.Now.ToString("yyyyMMddHHmmSS")}.asset");
-        modelController.FaceClipConfiguration = faceClipConfiguration;
 
         // Add OVRLipSyncHelper
         var lipSyncHelperType = GetTypeByClassName("OVRLipSyncHelper");
