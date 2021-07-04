@@ -1,26 +1,25 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
+using UnityEngine;
 using ChatdollKit.Dialog;
+using ChatdollKit.Examples.Skills;
 
-namespace ChatdollKit.Examples.MultiDialog
+namespace ChatdollKit.Examples.ModelControl
 {
+    [RequireComponent(typeof(EchoSkill))]
+    [RequireComponent(typeof(ModelControlSkill))]
     public class Router : SkillRouterBase
     {
-        public string WeatherKeyword = "天気";
-        public string TranslateKeyword = "翻訳";
+        public string ModelKeyword = "モデル";
 
         // Extract intent and entities from request and state
 #pragma warning disable CS1998
         public override async Task<IntentExtractionResult> ExtractIntentAsync(Request request, State state, CancellationToken token)
         {
-            if (request.Text.Contains(WeatherKeyword))
+            if (request.Text.Contains(ModelKeyword))
             {
-                return new IntentExtractionResult("weather");
+                return new IntentExtractionResult("modelcontrol");
 
-            }
-            else if (request.Text.Contains(TranslateKeyword))
-            {
-                return new IntentExtractionResult("translate");
             }
             else
             {

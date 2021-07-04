@@ -4,9 +4,9 @@ using System.Threading.Tasks;
 using ChatdollKit.Dialog;
 using ChatdollKit.Network;
 
-namespace ChatdollKit.Examples.Dialogs
+namespace ChatdollKit.Examples.Skills
 {
-    public class ChatA3RTDialog : SkillBase
+    public class ChatA3RTSkill : SkillBase
     {
         public string A3RTApiKey;
         private ChatdollHttp client = new ChatdollHttp();

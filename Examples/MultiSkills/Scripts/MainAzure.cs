@@ -1,14 +1,14 @@
 ﻿using UnityEngine;
-using ChatdollKit.Examples.Dialogs;
-using ChatdollKit.Extension.Google;
+using ChatdollKit.Examples.Skills;
+using ChatdollKit.Extension.Azure;
 
-namespace ChatdollKit.Examples.MultiDialog
+namespace ChatdollKit.Examples.MultiSkills
 {
     [RequireComponent(typeof(WeatherSkill))]
     [RequireComponent(typeof(TranslateSkill))]
     [RequireComponent(typeof(EchoSkill))]
     [RequireComponent(typeof(Router))]
-    public class MainGoogle : GoogleApplication
+    public class MainAzure : AzureApplication
     {
         
     }

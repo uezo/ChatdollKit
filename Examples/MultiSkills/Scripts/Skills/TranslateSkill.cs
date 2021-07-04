@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using ChatdollKit.Dialog;
 using ChatdollKit.Extension.Azure;
 
-namespace ChatdollKit.Examples.MultiDialog
+namespace ChatdollKit.Examples.MultiSkills
 {
     public class TranslateSkill : SkillBase
     {

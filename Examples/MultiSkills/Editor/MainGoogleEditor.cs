@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using UnityEditor;
 
-namespace ChatdollKit.Examples.MultiDialog
+namespace ChatdollKit.Examples.MultiSkills
 {
     [CustomEditor(typeof(MainGoogle))]
     public class MainGoogleEditor : Editor

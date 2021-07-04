@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using ChatdollKit.Dialog;
 
-namespace ChatdollKit.Examples.MultiDialog
+namespace ChatdollKit.Examples.MultiSkills
 {
     public class WeatherSkill : SkillBase
     {
