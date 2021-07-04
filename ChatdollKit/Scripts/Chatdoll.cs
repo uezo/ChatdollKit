@@ -186,7 +186,7 @@ namespace ChatdollKit
                     }
                     if (token.IsCancellationRequested) { return; }
 
-                    // Get dialog to process intent / topic
+                    // Get skill to process intent / topic
                     var skill = SkillRouter.Route(request, state, token);
                     if (token.IsCancellationRequested) { return; }
 
@@ -196,17 +196,17 @@ namespace ChatdollKit
                     // Start showing waiting animation
                     var waitingAnimationTask = skill.ShowWaitingAnimationAsync(preProcessResponse, request, state, token);
 
-                    // Process dialog
-                    var dialogResponse = await skill.ProcessAsync(request, state, token);
+                    // Process skill
+                    var skillResponse = await skill.ProcessAsync(request, state, token);
                     if (token.IsCancellationRequested) { return; }
 
-                    // Wait for waiting animation before show response of dialog
+                    // Wait for waiting animation before show response of skill
                     // TODO: Enable to cancel waitingAnimation instead of await when ProcessAsync ends.
                     await waitingAnimationTask;
                     if (token.IsCancellationRequested) { return; }
 
-                    // Show response of dialog
-                    await skill.ShowResponseAsync(dialogResponse, request, state, token);
+                    // Show response from skill
+                    await skill.ShowResponseAsync(skillResponse, request, state, token);
                     if (token.IsCancellationRequested) { return; }
 
                     // Save user

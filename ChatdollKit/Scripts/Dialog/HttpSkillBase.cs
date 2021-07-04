@@ -7,7 +7,7 @@ namespace ChatdollKit.Dialog
 {
     public class HttpSkillBase : SkillBase
     {
-        public string DialogUri;
+        public string Uri;
         protected ChatdollHttp httpClient = new ChatdollHttp();
 
         private void OnDestroy()
@@ -17,47 +17,47 @@ namespace ChatdollKit.Dialog
 
         public override async Task<Response> PreProcessAsync(Request request, State state, CancellationToken token)
         {
-            var httpDialogResponse = await httpClient.PostJsonAsync<HttpDialogResponse>(DialogUri, new HttpDialogRequest(request, state, true));
+            var httpSkillResponse = await httpClient.PostJsonAsync<HttpSkillResponse>(Uri, new HttpSkillRequest(request, state, true));
 
-            if (httpDialogResponse.State != null)
+            if (httpSkillResponse.State != null)
             {
                 // Update status and data
-                state.Topic.Status = httpDialogResponse.State.Topic.Status;
-                state.Data = httpDialogResponse.State.Data;
+                state.Topic.Status = httpSkillResponse.State.Topic.Status;
+                state.Data = httpSkillResponse.State.Data;
             }
 
-            return httpDialogResponse.Response;
+            return httpSkillResponse.Response;
         }
 
-        // Process dialog on server
+        // Process skill on server
         public override async Task<Response> ProcessAsync(Request request, State state, CancellationToken token)
         {
-            var httpDialogResponse = await httpClient.PostJsonAsync<HttpDialogResponse>(DialogUri, new HttpDialogRequest(request, state));
+            var httpSkillResponse = await httpClient.PostJsonAsync<HttpSkillResponse>(Uri, new HttpSkillRequest(request, state));
 
             // Update topic
-            state.Topic.Status = httpDialogResponse.State.Topic.Status;
-            state.Topic.IsFinished = httpDialogResponse.State.Topic.IsFinished;
-            state.Topic.RequiredRequestType = httpDialogResponse.State.Topic.RequiredRequestType;
+            state.Topic.Status = httpSkillResponse.State.Topic.Status;
+            state.Topic.IsFinished = httpSkillResponse.State.Topic.IsFinished;
+            state.Topic.RequiredRequestType = httpSkillResponse.State.Topic.RequiredRequestType;
 
             // Update data
-            state.Data = httpDialogResponse.State.Data;
+            state.Data = httpSkillResponse.State.Data;
 
             // Update user info
-            request.User.Name = httpDialogResponse.User.Name;
-            request.User.Nickname = httpDialogResponse.User.Nickname;
-            request.User.Data = httpDialogResponse.User.Data;
+            request.User.Name = httpSkillResponse.User.Name;
+            request.User.Nickname = httpSkillResponse.User.Nickname;
+            request.User.Data = httpSkillResponse.User.Data;
 
-            return httpDialogResponse.Response;
+            return httpSkillResponse.Response;
         }
 
         // Request message
-        private class HttpDialogRequest
+        private class HttpSkillRequest
         {
             public Request Request { get; set; }
             public State State { get; set; }
             public bool PreProcess { get; set; }
 
-            public HttpDialogRequest(Request request, State state, bool preProcess = false)
+            public HttpSkillRequest(Request request, State state, bool preProcess = false)
             {
                 Request = request;
                 State = state;
@@ -66,16 +66,16 @@ namespace ChatdollKit.Dialog
         }
 
         // Response message
-        private class HttpDialogResponse
+        private class HttpSkillResponse
         {
             public Response Response { get; set; }
             public State State { get; set; }
             public User User { get; set; }
-            public HttpDialogError Error { get; set; }
+            public HttpSkillError Error { get; set; }
         }
 
         // Error info in response
-        private class HttpDialogError
+        private class HttpSkillError
         {
             public string Code { get; set; }
             public string Message { get; set; }

@@ -36,7 +36,7 @@ namespace ChatdollKit.Dialog
             {
                 var skill = gameObject.AddComponent<HttpSkillBase>();
                 skill.Name = request.Intent.Name;
-                skill.DialogUri = SkillUriBase.EndsWith("/") ?
+                skill.Uri = SkillUriBase.EndsWith("/") ?
                     SkillUriBase + request.Intent.Name : SkillUriBase + "/" + request.Intent.Name;
                 RegisterSkill(skill);
             }

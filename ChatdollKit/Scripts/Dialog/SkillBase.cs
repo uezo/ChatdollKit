@@ -58,7 +58,7 @@ namespace ChatdollKit.Dialog
             }
         }
 
-        // Process dialog
+        // Process skill
 #pragma warning disable CS1998
         public virtual async Task<Response> ProcessAsync(Request request, State state, CancellationToken token)
         {
