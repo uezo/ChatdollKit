@@ -1,4 +1,4 @@
-# ChatdollKit
+﻿# ChatdollKit
 ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャットボットを作るためのフレームワークです。
 
 [🇬🇧English version is here](https://github.com/uezo/ChatdollKit/blob/master/README.ja.md)
@@ -22,7 +22,7 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 
 ... などなど！
 
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit_architecture.png" width="640">
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit-overview.png" width="720">
 
 # 🚀 クイックスタート
 
@@ -158,3 +158,13 @@ Animator Controllerを作成してBase Layerに`Default`というステートを
 設定が完了したら、3Dモデルの`Animator`コンポーネントの`Controller`に設定しましょう。
 
 <img src="https://uezo.blob.core.windows.net/github/chatdoll/05_2.png" width="640">
+
+
+# Appendix 3. uLipSyncの利用
+
+OVRLipSyncのかわりにuLipSyncを使用する場合は、以下の公式READMEまたは作者さまのブログの内容に従ってセットアップしてください。（iOSアプリの場合、OVRLipSyncを利用していると審査が通らないようです🙃）
+
+- https://github.com/hecomi/uLipSync
+- https://tips.hecomi.com/entry/2021/02/27/144722
+
+uLipSyncを利用する場合、ModelControllerのセットアップで3Dモデルに自動でアタッチされる`OVRLipSyncHelper`を3Dモデルから削除してください。なおuLipSyncは表情をリセットするための機能を提供していないようなのでChatdollKitとしてヘルパーを提供していませんが、特に問題なく動くと思います。

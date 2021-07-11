@@ -31,21 +31,21 @@ namespace ChatdollKit.Dialog
             httpClient?.Dispose();
         }
 
-        public async Task OnPromptAsync(Request preRequest, User user, Context context, CancellationToken token)
+        public async Task OnPromptAsync(Request preRequest, User user, State state, CancellationToken token)
         {
-            var promptKey = preRequest != null && !string.IsNullOrEmpty(preRequest.Intent) ? preRequest.Intent : defaultPromptKey;
+            var promptKey = preRequest != null && preRequest.HasIntent() ? preRequest.Intent.Name : defaultPromptKey;
             var promptAnimatedVoice = promptAnimatedVoices.ContainsKey(promptKey) ? promptAnimatedVoices[promptKey] : null;
             if (promptAnimatedVoice == null)
             {
                 // Update prompt animated voice and request type
-                var httpPromptResponse = await httpClient.PostJsonAsync<HttpPromptResponse>(PromptUri, new HttpPromptRequest(preRequest, context));
+                var httpPromptResponse = await httpClient.PostJsonAsync<HttpPromptResponse>(PromptUri, new HttpPromptRequest(preRequest, state));
                 if (httpPromptResponse.Response != null)
                 {
                     promptAnimatedVoice = httpPromptResponse.Response.AnimatedVoiceRequest;
                 }
-                if (httpPromptResponse.Context != null)
+                if (httpPromptResponse.State != null)
                 {
-                    promptRequestType = httpPromptResponse.Context.Topic.RequiredRequestType;
+                    promptRequestType = httpPromptResponse.State.Topic.RequiredRequestType;
                 }
             }
             else if (!string.IsNullOrEmpty(PingUri))
@@ -57,7 +57,7 @@ namespace ChatdollKit.Dialog
             }
 
             // Set request type and show animated voice
-            context.Topic.RequiredRequestType = promptRequestType;
+            state.Topic.RequiredRequestType = promptRequestType;
             if (promptAnimatedVoice != null)
             {
                 await modelController.AnimatedSay(promptAnimatedVoice, token);
@@ -76,12 +76,12 @@ namespace ChatdollKit.Dialog
         private class HttpPromptRequest
         {
             public Request Request { get; set; }
-            public Context Context { get; set; }
+            public State State { get; set; }
 
-            public HttpPromptRequest(Request request, Context context)
+            public HttpPromptRequest(Request request, State state)
             {
                 Request = request;
-                Context = context;
+                State = state;
             }
         }
 
@@ -89,7 +89,7 @@ namespace ChatdollKit.Dialog
         private class HttpPromptResponse
         {
             public Request Request { get; set; }
-            public Context Context { get; set; }
+            public State State { get; set; }
             public Response Response { get; set; }
             public HttpPromptError Error { get; set; }
         }

@@ -2,11 +2,12 @@
 using System.Threading.Tasks;
 using ChatdollKit.Dialog;
 
-namespace ChatdollKit.Examples.Dialogs
+namespace ChatdollKit.Examples.Skills
 {
-    public class EchoDialog : DialogProcessorBase
+    public class EchoSkill : SkillBase
     {
-        public override async Task<Response> ProcessAsync(Request request, Context context, CancellationToken token)
+#pragma warning disable CS1998
+        public override async Task<Response> ProcessAsync(Request request, State state, CancellationToken token)
         {
             // Build and return response message
             var response = new Response(request.Id);
@@ -16,5 +17,6 @@ namespace ChatdollKit.Examples.Dialogs
 
             return response;
         }
+#pragma warning restore CS1998
     }
 }

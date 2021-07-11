@@ -7,6 +7,6 @@ namespace ChatdollKit.Dialog
     public interface IRequestProvider
     {
         RequestType RequestType { get; }
-        Task<Request> GetRequestAsync(User user, Context context, CancellationToken token, Request preRequest = null);
+        Task<Request> GetRequestAsync(User user, State state, CancellationToken token, Request preRequest = null);
     }
 }

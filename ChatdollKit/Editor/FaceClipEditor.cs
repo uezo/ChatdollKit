@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -18,12 +18,6 @@ public class FaceClipEditor : Editor
     private int previousSelectedFaceIndex;
     private int selectedFaceIndex;
     private string currentFaceName;
-
-    // For setup
-    private static string[] visemeNames = new string[] {
-            "sil", "PP", "FF", "TH", "DD",
-            "kk", "CH", "SS", "nn", "RR",
-            "aa", "E", "ih", "oh", "ou" };
 
     public override void OnInspectorGUI()
     {
@@ -212,42 +206,62 @@ public class FaceClipEditor : Editor
     {
         var modelController = menuCommand.context as ModelController;
 
-        // Get viseme target as VRC FBX or VRM
+        // Get SkinnedMeshRenderer for facial expression
         var skinnedMeshRenderers = modelController.gameObject.GetComponentsInChildren<SkinnedMeshRenderer>();
-        var visemeTarget = GetVisemeTarget(skinnedMeshRenderers, false) ?? GetVisemeTarget(skinnedMeshRenderers, true);
-
-        if (visemeTarget == null)
+        var facialSkinnedMeshRenderer = GetFacialSkinnedMeshRenderer(skinnedMeshRenderers);
+        if (facialSkinnedMeshRenderer == null)
         {
-            Debug.LogError("Viseme target not found");
+            Debug.LogError("SkinnedMeshRenderer for facial expression not found");
             return;
         }
+        modelController.SkinnedMeshRenderer = facialSkinnedMeshRenderer;
 
-        // Configure LipSync viseme
-        var lipSyncObject = ConfigureViseme(modelController.gameObject, visemeTarget);
+        // Create and set face configuration
+        if (modelController.FaceClipConfiguration == null)
+        {
+            // Create new FaceClipConfiguration and add Neutral face
+            var faceClipConfiguration = CreateInstance<FaceClipConfiguration>();
+            faceClipConfiguration.FaceClips.Add(new FaceClip("Neutral", facialSkinnedMeshRenderer, new Dictionary<string, float>()));
 
-        // Set face skinnedMeshRenderer
-        modelController.SkinnedMeshRenderer = visemeTarget.SkinnedMeshRenderer;
-
-        // Set and configure audio source
-        modelController.AudioSource = lipSyncObject.GetComponent<AudioSource>();
-        modelController.AudioSource.playOnAwake = false;
-
-        // Set LipSyncContext
-        modelController.LipSyncContext = lipSyncObject.GetComponent<OVRLipSyncContext>();
+            if (!AssetDatabase.IsValidFolder("Assets/Resources"))
+            {
+                AssetDatabase.CreateFolder("Assets", "Resources");
+            }
+            AssetDatabase.CreateAsset(
+                faceClipConfiguration,
+                $"Assets/Resources/Faces-{modelController.gameObject.name}-{DateTime.Now.ToString("yyyyMMddHHmmss")}.asset");
+            modelController.FaceClipConfiguration = faceClipConfiguration;
+        }
 
         // Set blink target
         modelController.BlinkBlendShapeName = GetBlinkTargetName(modelController.SkinnedMeshRenderer);
 
-        // Create and set face configuration
-        var faceClipConfiguration = CreateInstance<FaceClipConfiguration>();
-        if (!AssetDatabase.IsValidFolder("Assets/Resources"))
+        // Add VoiceAudio object to the one that may have viseme
+        var voiceAudioObject = facialSkinnedMeshRenderer.gameObject.transform.Find("VoiceAudio")?.gameObject;
+        if (voiceAudioObject == null)
         {
-            AssetDatabase.CreateFolder("Assets", "Resources");
+            voiceAudioObject = new GameObject("VoiceAudio");
+            voiceAudioObject.transform.parent = facialSkinnedMeshRenderer.gameObject.transform;
         }
-        AssetDatabase.CreateAsset(
-            faceClipConfiguration,
-            $"Assets/Resources/Faces-{modelController.gameObject.name}-{DateTime.Now.ToString("yyyyMMddHHmmSS")}.asset");
-        modelController.FaceClipConfiguration = faceClipConfiguration;
+        // Add and configure AudioSource
+        var voiceAudio = voiceAudioObject.GetComponent<AudioSource>();
+        if (voiceAudio == null)
+        {
+            voiceAudio = voiceAudioObject.AddComponent<AudioSource>();
+        }
+        voiceAudio.playOnAwake = false;
+        // Set AudioSource to ModelController
+        modelController.AudioSource = voiceAudio;
+
+        // Add OVRLipSyncHelper
+        var lipSyncHelperType = GetTypeByClassName("OVRLipSyncHelper");
+        if (lipSyncHelperType != null)
+        {
+            if (modelController.gameObject.GetComponent(lipSyncHelperType) == null)
+            {
+                modelController.gameObject.AddComponent(lipSyncHelperType);
+            }
+        }
     }
 
     // Setup Animator
@@ -368,11 +382,10 @@ public class FaceClipEditor : Editor
         return clips;
     }
 
-    private static VisemeTarget GetVisemeTarget(SkinnedMeshRenderer[] skinnedMeshRenderers, bool IsVRM = false)
+    private static SkinnedMeshRenderer GetFacialSkinnedMeshRenderer(SkinnedMeshRenderer[] skinnedMeshRenderers)
     {
         var maxCount = 1;
         var maxIndex = -1;
-        var visemeTargetShapeKeyIndexes = new List<int>();
 
         for (var i = 0; i < skinnedMeshRenderers.Length; i++)
         {
@@ -380,98 +393,24 @@ public class FaceClipEditor : Editor
             {
                 continue;
             }
-            var temp = GetVisemeTargetShapeKeyIndexes(skinnedMeshRenderers[i].sharedMesh, visemeNames, IsVRM);
-            if (temp == null) continue;
-            var configuredCount = temp.Where(v => v >= 0).Count();
-            if (configuredCount >= maxCount)
+
+            var tempCount = skinnedMeshRenderers[i].sharedMesh.blendShapeCount;
+            if (tempCount >= maxCount)
             {
-                maxCount = configuredCount;
+                maxCount = tempCount;
                 maxIndex = i;
-                visemeTargetShapeKeyIndexes = temp;
             }
         }
 
         if (maxIndex < 0)
         {
-            // Return when no target indexes
+            // Return null when no blend shapes found
             return null;
         }
         else
         {
-            return new VisemeTarget()
-            {
-                SkinnedMeshRenderer = skinnedMeshRenderers[maxIndex],
-                ShapeKeyIndexes = visemeTargetShapeKeyIndexes
-            };
+            return skinnedMeshRenderers[maxIndex];
         }
-    }
-
-    private static List<int> GetVisemeTargetShapeKeyIndexes(Mesh mesh, string[] visemeNames, bool IsVRM = false)
-    {
-        var visemeTargetShapeKeyIndexes = new List<int>();
-
-        // Get shapekeys
-        var shapeKeys = new Dictionary<string, int>();
-        for (var i = 0; i < mesh.blendShapeCount; i++)
-        {
-            shapeKeys[mesh.GetBlendShapeName(i)] = i;
-        }
-
-        // Set index of shapekeys
-        for (var i = 0; i < visemeNames.Length; i++)
-        {
-            var visemeKey = visemeNames[i];
-            if (IsVRM)
-            {
-                if (visemeKey.ToLower() == "aa") visemeKey = "a";
-                else if (visemeKey.ToLower() == "ih") visemeKey = "i";
-                else if (visemeKey.ToLower() == "ou") visemeKey = "u";
-                else if (visemeKey.ToLower() == "e") visemeKey = "e";
-                else if (visemeKey.ToLower() == "oh") visemeKey = "o";
-                else visemeKey = "n";
-            }
-
-            var shapeKey = shapeKeys.Keys.Where(sk => sk.ToLower().Trim().EndsWith($"_{visemeKey}".ToLower())).FirstOrDefault();
-            if (!string.IsNullOrEmpty(shapeKey))
-            {
-                visemeTargetShapeKeyIndexes.Add(shapeKeys[shapeKey]);
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        return visemeTargetShapeKeyIndexes;
-    }
-
-    private static GameObject ConfigureViseme(GameObject rootGameObject, VisemeTarget visemeTarget)
-    {
-        var morphTarget = rootGameObject.GetComponentInChildren<OVRLipSyncContextMorphTarget>();
-        if (morphTarget == null)
-        {
-            var morphTargetGameObject = new GameObject("LipSync");
-            morphTarget = morphTargetGameObject.AddComponent<OVRLipSyncContextMorphTarget>();
-            morphTarget.transform.parent = visemeTarget.SkinnedMeshRenderer.gameObject.transform;
-        }
-
-        morphTarget.skinnedMeshRenderer = visemeTarget.SkinnedMeshRenderer;
-        for (var i = 0; i < visemeNames.Length; i++)
-        {
-            if (visemeTarget.ShapeKeyIndexes[i] >= 0)
-            {
-                morphTarget.visemeToBlendTargets[i] = visemeTarget.ShapeKeyIndexes[i];
-            }
-        }
-
-        var context = morphTarget.gameObject.GetComponent<OVRLipSyncContext>();
-        if (context == null)
-        {
-            context = morphTarget.gameObject.AddComponent<OVRLipSyncContext>();
-        }
-        context.audioLoopback = true;
-
-        return morphTarget.gameObject;
     }
 
     private static string GetBlinkTargetName(SkinnedMeshRenderer skinnedMeshRenderer)
@@ -492,9 +431,18 @@ public class FaceClipEditor : Editor
         return string.Empty;
     }
 
-    class VisemeTarget
+    public static Type GetTypeByClassName(string className)
     {
-        public SkinnedMeshRenderer SkinnedMeshRenderer { get; set; }
-        public List<int> ShapeKeyIndexes { get; set; }
+        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+        {
+            foreach (Type type in assembly.GetTypes())
+            {
+                if (type.Name == className)
+                {
+                    return type;
+                }
+            }
+        }
+        return null;
     }
 }

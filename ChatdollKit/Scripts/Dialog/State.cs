@@ -6,22 +6,22 @@ using Newtonsoft.Json;
 
 namespace ChatdollKit.Dialog
 {
-    public class Context
+    public class State
     {
         public string Id { get; }
         public string UserId { get; }
-        public DateTime Timestamp { get; set; }
+        public DateTime UpdatedAt { get; set; }
         public bool IsNew { get; set; }
         public Topic Topic { get; set; }
         public Dictionary<string, object> Data { get; set; }
         [JsonIgnore]
-        public Func<Context, Task> saveFunc { get; set; }
+        public Func<State, Task> saveFunc { get; set; }
 
-        public Context(string userId, string id = null, Func<Context, Task> saveFunc = null)
+        public State(string userId, string id = null, Func<State, Task> saveFunc = null)
         {
             Id = id == null ? Guid.NewGuid().ToString() : id;
             UserId = userId;
-            Timestamp = DateTime.UtcNow;
+            UpdatedAt = DateTime.UtcNow;
             IsNew = true;
             Topic = new Topic();
             Data = new Dictionary<string, object>();
@@ -44,16 +44,15 @@ namespace ChatdollKit.Dialog
     {
         public string Name { get; set; }
         public string Status { get; set; }
-        public bool IsNew { get; set; }
-        public bool ContinueTopic { get; set; }
-        public Topic Previous { get; }
+        public bool IsFirstTurn { get; set; }
+        public bool IsFinished { get; set; }
         public Priority Priority { get; set; }
         public RequestType RequiredRequestType { get; set; }
 
         public Topic()
         {
-            IsNew = true;
-            ContinueTopic = false;
+            IsFirstTurn = true;
+            IsFinished = true;
             RequiredRequestType = RequestType.Voice;
         }
     }

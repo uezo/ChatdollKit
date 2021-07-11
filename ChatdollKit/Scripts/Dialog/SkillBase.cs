@@ -6,7 +6,7 @@ using ChatdollKit.Model;
 
 namespace ChatdollKit.Dialog
 {
-    public class DialogProcessorBase : MonoBehaviour, IDialogProcessor
+    public class SkillBase : MonoBehaviour, ISkill
     {
         public string Name;
         protected ModelController modelController;
@@ -29,13 +29,9 @@ namespace ChatdollKit.Dialog
 
                 // Create name from ClassName
                 var name = GetType().Name;
-                if (name.ToLower().EndsWith("dialogprocessor"))
+                if (name.ToLower().EndsWith("skill"))
                 {
-                    name = name.Substring(0, name.Length - 15);
-                }
-                else if (name.ToLower().EndsWith("dialog"))
-                {
-                    name = name.Substring(0, name.Length - 6);
+                    name = name.Substring(0, name.Length - 5);
                 }
                 return name.ToLower();
             }
@@ -47,31 +43,31 @@ namespace ChatdollKit.Dialog
         }
 
 #pragma warning disable CS1998
-        public virtual async Task<Response> PreProcessAsync(Request request, Context context, CancellationToken token)
+        public virtual async Task<Response> PreProcessAsync(Request request, State state, CancellationToken token)
         {
             // Return AnimatedVoices or something to do when ProcessAsync is estimated to take much times in this method.
             return null;
         }
 #pragma warning restore CS1998
 
-        public virtual async Task ShowWaitingAnimationAsync(Response response, Request request, Context context, CancellationToken token)
+        public virtual async Task ShowWaitingAnimationAsync(Response response, Request request, State state, CancellationToken token)
         {
             if (response != null)
             {
-                await ShowResponseAsync(response, request, context, token);
+                await ShowResponseAsync(response, request, state, token);
             }
         }
 
-        // Process dialog
+        // Process skill
 #pragma warning disable CS1998
-        public virtual async Task<Response> ProcessAsync(Request request, Context context, CancellationToken token)
+        public virtual async Task<Response> ProcessAsync(Request request, State state, CancellationToken token)
         {
-            throw new NotImplementedException("DialogProcessorBase.ProcessAsync must be implemented");
+            throw new NotImplementedException("SkillBase.ProcessAsync must be implemented");
         }
 #pragma warning restore CS1998
 
         // Show response
-        public virtual async Task ShowResponseAsync(Response response, Request request, Context context, CancellationToken token)
+        public virtual async Task ShowResponseAsync(Response response, Request request, State state, CancellationToken token)
         {
             if (token.IsCancellationRequested)
             {

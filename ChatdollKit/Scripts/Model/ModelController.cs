@@ -13,12 +13,12 @@ namespace ChatdollKit.Model
         // Audio
         [Header("Voice")]
         public AudioSource AudioSource;
-        public OVRLipSyncContext LipSyncContext;
         private Dictionary<string, AudioClip> voices = new Dictionary<string, AudioClip>();
         public Func<Voice, CancellationToken, Task<AudioClip>> VoiceDownloadFunc;
         public Func<Voice, CancellationToken, Task<AudioClip>> TextToSpeechFunc;
         public Dictionary<string, Func<Voice, CancellationToken, Task<AudioClip>>> TextToSpeechFunctions = new Dictionary<string, Func<Voice, CancellationToken, Task<AudioClip>>>();
         public bool UsePrefetch = true;
+        private ILipSyncHelper lipSyncHelper;
 
         // Animation
         private Animator animator;
@@ -80,6 +80,9 @@ namespace ChatdollKit.Model
                     RegisterTTSFunction(loader.Name, loader.GetAudioClipAsync, loader.IsDefault);
                 }
             }
+
+            // Get lipSyncHelper
+            lipSyncHelper = gameObject.GetComponent<ILipSyncHelper>();
         }
 
         private void Start()
@@ -382,7 +385,7 @@ namespace ChatdollKit.Model
             }
 
             // Reset viseme
-            LipSyncContext?.ResetContext();
+            lipSyncHelper?.ResetViseme();
 
             // Restart blink
             if (request.DisableBlink && !token.IsCancellationRequested)

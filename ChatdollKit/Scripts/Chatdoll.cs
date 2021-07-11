@@ -16,8 +16,8 @@ namespace ChatdollKit
         public bool IsChatting { get; private set; }
         public bool IsError { get; private set; }
         public IUserStore UserStore { get; private set; }
-        public IContextStore ContextStore { get; private set; }
-        public IDialogRouter DialogRouter { get; private set; }
+        public IStateStore StateStore { get; private set; }
+        public ISkillRouter SkillRouter { get; private set; }
         public Dictionary<RequestType, IRequestProvider> RequestProviders { get; private set; }
 
         // Model
@@ -28,11 +28,11 @@ namespace ChatdollKit
 
         // Actions for each status
 #pragma warning disable CS1998
-        public Func<Request, User, Context, CancellationToken, Task> OnPromptAsync
+        public Func<Request, User, State, CancellationToken, Task> OnPromptAsync
             = async (r, u, c, t) => { Debug.LogWarning("Chatdoll.OnPromptAsync is not implemented"); };
-        public Func<Request, Context, CancellationToken, Task> OnNoIntentAsync
+        public Func<Request, State, CancellationToken, Task> OnNoIntentAsync
             = async (r, c, t) => { Debug.LogWarning("Chatdoll.OnNoIntentAsync is not implemented"); };
-        public Func<Request, Context, CancellationToken, Task> OnErrorAsync
+        public Func<Request, State, CancellationToken, Task> OnErrorAsync
             = async (r, c, t) => { Debug.LogWarning("Chatdoll.OnErrorAsync is not implemented"); };
 #pragma warning restore CS1998
 
@@ -42,8 +42,8 @@ namespace ChatdollKit
             // Use local store when no UserStore attached
             UserStore = gameObject.GetComponent<IUserStore>() ?? gameObject.AddComponent<LocalUserStore>();
 
-            // Use local store when no ContextStore attached
-            ContextStore = gameObject.GetComponent<IContextStore>() ?? gameObject.AddComponent<MemoryContextStore>();
+            // Use local store when no StateStore attached
+            StateStore = gameObject.GetComponent<IStateStore>() ?? gameObject.AddComponent<MemoryStateStore>();
 
             // Register request providers for each input type
             RequestProviders = new Dictionary<RequestType, IRequestProvider>();
@@ -64,22 +64,22 @@ namespace ChatdollKit
             }
 
             // Configure router
-            DialogRouter = gameObject.GetComponent<IDialogRouter>() ?? gameObject.AddComponent<StaticDialogRouter>();
-            DialogRouter.Configure();
+            SkillRouter = gameObject.GetComponent<ISkillRouter>() ?? gameObject.AddComponent<StaticSkillRouter>();
+            SkillRouter.Configure();
 
             // Register intents and its processor
-            var dialogProcessors = gameObject.GetComponents<IDialogProcessor>();
-            if (dialogProcessors != null)
+            var skills = gameObject.GetComponents<ISkill>();
+            if (skills != null)
             {
-                foreach (var dp in dialogProcessors)
+                foreach (var skill in skills)
                 {
-                    DialogRouter.RegisterIntent(dp.TopicName, dp);
-                    Debug.Log($"Intent '{dp.TopicName}' registered successfully");
+                    SkillRouter.RegisterSkill(skill);
+                    Debug.Log($"Skill '{skill.TopicName}' registered successfully");
                 }
             }
             else
             {
-                Debug.LogError("DialogProcessors are missing");
+                Debug.LogError("Skills are missing");
             }
 
             // ModelController
@@ -107,11 +107,11 @@ namespace ChatdollKit
                 return;
             }
 
-            // Get context
-            var context = await ContextStore.GetContextAsync(user.Id);
-            if (context == null)
+            // Get state
+            var state = await StateStore.GetStateAsync(user.Id);
+            if (state == null)
             {
-                Debug.LogError($"Error occured in getting context: {user.Id}");
+                Debug.LogError($"Error occured in getting state: {user.Id}");
                 await OnErrorAsync(null, null, token);
                 return;
             }
@@ -126,7 +126,7 @@ namespace ChatdollKit
                 // Prompt
                 if (!skipPrompt)
                 {
-                    await OnPromptAsync(preRequest, user, context, token);
+                    await OnPromptAsync(preRequest, user, state, token);
                 }
 
                 // Chat loop. Exit when session ends, canceled or error occures
@@ -135,37 +135,44 @@ namespace ChatdollKit
                     if (token.IsCancellationRequested) { return; }
 
                     var requestProvider = preRequest == null || preRequest.Type == RequestType.None ?
-                        RequestProviders[context.Topic.RequiredRequestType] :
+                        RequestProviders[state.Topic.RequiredRequestType] :
                         RequestProviders[preRequest.Type];
 
                     // Get or update request (microphone / camera / QR code, etc)
-                    request = await requestProvider.GetRequestAsync(user, context, token, preRequest);
+                    request = await requestProvider.GetRequestAsync(user, state, token, preRequest);
+
+                    // Clear preRequest for the next turn
+                    preRequest = null;
 
                     if (!request.IsSet() || request.IsCanceled)
                     {
-                        // Clear context when request is not set or canceled
-                        context.Clear();
-                        await ContextStore.SaveContextAsync(context);
+                        // Clear state when request is not set or canceled
+                        state.Clear();
+                        await StateStore.SaveStateAsync(state);
                         return;
                     }
 
                     if (token.IsCancellationRequested) { return; }
 
-                    // Extract intent
-                    if (preRequest == null || string.IsNullOrEmpty(preRequest.Intent))
+                    // Extract intent when request doesn't have intent (pre-request didn't set intent)
+                    if (!request.HasIntent())
                     {
-                        await DialogRouter.ExtractIntentAsync(request, context, token);
+                        var intentExtractionResult = await SkillRouter.ExtractIntentAsync(request, state, token);
+                        if (intentExtractionResult != null)
+                        {
+                            request.SetExtractionResult(intentExtractionResult);
+                        }
                     }
 
-                    if (string.IsNullOrEmpty(request.Intent) && string.IsNullOrEmpty(context.Topic.Name))
+                    if (!request.HasIntent() && string.IsNullOrEmpty(state.Topic.Name))
                     {
-                        // Just exit loop without clearing context when NoIntent
-                        await OnNoIntentAsync(request, context, token);
+                        // Just exit loop without clearing state when NoIntent
+                        await OnNoIntentAsync(request, state, token);
                         return;
                     }
                     else
                     {
-                        Debug.Log($"Intent:{request.Intent}({request.IntentPriority.ToString()})");
+                        Debug.Log($"Intent:{request.Intent.Name}({request.Intent.Priority.ToString()})");
                         if (request.Entities.Count > 0)
                         {
                             var entitiesString = "Entities:";
@@ -179,62 +186,61 @@ namespace ChatdollKit
                     }
                     if (token.IsCancellationRequested) { return; }
 
-                    // Get dialog to process intent / topic
-                    var dialogProcessor = DialogRouter.Route(request, context, token);
+                    // Get skill to process intent / topic
+                    var skill = SkillRouter.Route(request, state, token);
                     if (token.IsCancellationRequested) { return; }
 
                     // PreProcess
-                    var preProcessResponse = await dialogProcessor.PreProcessAsync(request, context, token);
+                    var preProcessResponse = await skill.PreProcessAsync(request, state, token);
 
                     // Start showing waiting animation
-                    var waitingAnimationTask = dialogProcessor.ShowWaitingAnimationAsync(preProcessResponse, request, context, token);
+                    var waitingAnimationTask = skill.ShowWaitingAnimationAsync(preProcessResponse, request, state, token);
 
-                    // Process dialog
-                    var dialogResponse = await dialogProcessor.ProcessAsync(request, context, token);
+                    // Process skill
+                    var skillResponse = await skill.ProcessAsync(request, state, token);
                     if (token.IsCancellationRequested) { return; }
 
-                    // Wait for waiting animation before show response of dialog
+                    // Wait for waiting animation before show response of skill
                     // TODO: Enable to cancel waitingAnimation instead of await when ProcessAsync ends.
                     await waitingAnimationTask;
                     if (token.IsCancellationRequested) { return; }
 
-                    // Show response of dialog
-                    await dialogProcessor.ShowResponseAsync(dialogResponse, request, context, token);
+                    // Show response from skill
+                    await skill.ShowResponseAsync(skillResponse, request, state, token);
                     if (token.IsCancellationRequested) { return; }
 
-                    // Post process
-                    if (context.Topic.ContinueTopic)
+                    // Save user
+                    await UserStore.SaveUserAsync(user);
+
+                    // Sava state
+                    if (state.Topic.IsFinished)
                     {
-                        // Clear pre-request
-                        preRequest = null;
-                        // Save user
-                        await UserStore.SaveUserAsync(user);
-                        // Save context
-                        await ContextStore.SaveContextAsync(context);
-                        // Update properties for next
-                        context.IsNew = false;
-                        context.Topic.IsNew = false;
-                        context.Topic.ContinueTopic = false;
+                        // Clear state before save when topic doesn't continue
+                        state.Clear();
+                        await StateStore.SaveStateAsync(state);
+                        break;
                     }
                     else
                     {
-                        // Clear context data and topic when topic doesn't continue
-                        context.Clear();
-                        await ContextStore.SaveContextAsync(context);
-                        break;
+                        // Save state
+                        await StateStore.SaveStateAsync(state);
+                        // Update properties for the next turn
+                        state.IsNew = false;
+                        state.Topic.IsFirstTurn = false;
+                        state.Topic.IsFinished = true;
                     }
                 }
             }
             catch (Exception ex)
             {
-                await ContextStore.DeleteContextAsync(user.Id);
+                await StateStore.DeleteStateAsync(user.Id);
                 if (!token.IsCancellationRequested)
                 {
                     IsError = true;
                     Debug.LogError($"Error occured in processing chat: {ex.Message}\n{ex.StackTrace}");
                     // Stop running animation and voice then get new token to say error
                     token = GetChatToken();
-                    await OnErrorAsync(request, context, token);
+                    await OnErrorAsync(request, state, token);
                 }
             }
             finally
@@ -251,9 +257,9 @@ namespace ChatdollKit
                 }
                 else
                 {
-                    // Clear context when canceled
-                    context.Clear();
-                    await ContextStore.SaveContextAsync(context);
+                    // Clear state when canceled
+                    state.Clear();
+                    await StateStore.SaveStateAsync(state);
                 }
             }
         }

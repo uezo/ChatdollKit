@@ -4,9 +4,9 @@ using System.Threading.Tasks;
 using ChatdollKit.Dialog;
 using ChatdollKit.Network;
 
-namespace ChatdollKit.Examples.Dialogs
+namespace ChatdollKit.Examples.Skills
 {
-    public class ChatA3RTDialog : DialogProcessorBase
+    public class ChatA3RTSkill : SkillBase
     {
         public string A3RTApiKey;
         private ChatdollHttp client = new ChatdollHttp();
@@ -16,7 +16,7 @@ namespace ChatdollKit.Examples.Dialogs
             client?.Dispose();
         }
 
-        public override async Task<Response> ProcessAsync(Request request, Context context, CancellationToken token)
+        public override async Task<Response> ProcessAsync(Request request, State state, CancellationToken token)
         {
             var response = new Response(request.Id);
 
@@ -31,8 +31,8 @@ namespace ChatdollKit.Examples.Dialogs
             // Set api result to response
             response.AddVoiceTTS((a3rtResponse?.results?[0]?.reply ?? string.Empty) + "。");
 
-            // Set true to continue chatting after this response
-            context.Topic.ContinueTopic = true;
+            // Set false to continue chatting after this response
+            state.Topic.IsFinished = false;
 
             return response;
         }

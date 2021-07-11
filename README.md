@@ -1,4 +1,4 @@
-# ChatdollKit
+﻿# ChatdollKit
 ChatdollKit enables you to make your 3D model into a voice-enabled chatbot.
 
 [🇯🇵日本語のREADMEはこちら](https://github.com/uezo/ChatdollKit/blob/master/README.ja.md)
@@ -13,16 +13,16 @@ ChatdollKit enables you to make your 3D model into a voice-enabled chatbot.
 - Dialog
     - Speech-to-Text (Azure, Google, Watson etc)
     - Text-to-Speech (Azure, Google, Watson, Voiceroid etc)
-    - Dialog context management
+    - Dialog state management
     - Intent extraction and topic routing
 
 - I/O
     - Wakeword
     - Camera and QR Code
 
-... and more!
+... and more! See [ChatdollKit Documentation](https://github.com/uezo/ChatdollKit/blob/master/manual.md) to learn details.
 
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit_architecture.png" width="640">
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit-overview.png" width="720">
 
 # 🚀 Quick start
 
@@ -40,7 +40,6 @@ You can learn how to setup ChatdollKit by watching this 2 minutes video: https:/
 1. 🍣Setup
     - Add Echo example to your 3D model and set API key on inspector
     - Run `Setup ModelController` and `Setup Animator` in the context menu on inspector
-
 
 # 📦 Import packages
 
@@ -101,6 +100,7 @@ After creating Animator Controller you can select default idle animation by edit
 
 If you want to setup manually, go to [Appendix2. Setup Animator manually](#Appendix%202.%20Setup%20Animator%20manually)
 
+
 ## Run
 
 Press Play button of Unity editor. You can see the model starts with idling animation and blinking.
@@ -152,3 +152,12 @@ Create Animator Controller and create `Default` state on the Base Layer, then pu
 After configuration set the Animator Controller as a `Controller` of Animator component of the 3D model.
 
 <img src="https://uezo.blob.core.windows.net/github/chatdoll/05_2.png" width="640">
+
+
+# Appendix 3. Using uLipSync
+
+If you want to use uLipSync instead of OVRLipSync please follow the official readme. (Apple Store doesn't accept the app using OVRLipSync🙃)
+
+https://github.com/hecomi/uLipSync
+
+We don't provide LipSyncHelper for it because it doesn't have a function to reset viseme. But don't worry, it works without any helpers. 

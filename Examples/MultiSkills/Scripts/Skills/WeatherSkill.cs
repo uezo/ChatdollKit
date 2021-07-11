@@ -4,13 +4,13 @@ using System.Threading.Tasks;
 using UnityEngine;
 using ChatdollKit.Dialog;
 
-namespace ChatdollKit.Examples.MultiDialog
+namespace ChatdollKit.Examples.MultiSkills
 {
-    public class WeatherDialog : DialogProcessorBase
+    public class WeatherSkill : SkillBase
     {
 
 #pragma warning disable CS1998
-        public override async Task<Response> ProcessAsync(Request request, Context context, CancellationToken token)
+        public override async Task<Response> ProcessAsync(Request request, State state, CancellationToken token)
         {
             // Get weather
             var weather = GetWeather(request);

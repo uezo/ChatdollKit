@@ -7,7 +7,7 @@ namespace ChatdollKit.Dialog
     public class Response
     {
         public string Id { get; }
-        public DateTime Timestamp { get; }
+        public DateTime CreatedAt { get; }
         public string Text { get; set; }
         public List<AnimatedVoiceRequest> AnimatedVoiceRequests { get; set; }
         public AnimatedVoiceRequest AnimatedVoiceRequest
@@ -26,7 +26,7 @@ namespace ChatdollKit.Dialog
         public Response(string id)
         {
             Id = id;
-            Timestamp = DateTime.UtcNow;
+            CreatedAt = DateTime.UtcNow;
             Text = string.Empty;
             AnimatedVoiceRequests = new List<AnimatedVoiceRequest>();
             AnimatedVoiceRequests.Add(new AnimatedVoiceRequest());

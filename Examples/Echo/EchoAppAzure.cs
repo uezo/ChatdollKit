@@ -1,10 +1,10 @@
 ﻿using UnityEngine;
-using ChatdollKit.Examples.Dialogs;
+using ChatdollKit.Examples.Skills;
 using ChatdollKit.Extension.Azure;
 
 namespace ChatdollKit.Examples.Echo
 {
-    [RequireComponent(typeof(EchoDialog))]
+    [RequireComponent(typeof(EchoSkill))]
     public class EchoAppAzure : AzureApplication
     {
         [Header("Application Language")]

@@ -49,7 +49,7 @@ namespace ChatdollKit.Extension.Azure
                 www.method = "POST";
 
                 // Header
-                www.SetRequestHeader("X-Microsoft-OutputFormat", AudioType == AudioType.WAV ? "riff-16khz-16bit-mono-pcm" : "audio-16khz-128kbitrate-mono-mp3");
+                www.SetRequestHeader("X-Microsoft-OutputFormat", AudioType == AudioType.MPEG ? "audio-16khz-128kbitrate-mono-mp3" : "riff-16khz-16bit-mono-pcm");
                 www.SetRequestHeader("Content-Type", "application/ssml+xml");
                 www.SetRequestHeader("Ocp-Apim-Subscription-Key", ApiKey);
 
