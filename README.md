@@ -20,7 +20,7 @@ ChatdollKit enables you to make your 3D model into a voice-enabled chatbot.
     - Wakeword
     - Camera and QR Code
 
-... and more!
+... and more! See [ChatdollKit Documentation](https://github.com/uezo/ChatdollKit/blob/master/manual.md) to learn details.
 
 <img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit-overview.png" width="720">
 
@@ -40,7 +40,6 @@ You can learn how to setup ChatdollKit by watching this 2 minutes video: https:/
 1. 🍣Setup
     - Add Echo example to your 3D model and set API key on inspector
     - Run `Setup ModelController` and `Setup Animator` in the context menu on inspector
-
 
 # 📦 Import packages
 
