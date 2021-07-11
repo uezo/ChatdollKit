@@ -18,7 +18,7 @@ namespace ChatdollKit.Examples.Skills
             response.AddVoiceTTS("この声、");
 
             response.AddVoiceTTS("モーション、", postGap: 2.5f, asNewFrame: true);
-            response.AddAnimation("AGIA_Other_walk_01");
+            response.AddAnimation("AGIA_Other_walking_01");
 
             response.AddVoiceTTS("表情は、", postGap: 4.0f, asNewFrame: true);
             response.AddAnimation("Default");
