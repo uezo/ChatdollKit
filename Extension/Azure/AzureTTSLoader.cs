@@ -36,7 +36,7 @@ namespace ChatdollKit.Extension.Azure
         public string Language = "ja-JP";
         public string Gender = "Female";
         public string SpeakerName = "ja-JP-HarukaRUS";
-        public AudioType AudioType = AudioType.MPEG;
+        public AudioType AudioType = AudioType.WAV;
 
         protected override async Task<AudioClip> DownloadAudioClipAsync(Voice voice, CancellationToken token)
         {
@@ -62,8 +62,6 @@ namespace ChatdollKit.Extension.Azure
 
                 // Send request
                 await www.SendWebRequest();
-
-                Debug.LogWarning(www.downloadedBytes);
 
                 if (www.isNetworkError || www.isHttpError)
                 {
