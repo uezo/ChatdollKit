@@ -6,6 +6,7 @@ namespace ChatdollKit.Examples.Skills
 {
     public class EchoSkill : SkillBase
     {
+#pragma warning disable CS1998
         public override async Task<Response> ProcessAsync(Request request, State state, CancellationToken token)
         {
             // Build and return response message
@@ -16,5 +17,6 @@ namespace ChatdollKit.Examples.Skills
 
             return response;
         }
+#pragma warning restore CS1998
     }
 }

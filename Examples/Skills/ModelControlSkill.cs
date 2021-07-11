@@ -6,6 +6,7 @@ namespace ChatdollKit.Examples.Skills
 {
     public class ModelControlSkill : SkillBase
     {
+#pragma warning disable CS1998
         public override async Task<Response> ProcessAsync(Request request, State state, CancellationToken token)
         {
             // NOTE: Register "Smile", "Angry" and "Sad" facial expression before running this example
@@ -32,5 +33,6 @@ namespace ChatdollKit.Examples.Skills
 
             return response;
         }
+#pragma warning restore CS1998
     }
 }
