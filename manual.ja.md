@@ -1,6 +1,6 @@
 ﻿# ChatdollKit マニュアル
 
-version 0.3.0 | June 21, 2021 | &copy;2020 uezo
+version 0.3.0 | June 21, 2021 | &copy;2020 uezo | [🇬🇧English version](https://github.com/uezo/ChatdollKit/blob/master/manual.md)
 
 
 - [セットアップ](#セットアップ)
@@ -91,13 +91,13 @@ ChatdollKitを3Dモデルに適用するには、以下の通りカスタムア�
 
 ```csharp
 using UnityEngine;
-// using ChatdollKit.Extension.Google;
-using ChatdollKit.Extension.Azure;
+using ChatdollKit.Extension.Azure;  // or ChatdollKit.Extension.Google
+using ChatdollKit.Examples.Skills;
 
 namespace MyChatdollApp
 {
-    // public class MyApp : GoogleApplication
-    public class MyApp : AzureApplication
+    [RequireComponent(typeof(EchoSkill))]
+    public class MyApp : AzureApplication  // or GoogleApplication
     {
 
     }
@@ -126,7 +126,7 @@ namespace MyChatdollApp
 
 ## 動作確認
 
-動作確認用に`ChatdollKit/Examples/Dialogs`から`EchoSkill`を3Dモデルにアタッチして、Unityエディタの実行ボタンを押下してください。以下の通り対話を進行できるか確認してみましょう。
+動作確認用に`ChatdollKit/Examples/Skills`から`EchoSkill`を3Dモデルにアタッチして、Unityエディタの実行ボタンを押下してください。以下の通り対話を進行できるか確認してみましょう。
 
 - ユーザー「こんにちは」
 - Chatdoll「どうしたの？」
@@ -337,10 +337,10 @@ animatedVoiceRequest.AddFace("Neutral");
 たとえば以下の通り4つのアイドルアニメーションを登録した場合、`Idle Animation Default Duration`の秒数おきにこれらのうちどれを実行するかランダムに決定されます。この際、どれが採用されるかの確率は`weight`の値に比例します。
 
 ```csharp
-modelController.AddIdleAnimation("idle01", weight: 20);
-modelController.AddIdleAnimation("idle02", "Doya", weight: 20);
-modelController.AddIdleAnimation("idle03", "Smile", disableBlink: true, weight: 5);
-modelController.AddIdleAnimation("idle04");
+modelController.AddIdleAnimation("idle01", weight: 60);
+modelController.AddIdleAnimation("idle02", "Doya", weight: 30);
+modelController.AddIdleAnimation("idle03", "Smile", disableBlink: true, weight: 9);
+modelController.AddIdleAnimation("idle04", weight: 1);
 ```
 
 なおこれらのパラメータで表現しきれない複雑なものを追加したい場合、`AnimatedVoiceRequest`を引数にとるオーバーロードを利用してください。
@@ -353,9 +353,6 @@ idle05.AddFace("Smile");
 idle05.AddAnimation("AGIA_Idle_calm_02_hands_on_front", duration: 20.0f, asNewFrame: true);
 idle05.AddFace("Neutral");
 modelController.AddIdleAnimation(idle05, weight: 2);
-
-// 追加
-modelController.AddIdleAnimation(animatedVoiceRequest);
 ```
 
 ## まばたき
