@@ -13,7 +13,7 @@ namespace ChatdollKit.Dialog
     {
         public string Id { get; }
         public RequestType Type { get; }
-        public DateTime Timestamp { get; }
+        public DateTime CreatedAt { get; }
         public User User { get; set; }
         public string Text { get; set; }
         public object Payloads { get; set; }
@@ -26,7 +26,7 @@ namespace ChatdollKit.Dialog
         {
             Id = Guid.NewGuid().ToString();
             Type = type;
-            Timestamp = DateTime.UtcNow;
+            CreatedAt = DateTime.UtcNow;
             User = null;
             Text = string.Empty;
             Intent = null;

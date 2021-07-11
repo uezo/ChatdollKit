@@ -10,7 +10,7 @@ namespace ChatdollKit.Dialog
     {
         public string Id { get; }
         public string UserId { get; }
-        public DateTime Timestamp { get; set; }
+        public DateTime UpdatedAt { get; set; }
         public bool IsNew { get; set; }
         public Topic Topic { get; set; }
         public Dictionary<string, object> Data { get; set; }
@@ -21,7 +21,7 @@ namespace ChatdollKit.Dialog
         {
             Id = id == null ? Guid.NewGuid().ToString() : id;
             UserId = userId;
-            Timestamp = DateTime.UtcNow;
+            UpdatedAt = DateTime.UtcNow;
             IsNew = true;
             Topic = new Topic();
             Data = new Dictionary<string, object>();

@@ -36,7 +36,7 @@ namespace ChatdollKit.Dialog
                 }
                 var state = JsonConvert.DeserializeObject<State>(jsonString);
 
-                if ((int)(DateTime.UtcNow - state.Timestamp).TotalSeconds > TimeoutSeconds)
+                if ((int)(DateTime.UtcNow - state.UpdatedAt).TotalSeconds > TimeoutSeconds)
                 {
                     // Create new state when timeout
                     Debug.Log("State created (Timeout)");
@@ -46,7 +46,7 @@ namespace ChatdollKit.Dialog
                 {
                     // Just update timestamp
                     Debug.Log("Using existing state");
-                    state.Timestamp = DateTime.UtcNow;
+                    state.UpdatedAt = DateTime.UtcNow;
                     return state;
                 }
             }

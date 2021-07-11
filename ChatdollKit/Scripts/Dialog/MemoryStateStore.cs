@@ -20,7 +20,7 @@ namespace ChatdollKit.Dialog
             {
                 state = states[userId];
 
-                if ((int)(DateTime.UtcNow - state.Timestamp).TotalSeconds > TimeoutSeconds)
+                if ((int)(DateTime.UtcNow - state.UpdatedAt).TotalSeconds > TimeoutSeconds)
                 {
                     // Create new state when timeout
                     Debug.Log("State created (Timeout)");
@@ -29,7 +29,7 @@ namespace ChatdollKit.Dialog
                 else
                 {
                     // Just update timestamp
-                    state.Timestamp = DateTime.UtcNow;
+                    state.UpdatedAt = DateTime.UtcNow;
                 }
             }
             else
