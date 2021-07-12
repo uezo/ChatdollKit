@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using UnityEngine;
 using ChatdollKit.Network;
 
 namespace ChatdollKit.Dialog
@@ -8,12 +10,28 @@ namespace ChatdollKit.Dialog
     public class HttpSkillRouter : SkillRouterBase
     {
         public string IntentExtractorUri;
-        public string SkillUriBase;
+        public string SkillsUri;
+        public bool LoadSkillsOnStart = true;
         protected ChatdollHttp httpClient = new ChatdollHttp();
 
         private void OnDestroy()
         {
             httpClient?.Dispose();
+        }
+
+        public async Task Start()
+        {
+            if (LoadSkillsOnStart)
+            {
+                try
+                {
+                    await RegisterSkillsAsync();
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"Error occured in loading skills: {ex.Message}\n{ex.StackTrace}");
+                }
+            }
         }
 
         public override async Task<IntentExtractionResult> ExtractIntentAsync(Request request, State state, CancellationToken token)
@@ -32,19 +50,39 @@ namespace ChatdollKit.Dialog
         public override ISkill Route(Request request, State state, CancellationToken token)
         {
             // Register skill dynamically
-            if (!topicResolver.ContainsKey(request.Intent.Name))
-            {
-                var skill = gameObject.AddComponent<HttpSkillBase>();
-                skill.Name = request.Intent.Name;
-                skill.Uri = SkillUriBase.EndsWith("/") ?
-                    SkillUriBase + request.Intent.Name : SkillUriBase + "/" + request.Intent.Name;
-                RegisterSkill(skill);
-            }
+            RegisterHttpSkill(request.Intent.Name);
 
             return base.Route(request, state, token);
         }
 
-        // Request message
+        public async Task RegisterSkillsAsync()
+        {
+            var httpSkillsResponse = await httpClient.GetJsonAsync<HttpSkillsResponse>(SkillsUri);
+
+            if (httpSkillsResponse.Error != null)
+            {
+                throw httpSkillsResponse.Error.Exception;
+            }
+
+            foreach (var skillName in httpSkillsResponse.SkillNames)
+            {
+                RegisterHttpSkill(skillName);
+            }
+        }
+
+        public void RegisterHttpSkill(string SkillName)
+        {
+            if (!topicResolver.ContainsKey(SkillName))
+            {
+                var skill = gameObject.AddComponent<HttpSkillBase>();
+                skill.Name = SkillName;
+                skill.Uri = SkillsUri.EndsWith("/") ?
+                    SkillsUri + SkillName : SkillsUri + "/" + SkillName;
+                RegisterSkill(skill);
+            }
+        }
+
+        // Request message to /intent
         private class HttpIntentRequest
         {
             public Request Request { get; set; }
@@ -57,10 +95,17 @@ namespace ChatdollKit.Dialog
             }
         }
 
-        // Response message
+        // Response message from /intent
         private class HttpIntentResponse
         {
             public IntentExtractionResult IntentExtractionResult { get; set; }
+            public HttpIntentError Error { get; set; }
+        }
+
+        // Response message from /skills
+        private class HttpSkillsResponse
+        {
+            public List<string> SkillNames { get; set; }
             public HttpIntentError Error { get; set; }
         }
 
