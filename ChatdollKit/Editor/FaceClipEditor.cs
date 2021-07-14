@@ -257,9 +257,15 @@ public class FaceClipEditor : Editor
         var lipSyncHelperType = GetTypeByClassName("OVRLipSyncHelper");
         if (lipSyncHelperType != null)
         {
-            if (modelController.gameObject.GetComponent(lipSyncHelperType) == null)
+            var lipSyncHelper = modelController.gameObject.GetComponent(lipSyncHelperType);
+            if (lipSyncHelper == null)
             {
                 modelController.gameObject.AddComponent(lipSyncHelperType);
+            }
+            else
+            {
+                // Reset if already exists
+                lipSyncHelperType.GetMethod("Reset").Invoke(lipSyncHelper, null);
             }
         }
     }
