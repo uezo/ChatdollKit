@@ -43,10 +43,17 @@ namespace ChatdollKit.Model
             if (audioDownloadTasks[voice.CacheKey].IsCompleted)
             {
                 var clip = audioDownloadTasks[voice.CacheKey].Result;
-                // Cache once regardless of UseCache to enable PreFetch
-                audioCache[voice.CacheKey] = clip;
-                audioDownloadTasks.Remove(voice.CacheKey);
-                return clip;
+                if (clip != null && clip.length > 0)
+                {
+                    // Cache once regardless of UseCache to enable PreFetch
+                    audioCache[voice.CacheKey] = clip;
+                    audioDownloadTasks.Remove(voice.CacheKey);
+                    return clip;
+                }
+                else
+                {
+                    Debug.LogWarning("Downloaded AudioClip is null or lts length is zero.");
+                }
             }
 
             return null;
