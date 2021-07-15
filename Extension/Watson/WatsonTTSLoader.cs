@@ -48,6 +48,11 @@ namespace ChatdollKit.Extension.Watson
         {
             if (token.IsCancellationRequested) { return null; };
 
+            if (string.IsNullOrEmpty(ApiKey) || string.IsNullOrEmpty(BaseUrl))
+            {
+                Debug.LogError("API Key or Language are missing from WatsonTTSLoader");
+            }
+
             var url = $"{BaseUrl}/v1/synthesize?voice={voice.GetTTSParam("speakerName") as string ?? SpeakerName}";
             using (var www = UnityWebRequestMultimedia.GetAudioClip(url, AudioType.OGGVORBIS))
             {

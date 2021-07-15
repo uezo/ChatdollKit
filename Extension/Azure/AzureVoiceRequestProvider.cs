@@ -16,6 +16,11 @@ namespace ChatdollKit.Extension.Azure
 
         protected override async Task<string> RecognizeSpeechAsync(AudioClip recordedVoice)
         {
+            if (string.IsNullOrEmpty(ApiKey) || string.IsNullOrEmpty(Region) || string.IsNullOrEmpty(Language))
+            {
+                Debug.LogError("API Key, Region and Language are missing from AzureVoiceRequestProvider");
+            }
+
             var headers = new Dictionary<string, string>()
             {
                 { "Ocp-Apim-Subscription-Key", ApiKey }

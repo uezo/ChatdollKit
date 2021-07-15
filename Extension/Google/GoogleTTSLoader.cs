@@ -48,6 +48,11 @@ namespace ChatdollKit.Extension.Google
         {
             if (token.IsCancellationRequested) { return null; };
 
+            if (string.IsNullOrEmpty(ApiKey) || string.IsNullOrEmpty(Language))
+            {
+                Debug.LogError("API Key or Language are missing from GoogleTTSLoader");
+            }
+
             try
             {
                 var url = $"https://texttospeech.googleapis.com/v1/text:synthesize?key={ApiKey}";

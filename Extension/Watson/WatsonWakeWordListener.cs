@@ -15,6 +15,11 @@ namespace ChatdollKit.Extension.Watson
 
         protected override async Task<string> RecognizeSpeechAsync(AudioClip recordedVoice)
         {
+            if (string.IsNullOrEmpty(ApiKey) || string.IsNullOrEmpty(Model) || string.IsNullOrEmpty(BaseUrl))
+            {
+                Debug.LogError("API Key, Model or Language are missing from WatsonWakeWordListener");
+            }
+
             var headers = new Dictionary<string, string>()
             {
                 { "Authorization", client.GetBasicAuthenticationHeaderValue("apikey", ApiKey).ToString() }

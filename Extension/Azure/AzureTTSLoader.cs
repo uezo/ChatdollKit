@@ -42,6 +42,11 @@ namespace ChatdollKit.Extension.Azure
         {
             if (token.IsCancellationRequested) { return null; };
 
+            if (string.IsNullOrEmpty(ApiKey) || string.IsNullOrEmpty(Region) || string.IsNullOrEmpty(Language))
+            {
+                Debug.LogError("API Key, Region or Language are missing from AzureTTSLoader");
+            }
+
             var url = $"https://{Region}.tts.speech.microsoft.com/cognitiveservices/v1";
             using (var www = UnityWebRequestMultimedia.GetAudioClip(url, AudioType))
             {

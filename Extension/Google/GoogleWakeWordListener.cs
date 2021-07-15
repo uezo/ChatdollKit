@@ -15,6 +15,11 @@ namespace ChatdollKit.Extension.Google
 
         protected override async Task<string> RecognizeSpeechAsync(AudioClip recordedVoice)
         {
+            if (string.IsNullOrEmpty(ApiKey) || string.IsNullOrEmpty(Language))
+            {
+                Debug.LogError("API Key or Language are missing from GoogleWakeWordListener");
+            }
+
             var response = await client.PostJsonAsync<SpeechRecognitionResponse>(
                 $"https://speech.googleapis.com/v1/speech:recognize?key={ApiKey}",
                 new SpeechRecognitionRequest(recordedVoice, Language, UseEnhancedModel));
