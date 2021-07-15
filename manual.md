@@ -801,10 +801,23 @@ ChatdollCamera.DecodeCode = (texture) =>
 
 ## Use Skill server (Experimental)
 
-You can host skills as a REST API server with any languages and platforms you like and use it from ChatdollKit with `HttpSkillRouter`.
+You can host skills as a REST API server on any platforms you like and use it from ChatdollKit so that you can update skills without updating client application.
+
+### Setup Skill server
 
 We provide server side SDK for Python.
-https://github.com/uezo/chatdollkit-server-python/blob/main/README.ja.md
+
+https://github.com/uezo/chatdollkit-server-python/blob/main/README.md
+
+### Setup Skill client (ChatdollKit device)
+
+Attach `HttpSkillRouter` and `HttpPrompt` to your 3D model to use skill server (experimental components). We provide an example in `Examples/SkillServer`.
+
+- Import resources and put and configure your 3D model to the scene. This procedure is the same as [📦Import packages](https://github.com/uezo/ChatdollKit/blob/master/README.md#-import-packages) and [🐟Resource preparation](https://github.com/uezo/ChatdollKit/blob/master/README.md#-resource-preparation) in README.
+- Attach `MainAzure` or `MainGoogle` to your 3D Model. Related ChatdollKit components are also attached.
+- Configure API Key, Language and Region(Azure only) on the inspector of `MainAzure` or `MainGoogle`.
+- Make sure that the skill server is already running then press Play button to run the application. 
+- Say wake word to start conversation (echo). Wake word is "hello" by default.
 
 
 ## Morphological Analysis (Japanese only)
