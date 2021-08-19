@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using ChatdollKit.Examples.Skills;
 using ChatdollKit.Extension.Watson;
 
 namespace ChatdollKit.Examples.Echo

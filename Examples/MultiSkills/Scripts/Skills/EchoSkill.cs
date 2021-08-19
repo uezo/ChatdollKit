@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using ChatdollKit.Dialog;
 
-namespace ChatdollKit.Examples.Skills
+namespace ChatdollKit.Examples.MultiSkills
 {
     public class EchoSkill : SkillBase
     {

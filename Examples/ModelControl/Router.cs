@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using UnityEngine;
 using ChatdollKit.Dialog;
-using ChatdollKit.Examples.Skills;
 
 namespace ChatdollKit.Examples.ModelControl
 {

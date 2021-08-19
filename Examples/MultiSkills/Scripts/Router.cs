@@ -1,13 +1,19 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
+using UnityEngine;
 using ChatdollKit.Dialog;
 
 namespace ChatdollKit.Examples.MultiSkills
 {
+    [RequireComponent(typeof(WeatherSkill))]
+    [RequireComponent(typeof(TranslateSkill))]
+    [RequireComponent(typeof(ChatA3RTSkill))]
+    [RequireComponent(typeof(EchoSkill))]
     public class Router : SkillRouterBase
     {
         public string WeatherKeyword = "天気";
         public string TranslateKeyword = "翻訳";
+        public string ChatKeyword = "雑談";
 
         // Extract intent and entities from request and state
 #pragma warning disable CS1998
@@ -21,6 +27,10 @@ namespace ChatdollKit.Examples.MultiSkills
             else if (request.Text.Contains(TranslateKeyword))
             {
                 return new IntentExtractionResult("translate");
+            }
+            else if (request.Text.Contains(TranslateKeyword))
+            {
+                return new IntentExtractionResult("chata3rt");
             }
             else
             {

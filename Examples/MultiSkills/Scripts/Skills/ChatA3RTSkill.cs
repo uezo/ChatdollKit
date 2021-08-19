@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using ChatdollKit.Dialog;
 using ChatdollKit.Network;
 
-namespace ChatdollKit.Examples.Skills
+namespace ChatdollKit.Examples.MultiSkills
 {
     public class ChatA3RTSkill : SkillBase
     {
