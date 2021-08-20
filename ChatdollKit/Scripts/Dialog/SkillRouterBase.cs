@@ -22,6 +22,22 @@ namespace ChatdollKit.Dialog
             topicResolver.Add(skill.TopicName, skill);
         }
 
+        public bool IsAvailableTopic(string topicName, bool warnInavailable = false)
+        {
+            if (topicResolver.ContainsKey(topicName) && topicResolver[topicName].IsAvailable)
+            {
+                return true;
+            }
+            else
+            {
+                if (warnInavailable)
+                {
+                    Debug.LogWarning($"Topic not available: {topicName}");
+                }
+                return false;
+            }
+        }
+
 #pragma warning disable CS1998
         public virtual async Task<IntentExtractionResult> ExtractIntentAsync(Request request, State state, CancellationToken token)
         {

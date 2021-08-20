@@ -37,6 +37,15 @@ namespace ChatdollKit.Dialog
             }
         }
 
+        public virtual bool IsAvailable
+        {
+            get
+            {
+                // Always returns true(available) in base
+                return true;
+            }
+        }
+
         public virtual void Configure()
         {
             //
