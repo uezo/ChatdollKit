@@ -1,29 +1,46 @@
-﻿using System.Threading;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
+using UnityEngine;
 using ChatdollKit.Dialog;
-using ChatdollKit.Extension.Azure;
+using ChatdollKit.Network;
 
 namespace ChatdollKit.Examples.MultiSkills
 {
     public class TranslateSkill : SkillBase
     {
-        public string AzureSubscriptionKey;
-        private AzureTranslator azureTranslator;
-
-        protected override void Awake()
+        public enum TranslationEngine
         {
-            base.Awake();
+            Azure, Google
+        }
 
-            azureTranslator = new AzureTranslator(AzureSubscriptionKey);
+        public TranslationEngine Engine = TranslationEngine.Azure;
+        public string ApiKey;
+        private ChatdollHttp client { get; } = new ChatdollHttp();
+
+        public override bool IsAvailable
+        {
+            get
+            {
+                return !string.IsNullOrEmpty(ApiKey);
+            }
+        }
+
+        private void OnDestroy()
+        {
+            client.Dispose();
         }
 
         public override async Task<Response> ProcessAsync(Request request, State state, CancellationToken token)
         {
-            // Translate
-            var translatedText = await TranslateAsync(request.Text);
-
-            // Build and return response message
             var response = new Response(request.Id);
+
+            if (!IsAvailable)
+            {
+                response.AddVoiceTTS("翻訳は利用できません");
+                response.AddAnimation("Default");
+            }
 
             if (state.Topic.IsFirstTurn)
             {
@@ -32,6 +49,8 @@ namespace ChatdollKit.Examples.MultiSkills
             }
             else
             {
+                // Translate
+                var translatedText = await (Engine == TranslationEngine.Azure ? TranslateWithAzureAsync(request.Text) : TranslateWithGoogleAsync(request.Text));
                 response.AddVoiceTTS($"{request.Text}を英語で言うと、{translatedText}、です。");
                 response.AddAnimation("Default");
             }
@@ -42,19 +61,90 @@ namespace ChatdollKit.Examples.MultiSkills
             return response;
         }
 
-#pragma warning disable CS1998
-        private async Task<string> TranslateAsync(string text)
+        private async Task<string> TranslateWithAzureAsync(string text, string language = "en")
         {
-            // Call translation API if Azure Translate API key is set
-            if (!string.IsNullOrEmpty(AzureSubscriptionKey))
+            // Compose url
+            var url = $"https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&to={language}";
+
+            // Create headers
+            var headers = new Dictionary<string, string>();
+            headers.Add("Ocp-Apim-Subscription-Key", ApiKey);
+
+            // Create data
+            var data = new List<AzureTranslationText>() { new AzureTranslationText(text) };
+
+            // Send request
+            var translatedText = string.Empty;
+            try
             {
-                return await azureTranslator?.TranslateAsync(text);
+                var response = await client.PostJsonAsync<List<AzureTranslationResponse>>(url, data, headers);
+                translatedText = response[0].Translations[0].Text;
             }
-            else
+            catch (Exception ex)
             {
-                return "This is the translated text.";
+                Debug.LogError($"Error occured while translation: {ex.Message}");
+            }
+            return translatedText;
+        }
+
+        class AzureTranslationResponse
+        {
+            public List<AzureTranslationText> Translations { get; set; }
+        }
+
+        class AzureTranslationText
+        {
+            public string Text { get; set; }
+
+            public AzureTranslationText(string text)
+            {
+                Text = text;
             }
         }
-#pragma warning restore CS1998
+
+        private async Task<string> TranslateWithGoogleAsync(string text, string language = "en")
+        {
+            // Compose url
+            var url = $"https://translation.googleapis.com/language/translate/v2";
+
+            // Set data
+            var data = new Dictionary<string, string>()
+            {
+                { "key", ApiKey },
+                { "q", text },
+                { "target", language },
+                { "source", "ja" },
+                { "model", "nmt" },
+                { "format", "text" },
+            };
+
+            // Send request
+            var translatedText = string.Empty;
+            try
+            {
+                var response = await client.PostFormAsync<GoogleTranslationResponse>(url, data);
+                translatedText = response.Data.Translations[0].TranslatedText;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Error occured while translation: {ex.Message}");
+            }
+            return translatedText;
+        }
+
+        class GoogleTranslationResponse
+        {
+            public GoogleTranslationData Data { get; set; }
+        }
+
+        class GoogleTranslationData
+        {
+            public List<GoogleTranslationText> Translations { get; set; }
+        }
+
+        class GoogleTranslationText
+        {
+            public string TranslatedText { get; set; }
+        }
     }
 }

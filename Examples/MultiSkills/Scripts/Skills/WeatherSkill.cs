@@ -1,45 +1,78 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using UnityEngine;
 using ChatdollKit.Dialog;
+using ChatdollKit.Network;
 
 namespace ChatdollKit.Examples.MultiSkills
 {
     public class WeatherSkill : SkillBase
     {
+        public enum WeatherLocation
+        {
+            Sapporo = 016010,
+            Sendai = 040010,
+            Tokyo = 130010,
+            Nagoya = 230010,
+            Osaka = 270000,
+            Hiroshima = 340010,
+            Fukuoka = 400010,
+            Naha = 471010
+        }
 
-#pragma warning disable CS1998
+        public WeatherLocation MyLocation;
+        private ChatdollHttp client { get; } = new ChatdollHttp();
+
         public override async Task<Response> ProcessAsync(Request request, State state, CancellationToken token)
         {
             // Get weather
-            var weather = GetWeather(request);
+            var weatherResponse = await client.GetJsonAsync<WeatherResponse>($"https://weather.tsukumijima.net/api/forecast/city/{((int)MyLocation).ToString("d6")}");
 
-            // Build and return response message
+            // Build response message
             var response = new Response(request.Id);
-            response.AddVoiceTTS($"今日の天気は、{weather.Weather}、最高気温は{weather.Temperature}度の見込みです。");
-            response.AddAnimation("Default");
+            response.AddVoiceTTS($"今日の{weatherResponse.location.city}の天気は、{weatherResponse.forecasts[0].telop}。");
+            if (weatherResponse.forecasts[0].temperature.max.celsius != null)
+            {
+                response.AddVoiceTTS($"最高気温は{weatherResponse.forecasts[0].temperature.max.celsius}度の見込みです。");
+            }
+            else if (weatherResponse.forecasts[0].temperature.min.celsius != null)
+            {
+                response.AddVoiceTTS($"最低気温は{weatherResponse.forecasts[0].temperature.min.celsius}度の見込みです。");
+            }
+            else
+            {
+                response.AddVoiceTTS("気温に関する情報はありません。");
+            }
+
             return response;
         }
-#pragma warning restore CS1998
 
-        private WeatherInfo GetWeather(Request request)
+        class WeatherResponse
         {
-            // Call weather API here instead
-            return new WeatherInfo();
+            public Location location;
+            public List<Forecast> forecasts;
         }
 
-        class WeatherInfo
+        class Location
         {
-            private List<string> weathers = new List<string>() { "晴れ", "晴ときどき曇り", "曇り", "曇りときどき雨", "雨" };
-            public string Weather;
-            public int Temperature;
+            public string city;
+        }
 
-            public WeatherInfo()
-            {
-                Weather = weathers[Random.Range(0, weathers.Count - 1)];
-                Temperature = Random.Range(0, 40);
-            }
+        class Forecast
+        {
+            public string telop;
+            public Temperature temperature;
+        }
+
+        class Temperature
+        {
+            public TemperatureItem max;
+            public TemperatureItem min;
+        }
+
+        class TemperatureItem
+        {
+            public string celsius;
         }
     }
 }

@@ -13,7 +13,6 @@ namespace ChatdollKit.Examples.MultiSkills
     {
         public string WeatherKeyword = "天気";
         public string TranslateKeyword = "翻訳";
-        public string ChatKeyword = "雑談";
 
         // Extract intent and entities from request and state
 #pragma warning disable CS1998
@@ -22,20 +21,22 @@ namespace ChatdollKit.Examples.MultiSkills
             if (request.Text.Contains(WeatherKeyword))
             {
                 return new IntentExtractionResult("weather");
+            }
 
-            }
-            else if (request.Text.Contains(TranslateKeyword))
+            if (request.Text.Contains(TranslateKeyword))
             {
-                return new IntentExtractionResult("translate");
+                if (IsAvailableTopic("translate", true))
+                {
+                    return new IntentExtractionResult("translate");
+                }
             }
-            else if (request.Text.Contains(TranslateKeyword))
+
+            if (IsAvailableTopic("chata3rt", true))
             {
-                return new IntentExtractionResult("chata3rt");
+                return new IntentExtractionResult("chata3rt", Priority.Lowest);
             }
-            else
-            {
-                return new IntentExtractionResult("echo");
-            }
+
+            return new IntentExtractionResult("echo");
         }
 #pragma warning restore CS1998
     }

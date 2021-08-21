@@ -11,6 +11,14 @@ namespace ChatdollKit.Examples.MultiSkills
         public string A3RTApiKey;
         private ChatdollHttp client = new ChatdollHttp();
 
+        public override bool IsAvailable
+        {
+            get
+            {
+                return !string.IsNullOrEmpty(A3RTApiKey);
+            }
+        }
+
         private void OnDestroy()
         {
             client?.Dispose();
