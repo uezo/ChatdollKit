@@ -26,12 +26,17 @@ MultiSkillsのExampleを組み込んだデモです。
 
 # 3Dモデルについて
 
-デモに含まれるモデルはしげひろさんによって制作されたものです。(Twitter: @gaku2_sigehiro)
-BOOTHにて最新のオリジナルバージョンを取得することができます。
-https://hiroiheya.booth.pm/items/2019040
+デモに含まれるモデルは、フリー素材キャラクター「つくよみちゃん」（© Rei Yumesaki）を使用しています。
 
-The model in this demo is created by Sigehiro. (Twitter: @gaku2_sigehiro)
-You can get the original distribution here: https://hiroiheya.booth.pm/items/2019040
+- つくよみちゃん公式サイト: https://tyc.rei-yumesaki.net/
+- 3Dモデル配布先: https://tyc.rei-yumesaki.net/material/avatar/3d-a/
+- プロジェクトTwitterアカウント: @TYC_Project
+
+The model in this demo is Tsukuyomi-chan ((c)Rei Yumesaki).
+
+- Official site: https://tyc.rei-yumesaki.net/
+- Distribution: https://tyc.rei-yumesaki.net/material/avatar/3d-a/
+- Twitter: @TYC_Project
 
 
 以上
