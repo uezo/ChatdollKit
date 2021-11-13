@@ -1,14 +1,14 @@
 ﻿using UnityEngine;
-using ChatdollKit.Extension.Google;
+using ChatdollKit.Extension.Watson;
 
 namespace ChatdollKit.Examples.MultiSkills
 {
     [RequireComponent(typeof(Router))]
-    public class MainGoogle : GoogleApplication
+    public class MainWatson : WatsonApplication
     {
         [Header("Skill settings")]
         public string TranslationApiKey;
-        public string TranslationBaseUrl = "https://translation.googleapis.com/language/translate/v2";
+        public string TranslationBaseUrl;
         public string ChatA3RTApiKey;
         public WeatherSkill.WeatherLocation WeatherLocation = WeatherSkill.WeatherLocation.Tokyo;
 
@@ -16,7 +16,7 @@ namespace ChatdollKit.Examples.MultiSkills
         {
             var translationSkill = gameObject.GetComponent<TranslateSkill>();
             translationSkill.ApiKey = TranslationApiKey;
-            translationSkill.Engine = TranslateSkill.TranslationEngine.Google;
+            translationSkill.Engine = TranslateSkill.TranslationEngine.Watson;
             translationSkill.BaseUrl = TranslationBaseUrl;
             gameObject.GetComponent<ChatA3RTSkill>().A3RTApiKey = ChatA3RTApiKey;
             gameObject.GetComponent<WeatherSkill>().MyLocation = WeatherLocation;

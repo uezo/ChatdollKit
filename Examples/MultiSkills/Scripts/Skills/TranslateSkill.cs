@@ -12,11 +12,12 @@ namespace ChatdollKit.Examples.MultiSkills
     {
         public enum TranslationEngine
         {
-            Azure, Google
+            Azure, Google, Watson
         }
 
         public TranslationEngine Engine = TranslationEngine.Azure;
         public string ApiKey;
+        public string BaseUrl;
         private ChatdollHttp client { get; } = new ChatdollHttp();
 
         public override bool IsAvailable
@@ -50,7 +51,20 @@ namespace ChatdollKit.Examples.MultiSkills
             else
             {
                 // Translate
-                var translatedText = await (Engine == TranslationEngine.Azure ? TranslateWithAzureAsync(request.Text) : TranslateWithGoogleAsync(request.Text));
+                var translatedText = string.Empty;
+                if (Engine == TranslationEngine.Azure)
+                {
+                    translatedText = await TranslateWithAzureAsync(request.Text);
+                }
+                else if (Engine == TranslationEngine.Google)
+                {
+                    translatedText = await TranslateWithGoogleAsync(request.Text);
+                }
+                else if (Engine == TranslationEngine.Watson)
+                {
+                    translatedText = await TranslateWithWatsonAsync(request.Text);
+                }
+
                 response.AddVoiceTTS($"{request.Text}を英語で言うと、{translatedText}、です。");
                 response.AddAnimation("Default");
             }
@@ -64,7 +78,7 @@ namespace ChatdollKit.Examples.MultiSkills
         private async Task<string> TranslateWithAzureAsync(string text, string language = "en")
         {
             // Compose url
-            var url = $"https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&to={language}";
+            var url = BaseUrl + $"/translate?api-version=3.0&to={language}";
 
             // Create headers
             var headers = new Dictionary<string, string>();
@@ -105,7 +119,7 @@ namespace ChatdollKit.Examples.MultiSkills
         private async Task<string> TranslateWithGoogleAsync(string text, string language = "en")
         {
             // Compose url
-            var url = $"https://translation.googleapis.com/language/translate/v2";
+            var url = BaseUrl;
 
             // Set data
             var data = new Dictionary<string, string>()
@@ -145,6 +159,50 @@ namespace ChatdollKit.Examples.MultiSkills
         class GoogleTranslationText
         {
             public string TranslatedText { get; set; }
+        }
+
+        private async Task<string> TranslateWithWatsonAsync(string text, string language = "en")
+        {
+            // Compose url
+            var url = BaseUrl + "/v3/translate?version=2018-05-01";
+
+            // Set header
+            var headers = new Dictionary<string, string>()
+            {
+                { "Authorization", client.GetBasicAuthenticationHeaderValue("apikey", ApiKey).ToString() },
+            };
+
+            // Set data
+            var data = new Dictionary<string, string>()
+            {
+                { "text", text },
+                { "target", language },
+                { "source", "ja" }
+            };
+
+            // Send request
+            var translatedText = string.Empty;
+            try
+            {
+                var response = await client.PostJsonAsync<WatsonTranslationResponse>(url, data, headers);
+                translatedText = response.translations[0].translation;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Error occured while translation: {ex.Message}");
+            }
+            return translatedText;
+
+        }
+
+        class WatsonTranslationResponse
+        {
+            public List<WatsonTranslationData> translations { get; set; }
+        }
+
+        class WatsonTranslationData
+        {
+            public string translation { get; set; }
         }
     }
 }

@@ -418,6 +418,7 @@ MonoBehaviour:
   Language: ja-JP
   LogTableUri: 
   TranslationApiKey: 
+  TranslationBaseUrl: https://api.cognitive.microsofttranslator.com
   ChatA3RTApiKey: 
   WeatherLocation: 130010
 --- !u!114 &1621422569
@@ -640,6 +641,7 @@ MonoBehaviour:
   Name: 
   Engine: 0
   ApiKey: 
+  BaseUrl: 
 --- !u!114 &1621422581
 MonoBehaviour:
   m_ObjectHideFlags: 0

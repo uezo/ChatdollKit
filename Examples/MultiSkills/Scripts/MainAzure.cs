@@ -8,6 +8,7 @@ namespace ChatdollKit.Examples.MultiSkills
     {
         [Header("Skill settings")]
         public string TranslationApiKey;
+        public string TranslationBaseUrl = "https://api.cognitive.microsofttranslator.com";
         public string ChatA3RTApiKey;
         public WeatherSkill.WeatherLocation WeatherLocation = WeatherSkill.WeatherLocation.Tokyo;
 
@@ -16,6 +17,7 @@ namespace ChatdollKit.Examples.MultiSkills
             var translationSkill = gameObject.GetComponent<TranslateSkill>();
             translationSkill.ApiKey = TranslationApiKey;
             translationSkill.Engine = TranslateSkill.TranslationEngine.Azure;
+            translationSkill.BaseUrl = TranslationBaseUrl;
             gameObject.GetComponent<ChatA3RTSkill>().A3RTApiKey = ChatA3RTApiKey;
             gameObject.GetComponent<WeatherSkill>().MyLocation = WeatherLocation;
 
