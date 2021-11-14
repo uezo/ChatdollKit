@@ -63,9 +63,8 @@ namespace ChatdollKit
                 Debug.LogError("RequestProviders are missing");
             }
 
-            // Configure router
+            // Use user defined router or static router
             SkillRouter = gameObject.GetComponent<ISkillRouter>() ?? gameObject.AddComponent<StaticSkillRouter>();
-            SkillRouter.Configure();
 
             // Register intents and its processor
             var skills = gameObject.GetComponents<ISkill>();

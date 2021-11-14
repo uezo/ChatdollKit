@@ -11,14 +11,8 @@ namespace ChatdollKit.Dialog
     {
         protected Dictionary<string, ISkill> topicResolver = new Dictionary<string, ISkill>();
 
-        public virtual void Configure()
-        {
-            
-        }
-
         public void RegisterSkill(ISkill skill)
         {
-            skill.Configure();
             topicResolver.Add(skill.TopicName, skill);
         }
 
