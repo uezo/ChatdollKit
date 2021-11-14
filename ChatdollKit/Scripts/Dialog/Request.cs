@@ -16,7 +16,7 @@ namespace ChatdollKit.Dialog
         public DateTime CreatedAt { get; }
         public User User { get; set; }
         public string Text { get; set; }
-        public object Payloads { get; set; }
+        public List<object> Payloads { get; set; }
         public Intent Intent { get; set; }
         public Dictionary<string, object> Entities { get; set; }
         public List<WordNode> Words { get; set; }
@@ -29,6 +29,7 @@ namespace ChatdollKit.Dialog
             CreatedAt = DateTime.UtcNow;
             User = null;
             Text = string.Empty;
+            Payloads = new List<object>();
             Intent = null;
             Entities = new Dictionary<string, object>();
             IsCanceled = false;
@@ -42,7 +43,7 @@ namespace ChatdollKit.Dialog
             }
             else
             {
-                return Payloads != null;
+                return Payloads.Count > 0;
             }
         }
 

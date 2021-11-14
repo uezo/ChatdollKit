@@ -23,14 +23,13 @@ namespace ChatdollKit.Examples.MultiSkills
             else
             {
                 // Get extracted QRCode data
-                var extractedQRCodeData = request.Payloads as List<string>;
-                if (extractedQRCodeData == null || extractedQRCodeData.Count == 0)
+                if (request.Payloads.Count == 0)
                 {
                     response.AddVoiceTTS("QRコードの読み取りに失敗しました");
                 }
                 else
                 {
-                    response.AddVoiceTTS($"QRコードのデータは、{extractedQRCodeData[0]}");
+                    response.AddVoiceTTS($"QRコードのデータは、{(string)request.Payloads[0]}");
                 }
             }
 

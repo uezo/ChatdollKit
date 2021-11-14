@@ -23,18 +23,15 @@ namespace ChatdollKit.Dialog
             var request = preRequest ?? new Request(RequestType);
             request.User = user;
 
-            var payloads = new List<Texture2D>();
-
             if (ChatdollCamera != null)
             {
-                payloads.Add(await ChatdollCamera.CaptureTextureWithTimerAsync(CameraCaption, SelfTimerSeconds, token));
+                request.Payloads.Add(await ChatdollCamera.CaptureTextureWithTimerAsync(CameraCaption, SelfTimerSeconds, token));
             }
             else
             {
                 Debug.LogError("ChatdollCamera is not set to CameraRequestProvider");
             }
 
-            request.Payloads = payloads;
             return request;
         }
     }

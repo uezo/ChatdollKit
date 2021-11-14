@@ -20,18 +20,15 @@ namespace ChatdollKit.Dialog
             var request = preRequest ?? new Request(RequestType);
             request.User = user;
 
-            var payloads = new List<string>();
-
             if (ChatdollCamera != null)
             {
-                payloads.Add(await ChatdollCamera.ReadCodeAsync(token));
+                request.Payloads.Add(await ChatdollCamera.ReadCodeAsync(token));
             }
             else
             {
                 Debug.LogWarning("ChatdollCamera is not set to QRCodeRequestProvider");
             }
 
-            request.Payloads = payloads;
             return request;
         }
     }

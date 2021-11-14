@@ -25,8 +25,7 @@ namespace ChatdollKit.Examples.MultiSkills
             else
             {
                 // Save photo
-                var photos = request.Payloads as List<Texture2D>;
-                var jpg = photos[0].EncodeToJPG();
+                var jpg = ((Texture2D)request.Payloads[0]).EncodeToJPG();
                 File.WriteAllBytes("Assets/Resources/ExamplePhoto.jpg", jpg);
 
                 response.AddVoiceTTS("写真を撮りました");
