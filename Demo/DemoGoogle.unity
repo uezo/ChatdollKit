@@ -289,6 +289,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   WeatherKeyword: "\u5929\u6C17"
   TranslateKeyword: "\u7FFB\u8A33"
+  CameraKeyword: "\u5199\u771F"
+  QRCodeKeyword: "QR\u30B3\u30FC\u30C9"
 --- !u!114 &10516576
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -477,6 +479,32 @@ MonoBehaviour:
   ApiKey: 
   Language: ja-JP
   UseEnhancedModel: 0
+--- !u!114 &10516585
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 10516568}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d036375b4e94442abd181704519745b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Name: 
+--- !u!114 &10516586
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 10516568}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd5bbdeb370964530a7010c67bad1b86, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Name: 
 --- !u!1 &1043467913
 GameObject:
   m_ObjectHideFlags: 0

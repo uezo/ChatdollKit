@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using ChatdollKit.Dialog;
 using ChatdollKit.Extension.Watson;
 
 namespace ChatdollKit.Examples.MultiSkills
@@ -22,6 +23,8 @@ namespace ChatdollKit.Examples.MultiSkills
             gameObject.GetComponent<WeatherSkill>().MyLocation = WeatherLocation;
 
             base.Awake();
+
+            gameObject.GetComponent<QRCodeRequestProvider>().ChatdollCamera.DecodeCode = QRCodeDecoder.DecodeByZXing;
         }
     }
 }

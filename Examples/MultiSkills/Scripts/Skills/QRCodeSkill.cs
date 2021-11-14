@@ -1,0 +1,41 @@
+﻿using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using ChatdollKit.Dialog;
+
+namespace ChatdollKit.Examples.MultiSkills
+{
+    public class QRCodeSkill : SkillBase
+    {
+#pragma warning disable CS1998
+        public override async Task<Response> ProcessAsync(Request request, State state, CancellationToken token)
+        {
+            var response = new Response(request.Id);
+
+            if (state.Topic.IsFirstTurn)
+            {
+                // Continue topic to scan QRCode next turn
+                state.Topic.IsFinished = false;
+                state.Topic.RequiredRequestType = RequestType.QRCode;
+
+                response.AddVoiceTTS("QRコードを見せてください");
+            }
+            else
+            {
+                // Get extracted QRCode data
+                var extractedQRCodeData = request.Payloads as List<string>;
+                if (extractedQRCodeData == null || extractedQRCodeData.Count == 0)
+                {
+                    response.AddVoiceTTS("QRコードの読み取りに失敗しました");
+                }
+                else
+                {
+                    response.AddVoiceTTS($"QRコードのデータは、{extractedQRCodeData[0]}");
+                }
+            }
+
+            return response;
+        }
+#pragma warning restore CS1998
+    }
+}
