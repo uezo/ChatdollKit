@@ -1,17 +1,17 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 using ChatdollKit.Dialog;
 using ChatdollKit.IO;
 using ChatdollKit.Model;
 
 namespace ChatdollKit
 {
-    [RequireComponent(typeof(Chatdoll))]
     [RequireComponent(typeof(ModelController))]
     [RequireComponent(typeof(CameraRequestProvider))]
     [RequireComponent(typeof(QRCodeRequestProvider))]
     public class ChatdollApplication : MonoBehaviour
     {
-        protected Chatdoll chatdoll;
+        protected DialogController dialogController;
         protected ModelController modelController;
         protected VoiceRequestProviderBase voiceRequestProvider;
         protected CameraRequestProvider cameraRequestProvider;
@@ -39,18 +39,59 @@ namespace ChatdollKit
         protected virtual void Awake()
         {
             // Get components
-            chatdoll = gameObject.GetComponent<Chatdoll>();
             modelController = gameObject.GetComponent<ModelController>();
             voiceRequestProvider = gameObject.GetComponent<VoiceRequestProviderBase>();
             cameraRequestProvider = gameObject.GetComponent<CameraRequestProvider>();
             qrcodeRequestProvider = gameObject.GetComponent<QRCodeRequestProvider>();
-            wakeWordListener = GetComponent<WakeWordListenerBase>();
+
+            // Get or add User/State store
+            var userStore = gameObject.GetComponent<IUserStore>() ?? gameObject.AddComponent<LocalUserStore>();
+            var stateStore = gameObject.GetComponent<IStateStore>() ?? gameObject.AddComponent<MemoryStateStore>();
+
+            // Register request providers for each input type
+            var requestProviders = new Dictionary<RequestType, IRequestProvider>();
+            var attachedRequestProviders = gameObject.GetComponents<IRequestProvider>();
+            if (attachedRequestProviders != null)
+            {
+                foreach (var rp in attachedRequestProviders)
+                {
+                    if (((MonoBehaviour)rp).enabled)
+                    {
+                        requestProviders[rp.RequestType] = rp;
+                    }
+                }
+            }
+            else
+            {
+                Debug.LogError("RequestProviders are missing");
+            }
+
+            // Use user defined router or static router
+            var skillRouter = gameObject.GetComponent<ISkillRouter>() ?? gameObject.AddComponent<StaticSkillRouter>();
+
+            // Register intents and its processor
+            var skills = gameObject.GetComponents<ISkill>();
+            if (skills != null)
+            {
+                foreach (var skill in skills)
+                {
+                    skillRouter.RegisterSkill(skill);
+                    Debug.Log($"Skill '{skill.TopicName}' registered successfully");
+                }
+            }
+            else
+            {
+                Debug.LogError("Skills are missing");
+            }
+
+            // Setup DialogController
+            dialogController = new DialogController(userStore, stateStore, skillRouter, requestProviders, modelController);
 
             // Prompt
             var httpPrompter = gameObject.GetComponent<HttpPrompter>();
             if (httpPrompter != null)
             {
-                chatdoll.OnPromptAsync = httpPrompter.OnPromptAsync;
+                dialogController.OnPromptAsync = httpPrompter.OnPromptAsync;
             }
             else
             {
@@ -78,19 +119,20 @@ namespace ChatdollKit
                     PromptAnimatedVoiceRequest.AddAnimation(PromptAnimation);
                 }
 
-                chatdoll.OnPromptAsync = async (r, u, c, t) =>
+                dialogController.OnPromptAsync = async (r, u, c, t) =>
                 {
                     await modelController.AnimatedSay(PromptAnimatedVoiceRequest, t);
                 };
             }
 
             // Error
-            chatdoll.OnErrorAsync = async (r, c, t) =>
+            dialogController.OnErrorAsync = async (r, c, t) =>
             {
                 await modelController.AnimatedSay(ErrorAnimatedVoiceRequest, t);
             };
 
             // Wakeword Listener
+            wakeWordListener = GetComponent<WakeWordListenerBase>();
             if (wakeWordListener != null)
             {
                 // Register wakeword
@@ -132,14 +174,16 @@ namespace ChatdollKit
                     }
 
                     // Invoke chat
-                    await chatdoll.StartChatAsync(GetUserId(), skipPrompt, preRequest);
+                    await dialogController.StartChatAsync(GetUserId(), skipPrompt, preRequest);
                 };
 
                 // Cancel
-                wakeWordListener.OnCancelAsync = async () => { chatdoll.StopChat(); };
+#pragma warning disable CS1998
+                wakeWordListener.OnCancelAsync = async () => { dialogController.StopChat(); };
+#pragma warning restore CS1998
 
                 // Raise voice detection threshold when chatting
-                wakeWordListener.ShouldRaiseThreshold = () => { return chatdoll.IsChatting; };
+                wakeWordListener.ShouldRaiseThreshold = () => { return dialogController.IsChatting; };
             }
 
             // Voice Request Provider
@@ -170,6 +214,12 @@ namespace ChatdollKit
                 InstantiateCamera();
                 qrcodeRequestProvider.ChatdollCamera = ChatdollCamera;
             }
+        }
+
+        // OnDestroy
+        protected void OnDestroy()
+        {
+            dialogController.Dispose();
         }
 
         protected virtual void InstantiateMessageWindos()
@@ -203,12 +253,12 @@ namespace ChatdollKit
 
         public async void StartChatAsync()
         {
-            await chatdoll.StartChatAsync(GetUserId());
+            await dialogController.StartChatAsync(GetUserId());
         }
 
         public void StopChat()
         {
-            chatdoll.StopChat();
+            dialogController.StopChat();
         }
 
         protected virtual string GetUserId()

@@ -4,11 +4,11 @@ using ChatdollKit.Dialog;
 using ChatdollKit.IO;
 using ChatdollKit.Model;
 
-[CustomEditor(typeof(Chatdoll))]
+[CustomEditor(typeof(ChatdollApplication))]
 public class ChatdollEditor : Editor
 {
     // Remove ChatdollKit components and objects
-    [MenuItem("CONTEXT/Chatdoll/Remove ChatdollKit components")]
+    [MenuItem("CONTEXT/ChatdollApplication/Remove ChatdollKit components")]
     private static void RemoveComponents(MenuCommand menuCommand)
     {
         if (!EditorUtility.DisplayDialog("Confirmation", "Are you sure to remove all ChatdollKit components?", "OK", "Cancel"))
@@ -16,7 +16,7 @@ public class ChatdollEditor : Editor
             return;
         }
 
-        var chatdoll = menuCommand.context as Chatdoll;
+        var chatdoll = menuCommand.context as ChatdollApplication;
         var gameObject = chatdoll.gameObject;
 
         // Main Application
@@ -43,9 +43,6 @@ public class ChatdollEditor : Editor
 
         // Skills
         DestroyComponents(gameObject.GetComponents<ISkill>());
-
-        // Chatdoll
-        DestroyComponents(gameObject.GetComponents<Chatdoll>());
 
         // ModelController
         foreach (var c in gameObject.GetComponents<ModelController>())

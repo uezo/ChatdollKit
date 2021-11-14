@@ -3,14 +3,11 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
-using ChatdollKit.Dialog;
 using ChatdollKit.Model;
 
-
-namespace ChatdollKit
+namespace ChatdollKit.Dialog
 {
-    [RequireComponent(typeof(ModelController))]
-    public class Chatdoll : MonoBehaviour
+    public class DialogController
     {
         // Conversation
         public bool IsChatting { get; private set; }
@@ -37,57 +34,19 @@ namespace ChatdollKit
 #pragma warning restore CS1998
 
         // Awake
-        private void Awake()
+        public DialogController(IUserStore userStore, IStateStore stateStore, ISkillRouter skillRouter, Dictionary<RequestType, IRequestProvider> requestProviders, ModelController modelController)
         {
-            // Use local store when no UserStore attached
-            UserStore = gameObject.GetComponent<IUserStore>() ?? gameObject.AddComponent<LocalUserStore>();
-
-            // Use local store when no StateStore attached
-            StateStore = gameObject.GetComponent<IStateStore>() ?? gameObject.AddComponent<MemoryStateStore>();
-
-            // Register request providers for each input type
-            RequestProviders = new Dictionary<RequestType, IRequestProvider>();
-            var requestProviders = gameObject.GetComponents<IRequestProvider>();
-            if (requestProviders != null)
-            {
-                foreach (var rp in requestProviders)
-                {
-                    if (((MonoBehaviour)rp).enabled)
-                    {
-                        RequestProviders[rp.RequestType] = rp;
-                    }
-                }
-            }
-            else
-            {
-                Debug.LogError("RequestProviders are missing");
-            }
-
-            // Use user defined router or static router
-            SkillRouter = gameObject.GetComponent<ISkillRouter>() ?? gameObject.AddComponent<StaticSkillRouter>();
-
-            // Register intents and its processor
-            var skills = gameObject.GetComponents<ISkill>();
-            if (skills != null)
-            {
-                foreach (var skill in skills)
-                {
-                    SkillRouter.RegisterSkill(skill);
-                    Debug.Log($"Skill '{skill.TopicName}' registered successfully");
-                }
-            }
-            else
-            {
-                Debug.LogError("Skills are missing");
-            }
-
-            // ModelController
-            ModelController = gameObject.GetComponent<ModelController>();
+            UserStore = userStore;
+            StateStore = stateStore;
+            SkillRouter = skillRouter;
+            RequestProviders = requestProviders;
+            ModelController = modelController;
         }
 
-        // OnDestroy
-        private void OnDestroy()
+        // Dispose
+        public void Dispose()
         {
+            // Stop async operations
             chatTokenSource?.Cancel();
         }
 
@@ -298,6 +257,6 @@ namespace ChatdollKit
             // Create new TokenSource and return its token
             chatTokenSource = new CancellationTokenSource();
             return chatTokenSource.Token;
-        } 
+        }
     }
 }
