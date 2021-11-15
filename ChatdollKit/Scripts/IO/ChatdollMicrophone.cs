@@ -16,7 +16,7 @@ namespace ChatdollKit.IO
         private AudioClip microphoneInput;
         private float[] samplingData;
         private int previousPosition;
-        public MicrophoneCapturedData CapturedData;
+        public MicrophoneCapturedData CapturedData { get; private set; }
 
         // Status and timestamp
         public bool IsListening { get; private set; }
