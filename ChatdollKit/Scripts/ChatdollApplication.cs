@@ -21,20 +21,20 @@ namespace ChatdollKit
         protected AnimatedVoiceRequest ErrorAnimatedVoiceRequest = new AnimatedVoiceRequest();
 
         [Header("Wake Word and Cancel Word")]
-        public string WakeWord;
-        public string CancelWord;
+        [SerializeField] protected string WakeWord;
+        [SerializeField] protected string CancelWord;
 
         [Header("Prompt")]
-        public string PromptVoice;
-        public VoiceSource PromptVoiceType;
-        public string PromptFace;
-        public string PromptAnimation;
+        [SerializeField] protected string PromptVoice;
+        [SerializeField] protected VoiceSource PromptVoiceType;
+        [SerializeField] protected string PromptFace;
+        [SerializeField] protected string PromptAnimation;
 
         [Header("Voice Request Provider")]
-        public MessageWindowBase MessageWindow;
+        [SerializeField] protected MessageWindowBase MessageWindow;
 
         [Header("Camera")]
-        public ChatdollCamera ChatdollCamera;
+        [SerializeField] protected ChatdollCamera ChatdollCamera;
 
         protected virtual void Awake()
         {
