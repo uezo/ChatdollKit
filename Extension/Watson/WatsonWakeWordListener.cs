@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
+using ChatdollKit.Dialog;
 using ChatdollKit.IO;
 
 namespace ChatdollKit.Extension.Watson

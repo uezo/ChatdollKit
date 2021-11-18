@@ -1,15 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
-using ChatdollKit.Dialog;
+using ChatdollKit.IO;
 using ChatdollKit.Network;
 
-
-namespace ChatdollKit.IO
+namespace ChatdollKit.Dialog
 {
-    public class WakeWordListenerBase : VoiceRecorderBase
+    public class WakeWordListenerBase : ShortPhraseListener
     {
         [Header("WakeWord Settings")]
         public List<WakeWord> WakeWords;
@@ -17,66 +15,14 @@ namespace ChatdollKit.IO
         public List<string> IgnoreWords = new List<string>() { "。", "、", "？", "！" };
         public Func<string, WakeWord> ExtractWakeWord;
         public Func<string, string> ExtractCancelWord;
-        public Func<string, Task> OnRecognizedAsync;
         public Func<WakeWord, Task> OnWakeAsync;
         public Func<Task> OnCancelAsync;
-        public bool AutoStart = true;
 
-        [Header("Test and Debug")]
-        public bool PrintResult = false;
-
-        [Header("Voice Recorder Settings")]
-        public float VoiceDetectionThreshold = 0.1f;
-        public float VoiceDetectionRaisedThreshold = 0.5f;
-        public float VoiceDetectionMinimumLength = 0.2f;
-        public float SilenceDurationToEndRecording = 0.3f;
-        public float VoiceRecognitionMaximumLength = 3.0f;
-
-        public Action OnListeningStart;
-        public Action OnListeningStop;
-        public Action OnRecordingStart = () => { Debug.Log("Recording wakeword started"); };
-        public Action<float> OnDetectVoice;
-        public Action<AudioClip> OnRecordingEnd = (a) => { Debug.Log("Recording wakeword ended"); };
-        public Action<Exception> OnError = (e) => { Debug.LogError($"Recording wakeword error: {e.Message}\n{e.StackTrace}"); };
-        public Func<bool> ShouldRaiseThreshold = () => { return false; };
-
-        // Private and protected members for recording voice and recognize task
-        private CancellationTokenSource cancellationTokenSource;
         protected ChatdollHttp client = new ChatdollHttp();
 
-        private void Start()
+        protected override void Start()
         {
             if (AutoStart)
-            {
-#pragma warning disable CS4014
-                StartListeningAsync();
-#pragma warning restore CS4014
-            }
-        }
-
-        private void Update()
-        {
-            // Observe which threshold should be applied in every frames
-            voiceDetectionThreshold = ShouldRaiseThreshold() ? VoiceDetectionRaisedThreshold : VoiceDetectionThreshold;
-        }
-
-        protected override void OnDestroy()
-        {
-            base.OnDestroy();
-            cancellationTokenSource?.Cancel();
-        }
-
-        public async Task StartListeningAsync()
-        {
-            if (IsListening)
-            {
-                Debug.LogWarning("WakeWordListener is already listening");
-                return;
-            }
-
-            StartListening();   // Start recorder here to asure that GetVoiceAsync will be called after recorder started
-
-            try
             {
                 if (OnWakeAsync == null)
                 {
@@ -86,44 +32,19 @@ namespace ChatdollKit.IO
 #pragma warning restore CS1998
                 }
 
-                cancellationTokenSource = new CancellationTokenSource();
-                var token = cancellationTokenSource.Token;
-
-                while (!token.IsCancellationRequested)
-                {
-                    voiceDetectionThreshold = VoiceDetectionThreshold;
-                    voiceDetectionMinimumLength = VoiceDetectionMinimumLength;
-                    silenceDurationToEndRecording = SilenceDurationToEndRecording;
-                    onListeningStart = OnListeningStart;
-                    onListeningStop = OnListeningStop;
-                    onRecordingStart = OnRecordingStart;
-                    onDetectVoice = OnDetectVoice;
-                    onRecordingEnd = OnRecordingEnd;
-                    onError = OnError;
-
-                    var voiceRecorderResponse = await GetVoiceAsync(0.0f, token);
-                    if (voiceRecorderResponse != null && voiceRecorderResponse.Voice != null)
-                    {
-                        if (voiceRecorderResponse.Voice.length <= VoiceRecognitionMaximumLength)
-                        {
 #pragma warning disable CS4014
-                            ProcessVoiceAsync(voiceRecorderResponse.Voice); // Do not await to continue listening
+                StartListeningAsync();
 #pragma warning restore CS4014
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"Error occured in listening wakeword: {ex.Message}\n{ex.StackTrace}");
-            }
-            finally
-            {
-                StopListening();
             }
         }
 
-        private async Task ProcessVoiceAsync(AudioClip voice)
+        protected override void OnDestroy()
+        {
+            base.OnDestroy();
+            client?.Dispose();
+        }
+
+        protected override async Task ProcessVoiceAsync(AudioClip voice)
         {
             // Recognize speech
             var recognizedText = await RecognizeSpeechAsync(voice);

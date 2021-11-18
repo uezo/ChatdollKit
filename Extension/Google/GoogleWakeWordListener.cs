@@ -3,7 +3,6 @@ using UnityEngine;
 using ChatdollKit.Dialog;
 using ChatdollKit.IO;
 
-
 namespace ChatdollKit.Extension.Google
 {
     public class GoogleWakeWordListener : WakeWordListenerBase
