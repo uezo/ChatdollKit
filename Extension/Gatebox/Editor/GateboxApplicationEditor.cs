@@ -4,7 +4,7 @@ using UnityEditor;
 namespace ChatdollKit.Extension.Gatebox
 {
     [CustomEditor(typeof(GateboxApplication), true)]
-    public class GateboxApplicationEditor : Editor
+    public class GateboxApplicationEditor : ChatdollEditor
     {
         private GUIStyle labelStyle;
         private bool isHumanSensorLeft = false;

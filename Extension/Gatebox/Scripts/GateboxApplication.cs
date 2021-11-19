@@ -58,14 +58,14 @@ namespace ChatdollKit.Extension.Gatebox
             };
             OnGateboxButtonDoubleTap = () =>
             {
-                if (chatdoll.IsChatting)
+                if (dialogController.IsChatting)
                 {
-                    chatdoll.StopChat();
+                    dialogController.StopChat();
                 }
                 else
                 {
 #pragma warning disable CS4014
-                    chatdoll.StartChatAsync(GetUserId());
+                    dialogController.StartChatAsync(GetUserId());
 #pragma warning restore CS4014
                 }
             };
@@ -132,7 +132,7 @@ namespace ChatdollKit.Extension.Gatebox
         protected virtual void SetLEDColors()
         {
             // Set LEDs Color for each status
-            if (chatdoll.IsError)
+            if (dialogController.IsError)
             {
                 StageLED.SetColor(ErrorColor); StatusLED.SetColor(ErrorColor);
             }
@@ -140,7 +140,7 @@ namespace ChatdollKit.Extension.Gatebox
             {
                 StageLED.SetColor(ListeningColor); StatusLED.SetColor(ListeningColor);
             }
-            else if (chatdoll.IsChatting)
+            else if (dialogController.IsChatting)
             {
                 StageLED.SetColor(ChattingColor); StatusLED.SetColor(ChattingColor);
             }
