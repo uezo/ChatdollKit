@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace ChatdollKit.Extension.Google
 {
@@ -10,36 +11,53 @@ namespace ChatdollKit.Extension.Google
         [Header("Google Cloud Speech API")]
         public string ApiKey;
         public string Language;
+        public string Gender = "FEMALE";
+        public string SpeakerName = "ja-JP-Standard-A";
 
-        protected override void Awake()
+        protected override void OnComponentsReady(ScriptableObject config)
         {
-            Configure(gameObject, ApiKey, Language);
-            base.Awake();
-        }
-
-        public static void Configure(GameObject gameObject, string apiKey, string language)
-        {
-            // Set API key and language to each component
-            var wakewordListener = gameObject.GetComponent<GoogleWakeWordListener>();
-            if (wakewordListener != null)
+            if (config != null)
             {
-                wakewordListener.ApiKey = string.IsNullOrEmpty(wakewordListener.ApiKey) ? apiKey : wakewordListener.ApiKey;
-                wakewordListener.Language = string.IsNullOrEmpty(wakewordListener.Language) ? language : wakewordListener.Language;
+                var appConfig = (GoogleApplicationConfig)config;
+                ApiKey = appConfig.SpeechApiKey;
+                Language = appConfig.Language;
             }
 
-            var voiceRequestProvider = gameObject.GetComponent<GoogleVoiceRequestProvider>();
-            if (voiceRequestProvider != null)
+            // Set API key and language to each component
+            var ww = wakeWordListener as GoogleWakeWordListener;
+            if (ww != null)
             {
-                voiceRequestProvider.ApiKey = string.IsNullOrEmpty(voiceRequestProvider.ApiKey) ? apiKey : voiceRequestProvider.ApiKey;
-                voiceRequestProvider.Language = string.IsNullOrEmpty(voiceRequestProvider.Language) ? language : voiceRequestProvider.Language;
+                ww.ApiKey = string.IsNullOrEmpty(ww.ApiKey) ? ApiKey : ww.ApiKey;
+                ww.Language = string.IsNullOrEmpty(ww.Language) ? Language : ww.Language;
+            }
+
+            var vreq = voiceRequestProvider as GoogleVoiceRequestProvider;
+            if (vreq != null)
+            {
+                vreq.ApiKey = string.IsNullOrEmpty(vreq.ApiKey) ? ApiKey : vreq.ApiKey;
+                vreq.Language = string.IsNullOrEmpty(vreq.Language) ? Language : vreq.Language;
             }
 
             var ttsLoader = gameObject.GetComponent<GoogleTTSLoader>();
             if (ttsLoader != null)
             {
-                ttsLoader.ApiKey = string.IsNullOrEmpty(ttsLoader.ApiKey) ? apiKey : ttsLoader.ApiKey;
-                ttsLoader.Language = string.IsNullOrEmpty(ttsLoader.Language) ? language : ttsLoader.Language;
+                ttsLoader.ApiKey = string.IsNullOrEmpty(ttsLoader.ApiKey) ? ApiKey : ttsLoader.ApiKey;
+                ttsLoader.Language = string.IsNullOrEmpty(ttsLoader.Language) ? Language : ttsLoader.Language;
             }
+        }
+
+        public override ScriptableObject CreateConfig(ScriptableObject config = null)
+        {
+            var appConfig = (GoogleApplicationConfig)base.CreateConfig(
+                config ?? ScriptableObject.CreateInstance<GoogleApplicationConfig>()
+            );
+
+            appConfig.SpeechApiKey = ApiKey;
+            appConfig.Language = Language;
+            appConfig.Gender = "FEMALE";
+            appConfig.SpeakerName = "ja-JP-Standard-A";
+
+            return appConfig;
         }
     }
 }

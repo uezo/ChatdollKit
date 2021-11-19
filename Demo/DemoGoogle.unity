@@ -318,6 +318,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fad220efa5a9a4b4a9db65a5641059b2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ApplicationName: Demo-Google-MultiSkills
   WakeWord: "\u3053\u3093\u306B\u3061\u306F"
   CancelWord: "\u304A\u3057\u307E\u3044"
   PromptVoice: "\u3069\u3046\u3057\u305F\u306E\uFF1F"
@@ -328,6 +329,8 @@ MonoBehaviour:
   ChatdollCamera: {fileID: 0}
   ApiKey: 
   Language: ja-JP
+  Gender: FEMALE
+  SpeakerName: ja-JP-Standard-A
   TranslationApiKey: 
   TranslationBaseUrl: https://translation.googleapis.com/language/translate/v2
   ChatA3RTApiKey: 
@@ -409,18 +412,6 @@ MonoBehaviour:
   FaceClipConfiguration: {fileID: 11400000, guid: 56562b6f67368428eb49d06adae5f60a,
     type: 2}
   FaceFadeStep: 5
---- !u!114 &10516581
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 10516568}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f663eda18bec94d1c87c0cd0dd68a092, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &10516582
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -462,13 +453,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   IsEnabled: 0
-  WakeWords: []
-  CancelWords: []
-  IgnoreWords:
-  - "\u3002"
-  - "\u3001"
-  - "\uFF1F"
-  - "\uFF01"
   AutoStart: 1
   PrintResult: 0
   VoiceDetectionThreshold: 0.1
@@ -476,6 +460,13 @@ MonoBehaviour:
   VoiceDetectionMinimumLength: 0.2
   SilenceDurationToEndRecording: 0.3
   VoiceRecognitionMaximumLength: 3
+  WakeWords: []
+  CancelWords: []
+  IgnoreWords:
+  - "\u3002"
+  - "\u3001"
+  - "\uFF1F"
+  - "\uFF01"
   ApiKey: 
   Language: ja-JP
   UseEnhancedModel: 0

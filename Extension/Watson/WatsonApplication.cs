@@ -18,40 +18,63 @@ namespace ChatdollKit.Extension.Watson
         public string TTSBaseUrl;
         public string TTSSpeakerName;
 
-        protected override void Awake()
+        protected override void OnComponentsReady(ScriptableObject config)
         {
-            Configure(gameObject, STTApiKey, STTBaseUrl, STTModel, STTRemoveWordSeparation, TTSApiKey, TTSBaseUrl, TTSSpeakerName);
-            base.Awake();
-        }
-
-        public static void Configure(GameObject gameObject, string sttApiKey, string sttBaseUrl, string sttModel, bool sttRemoveWordSeparation, string ttsApiKey, string ttsBaseUrl, string ttsSpeakerName)
-        {
-            // Set API key and some properties to each component
-            var wakewordListener = gameObject.GetComponent<WatsonWakeWordListener>();
-            if (wakewordListener != null)
+            if (config != null)
             {
-                wakewordListener.ApiKey = string.IsNullOrEmpty(wakewordListener.ApiKey) ? sttApiKey : wakewordListener.ApiKey;
-                wakewordListener.BaseUrl = string.IsNullOrEmpty(wakewordListener.BaseUrl) ? sttBaseUrl : wakewordListener.BaseUrl;
-                wakewordListener.Model = string.IsNullOrEmpty(wakewordListener.Model) ? sttModel : wakewordListener.Model;
-                wakewordListener.RemoveWordSeparation = sttRemoveWordSeparation;
+                var appConfig = (WatsonApplicationConfig)config;
+                STTApiKey = appConfig.STTApiKey;
+                STTBaseUrl = appConfig.STTBaseUrl;
+                STTModel = appConfig.STTModel;
+                STTRemoveWordSeparation = appConfig.STTRemoveWordSeparation;
+                TTSApiKey = appConfig.TTSApiKey;
+                TTSBaseUrl = appConfig.TTSBaseUrl;
+                TTSSpeakerName = appConfig.TTSSpeakerName;
             }
 
-            var voiceRequestProvider = gameObject.GetComponent<WatsonVoiceRequestProvider>();
-            if (voiceRequestProvider != null)
+            // Set API key and language to each component
+            var ww = wakeWordListener as WatsonWakeWordListener;
+            if (ww != null)
             {
-                voiceRequestProvider.ApiKey = string.IsNullOrEmpty(voiceRequestProvider.ApiKey) ? sttApiKey : voiceRequestProvider.ApiKey;
-                voiceRequestProvider.BaseUrl = string.IsNullOrEmpty(voiceRequestProvider.BaseUrl) ? sttBaseUrl : voiceRequestProvider.BaseUrl;
-                voiceRequestProvider.Model = string.IsNullOrEmpty(voiceRequestProvider.Model) ? sttModel : voiceRequestProvider.Model;
-                voiceRequestProvider.RemoveWordSeparation = sttRemoveWordSeparation;
+                ww.ApiKey = string.IsNullOrEmpty(ww.ApiKey) ? STTApiKey : ww.ApiKey;
+                ww.BaseUrl = string.IsNullOrEmpty(ww.BaseUrl) ? STTBaseUrl : ww.BaseUrl;
+                ww.Model = string.IsNullOrEmpty(ww.Model) ? STTModel : ww.Model;
+                ww.RemoveWordSeparation = ww.RemoveWordSeparation ? STTRemoveWordSeparation : ww.RemoveWordSeparation;
+            }
+
+            var vreq = voiceRequestProvider as WatsonVoiceRequestProvider;
+            if (vreq != null)
+            {
+                vreq.ApiKey = string.IsNullOrEmpty(vreq.ApiKey) ? STTApiKey : vreq.ApiKey;
+                vreq.BaseUrl = string.IsNullOrEmpty(vreq.BaseUrl) ? STTBaseUrl : vreq.BaseUrl;
+                vreq.Model = string.IsNullOrEmpty(vreq.Model) ? STTModel : vreq.Model;
+                vreq.RemoveWordSeparation = vreq.RemoveWordSeparation ? STTRemoveWordSeparation : vreq.RemoveWordSeparation;
             }
 
             var ttsLoader = gameObject.GetComponent<WatsonTTSLoader>();
             if (ttsLoader != null)
             {
-                ttsLoader.ApiKey = string.IsNullOrEmpty(ttsLoader.ApiKey) ? ttsApiKey : ttsLoader.ApiKey;
-                ttsLoader.BaseUrl = string.IsNullOrEmpty(ttsLoader.BaseUrl) ? ttsBaseUrl : ttsLoader.BaseUrl;
-                ttsLoader.SpeakerName = string.IsNullOrEmpty(ttsLoader.SpeakerName) ? ttsSpeakerName : ttsLoader.SpeakerName;
+                ttsLoader.ApiKey = string.IsNullOrEmpty(ttsLoader.ApiKey) ? TTSApiKey : ttsLoader.ApiKey;
+                ttsLoader.BaseUrl = string.IsNullOrEmpty(ttsLoader.BaseUrl) ? TTSBaseUrl : ttsLoader.BaseUrl;
+                ttsLoader.SpeakerName = string.IsNullOrEmpty(ttsLoader.SpeakerName) ? TTSSpeakerName : ttsLoader.SpeakerName;
             }
+        }
+
+        public override ScriptableObject CreateConfig(ScriptableObject config = null)
+        {
+            var appConfig = (WatsonApplicationConfig)base.CreateConfig(
+                config ?? ScriptableObject.CreateInstance<WatsonApplicationConfig>()
+            );
+
+            appConfig.STTApiKey = STTApiKey;
+            appConfig.STTBaseUrl = STTBaseUrl;
+            appConfig.STTModel = STTModel;
+            appConfig.STTRemoveWordSeparation = STTRemoveWordSeparation;
+            appConfig.TTSApiKey = TTSApiKey;
+            appConfig.TTSBaseUrl = TTSBaseUrl;
+            appConfig.TTSSpeakerName = TTSSpeakerName;
+
+            return appConfig;
         }
     }
 }

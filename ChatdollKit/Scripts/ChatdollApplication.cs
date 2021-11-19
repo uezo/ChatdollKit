@@ -3,6 +3,7 @@ using UnityEngine;
 using ChatdollKit.Dialog;
 using ChatdollKit.IO;
 using ChatdollKit.Model;
+using System;
 
 namespace ChatdollKit
 {
@@ -26,6 +27,9 @@ namespace ChatdollKit
         protected AnimatedVoiceRequest PromptAnimatedVoiceRequest = new AnimatedVoiceRequest() { StartIdlingOnEnd = false };
         protected AnimatedVoiceRequest ErrorAnimatedVoiceRequest = new AnimatedVoiceRequest();
 
+        [Header("Application Identifier")]
+        public string ApplicationName;
+
         [Header("Wake Word and Cancel Word")]
         [SerializeField] protected string WakeWord;
         [SerializeField] protected string CancelWord;
@@ -36,7 +40,7 @@ namespace ChatdollKit
         [SerializeField] protected string PromptFace;
         [SerializeField] protected string PromptAnimation;
 
-        [Header("Voice Request Provider")]
+        [Header("Message Window")]
         [SerializeField] protected MessageWindowBase MessageWindow;
 
         [Header("Camera")]
@@ -48,14 +52,39 @@ namespace ChatdollKit
             modelController = gameObject.GetComponent<ModelController>();
             userStore = gameObject.GetComponent<IUserStore>() ?? gameObject.AddComponent<LocalUserStore>();
             stateStore = gameObject.GetComponent<IStateStore>() ?? gameObject.AddComponent<MemoryStateStore>();
-            requestProviders = gameObject.GetComponents<IRequestProvider>();
             skills = gameObject.GetComponents<ISkill>();
             skillRouter = gameObject.GetComponent<ISkillRouter>() ?? gameObject.AddComponent<StaticSkillRouter>();
             httpPrompter = gameObject.GetComponent<HttpPrompter>();
             wakeWordListener = GetComponent<WakeWordListenerBase>();
+            requestProviders = gameObject.GetComponents<IRequestProvider>();
+            MessageWindow = MessageWindow ?? InstantiateMessageWindow();
+            ChatdollCamera = ChatdollCamera ?? InstantiateCamera();
+
+            foreach (var rp in requestProviders)
+            {
+                if (((MonoBehaviour)rp).enabled)
+                {
+                    if (rp.RequestType == RequestType.Voice)
+                    {
+                        voiceRequestProvider = (VoiceRequestProviderBase)rp;
+                        voiceRequestProvider.MessageWindow = MessageWindow;
+                    }
+                    else if (rp.RequestType == RequestType.Camera)
+                    {
+                        cameraRequestProvider = (CameraRequestProvider)rp;
+                        cameraRequestProvider.ChatdollCamera = ChatdollCamera;
+                    }
+                    else if (rp.RequestType == RequestType.QRCode)
+                    {
+                        qrcodeRequestProvider = (QRCodeRequestProvider)rp;
+                        qrcodeRequestProvider.ChatdollCamera = ChatdollCamera;
+                    }
+                }
+            }
 
             // Apply configuration to each component if configuration exists
-            OnComponentsReady();
+            var config = Resources.Load<ScriptableObject>(GetConfigName());
+            OnComponentsReady(config);
 
             // Register skills to router
             if (skills != null)
@@ -71,57 +100,16 @@ namespace ChatdollKit
                 Debug.LogError("Skills are missing");
             }
 
-            // Get and configure request providers that is enabled
-            var enabledRequestProviders = new Dictionary<RequestType, IRequestProvider>();
-            if (requestProviders != null)
+            // Make request provider set
+            var enabledRequestProviders = new Dictionary<RequestType, IRequestProvider>
             {
-                foreach (var rp in requestProviders)
-                {
-                    if (((MonoBehaviour)rp).enabled)
-                    {
-                        enabledRequestProviders[rp.RequestType] = rp;
-
-                        if (rp.RequestType == RequestType.Voice)
-                        {
-                            voiceRequestProvider = (VoiceRequestProviderBase)rp;
-                            // Set message window
-                            if (voiceRequestProvider.MessageWindow == null)
-                            {
-                                InstantiateMessageWindos();
-                                voiceRequestProvider.MessageWindow = MessageWindow;
-                            }
-                            // Register cancel word to request provider
-                            if (voiceRequestProvider.CancelWords.Count == 0)
-                            {
-                                voiceRequestProvider.CancelWords.Add(CancelWord);
-                            }
-                        }
-                        else if (rp.RequestType == RequestType.Camera)
-                        {
-                            cameraRequestProvider = (CameraRequestProvider)rp;
-                            if (cameraRequestProvider.ChatdollCamera == null)
-                            {
-                                // Set camera if not set
-                                InstantiateCamera();
-                                cameraRequestProvider.ChatdollCamera = ChatdollCamera;
-                            }
-                        }
-                        else if (rp.RequestType == RequestType.QRCode)
-                        {
-                            qrcodeRequestProvider = (QRCodeRequestProvider)rp;
-                            if (qrcodeRequestProvider.ChatdollCamera == null)
-                            {
-                                // Set camera if not set
-                                InstantiateCamera();
-                                qrcodeRequestProvider.ChatdollCamera = ChatdollCamera;
-                            }
-                        }
-                    }
-                }
-            }
-            else
+                [RequestType.Voice] = voiceRequestProvider,
+                [RequestType.Camera] = cameraRequestProvider,
+                [RequestType.QRCode] = qrcodeRequestProvider
+            };
+            if (enabledRequestProviders.Count == 0)
             {
-                Debug.LogError("RequestProviders are missing");
+                Debug.LogWarning("Request providers are missing");
             }
 
             // Create DialogController with components
@@ -226,7 +214,7 @@ namespace ChatdollKit
         }
 
         // Called after GetComponent(s) in Awake
-        protected virtual void OnComponentsReady()
+        protected virtual void OnComponentsReady(ScriptableObject config)
         {
 
         }
@@ -237,7 +225,7 @@ namespace ChatdollKit
             dialogController.Dispose();
         }
 
-        protected virtual void InstantiateMessageWindos()
+        protected virtual MessageWindowBase InstantiateMessageWindow()
         {
             if (MessageWindow == null)
             {
@@ -247,12 +235,14 @@ namespace ChatdollKit
                 {
                     var messageWindowGameObjectInstance = Instantiate(messageWindowGameObject);
                     messageWindowGameObjectInstance.name = messageWindowGameObject.name;
-                    MessageWindow = messageWindowGameObjectInstance.GetComponent<SimpleMessageWindow>();
+                    return messageWindowGameObjectInstance.GetComponent<SimpleMessageWindow>();
                 }
             }
+
+            return null;
         }
 
-        protected virtual void InstantiateCamera()
+        protected virtual ChatdollCamera InstantiateCamera()
         {
             if (ChatdollCamera == null)
             {
@@ -261,19 +251,38 @@ namespace ChatdollKit
                 {
                     var cameraGameObjectInstance = Instantiate(cameraGameObject);
                     cameraGameObjectInstance.name = cameraGameObject.name;
-                    ChatdollCamera = cameraGameObjectInstance.GetComponent<ChatdollCamera>();
+                    return cameraGameObjectInstance.GetComponent<ChatdollCamera>();
                 }
             }
+
+            return null;
         }
 
         public async void StartChatAsync()
         {
-            await dialogController.StartChatAsync(GetUserId());
+            if (dialogController != null)
+            {
+                await dialogController.StartChatAsync(GetUserId());
+            }
+            else
+            {
+                Debug.LogWarning("Run application before start chatting");
+            }
         }
 
         public void StopChat()
         {
-            dialogController.StopChat();
+            dialogController?.StopChat();
+        }
+
+        public virtual string GetConfigName()
+        {
+            return string.IsNullOrEmpty(ApplicationName) ? name : ApplicationName;
+        }
+
+        public virtual ScriptableObject CreateConfig(ScriptableObject config = null)
+        {
+            return config ?? ScriptableObject.CreateInstance<ScriptableObject>();
         }
 
         protected virtual string GetUserId()

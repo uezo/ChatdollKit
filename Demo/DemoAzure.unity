@@ -418,6 +418,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f7a69ed9c3f3f44229c7081a49898cf9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ApplicationName: Demo-Azure-MultiSkills
   WakeWord: "\u3053\u3093\u306B\u3061\u306F"
   CancelWord: "\u304A\u3057\u307E\u3044"
   PromptVoice: "\u3069\u3046\u3057\u305F\u306E\uFF1F"
@@ -462,18 +463,6 @@ MonoBehaviour:
   CameraCaption: 
   SelfTimerSeconds: 3
   ChatdollCamera: {fileID: 0}
---- !u!114 &1621422571
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1621422566}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f663eda18bec94d1c87c0cd0dd68a092, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1621422572
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -566,13 +555,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   IsEnabled: 0
-  WakeWords: []
-  CancelWords: []
-  IgnoreWords:
-  - "\u3002"
-  - "\u3001"
-  - "\uFF1F"
-  - "\uFF01"
   AutoStart: 1
   PrintResult: 0
   VoiceDetectionThreshold: 0.1
@@ -580,6 +562,13 @@ MonoBehaviour:
   VoiceDetectionMinimumLength: 0.2
   SilenceDurationToEndRecording: 0.3
   VoiceRecognitionMaximumLength: 3
+  WakeWords: []
+  CancelWords: []
+  IgnoreWords:
+  - "\u3002"
+  - "\u3001"
+  - "\uFF1F"
+  - "\uFF01"
   ApiKey: 
   Region: 
   Language: ja-JP
