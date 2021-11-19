@@ -1,6 +1,6 @@
 ﻿# ChatdollKit Documentation
 
-version 0.3.0 | July 11, 2021 | &copy;2020 uezo | [🇯🇵Japanese version](https://github.com/uezo/ChatdollKit/blob/master/manual.ja.md)
+version 0.3.2 | November 19, 2021 | &copy;2020 uezo | [🇯🇵Japanese version](https://github.com/uezo/ChatdollKit/blob/master/manual.ja.md)
 
 - [Setup](#Setup)
     - [Import packages](#Import-packages)

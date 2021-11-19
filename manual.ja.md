@@ -1,6 +1,6 @@
 ﻿# ChatdollKit マニュアル
 
-version 0.3.0 | June 21, 2021 | &copy;2020 uezo | [🇬🇧English version](https://github.com/uezo/ChatdollKit/blob/master/manual.md)
+version 0.3.2 | November 19, 2021 | &copy;2020 uezo | [🇬🇧English version](https://github.com/uezo/ChatdollKit/blob/master/manual.md)
 
 
 - [セットアップ](#セットアップ)
