@@ -111,16 +111,6 @@ namespace ChatdollKit.Network
             DebugFunc?.Invoke($"Method: {request.Method}");
             DebugFunc?.Invoke($"URI: {request.RequestUri}");
 
-            // Set headers
-            if (headers != null)
-            {
-                foreach (var h in headers)
-                {
-                    request.Headers.Add(h.Key, h.Value);
-                }
-            }
-            DebugFunc?.Invoke($"Request headers: {request.Headers}");
-
             // Set content
             if (content != null)
             {
@@ -134,6 +124,26 @@ namespace ChatdollKit.Network
                     DebugFunc?.Invoke($"Content: byte[{(await request.Content.ReadAsByteArrayAsync()).Length}]");
                 }
             }
+
+            // Set headers
+            if (headers != null)
+            {
+                foreach (var h in headers)
+                {
+                    if (h.Key.ToLower() == "content-type")
+                    {
+                        if (request.Content != null)
+                        {
+                            request.Content.Headers.Add(h.Key, h.Value);
+                        }
+                    }
+                    else
+                    {
+                        request.Headers.Add(h.Key, h.Value);
+                    }
+                }
+            }
+            DebugFunc?.Invoke($"Request headers: {request.Headers}");
 
             // Inject user function just before sending request
             if (BeforeRequestFunc != null)
