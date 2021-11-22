@@ -36,7 +36,7 @@ namespace ChatdollKit.Extension.Azure
         public string Language = "ja-JP";
         public string Gender = "Female";
         public string SpeakerName = "ja-JP-HarukaRUS";
-        public AudioType AudioType = AudioType.WAV;
+        public AudioType AudioType = AudioType.MPEG;
 
         public void Configure(string apiKey, string language, string gender, string speakerName, string region, bool overwrite = false)
         {
@@ -63,7 +63,7 @@ namespace ChatdollKit.Extension.Azure
                 www.method = "POST";
 
                 // Header
-                www.SetRequestHeader("X-Microsoft-OutputFormat", AudioType == AudioType.MPEG ? "audio-16khz-128kbitrate-mono-mp3" : "riff-16khz-16bit-mono-pcm");
+                www.SetRequestHeader("X-Microsoft-OutputFormat", AudioType == AudioType.MPEG ? "audio-16khz-32kbitrate-mono-mp3" : "riff-16khz-16bit-mono-pcm");
                 www.SetRequestHeader("Content-Type", "application/ssml+xml");
                 www.SetRequestHeader("Ocp-Apim-Subscription-Key", ApiKey);
 
