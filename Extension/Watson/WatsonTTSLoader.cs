@@ -44,6 +44,13 @@ namespace ChatdollKit.Extension.Watson
             client?.Dispose();
         }
 
+        public void Configure(string apiKey, string baseUrl, string speakerName, bool overwrite = false)
+        {
+            ApiKey = string.IsNullOrEmpty(ApiKey) || overwrite ? apiKey : ApiKey;
+            BaseUrl = string.IsNullOrEmpty(BaseUrl) || overwrite ? baseUrl : BaseUrl;
+            SpeakerName = string.IsNullOrEmpty(SpeakerName) || overwrite ? speakerName : SpeakerName;
+        }
+
         protected override async Task<AudioClip> DownloadAudioClipAsync(Voice voice, CancellationToken token)
         {
             if (token.IsCancellationRequested) { return null; };

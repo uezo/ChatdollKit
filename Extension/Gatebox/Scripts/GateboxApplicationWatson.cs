@@ -21,6 +21,7 @@ namespace ChatdollKit.Extension.Gatebox
 
         protected override void OnComponentsReady(ScriptableObject config)
         {
+            // Apply configuraton to this app and its components
             if (config != null)
             {
                 var appConfig = (WatsonApplicationConfig)config;
@@ -33,32 +34,9 @@ namespace ChatdollKit.Extension.Gatebox
                 TTSSpeakerName = appConfig.TTSSpeakerName;
             }
 
-            // Set API key and language to each component
-            var ww = wakeWordListener as WatsonWakeWordListener;
-            if (ww != null)
-            {
-                ww.ApiKey = string.IsNullOrEmpty(ww.ApiKey) ? STTApiKey : ww.ApiKey;
-                ww.BaseUrl = string.IsNullOrEmpty(ww.BaseUrl) ? STTBaseUrl : ww.BaseUrl;
-                ww.Model = string.IsNullOrEmpty(ww.Model) ? STTModel : ww.Model;
-                ww.RemoveWordSeparation = ww.RemoveWordSeparation ? STTRemoveWordSeparation : ww.RemoveWordSeparation;
-            }
-
-            var vreq = voiceRequestProvider as WatsonVoiceRequestProvider;
-            if (vreq != null)
-            {
-                vreq.ApiKey = string.IsNullOrEmpty(vreq.ApiKey) ? STTApiKey : vreq.ApiKey;
-                vreq.BaseUrl = string.IsNullOrEmpty(vreq.BaseUrl) ? STTBaseUrl : vreq.BaseUrl;
-                vreq.Model = string.IsNullOrEmpty(vreq.Model) ? STTModel : vreq.Model;
-                vreq.RemoveWordSeparation = vreq.RemoveWordSeparation ? STTRemoveWordSeparation : vreq.RemoveWordSeparation;
-            }
-
-            var ttsLoader = gameObject.GetComponent<WatsonTTSLoader>();
-            if (ttsLoader != null)
-            {
-                ttsLoader.ApiKey = string.IsNullOrEmpty(ttsLoader.ApiKey) ? TTSApiKey : ttsLoader.ApiKey;
-                ttsLoader.BaseUrl = string.IsNullOrEmpty(ttsLoader.BaseUrl) ? TTSBaseUrl : ttsLoader.BaseUrl;
-                ttsLoader.SpeakerName = string.IsNullOrEmpty(ttsLoader.SpeakerName) ? TTSSpeakerName : ttsLoader.SpeakerName;
-            }
+            (wakeWordListener as WatsonWakeWordListener)?.Configure(STTApiKey, STTModel, STTBaseUrl, STTRemoveWordSeparation);
+            (voiceRequestProvider as WatsonVoiceRequestProvider)?.Configure(STTApiKey, STTModel, STTBaseUrl, STTRemoveWordSeparation);
+            (gameObject.GetComponent<WatsonTTSLoader>())?.Configure(TTSApiKey, TTSBaseUrl, TTSSpeakerName);
         }
 
         public override ScriptableObject CreateConfig(ScriptableObject config = null)

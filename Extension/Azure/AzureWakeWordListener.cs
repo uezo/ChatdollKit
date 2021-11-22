@@ -13,6 +13,13 @@ namespace ChatdollKit.Extension.Azure
         public string Region = string.Empty;
         public string Language = "ja-JP";
 
+        public void Configure(string apiKey, string language, string region, bool overwrite = false)
+        {
+            ApiKey = string.IsNullOrEmpty(ApiKey) || overwrite ? apiKey : ApiKey;
+            Language = string.IsNullOrEmpty(Language) || overwrite ? language : Language;
+            Region = string.IsNullOrEmpty(Region) || overwrite ? region : Region;
+        }
+
         protected override async Task<string> RecognizeSpeechAsync(AudioClip recordedVoice)
         {
             if (string.IsNullOrEmpty(ApiKey) || string.IsNullOrEmpty(Region) || string.IsNullOrEmpty(Language))

@@ -1,5 +1,4 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace ChatdollKit.Extension.Google
 {
@@ -16,6 +15,7 @@ namespace ChatdollKit.Extension.Google
 
         protected override void OnComponentsReady(ScriptableObject config)
         {
+            // Apply configuraton to this app and its components
             if (config != null)
             {
                 var appConfig = (GoogleApplicationConfig)config;
@@ -23,27 +23,9 @@ namespace ChatdollKit.Extension.Google
                 Language = appConfig.Language;
             }
 
-            // Set API key and language to each component
-            var ww = wakeWordListener as GoogleWakeWordListener;
-            if (ww != null)
-            {
-                ww.ApiKey = string.IsNullOrEmpty(ww.ApiKey) ? ApiKey : ww.ApiKey;
-                ww.Language = string.IsNullOrEmpty(ww.Language) ? Language : ww.Language;
-            }
-
-            var vreq = voiceRequestProvider as GoogleVoiceRequestProvider;
-            if (vreq != null)
-            {
-                vreq.ApiKey = string.IsNullOrEmpty(vreq.ApiKey) ? ApiKey : vreq.ApiKey;
-                vreq.Language = string.IsNullOrEmpty(vreq.Language) ? Language : vreq.Language;
-            }
-
-            var ttsLoader = gameObject.GetComponent<GoogleTTSLoader>();
-            if (ttsLoader != null)
-            {
-                ttsLoader.ApiKey = string.IsNullOrEmpty(ttsLoader.ApiKey) ? ApiKey : ttsLoader.ApiKey;
-                ttsLoader.Language = string.IsNullOrEmpty(ttsLoader.Language) ? Language : ttsLoader.Language;
-            }
+            (wakeWordListener as GoogleWakeWordListener)?.Configure(ApiKey, Language);
+            (voiceRequestProvider as GoogleVoiceRequestProvider)?.Configure(ApiKey, Language);
+            (gameObject.GetComponent<GoogleTTSLoader>())?.Configure(ApiKey, Language, Gender, SpeakerName);
         }
 
         public override ScriptableObject CreateConfig(ScriptableObject config = null)
@@ -54,8 +36,8 @@ namespace ChatdollKit.Extension.Google
 
             appConfig.SpeechApiKey = ApiKey;
             appConfig.Language = Language;
-            appConfig.Gender = "FEMALE";
-            appConfig.SpeakerName = "ja-JP-Standard-A";
+            appConfig.Gender = Gender;
+            appConfig.SpeakerName = SpeakerName;
 
             return appConfig;
         }
