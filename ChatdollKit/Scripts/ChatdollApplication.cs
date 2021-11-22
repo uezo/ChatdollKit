@@ -112,6 +112,15 @@ namespace ChatdollKit
                 Debug.LogWarning("Request providers are missing");
             }
 
+            // Register cancel word to VoiceRequestProvider
+            if (voiceRequestProvider?.CancelWords.Count == 0)
+            {
+                if (!string.IsNullOrEmpty(CancelWord))
+                {
+                    voiceRequestProvider.CancelWords.Add(CancelWord);
+                }
+            }
+
             // Create DialogController with components
             dialogController = new DialogController(userStore, stateStore, skillRouter, enabledRequestProviders, modelController);
 
