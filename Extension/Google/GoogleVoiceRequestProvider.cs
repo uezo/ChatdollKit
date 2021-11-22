@@ -3,7 +3,6 @@ using UnityEngine;
 using ChatdollKit.Dialog;
 using ChatdollKit.IO;
 
-
 namespace ChatdollKit.Extension.Google
 {
     public class GoogleVoiceRequestProvider : VoiceRequestProviderBase
@@ -12,6 +11,12 @@ namespace ChatdollKit.Extension.Google
         public string ApiKey = string.Empty;
         public string Language = "ja-JP";
         public bool UseEnhancedModel = false;
+
+        public void Configure(string apiKey, string language, bool overwrite = false)
+        {
+            ApiKey = string.IsNullOrEmpty(ApiKey) || overwrite ? apiKey : ApiKey;
+            Language = string.IsNullOrEmpty(Language) || overwrite ? language : Language;
+        }
 
         protected override async Task<string> RecognizeSpeechAsync(AudioClip recordedVoice)
         {

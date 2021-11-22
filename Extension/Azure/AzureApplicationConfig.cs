@@ -11,5 +11,7 @@ namespace ChatdollKit.Extension.Azure
         public string SpeechApiKey;
         public string Region;
         public string Language;
+        public string Gender;
+        public string SpeakerName;
     }
 }
