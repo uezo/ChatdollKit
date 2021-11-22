@@ -430,6 +430,8 @@ MonoBehaviour:
   ApiKey: 
   Region: 
   Language: ja-JP
+  Gender: Female
+  SpeakerName: ja-JP-HarukaRUS
   LogTableUri: 
   TranslationApiKey: 
   TranslationBaseUrl: https://api.cognitive.microsofttranslator.com
@@ -511,7 +513,7 @@ MonoBehaviour:
   Language: ja-JP
   Gender: Female
   SpeakerName: ja-JP-HarukaRUS
-  AudioType: 20
+  AudioType: 13
 --- !u!114 &1621422574
 MonoBehaviour:
   m_ObjectHideFlags: 0
