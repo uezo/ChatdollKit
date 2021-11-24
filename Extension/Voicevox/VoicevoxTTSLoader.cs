@@ -78,6 +78,10 @@ namespace ChatdollKit.Extension.Voicevox
                 Debug.LogError("Query for VOICEVOX is empty");
                 return null;
             }
+            if (Speaker == SpeakerName.四国めたん)
+            {
+                audio_query = audio_query.Replace("\"speedScale\":1.0", "\"speedScale\":0.9");
+            }
 
             using (var www = UnityWebRequestMultimedia.GetAudioClip(EndpointUrl + $"/synthesis?speaker={(decimal)Speaker}", AudioType.WAV))
             {
