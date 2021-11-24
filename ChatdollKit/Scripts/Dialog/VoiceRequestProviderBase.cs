@@ -114,8 +114,13 @@ namespace ChatdollKit.Dialog
                 // For debugging and testing
                 if (UseDummy)
                 {
+                    while (string.IsNullOrWhiteSpace(DummyText))
+                    {
+                        await Task.Delay(1);
+                    }
                     await Task.Delay(1000);
                     request.Text = DummyText;
+                    DummyText = string.Empty;   // NOTE: Value on inspector will not be cleared
                 }
                 else
                 {

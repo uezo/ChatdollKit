@@ -9,24 +9,50 @@ namespace ChatdollKit
     [CustomEditor(typeof(ChatdollApplication), true)]
     public class ChatdollEditor : Editor
     {
+        private GUIStyle headerStyle = new GUIStyle();
+        private string dummyText = string.Empty;
+
         public override void OnInspectorGUI()
         {
             base.OnInspectorGUI();
 
             var app = target as ChatdollApplication;
 
-            if (GUILayout.Button("Start Chat"))
+            // Playmode only
+            if (EditorApplication.isPlaying)
             {
+                GUILayout.Space(20.0f);
+
+                // Start and Stop button
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Start Chat"))
+                {
 #pragma warning disable CS4014
-                app.StartChatAsync();
+                    app.StartChatAsync();
 #pragma warning restore CS4014
+                }
+                if (GUILayout.Button("Stop Chat"))
+                {
+                    app.StopChat();
+                }
+                GUILayout.EndHorizontal();
+
+                // Send request button
+                app.voiceRequestProvider.UseDummy = EditorGUILayout.ToggleLeft("Send text request instead of voice", app.voiceRequestProvider.UseDummy);
+                GUILayout.BeginHorizontal();
+                dummyText = EditorGUILayout.TextField(dummyText);
+                if (GUILayout.Button("Send"))
+                {
+                    app.voiceRequestProvider.DummyText = dummyText;
+                    dummyText = string.Empty;
+                    GUI.FocusControl(string.Empty); // Remove focus to clear input field
+                }
+                GUILayout.EndHorizontal();
             }
 
-            if (GUILayout.Button("Stop Chat"))
-            {
-                app.StopChat();
-            }
+            GUILayout.Space(20.0f);
 
+            // Always available
             if (GUILayout.Button("Save Config"))
             {
                 var config = app.CreateConfig();
