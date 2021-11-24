@@ -17,7 +17,7 @@ namespace ChatdollKit
         protected IUserStore userStore;
         protected IStateStore stateStore;
         protected IRequestProvider[] requestProviders;
-        protected VoiceRequestProviderBase voiceRequestProvider;
+        public VoiceRequestProviderBase voiceRequestProvider { get; protected set; }
         protected CameraRequestProvider cameraRequestProvider;
         protected QRCodeRequestProvider qrcodeRequestProvider;
         protected ISkill[] skills;
