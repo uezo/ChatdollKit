@@ -17,7 +17,7 @@ namespace ChatdollKit
         protected IUserStore userStore;
         protected IStateStore stateStore;
         protected IRequestProvider[] requestProviders;
-        protected VoiceRequestProviderBase voiceRequestProvider;
+        public VoiceRequestProviderBase voiceRequestProvider { get; protected set; }
         protected CameraRequestProvider cameraRequestProvider;
         protected QRCodeRequestProvider qrcodeRequestProvider;
         protected ISkill[] skills;
@@ -110,6 +110,15 @@ namespace ChatdollKit
             if (enabledRequestProviders.Count == 0)
             {
                 Debug.LogWarning("Request providers are missing");
+            }
+
+            // Register cancel word to VoiceRequestProvider
+            if (voiceRequestProvider?.CancelWords.Count == 0)
+            {
+                if (!string.IsNullOrEmpty(CancelWord))
+                {
+                    voiceRequestProvider.CancelWords.Add(CancelWord);
+                }
             }
 
             // Create DialogController with components

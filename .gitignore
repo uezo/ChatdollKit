@@ -10,9 +10,6 @@
 /[Ll]ogs/
 /[Mm]emoryCaptures/
 
-# Ignore Asset meta data
-*.meta
-
 # Uncomment this line if you wish to ignore the asset store tools plugin
 # /[Aa]ssets/AssetStoreTools*
 
@@ -63,3 +60,6 @@ desktop.ini
 
 # Finder
 .DS_Store
+
+# Do not sync UniVRM resources
+Demo/UniVRM

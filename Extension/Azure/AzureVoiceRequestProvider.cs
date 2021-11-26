@@ -4,7 +4,6 @@ using UnityEngine;
 using ChatdollKit.Dialog;
 using ChatdollKit.IO;
 
-
 namespace ChatdollKit.Extension.Azure
 {
     public class AzureVoiceRequestProvider : VoiceRequestProviderBase
@@ -13,6 +12,13 @@ namespace ChatdollKit.Extension.Azure
         public string ApiKey = string.Empty;
         public string Region = string.Empty;
         public string Language = "ja-JP";
+
+        public void Configure(string apiKey, string language, string region, bool overwrite = false)
+        {
+            ApiKey = string.IsNullOrEmpty(ApiKey) || overwrite ? apiKey : ApiKey;
+            Language = string.IsNullOrEmpty(Language) || overwrite ? language : Language;
+            Region = string.IsNullOrEmpty(Region) || overwrite ? region : Region;
+        }
 
         protected override async Task<string> RecognizeSpeechAsync(AudioClip recordedVoice)
         {

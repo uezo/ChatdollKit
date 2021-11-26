@@ -12,6 +12,12 @@ namespace ChatdollKit.Extension.Google
         public string Language = "ja-JP";
         public bool UseEnhancedModel = false;
 
+        public void Configure(string apiKey, string language, bool overwrite = false)
+        {
+            ApiKey = string.IsNullOrEmpty(ApiKey) || overwrite ? apiKey : ApiKey;
+            Language = string.IsNullOrEmpty(Language) || overwrite ? language : Language;
+        }
+
         protected override async Task<string> RecognizeSpeechAsync(AudioClip recordedVoice)
         {
             if (string.IsNullOrEmpty(ApiKey) || string.IsNullOrEmpty(Language))

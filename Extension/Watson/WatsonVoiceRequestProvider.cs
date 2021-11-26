@@ -14,6 +14,14 @@ namespace ChatdollKit.Extension.Watson
         public string BaseUrl = string.Empty;
         public bool RemoveWordSeparation = true;
 
+        public void Configure(string apiKey, string model, string baseUrl, bool removeWordSeparation = true, bool overwrite = false)
+        {
+            ApiKey = string.IsNullOrEmpty(ApiKey) || overwrite ? apiKey : ApiKey;
+            Model = string.IsNullOrEmpty(Model) || overwrite ? model : Model;
+            BaseUrl = string.IsNullOrEmpty(BaseUrl) || overwrite ? baseUrl : BaseUrl;
+            RemoveWordSeparation = overwrite ? removeWordSeparation : RemoveWordSeparation;
+        }
+
         protected override async Task<string> RecognizeSpeechAsync(AudioClip recordedVoice)
         {
             if (string.IsNullOrEmpty(ApiKey) || string.IsNullOrEmpty(Model) || string.IsNullOrEmpty(BaseUrl))

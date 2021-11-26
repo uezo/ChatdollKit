@@ -44,6 +44,14 @@ namespace ChatdollKit.Extension.Google
             client?.Dispose();
         }
 
+        public void Configure(string apiKey, string language, string gender, string speakerName, bool overwrite = false)
+        {
+            ApiKey = string.IsNullOrEmpty(ApiKey) || overwrite ? apiKey : ApiKey;
+            Language = string.IsNullOrEmpty(Language) || overwrite ? language : Language;
+            Gender = string.IsNullOrEmpty(Gender) || overwrite ? gender : Gender;
+            SpeakerName = string.IsNullOrEmpty(SpeakerName) || overwrite ? speakerName : SpeakerName;
+        }
+
         protected override async Task<AudioClip> DownloadAudioClipAsync(Voice voice, CancellationToken token)
         {
             if (token.IsCancellationRequested) { return null; };
