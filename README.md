@@ -12,7 +12,7 @@ ChatdollKit enables you to make your 3D model into a voice-enabled chatbot.
 
 - Dialog
     - Speech-to-Text (Azure, Google, Watson etc)
-    - Text-to-Speech (Azure, Google, Watson, Voiceroid etc)
+    - Text-to-Speech (Azure, Google, Watson, VOICEROID, VOICEVOX etc)
     - Dialog state management
     - Intent extraction and topic routing
 
@@ -24,7 +24,20 @@ ChatdollKit enables you to make your 3D model into a voice-enabled chatbot.
 
 <img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit-overview.png" width="720">
 
-# 🚀 Quick start
+# 🥳 Run Demo
+
+We provide the demo that runs out-of-the-box even if you are too busy to walk through Quick Start below and don't have any API keys for speech services.👍
+
+1. Import dependencies [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347) and [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/)
+1. Import [Anime Girls Idle Animations Free](https://assetstore.unity.com/packages/3d/animations/anime-girl-idle-animations-free-150406) for idle motions
+1. Import [ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases) and [ChatdollKit_Demo.unitypackage](https://github.com/uezo/ChatdollKit/releases)
+1. Open scene `Asset/Demo/DemoOOTB` and start application
+1. Press `Start chat` button on the inspector of `ChatdollApplication` attached to the 3D model, and input and send request message (e.g. 今日はいい天気ですね)
+
+If you have API keys for Azure / Google / Watson speech service, open `Asset/Demo/Azure`, `Google` or `Watson` and set API key to inspector of Main application that is attached to 3D model. You can talk to 3D model instead of text request.
+
+
+# 🚀 Quick start index
 
 You can learn how to setup ChatdollKit by watching this 2 minutes video: https://www.youtube.com/watch?v=aJ0iDZ0o4Es
 
@@ -115,7 +128,7 @@ Okay, let's start chatting with your chatdoll now.
 - Your model will be reply "Hello world"
 
 
-# Build your own app
+# 👷‍♀️ Build your own app
 
 See the `MultiDialog` example. That is more rich application including:
 
@@ -125,39 +138,10 @@ See the `MultiDialog` example. That is more rich application including:
 We are now preparing contents to create more rich virtual assistant using ChatdollKit.
 
 
-# Appendix 1. Setup ModelController manually
+# ❤️ Thanks
 
-Create a new empty GameObject attach `OVR Lip Sync Context` and `OVR Lip Sync Context Morph Target`.
+- [Tsukuyomi-chan 3D model](https://tyc.rei-yumesaki.net/) (3D model for demo) (c)[Rei Yumesaki](https://twitter.com/TYC_Project)
+- [VOICEVOX](https://voicevox.hiroshiba.jp) (Text-to-Speech service for demo) (c)[Hiroshiba](https://twitter.com/hiho_karuta)
+- [Shikoku Metan and Zundamon](https://zunko.jp/con_voice.html) (Voice for demo, used in VOICEVOX TTS loader)
 
-- Then turn on `Audio Loopback` in `OVR Lip Sync Context`
-- Set the object that has the shapekeys for face expressions to `Skinned Mesh Renderer` in `OVR Lip Sync Context Morph Target`
-- Configure viseme to blend targets in `OVR Lip Sync Context Morph Target`
-
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/02_2.png" width="640">
-
-After that, select root GameObject to which ModelController is attached.
-
-- Set LipSync object to `Audio Source`
-- Set the object that has the shape keys for face expression to `Skinned Mesh Renderer`
-- Set the shape key that close the eyes for blink to `Blink Blend Shape Name`.
-
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/06_2.png" width="640">
-
-# Appendix 2. Setup Animator manually
-
-Create Animator Controller and create `Default` state on the Base Layer, then put animations. Lastly set a motion you like to the `Default` state. You can create other layers and put animations at this time. Note that every layers should have the `Default` state and `None` should be set to their motion except for the Base Layer.
-
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/04.png" width="640">
-
-After configuration set the Animator Controller as a `Controller` of Animator component of the 3D model.
-
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/05_2.png" width="640">
-
-
-# Appendix 3. Using uLipSync
-
-If you want to use uLipSync instead of OVRLipSync please follow the official readme. (Apple Store doesn't accept the app using OVRLipSync🙃)
-
-https://github.com/hecomi/uLipSync
-
-We don't provide LipSyncHelper for it because it doesn't have a function to reset viseme. But don't worry, it works without any helpers. 
+Strictly follow the [Term of Use of Shikoku Metan and Zundamon](https://zunko.jp/con_ongen_kiyaku.html). And, if you distribute the voice generated with VOICEVOX let the users follow that rules.

@@ -12,7 +12,7 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 
 - 対話制御
     - 音声認識（Speech-to-Text。Azure、Google、Watson等）
-    - テキスト読み上げ（Text-to-Speech。Azure、Google、Watson、Voiceroid等）
+    - テキスト読み上げ（Text-to-Speech。Azure、Google、Watson、VOICEROID、VOICEVOX等）
     - 対話の文脈・ステート管理
     - 発話意図の抽出と対話トピックのルーティング
 
@@ -23,6 +23,19 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 ... などなど！
 
 <img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit-overview.png" width="720">
+
+# 🥳 デモの実行
+
+クイックスタートを試す時間のない方やスピーチサービスのAPIをお持ちでない方のために、すぐに実行可能なデモを提供しています。👍
+
+1. 依存ライブラリの [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347) と [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/) をインポート
+1. アイドルモーション用に [Anime Girls Idle Animations Free](https://assetstore.unity.com/packages/3d/animations/anime-girl-idle-animations-free-150406) もインポート
+1. ChatdollKit本体 [ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases) とデモパッケージ [ChatdollKit_Demo.unitypackage](https://github.com/uezo/ChatdollKit/releases) をインポート
+1. シーン `Asset/Demo/DemoOOTB` を開いて実行
+1. 3Dモデルにアタッチされた `ChatdollApplication` のインスペクター上部にある `Start chat` ボタンを押して、リクエスト文言をキーボードで入力・送信（例：今日はいい天気ですね）
+
+もし Azure / Google / Watson のスピーチサービス用APIキーをお持ちの場合、`Asset/Demo/Azure` / `Google` / `Watson` を開いてAPIキーをメインアプリケーション（3Dモデルにアタッチされています）のインスペクタ上に登録してください。テキスト入力の代わりに音声対話ができるようになります。
+
 
 # 🚀 クイックスタート
 
@@ -115,7 +128,7 @@ UnityのPlayボタンを押します。3Dモデルがまばたきをしながら
 - 「ハローワールド」と、話しかけたのと同じ内容を応答
 
 
-# カスタムアプリケーションの作り方
+# 👷‍♀️ カスタムアプリケーションの作り方
 
 Examplesに同梱の`MultiDialog`の実装サンプルを確認ください。
 
@@ -125,46 +138,12 @@ Examplesに同梱の`MultiDialog`の実装サンプルを確認ください。
 ChatdollKitを利用した複雑で実用的なバーチャルアシスタントの開発方法については、現在コンテンツを準備中です。
 
 
-# Appendix 1. ModelControllerの手動設定
+# ❤️ 謝辞
 
-モデルのオブジェクトまたは適当な場所に追加した空のオブジェクトに、インスペクターから以下2つのコンポーネントを追加してください。
+ChatdollKitでは以下のすばらしい素材・ツールを利用させていただいており、心から感謝申し上げます。
 
-- OVR Lip Sync Context
-- OVR Lip Sync Context Morph Target
+- [つくよみちゃん 3Dモデル](https://tyc.rei-yumesaki.net/) (3D model for demo) (c)[Rei Yumesaki](https://twitter.com/TYC_Project)
+- [VOICEVOX](https://voicevox.hiroshiba.jp) (Text-to-Speech service for demo) (c)[Hiroshiba](https://twitter.com/hiho_karuta)
+- [四国めたん ＆ ずんだもん](https://zunko.jp/con_voice.html) (Voice for demo, used in VOICEVOX TTS loader)
 
-また、その設定内容は以下の通りです。
-
-- `OVR Lip Sync Context`の`Audio Loopback`のチェックをオンにする
-- 表情関連のシェイプキーを`OVR Lip Sync Context Morph Target`の`Skinned Mesh Renderer`に設定
-- 単語の読み上げ時の口の形にそれぞれ適切なものを指定
-
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/02_2.png" width="640">
-
-その後、ModelControllerのインスペクターを表示して以下の通り設定します。
-
-- LipSyncを設定したオブジェクトを`ModelController`の`Audio Source`に設定
-- 表情関連のシェイプキーの設定されたオブジェクトを`Skinned Mesh Renderer`に設定
-- まばたきをするため、目を閉じる表現のためのシェイプキーの名前を`Blink Blend Shape Name`に設定
-
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/06_2.png" width="640">
-
-
-# Appendix 2. Animatorの手動設定
-
-Animator Controllerを作成してBase Layerに`Default`というステートを追加し、各モーションを配置してください。そして`Default`ステートにも任意のアイドル状態のアニメーションを追加しましょう。Base Layer以外にも、たとえば上半身のマスクを適用したレイヤーを追加し、モーションを追加しておくこともできます。その場合は必ずすべてのレイヤーに`Default`ステートを追加し、モーションには何も設定しない（＝`None`のまま）ようにしてください。
-
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/04.png" width="640">
-
-設定が完了したら、3Dモデルの`Animator`コンポーネントの`Controller`に設定しましょう。
-
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/05_2.png" width="640">
-
-
-# Appendix 3. uLipSyncの利用
-
-OVRLipSyncのかわりにuLipSyncを使用する場合は、以下の公式READMEまたは作者さまのブログの内容に従ってセットアップしてください。（iOSアプリの場合、OVRLipSyncを利用していると審査が通らないようです🙃）
-
-- https://github.com/hecomi/uLipSync
-- https://tips.hecomi.com/entry/2021/02/27/144722
-
-uLipSyncを利用する場合、ModelControllerのセットアップで3Dモデルに自動でアタッチされる`OVRLipSyncHelper`を3Dモデルから削除してください。なおuLipSyncは表情をリセットするための機能を提供していないようなのでChatdollKitとしてヘルパーを提供していませんが、特に問題なく動くと思います。
+ご利用にあたっては[ずんだもん、四国めたん音源利用規約](https://zunko.jp/con_ongen_kiyaku.html)を遵守ください。また、もし生成された音声を配布する場合、配布先にも利用規約を遵守させるよう徹底ください。
