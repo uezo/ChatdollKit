@@ -14,15 +14,11 @@ namespace ChatdollKit
 
         public override void OnInspectorGUI()
         {
-            base.OnInspectorGUI();
-
             var app = target as ChatdollApplication;
 
             // Playmode only
             if (EditorApplication.isPlaying)
             {
-                GUILayout.Space(20.0f);
-
                 // Start and Stop button
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Start Chat"))
@@ -48,7 +44,10 @@ namespace ChatdollKit
                     GUI.FocusControl(string.Empty); // Remove focus to clear input field
                 }
                 GUILayout.EndHorizontal();
+                GUILayout.Space(20.0f);
             }
+
+            base.OnInspectorGUI();
 
             GUILayout.Space(20.0f);
 
