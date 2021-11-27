@@ -31,7 +31,7 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 1. 依存ライブラリの [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347) と [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/) をインポート
 1. アイドルモーション用に [Anime Girls Idle Animations Free](https://assetstore.unity.com/packages/3d/animations/anime-girl-idle-animations-free-150406) もインポート
 1. ChatdollKit本体 [ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases) とデモパッケージ [ChatdollKit_Demo.unitypackage](https://github.com/uezo/ChatdollKit/releases) をインポート
-1. シーン `Asset/Demo/DemoOOTB` を開いて実行
+1. シーン `Assets/ChatdollKit/Demo/DemoOOTB` を開いて実行
 1. 3Dモデルにアタッチされた `ChatdollApplication` のインスペクター上部にある `Start chat` ボタンを押して、リクエスト文言をキーボードで入力・送信（例：今日はいい天気ですね）
 
 もし Azure / Google / Watson のスピーチサービス用APIキーをお持ちの場合、`Asset/Demo/Azure` / `Google` / `Watson` を開いてAPIキーをメインアプリケーション（3Dモデルにアタッチされています）のインスペクタ上に登録してください。テキスト入力の代わりに音声対話ができるようになります。

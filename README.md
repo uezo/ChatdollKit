@@ -31,7 +31,7 @@ We provide the demo that runs out-of-the-box even if you are too busy to walk th
 1. Import dependencies [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347) and [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/)
 1. Import [Anime Girls Idle Animations Free](https://assetstore.unity.com/packages/3d/animations/anime-girl-idle-animations-free-150406) for idle motions
 1. Import [ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases) and [ChatdollKit_Demo.unitypackage](https://github.com/uezo/ChatdollKit/releases)
-1. Open scene `Asset/Demo/DemoOOTB` and start application
+1. Open scene `Assets/ChatdollKit/Demo/DemoOOTB` and start application
 1. Press `Start chat` button on the inspector of `ChatdollApplication` attached to the 3D model, and input and send request message (e.g. 今日はいい天気ですね)
 
 If you have API keys for Azure / Google / Watson speech service, open `Asset/Demo/Azure`, `Google` or `Watson` and set API key to inspector of Main application that is attached to 3D model. You can talk to 3D model instead of text request.
