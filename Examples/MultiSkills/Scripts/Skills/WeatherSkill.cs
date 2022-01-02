@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using ChatdollKit.Dialog;
 using ChatdollKit.Network;
 
@@ -23,7 +23,7 @@ namespace ChatdollKit.Examples.MultiSkills
         public WeatherLocation MyLocation;
         private ChatdollHttp client { get; } = new ChatdollHttp();
 
-        public override async Task<Response> ProcessAsync(Request request, State state, CancellationToken token)
+        public override async UniTask<Response> ProcessAsync(Request request, State state, CancellationToken token)
         {
             // Get weather
             var weatherResponse = await client.GetJsonAsync<WeatherResponse>($"https://weather.tsukumijima.net/api/forecast/city/{((int)MyLocation).ToString("d6")}");

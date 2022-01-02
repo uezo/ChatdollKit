@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 using ChatdollKit.IO;
 using ChatdollKit.Network;
 
@@ -15,8 +15,8 @@ namespace ChatdollKit.Dialog
         public List<string> IgnoreWords = new List<string>() { "。", "、", "？", "！" };
         public Func<string, WakeWord> ExtractWakeWord;
         public Func<string, string> ExtractCancelWord;
-        public Func<WakeWord, Task> OnWakeAsync;
-        public Func<Task> OnCancelAsync;
+        public Func<WakeWord, UniTask> OnWakeAsync;
+        public Func<UniTask> OnCancelAsync;
 
         protected ChatdollHttp client = new ChatdollHttp();
 
@@ -44,7 +44,7 @@ namespace ChatdollKit.Dialog
             client?.Dispose();
         }
 
-        protected override async Task ProcessVoiceAsync(AudioClip voice)
+        protected override async UniTask ProcessVoiceAsync(AudioClip voice)
         {
             // Recognize speech
             var recognizedText = await RecognizeSpeechAsync(voice);
@@ -131,7 +131,7 @@ namespace ChatdollKit.Dialog
         }
 
 #pragma warning disable CS1998
-        protected virtual async Task<string> RecognizeSpeechAsync(AudioClip recordedVoice)
+        protected virtual async UniTask<string> RecognizeSpeechAsync(AudioClip recordedVoice)
         {
             throw new NotImplementedException("RecognizeSpeechAsync method should be implemented at the sub class of WakeWordListenerBase");
         }

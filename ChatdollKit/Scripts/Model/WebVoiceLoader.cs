@@ -1,8 +1,7 @@
 ﻿using System.Threading;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
-using ChatdollKit.Network;
+using Cysharp.Threading.Tasks;
 
 namespace ChatdollKit.Model
 {
@@ -10,14 +9,14 @@ namespace ChatdollKit.Model
     {
         public AudioType AudioType = AudioType.WAV;
 
-        protected override async Task<AudioClip> DownloadAudioClipAsync(Voice voice, CancellationToken token)
+        protected override async UniTask<AudioClip> DownloadAudioClipAsync(Voice voice, CancellationToken token)
         {
             if (token.IsCancellationRequested) { return null; };
 
             using (var www = UnityWebRequestMultimedia.GetAudioClip(voice.Url, AudioType))
             {
                 www.timeout = Timeout;
-                await www.SendWebRequest();
+                await www.SendWebRequest().ToUniTask();
 
                 if (www.isNetworkError || www.isHttpError)
                 {

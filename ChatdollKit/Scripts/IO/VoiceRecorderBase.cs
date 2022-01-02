@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using UnityEngine;
-
+using Cysharp.Threading.Tasks;
 
 namespace ChatdollKit.IO
 {
@@ -137,7 +136,7 @@ namespace ChatdollKit.IO
             onListeningStop?.Invoke();
         }
 
-        public async Task<VoiceRecorderResponse> GetVoiceAsync(float timeout, CancellationToken token)
+        public async UniTask<VoiceRecorderResponse> GetVoiceAsync(float timeout, CancellationToken token)
         {
             try
             {
@@ -159,7 +158,7 @@ namespace ChatdollKit.IO
                     {
                         return lastRecordedVoice;
                     }
-                    await Task.Delay(10);
+                    await UniTask.Delay(10);
                 }
             }
             catch (Exception ex)

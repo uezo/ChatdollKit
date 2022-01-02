@@ -1,10 +1,9 @@
 ﻿using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
+using Cysharp.Threading.Tasks;
 using ChatdollKit.Model;
-using ChatdollKit.Network;
 
 namespace ChatdollKit.Extension.Voicevox
 {
@@ -49,7 +48,7 @@ namespace ChatdollKit.Extension.Voicevox
 
         // Get audio clip from VOICEVOX engine
         // https://github.com/Hiroshiba/voicevox_engine
-        protected override async Task<AudioClip> DownloadAudioClipAsync(Voice voice, CancellationToken token)
+        protected override async UniTask<AudioClip> DownloadAudioClipAsync(Voice voice, CancellationToken token)
         {
             if (token.IsCancellationRequested) { return null; };
 
@@ -58,9 +57,7 @@ namespace ChatdollKit.Extension.Voicevox
             {
                 www.timeout = Timeout;
                 www.downloadHandler = new DownloadHandlerBuffer();
-                
-
-                await www.SendWebRequest();
+                await www.SendWebRequest().ToUniTask();
 
                 if (www.isNetworkError || www.isHttpError)
                 {
@@ -91,12 +88,11 @@ namespace ChatdollKit.Extension.Voicevox
                 // Header
                 www.SetRequestHeader("Content-Type", "application/json");
 
-
                 // Body
                 www.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(audio_query));
 
                 // Send request
-                await www.SendWebRequest();
+                await www.SendWebRequest().ToUniTask();
 
                 if (www.isNetworkError || www.isHttpError)
                 {

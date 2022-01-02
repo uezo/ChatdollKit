@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 using ChatdollKit.Dialog;
 using ChatdollKit.Network;
 
@@ -33,7 +33,7 @@ namespace ChatdollKit.Examples.MultiSkills
             client.Dispose();
         }
 
-        public override async Task<Response> ProcessAsync(Request request, State state, CancellationToken token)
+        public override async UniTask<Response> ProcessAsync(Request request, State state, CancellationToken token)
         {
             var response = new Response(request.Id);
 
@@ -75,7 +75,7 @@ namespace ChatdollKit.Examples.MultiSkills
             return response;
         }
 
-        private async Task<string> TranslateWithAzureAsync(string text, string language = "en")
+        private async UniTask<string> TranslateWithAzureAsync(string text, string language = "en")
         {
             // Compose url
             var url = BaseUrl + $"/translate?api-version=3.0&to={language}";
@@ -116,7 +116,7 @@ namespace ChatdollKit.Examples.MultiSkills
             }
         }
 
-        private async Task<string> TranslateWithGoogleAsync(string text, string language = "en")
+        private async UniTask<string> TranslateWithGoogleAsync(string text, string language = "en")
         {
             // Compose url
             var url = BaseUrl;
@@ -161,7 +161,7 @@ namespace ChatdollKit.Examples.MultiSkills
             public string TranslatedText { get; set; }
         }
 
-        private async Task<string> TranslateWithWatsonAsync(string text, string language = "en")
+        private async UniTask<string> TranslateWithWatsonAsync(string text, string language = "en")
         {
             // Compose url
             var url = BaseUrl + "/v3/translate?version=2018-05-01";

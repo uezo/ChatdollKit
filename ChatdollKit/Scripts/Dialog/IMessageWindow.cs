@@ -1,5 +1,5 @@
 ﻿using System.Threading;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 
 namespace ChatdollKit.Dialog
 {
@@ -7,7 +7,7 @@ namespace ChatdollKit.Dialog
     {
         void Show(string prompt = null);
         void Hide();
-        Task ShowMessageAsync(string message, CancellationToken token);
-        Task SetMessageAsync(string message, CancellationToken token);
+        UniTask ShowMessageAsync(string message, CancellationToken token);
+        UniTask SetMessageAsync(string message, CancellationToken token);
     }
 }

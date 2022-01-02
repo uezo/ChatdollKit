@@ -1,12 +1,11 @@
-﻿using System.Threading.Tasks;
-
+﻿using Cysharp.Threading.Tasks;
 
 namespace ChatdollKit.Dialog
 {
     public interface IStateStore
     {
-        Task<State> GetStateAsync(string userId);
-        Task SaveStateAsync(State state);
-        Task DeleteStateAsync(string userId);
+        UniTask<State> GetStateAsync(string userId);
+        UniTask SaveStateAsync(State state);
+        UniTask DeleteStateAsync(string userId);
     }
 }

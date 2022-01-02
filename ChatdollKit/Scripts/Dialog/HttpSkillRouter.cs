@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 using ChatdollKit.Network;
 
 namespace ChatdollKit.Dialog
@@ -19,7 +19,7 @@ namespace ChatdollKit.Dialog
             httpClient?.Dispose();
         }
 
-        public async Task Start()
+        public async UniTask Start()
         {
             if (LoadSkillsOnStart)
             {
@@ -34,7 +34,7 @@ namespace ChatdollKit.Dialog
             }
         }
 
-        public override async Task<IntentExtractionResult> ExtractIntentAsync(Request request, State state, CancellationToken token)
+        public override async UniTask<IntentExtractionResult> ExtractIntentAsync(Request request, State state, CancellationToken token)
         {
             var httpIntentResponse = await httpClient.PostJsonAsync<HttpIntentResponse>(
                 IntentExtractorUri, new HttpIntentRequest(request, state));
@@ -55,7 +55,7 @@ namespace ChatdollKit.Dialog
             return base.Route(request, state, token);
         }
 
-        public async Task RegisterSkillsAsync()
+        public async UniTask RegisterSkillsAsync()
         {
             var httpSkillsResponse = await httpClient.GetJsonAsync<HttpSkillsResponse>(SkillsUri);
 

@@ -1,9 +1,8 @@
 ﻿using System.Threading;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
+using Cysharp.Threading.Tasks;
 using ChatdollKit.Model;
-using ChatdollKit.Network;
 
 namespace ChatdollKit.Extension.Azure
 {
@@ -47,7 +46,7 @@ namespace ChatdollKit.Extension.Azure
             Region = string.IsNullOrEmpty(Region) || overwrite ? region : Region;
         }
 
-        protected override async Task<AudioClip> DownloadAudioClipAsync(Voice voice, CancellationToken token)
+        protected override async UniTask<AudioClip> DownloadAudioClipAsync(Voice voice, CancellationToken token)
         {
             if (token.IsCancellationRequested) { return null; };
 
@@ -75,7 +74,7 @@ namespace ChatdollKit.Extension.Azure
                 www.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(text));
 
                 // Send request
-                await www.SendWebRequest();
+                await www.SendWebRequest().ToUniTask();
 
                 if (www.isNetworkError || www.isHttpError)
                 {

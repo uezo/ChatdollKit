@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
-using System.Threading.Tasks;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 using ChatdollKit.Model;
 
 namespace ChatdollKit.Dialog
@@ -52,14 +52,14 @@ namespace ChatdollKit.Dialog
         }
 
 #pragma warning disable CS1998
-        public virtual async Task<Response> PreProcessAsync(Request request, State state, CancellationToken token)
+        public virtual async UniTask<Response> PreProcessAsync(Request request, State state, CancellationToken token)
         {
             // Return AnimatedVoices or something to do when ProcessAsync is estimated to take much times in this method.
             return null;
         }
 #pragma warning restore CS1998
 
-        public virtual async Task ShowWaitingAnimationAsync(Response response, Request request, State state, CancellationToken token)
+        public virtual async UniTask ShowWaitingAnimationAsync(Response response, Request request, State state, CancellationToken token)
         {
             if (response != null)
             {
@@ -69,23 +69,23 @@ namespace ChatdollKit.Dialog
 
         // Process skill
 #pragma warning disable CS1998
-        public virtual async Task<Response> ProcessAsync(Request request, State state, CancellationToken token)
+        public virtual async UniTask<Response> ProcessAsync(Request request, State state, CancellationToken token)
         {
             throw new NotImplementedException("SkillBase.ProcessAsync must be implemented");
         }
 #pragma warning restore CS1998
 
         // Show response
-        public virtual async Task ShowResponseAsync(Response response, Request request, State state, CancellationToken token)
+        public virtual async UniTask ShowResponseAsync(Response response, Request request, State state, CancellationToken token)
         {
             if (token.IsCancellationRequested)
             {
                 return;
             }
 
-            if (response.AnimatedVoiceRequest != null)
+            if (response.AnimatedVoiceRequest != null && modelController != null)
             {
-                await modelController?.AnimatedSay(response.AnimatedVoiceRequest, token);
+                await modelController.AnimatedSay(response.AnimatedVoiceRequest, token);
             }
         }
     }

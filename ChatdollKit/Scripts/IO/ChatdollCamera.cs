@@ -1,13 +1,12 @@
 ﻿using System;
 using System.IO;
 using System.Threading;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 #if PLATFORM_ANDROID
 using UnityEngine.Android;
 #endif
-
+using Cysharp.Threading.Tasks;
 
 namespace ChatdollKit.IO
 {
@@ -213,7 +212,7 @@ namespace ChatdollKit.IO
             return photo;
         }
 
-        public async Task CaptureAsync(string path)
+        public async UniTask CaptureAsync(string path)
         {
             if (!IsReadyToCapture())
             {
@@ -227,26 +226,26 @@ namespace ChatdollKit.IO
                 // Preview captured photo when preview time is longer than zero
                 previewWindow.texture = photo;
             }
-            var waitTask = Task.Delay((int)(PreviewTime * 1000));
+            var waitTask = UniTask.Delay((int)(PreviewTime * 1000));
 
             // Save as file
             var img = photo.EncodeToJPG();
             var st = new FileStream(path, FileMode.OpenOrCreate, FileAccess.Write);
-            var writeTask = st.WriteAsync(img, 0, img.Length);
+            var writeTask = st.WriteAsync(img, 0, img.Length).AsUniTask();
 
             audioSource.Play();
             OnCaptured?.Invoke();
 
-            await Task.WhenAll(writeTask, waitTask);
+            await UniTask.WhenAll(writeTask, waitTask);
             previewWindow.texture = webCamTexture;
         }
 
-        public async Task<bool> WaitForReadyAsync(float timeout)
+        public async UniTask<bool> WaitForReadyAsync(float timeout)
         {
             var startTime = Time.time;
             while (!IsReadyToCapture())
             {
-                await Task.Delay(100);
+                await UniTask.Delay(100);
                 if (Time.time - startTime > timeout)
                 {
                     return false;
@@ -276,7 +275,7 @@ namespace ChatdollKit.IO
         }
 
         // Self-timer
-        public async Task<Texture2D> CaptureTextureWithTimerAsync(string caption, int timerSeconds, CancellationToken token)
+        public async UniTask<Texture2D> CaptureTextureWithTimerAsync(string caption, int timerSeconds, CancellationToken token)
         {
             if (!Launch(caption))
             {
@@ -300,7 +299,7 @@ namespace ChatdollKit.IO
                     }
                     selfTimerCounter.text = i.ToString();
                     OnTimer?.Invoke(i);
-                    await Task.Delay(1000, token);
+                    await UniTask.Delay(1000, cancellationToken:token);
                 }
 
                 if (token.IsCancellationRequested)
@@ -315,7 +314,7 @@ namespace ChatdollKit.IO
                 {
                     // Preview captured photo when preview time is longer than zero
                     previewWindow.texture = photo;
-                    await Task.Delay((int)(PreviewTime * 1000), token);
+                    await UniTask.Delay((int)(PreviewTime * 1000), cancellationToken: token);
                 }
 
                 if (token.IsCancellationRequested)
@@ -342,7 +341,7 @@ namespace ChatdollKit.IO
         }
 
         // QRCode/Barcode reader
-        public async Task<string> ReadCodeAsync(CancellationToken token)
+        public async UniTask<string> ReadCodeAsync(CancellationToken token)
         {
             if (DecodeCode == null)
             {
@@ -382,7 +381,7 @@ namespace ChatdollKit.IO
                         return string.Empty;    // Timeout
                     }
 
-                    await Task.Delay(1000 / CodeReaderFps);
+                    await UniTask.Delay(1000 / CodeReaderFps);
                 }
             }
             catch (Exception ex)

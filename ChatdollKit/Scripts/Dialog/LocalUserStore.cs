@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Threading.Tasks;
 using System.IO;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
 
 
@@ -17,7 +17,7 @@ namespace ChatdollKit.Dialog
         }
 
         // Get user from file
-        public async Task<User> GetUserAsync(string userId)
+        public async UniTask<User> GetUserAsync(string userId)
         {
             var filePath = Path.Combine(saveDirectory, $"user_{userId}.json");
             if (!File.Exists(filePath))
@@ -48,7 +48,7 @@ namespace ChatdollKit.Dialog
         }
 
         // Save user to file
-        public async Task SaveUserAsync(User user)
+        public async UniTask SaveUserAsync(User user)
         {
             var filePath = Path.Combine(saveDirectory, $"user_{user.Id}.json");
             var jsonString = JsonConvert.SerializeObject(user);
@@ -60,7 +60,7 @@ namespace ChatdollKit.Dialog
 
 #pragma warning disable CS1998
         // Clear user by removing file
-        public async Task DeleteUserAsync(string userId)
+        public async UniTask DeleteUserAsync(string userId)
         {
             var filePath = Path.Combine(saveDirectory, $"user_{userId}.json");
             if (File.Exists(filePath))

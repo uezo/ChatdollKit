@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 
 namespace ChatdollKit.Model
 {
@@ -14,9 +14,9 @@ namespace ChatdollKit.Model
         [Header("Voice")]
         public AudioSource AudioSource;
         private Dictionary<string, AudioClip> voices = new Dictionary<string, AudioClip>();
-        public Func<Voice, CancellationToken, Task<AudioClip>> VoiceDownloadFunc;
-        public Func<Voice, CancellationToken, Task<AudioClip>> TextToSpeechFunc;
-        public Dictionary<string, Func<Voice, CancellationToken, Task<AudioClip>>> TextToSpeechFunctions = new Dictionary<string, Func<Voice, CancellationToken, Task<AudioClip>>>();
+        public Func<Voice, CancellationToken, UniTask<AudioClip>> VoiceDownloadFunc;
+        public Func<Voice, CancellationToken, UniTask<AudioClip>> TextToSpeechFunc;
+        public Dictionary<string, Func<Voice, CancellationToken, UniTask<AudioClip>>> TextToSpeechFunctions = new Dictionary<string, Func<Voice, CancellationToken, UniTask<AudioClip>>>();
         public bool UsePrefetch = true;
         private ILipSyncHelper lipSyncHelper;
 
@@ -27,7 +27,7 @@ namespace ChatdollKit.Model
         public float IdleAnimationDefaultDuration = 10.0f;
         private List<AnimatedVoiceRequest> idleAnimatedVoiceRequests = new List<AnimatedVoiceRequest>();
         private List<int> idleWeightedIndexes = new List<int>();
-        public Func<CancellationToken, Task> IdleFunc;
+        public Func<CancellationToken, UniTask> IdleFunc;
         private CancellationTokenSource idleTokenSource;
         public string AnimatorDefaultState = "Default";
 
@@ -128,7 +128,7 @@ namespace ChatdollKit.Model
         }
 
         // Start idling
-        public async Task StartIdlingAsync()
+        public async UniTask StartIdlingAsync()
         {
             // Stop running idle loop
             StopIdling();
@@ -197,7 +197,7 @@ namespace ChatdollKit.Model
         }
 
         // Speak with animation and face expression
-        public async Task AnimatedSay(AnimatedVoiceRequest request, CancellationToken token)
+        public async UniTask AnimatedSay(AnimatedVoiceRequest request, CancellationToken token)
         {
             // Stop blink
             if (request.DisableBlink && !token.IsCancellationRequested)
@@ -219,11 +219,16 @@ namespace ChatdollKit.Model
                     break;
                 }
 
-                Task animationTask = null;
+                UniTask animationTask;
                 if (animatedVoice.Animations != null && animatedVoice.Animations.Count > 0)
                 {
                     animationTask = Animate(new AnimationRequest(animatedVoice.Animations, false, false, false, request.StopLayeredAnimations), token);
                 }
+                else
+                {
+                    animationTask = UniTask.Delay(1);   // Set empty task
+                }
+                
                 if (animatedVoice.Faces != null && animatedVoice.Faces.Count > 0)
                 {
                     _ = SetFace(new FaceRequest(animatedVoice.Faces, false));
@@ -234,7 +239,7 @@ namespace ChatdollKit.Model
                     // Wait for the requested voices end
                     await Say(new VoiceRequest(animatedVoice.Voices, false), token);
                 }
-                else if (animationTask != null)
+                else
                 {
                     // Wait for the requested animations end
                     await animationTask;
@@ -261,7 +266,7 @@ namespace ChatdollKit.Model
         }
 
         // Speak one phrase
-        public async Task Say(string voiceName, float preGap = 0f, float postGap = 0f)
+        public async UniTask Say(string voiceName, float preGap = 0f, float postGap = 0f)
         {
             var request = new VoiceRequest(voiceName);
             request.Voices[0].PreGap = preGap;
@@ -270,7 +275,7 @@ namespace ChatdollKit.Model
         }
 
         // Speak
-        public async Task Say(VoiceRequest request, CancellationToken token)
+        public async UniTask Say(VoiceRequest request, CancellationToken token)
         {
             // Stop speech
             StopSpeech();
@@ -300,7 +305,7 @@ namespace ChatdollKit.Model
                     if (voices.ContainsKey(v.Name))
                     {
                         // Wait for PreGap
-                        await Task.Delay((int)(v.PreGap * 1000), token);
+                        await UniTask.Delay((int)(v.PreGap * 1000), cancellationToken: token);
                         // Play audio
                         History?.Add(v);
                         AudioSource.PlayOneShot(voices[v.Name]);
@@ -349,11 +354,11 @@ namespace ChatdollKit.Model
                             {
                                 try
                                 {
-                                    await Task.Delay((int)(preGap * 1000), token);
+                                    await UniTask.Delay((int)(preGap * 1000), cancellationToken: token);
                                 }
-                                catch (TaskCanceledException)
+                                catch (OperationCanceledException)
                                 {
-                                    // TaskCanceledException raises
+                                    // OperationCanceledException raises
                                     Debug.Log("Task canceled in waiting PreGap");
                                 }
                             }
@@ -367,7 +372,7 @@ namespace ChatdollKit.Model
                 // Wait while voice playing
                 while (AudioSource.isPlaying && !token.IsCancellationRequested)
                 {
-                    await Task.Delay(1);
+                    await UniTask.Delay(1);
                 }
 
                 if (!token.IsCancellationRequested)
@@ -375,9 +380,9 @@ namespace ChatdollKit.Model
                     try
                     {
                         // Wait for PostGap
-                        await Task.Delay((int)(v.PostGap * 1000), token);
+                        await UniTask.Delay((int)(v.PostGap * 1000), cancellationToken: token);
                     }
-                    catch (TaskCanceledException)
+                    catch (OperationCanceledException)
                     {
                         Debug.Log("Task canceled in waiting PostGap");
                     }
@@ -425,7 +430,7 @@ namespace ChatdollKit.Model
         }
 
         // Get registered TTS Function by name
-        private Func<Voice, CancellationToken, Task<AudioClip>> GetTTSFunction(string name)
+        private Func<Voice, CancellationToken, UniTask<AudioClip>> GetTTSFunction(string name)
         {
             if (!string.IsNullOrEmpty(name) && TextToSpeechFunctions.ContainsKey(name))
             {
@@ -435,7 +440,7 @@ namespace ChatdollKit.Model
         }
 
         // Register TTS Function with name
-        public void RegisterTTSFunction(string name, Func<Voice, CancellationToken, Task<AudioClip>> func, bool asDefault = false)
+        public void RegisterTTSFunction(string name, Func<Voice, CancellationToken, UniTask<AudioClip>> func, bool asDefault = false)
         {
             TextToSpeechFunctions[name] = func;
             if (asDefault)
@@ -474,7 +479,7 @@ namespace ChatdollKit.Model
         }
 
         // Do animations
-        public async Task Animate(AnimationRequest request, CancellationToken token)
+        public async UniTask Animate(AnimationRequest request, CancellationToken token)
         {
             // Stop blink
             if (request.DisableBlink && !token.IsCancellationRequested)
@@ -518,7 +523,7 @@ namespace ChatdollKit.Model
             }
         }
 
-        private async Task PlayAnimations(List<Animation> animations, string layerName, CancellationToken token)
+        private async UniTask PlayAnimations(List<Animation> animations, string layerName, CancellationToken token)
         {
             var layerIndex = layerName == string.Empty ? 0 : animator.GetLayerIndex(layerName);
             foreach (var a in animations)
@@ -528,14 +533,14 @@ namespace ChatdollKit.Model
                 {
                     if (a.PreGap > 0)
                     {
-                        await Task.Delay((int)(a.PreGap * 1000), token);
+                        await UniTask.Delay((int)(a.PreGap * 1000), cancellationToken: token);
                     }
                     animator.SetLayerWeight(layerIndex, a.Weight);
                     histroyId = History?.Add(a);
                     animator.CrossFadeInFixedTime(a.Name, a.FadeLength < 0 ? AnimationFadeLength : a.FadeLength, layerIndex);
-                    await Task.Delay((int)(a.Duration * 1000), token);
+                    await UniTask.Delay((int)(a.Duration * 1000), cancellationToken: token);
                 }
-                catch (TaskCanceledException tcex)
+                catch (OperationCanceledException tcex)
                 {
                     History?.Add(histroyId, "canceled");
                     Debug.Log($"Animation {a.Name} on {a.LayerName} canceled: {tcex.Message}");
@@ -568,20 +573,20 @@ namespace ChatdollKit.Model
         }
 
         // Set default face expression
-        public async Task SetDefaultFace()
+        public async UniTask SetDefaultFace()
         {
             History?.Add("Set default face");
             await SetFace(DefaultFace);
         }
 
         // Set face expression
-        public async Task SetFace(string name, float duration = 0.0f, string description = null)
+        public async UniTask SetFace(string name, float duration = 0.0f, string description = null)
         {
             await SetFace(new FaceRequest(new List<FaceExpression>() { new FaceExpression(name, duration, description) }));
         }
 
         // Set face expressions
-        public async Task SetFace(FaceRequest request)
+        public async UniTask SetFace(FaceRequest request)
         {
             foreach (var face in request.Faces)
             {
@@ -619,10 +624,10 @@ namespace ChatdollKit.Model
                             {
                                 SkinnedMeshRenderer.SetBlendShapeWeight(blendShapeValue.Index, weightsForEachSteps[blendShapeValue.Index][i]);
                             }
-                            await Task.Delay(10);
+                            await UniTask.Delay(10);
                         }
                     }
-                    await Task.Delay((int)(face.Duration * 1000));
+                    await UniTask.Delay((int)(face.Duration * 1000));
                 }
                 else
                 {
@@ -671,7 +676,7 @@ namespace ChatdollKit.Model
         }
 
         // Initialize and start blink
-        public async Task StartBlinkAsync(bool startNew = false)
+        public async UniTask StartBlinkAsync(bool startNew = false)
         {
             // Return with doing nothing when already blinking
             if (IsBlinkEnabled && startNew == false)
@@ -707,11 +712,11 @@ namespace ChatdollKit.Model
 
                 // Close eyes
                 blinkIntervalToClose = UnityEngine.Random.Range(MinBlinkIntervalToClose, MaxBlinkIntervalToClose);
-                await Task.Delay((int)(blinkIntervalToClose * 1000));
+                await UniTask.Delay((int)(blinkIntervalToClose * 1000));
                 blinkAction = CloseEyesOnUpdate;
                 // Open eyes
                 blinkIntervalToOpen = UnityEngine.Random.Range(MinBlinkIntervalToOpen, MaxBlinkIntervalToOpen);
-                await Task.Delay((int)(blinkIntervalToOpen * 1000));
+                await UniTask.Delay((int)(blinkIntervalToOpen * 1000));
                 blinkAction = OpenEyesOnUpdate;
             }
         }

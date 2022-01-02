@@ -1,6 +1,6 @@
 ﻿using System.Threading;
-using System.Threading.Tasks;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 
 namespace ChatdollKit.Model
 {
@@ -11,7 +11,7 @@ namespace ChatdollKit.Model
         VoiceLoaderType Type { get; }
         string Name { get; }
         bool IsDefault { get; set; }
-        Task<AudioClip> GetAudioClipAsync(Voice voice, CancellationToken token);
+        UniTask<AudioClip> GetAudioClipAsync(Voice voice, CancellationToken token);
         bool HasCache(Voice voice);
         bool IsLoading(Voice voice);
     }

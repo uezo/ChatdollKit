@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
 
 namespace ChatdollKit.Dialog
@@ -13,7 +13,7 @@ namespace ChatdollKit.Dialog
 
 #pragma warning disable CS1998
 
-        public async Task<State> GetStateAsync(string userId)
+        public async UniTask<State> GetStateAsync(string userId)
         {
             State state;
             if (states.ContainsKey(userId))
@@ -43,12 +43,12 @@ namespace ChatdollKit.Dialog
             return JsonConvert.DeserializeObject<State>(JsonConvert.SerializeObject(state));
         }
 
-        public async Task SaveStateAsync(State state)
+        public async UniTask SaveStateAsync(State state)
         {
             states[state.UserId] = state;
         }
 
-        public async Task DeleteStateAsync(string userId)
+        public async UniTask DeleteStateAsync(string userId)
         {
             states.Remove(userId);
         }

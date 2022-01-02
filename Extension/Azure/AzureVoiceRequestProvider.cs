@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using ChatdollKit.Dialog;
 using ChatdollKit.IO;
@@ -20,7 +20,7 @@ namespace ChatdollKit.Extension.Azure
             Region = string.IsNullOrEmpty(Region) || overwrite ? region : Region;
         }
 
-        protected override async Task<string> RecognizeSpeechAsync(AudioClip recordedVoice)
+        protected override async UniTask<string> RecognizeSpeechAsync(AudioClip recordedVoice)
         {
             if (string.IsNullOrEmpty(ApiKey) || string.IsNullOrEmpty(Region) || string.IsNullOrEmpty(Language))
             {

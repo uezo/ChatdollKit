@@ -3,7 +3,6 @@ using UnityEngine;
 using ChatdollKit.Dialog;
 using ChatdollKit.IO;
 using ChatdollKit.Model;
-using System;
 
 namespace ChatdollKit
 {

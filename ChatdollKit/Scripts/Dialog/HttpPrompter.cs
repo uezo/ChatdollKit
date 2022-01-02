@@ -1,9 +1,9 @@
 ﻿using System.Threading;
-using System.Threading.Tasks;
+using System.Collections.Generic;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 using ChatdollKit.Model;
 using ChatdollKit.Network;
-using System.Collections.Generic;
 
 namespace ChatdollKit.Dialog
 {
@@ -31,7 +31,7 @@ namespace ChatdollKit.Dialog
             httpClient?.Dispose();
         }
 
-        public async Task OnPromptAsync(Request preRequest, User user, State state, CancellationToken token)
+        public async UniTask OnPromptAsync(Request preRequest, User user, State state, CancellationToken token)
         {
             var promptKey = preRequest != null && preRequest.HasIntent() ? preRequest.Intent.Name : defaultPromptKey;
             var promptAnimatedVoice = promptAnimatedVoices.ContainsKey(promptKey) ? promptAnimatedVoices[promptKey] : null;

@@ -1,16 +1,15 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Threading;
-using System.Threading.Tasks;
-using ChatdollKit.Dialog;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
+using ChatdollKit.Dialog;
 
 namespace ChatdollKit.Examples.MultiSkills
 {
     public class CameraSkill : SkillBase
     {
 #pragma warning disable CS1998
-        public override async Task<Response> ProcessAsync(Request request, State state, CancellationToken token)
+        public override async UniTask<Response> ProcessAsync(Request request, State state, CancellationToken token)
         {
             var response = new Response(request.Id);
 

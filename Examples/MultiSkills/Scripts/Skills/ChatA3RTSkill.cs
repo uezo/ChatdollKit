@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using ChatdollKit.Dialog;
 using ChatdollKit.Network;
 
@@ -24,7 +24,7 @@ namespace ChatdollKit.Examples.MultiSkills
             client?.Dispose();
         }
 
-        public override async Task<Response> ProcessAsync(Request request, State state, CancellationToken token)
+        public override async UniTask<Response> ProcessAsync(Request request, State state, CancellationToken token)
         {
             var response = new Response(request.Id);
 

@@ -1,11 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 using ChatdollKit.IO;
 using ChatdollKit.Network;
-using System.Collections.Generic;
-
 
 namespace ChatdollKit.Dialog
 {
@@ -41,10 +40,10 @@ namespace ChatdollKit.Dialog
 
         // Actions for each status
 #pragma warning disable CS1998
-        public Func<Request, State, CancellationToken, Task> OnStartListeningAsync;
-        public Func<string, Task> OnRecognizedAsync;
-        public Func<Request, State, CancellationToken, Task> OnFinishListeningAsync;
-        public Func<Request, State, CancellationToken, Task> OnErrorAsync
+        public Func<Request, State, CancellationToken, UniTask> OnStartListeningAsync;
+        public Func<string, UniTask> OnRecognizedAsync;
+        public Func<Request, State, CancellationToken, UniTask> OnFinishListeningAsync;
+        public Func<Request, State, CancellationToken, UniTask> OnErrorAsync
             = async (r, c, t) => { Debug.LogWarning("VoiceRequestProvider.OnErrorAsync is not implemented"); };
 #pragma warning restore CS1998
 
@@ -53,7 +52,7 @@ namespace ChatdollKit.Dialog
         protected ChatdollHttp client = new ChatdollHttp();
 
 #pragma warning disable CS1998
-        private async Task OnStartListeningDefaultAsync(Request request, State state, CancellationToken token)
+        private async UniTask OnStartListeningDefaultAsync(Request request, State state, CancellationToken token)
         {
             if (MessageWindow != null)
             {
@@ -65,7 +64,7 @@ namespace ChatdollKit.Dialog
             }
         }
 
-        private async Task OnFinishListeningDefaultAsync(Request request, State state, CancellationToken token)
+        private async UniTask OnFinishListeningDefaultAsync(Request request, State state, CancellationToken token)
         {
             if (MessageWindow != null)
             {
@@ -79,7 +78,7 @@ namespace ChatdollKit.Dialog
 #pragma warning restore CS1998
 
         // Create request using voice recognition
-        public async Task<Request> GetRequestAsync(User user, State state, CancellationToken token, Request preRequest = null)
+        public async UniTask<Request> GetRequestAsync(User user, State state, CancellationToken token, Request preRequest = null)
         {
             if (preRequest != null && !string.IsNullOrEmpty(preRequest.Text))
             {
@@ -116,11 +115,11 @@ namespace ChatdollKit.Dialog
                 {
                     while (string.IsNullOrWhiteSpace(DummyText) && !token.IsCancellationRequested)
                     {
-                        await Task.Delay(1);
+                        await UniTask.Delay(1);
                     }
                     if (!token.IsCancellationRequested)
                     {
-                        await Task.Delay(1000);
+                        await UniTask.Delay(1000);
                         request.Text = DummyText;
                     }
                     DummyText = string.Empty;   // NOTE: Value on inspector will not be cleared
@@ -167,7 +166,7 @@ namespace ChatdollKit.Dialog
                     request.IsCanceled = true;
                 }
             }
-            catch (TaskCanceledException)
+            catch (OperationCanceledException)
             {
                 Debug.Log("Canceled during recognizing speech");
             }
@@ -187,7 +186,7 @@ namespace ChatdollKit.Dialog
         }
 
 #pragma warning disable CS1998
-        protected virtual async Task<string> RecognizeSpeechAsync(AudioClip recordedVoice)
+        protected virtual async UniTask<string> RecognizeSpeechAsync(AudioClip recordedVoice)
         {
             throw new NotImplementedException("RecognizeSpeechAsync method should be implemented at the sub class of VoiceRequestProviderBase");
         }
