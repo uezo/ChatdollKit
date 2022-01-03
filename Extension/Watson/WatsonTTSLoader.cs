@@ -39,11 +39,6 @@ namespace ChatdollKit.Extension.Watson
 
         private ChatdollHttp client = new ChatdollHttp();
 
-        private void OnDestroy()
-        {
-            client?.Dispose();
-        }
-
         public void Configure(string apiKey, string baseUrl, string speakerName, bool overwrite = false)
         {
             ApiKey = string.IsNullOrEmpty(ApiKey) || overwrite ? apiKey : ApiKey;

@@ -19,11 +19,6 @@ namespace ChatdollKit.Examples.MultiSkills
             }
         }
 
-        private void OnDestroy()
-        {
-            client?.Dispose();
-        }
-
         public override async UniTask<Response> ProcessAsync(Request request, State state, CancellationToken token)
         {
             var response = new Response(request.Id);

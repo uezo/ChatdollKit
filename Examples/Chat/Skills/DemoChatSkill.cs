@@ -12,11 +12,6 @@ namespace ChatdollKit.Examples.Chat
     {
         private ChatdollHttp client = new ChatdollHttp();
 
-        private void OnDestroy()
-        {
-            client.Dispose();
-        }
-
         public override async UniTask<Response> ProcessAsync(Request request, State state, CancellationToken token)
         {
             // Build and return response message

@@ -10,11 +10,6 @@ namespace ChatdollKit.Dialog
         public string Uri;
         protected ChatdollHttp httpClient = new ChatdollHttp();
 
-        private void OnDestroy()
-        {
-            httpClient?.Dispose();
-        }
-
         public override async UniTask<Response> PreProcessAsync(Request request, State state, CancellationToken token)
         {
             var httpSkillResponse = await httpClient.PostJsonAsync<HttpSkillResponse>(Uri, new HttpSkillRequest(request, state, true));

@@ -38,12 +38,6 @@ namespace ChatdollKit.Dialog
             }
         }
 
-        protected override void OnDestroy()
-        {
-            base.OnDestroy();
-            client?.Dispose();
-        }
-
         protected override async UniTask ProcessVoiceAsync(AudioClip voice)
         {
             // Recognize speech

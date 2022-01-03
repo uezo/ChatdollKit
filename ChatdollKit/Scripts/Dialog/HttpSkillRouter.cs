@@ -14,11 +14,6 @@ namespace ChatdollKit.Dialog
         public bool LoadSkillsOnStart = true;
         protected ChatdollHttp httpClient = new ChatdollHttp();
 
-        private void OnDestroy()
-        {
-            httpClient?.Dispose();
-        }
-
         public async UniTask Start()
         {
             if (LoadSkillsOnStart)

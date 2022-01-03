@@ -26,11 +26,6 @@ namespace ChatdollKit.Dialog
             }
         }
 
-        protected void OnDestroy()
-        {
-            httpClient?.Dispose();
-        }
-
         public async UniTask OnPromptAsync(Request preRequest, User user, State state, CancellationToken token)
         {
             var promptKey = preRequest != null && preRequest.HasIntent() ? preRequest.Intent.Name : defaultPromptKey;
@@ -52,7 +47,7 @@ namespace ChatdollKit.Dialog
             {
 #pragma warning disable CS4014
                 // Send ping request to warm up
-                httpClient.GetJsonAsync<AnimatedVoiceRequest>(PingUri);
+                httpClient.GetAsync(PingUri);
 #pragma warning restore CS4014
             }
 
