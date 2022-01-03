@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 using ChatdollKit.Model;
 
 namespace ChatdollKit.Dialog
@@ -25,11 +25,11 @@ namespace ChatdollKit.Dialog
 
         // Actions for each status
 #pragma warning disable CS1998
-        public Func<Request, User, State, CancellationToken, Task> OnPromptAsync
+        public Func<Request, User, State, CancellationToken, UniTask> OnPromptAsync
             = async (r, u, c, t) => { Debug.LogWarning("Chatdoll.OnPromptAsync is not implemented"); };
-        public Func<Request, State, CancellationToken, Task> OnNoIntentAsync
+        public Func<Request, State, CancellationToken, UniTask> OnNoIntentAsync
             = async (r, c, t) => { Debug.LogWarning("Chatdoll.OnNoIntentAsync is not implemented"); };
-        public Func<Request, State, CancellationToken, Task> OnErrorAsync
+        public Func<Request, State, CancellationToken, UniTask> OnErrorAsync
             = async (r, c, t) => { Debug.LogWarning("Chatdoll.OnErrorAsync is not implemented"); };
 #pragma warning restore CS1998
 
@@ -51,7 +51,7 @@ namespace ChatdollKit.Dialog
         }
 
         // Start chatting loop
-        public async Task StartChatAsync(string userId, bool skipPrompt = false, Request preRequest = null, Dictionary<string, object> payloads = null)
+        public async UniTask StartChatAsync(string userId, bool skipPrompt = false, Request preRequest = null, Dictionary<string, object> payloads = null)
         {
             // Get cancellation token
             var token = GetChatToken();

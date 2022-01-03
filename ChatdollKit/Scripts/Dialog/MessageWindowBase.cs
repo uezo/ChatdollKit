@@ -1,7 +1,6 @@
 ﻿using System.Threading;
-using System.Threading.Tasks;
 using UnityEngine;
-
+using Cysharp.Threading.Tasks;
 namespace ChatdollKit.Dialog
 {
     // Unity2018 support (inspector does not support interface)
@@ -17,12 +16,12 @@ namespace ChatdollKit.Dialog
             throw new System.NotImplementedException();
         }
 
-        public virtual Task ShowMessageAsync(string message, CancellationToken token)
+        public virtual UniTask ShowMessageAsync(string message, CancellationToken token)
         {
             throw new System.NotImplementedException();
         }
 
-        public virtual Task SetMessageAsync(string message, CancellationToken token)
+        public virtual UniTask SetMessageAsync(string message, CancellationToken token)
         {
             throw new System.NotImplementedException();
         }

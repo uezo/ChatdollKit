@@ -1,9 +1,9 @@
 ﻿using System.Threading;
-using System.Threading.Tasks;
+using System.Collections.Generic;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 using ChatdollKit.Model;
 using ChatdollKit.Network;
-using System.Collections.Generic;
 
 namespace ChatdollKit.Dialog
 {
@@ -26,12 +26,7 @@ namespace ChatdollKit.Dialog
             }
         }
 
-        protected void OnDestroy()
-        {
-            httpClient?.Dispose();
-        }
-
-        public async Task OnPromptAsync(Request preRequest, User user, State state, CancellationToken token)
+        public async UniTask OnPromptAsync(Request preRequest, User user, State state, CancellationToken token)
         {
             var promptKey = preRequest != null && preRequest.HasIntent() ? preRequest.Intent.Name : defaultPromptKey;
             var promptAnimatedVoice = promptAnimatedVoices.ContainsKey(promptKey) ? promptAnimatedVoices[promptKey] : null;
@@ -52,7 +47,7 @@ namespace ChatdollKit.Dialog
             {
 #pragma warning disable CS4014
                 // Send ping request to warm up
-                httpClient.GetJsonAsync<AnimatedVoiceRequest>(PingUri);
+                httpClient.GetAsync(PingUri);
 #pragma warning restore CS4014
             }
 

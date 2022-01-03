@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
+using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
 using ChatdollKit.Model;
 using ChatdollKit.Network;
@@ -39,11 +39,6 @@ namespace ChatdollKit.Extension.Watson
 
         private ChatdollHttp client = new ChatdollHttp();
 
-        private void OnDestroy()
-        {
-            client?.Dispose();
-        }
-
         public void Configure(string apiKey, string baseUrl, string speakerName, bool overwrite = false)
         {
             ApiKey = string.IsNullOrEmpty(ApiKey) || overwrite ? apiKey : ApiKey;
@@ -51,7 +46,7 @@ namespace ChatdollKit.Extension.Watson
             SpeakerName = string.IsNullOrEmpty(SpeakerName) || overwrite ? speakerName : SpeakerName;
         }
 
-        protected override async Task<AudioClip> DownloadAudioClipAsync(Voice voice, CancellationToken token)
+        protected override async UniTask<AudioClip> DownloadAudioClipAsync(Voice voice, CancellationToken token)
         {
             if (token.IsCancellationRequested) { return null; };
 
@@ -75,7 +70,7 @@ namespace ChatdollKit.Extension.Watson
                 www.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new Dictionary<string, string>(){{"text", voice.Text}})));
 
                 // Send request
-                await www.SendWebRequest();
+                await www.SendWebRequest().ToUniTask();
 
                 if (www.isNetworkError || www.isHttpError)
                 {

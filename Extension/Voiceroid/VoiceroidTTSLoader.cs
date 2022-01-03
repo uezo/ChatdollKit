@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
 using Newtonsoft.Json;
+using Cysharp.Threading.Tasks;
 using ChatdollKit.Model;
 using ChatdollKit.Network;
 
@@ -47,7 +47,7 @@ namespace ChatdollKit.Extension
 
         // Get audio clip from Voiceroid Daemon
         // https://github.com/Nkyoku/voiceroid_daemon
-        protected override async Task<AudioClip> DownloadAudioClipAsync(Voice voice, CancellationToken token)
+        protected override async UniTask<AudioClip> DownloadAudioClipAsync(Voice voice, CancellationToken token)
         {
             if (token.IsCancellationRequested) { return null; };
 
@@ -65,7 +65,7 @@ namespace ChatdollKit.Extension
                 www.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(text));
 
                 // Send request
-                await www.SendWebRequest();
+                await www.SendWebRequest().ToUniTask();
 
                 if (www.isNetworkError || www.isHttpError)
                 {
