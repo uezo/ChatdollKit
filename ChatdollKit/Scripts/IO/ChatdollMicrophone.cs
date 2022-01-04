@@ -4,7 +4,11 @@ using UnityEngine;
 #if PLATFORM_ANDROID
 using UnityEngine.Android;
 #endif
-
+# if UNITY_WEBGL && !UNITY_EDITOR
+using Microphone = ChatdollKit.IO.WebGLMicrophone;
+# else
+using Microphone = UnityEngine.Microphone;
+#endif
 
 namespace ChatdollKit.IO
 {
@@ -37,6 +41,13 @@ namespace ChatdollKit.IO
             if (!Permission.HasUserAuthorizedPermission(Permission.Microphone))
             {
                 Permission.RequestUserPermission(Permission.Microphone);
+            }
+#endif
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+            if (gameObject.GetComponent<ChatdollKit.IO.WebGLMicrophone>() == null)
+            {
+                gameObject.AddComponent<ChatdollKit.IO.WebGLMicrophone>();
             }
 #endif
         }
