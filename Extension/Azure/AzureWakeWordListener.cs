@@ -36,13 +36,12 @@ namespace ChatdollKit.Extension.Azure
             // https://docs.microsoft.com/ja-jp/azure/cognitive-services/speech-service/rest-speech-to-text#chunked-transfer
             var response = await client.PostBytesAsync<SpeechRecognitionResponse>(
                 $"https://{Region}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language={Language}",
-                AudioConverter.AudioClipToPCM(recordedVoice.Voice),
+                AudioConverter.AudioClipToPCM(recordedVoice.Voice, recordedVoice.SamplingData),
                 headers);
 
             return response?.DisplayText ?? string.Empty;
         }
 
-#pragma warning disable CS0649
         // Response from Azure STT
         class SpeechRecognitionResponse
         {
