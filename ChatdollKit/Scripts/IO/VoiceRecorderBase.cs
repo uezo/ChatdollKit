@@ -22,6 +22,7 @@ namespace ChatdollKit.IO
 
         // Runtime configurations
         protected float voiceDetectionThreshold;
+        protected float voiceDetectionMaxThreshold = 0.7f;
         protected float voiceDetectionMinimumLength;
         protected float silenceDurationToEndRecording;
         protected Action onListeningStart;
@@ -51,7 +52,7 @@ namespace ChatdollKit.IO
 
                 // Handle recorded voice
                 recordedData.AddRange(capturedData.Data);
-                if (capturedData.MaxVolume > voiceDetectionThreshold)
+                if (capturedData.MaxVolume > voiceDetectionThreshold && capturedData.MaxVolume < voiceDetectionMaxThreshold)
                 {
                     onDetectVoice?.Invoke(capturedData.MaxVolume);
 
