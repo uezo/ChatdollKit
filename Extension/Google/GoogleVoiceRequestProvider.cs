@@ -18,7 +18,7 @@ namespace ChatdollKit.Extension.Google
             Language = string.IsNullOrEmpty(Language) || overwrite ? language : Language;
         }
 
-        protected override async UniTask<string> RecognizeSpeechAsync(AudioClip recordedVoice)
+        protected override async UniTask<string> RecognizeSpeechAsync(VoiceRecorderResponse recordedVoice)
         {
             if (string.IsNullOrEmpty(ApiKey) || string.IsNullOrEmpty(Language))
             {
@@ -27,7 +27,7 @@ namespace ChatdollKit.Extension.Google
 
             var response = await client.PostJsonAsync<SpeechRecognitionResponse>(
                 $"https://speech.googleapis.com/v1/speech:recognize?key={ApiKey}",
-                new SpeechRecognitionRequest(recordedVoice, Language, UseEnhancedModel));
+                new SpeechRecognitionRequest(recordedVoice.Voice, Language, UseEnhancedModel));
 
             return response?.results?[0]?.alternatives?[0]?.transcript ?? string.Empty;
         }
