@@ -22,7 +22,7 @@ namespace ChatdollKit.Extension.Watson
             RemoveWordSeparation = overwrite ? removeWordSeparation : RemoveWordSeparation;
         }
 
-        protected override async UniTask<string> RecognizeSpeechAsync(AudioClip recordedVoice)
+        protected override async UniTask<string> RecognizeSpeechAsync(VoiceRecorderResponse recordedVoice)
         {
             if (string.IsNullOrEmpty(ApiKey) || string.IsNullOrEmpty(Model) || string.IsNullOrEmpty(BaseUrl))
             {
@@ -38,7 +38,7 @@ namespace ChatdollKit.Extension.Watson
             // TODO: Accept more parameters
             var response = await client.PostBytesAsync<SpeechRecognitionResponse>(
                 $"{BaseUrl}/v1/recognize?model={Model}",
-                AudioConverter.AudioClipToPCM(recordedVoice),
+                AudioConverter.AudioClipToPCM(recordedVoice.Voice, recordedVoice.SamplingData),
                 headers);
 
             var recognizedText = response?.results?[0]?.alternatives?[0]?.transcript ?? string.Empty;
@@ -49,7 +49,6 @@ namespace ChatdollKit.Extension.Watson
             return recognizedText;
         }
 
-#pragma warning disable CS0649
         // Models for response
         public class SpeechRecognitionResponse
         {

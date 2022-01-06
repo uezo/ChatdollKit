@@ -135,7 +135,7 @@ namespace ChatdollKit.Dialog
                     }
                     else if (voiceRecorderResponse != null && voiceRecorderResponse.Voice != null)
                     {
-                        request.Text = await RecognizeSpeechAsync(voiceRecorderResponse.Voice);
+                        request.Text = await RecognizeSpeechAsync(voiceRecorderResponse);
                         if (OnRecognizedAsync != null)
                         {
                             await OnRecognizedAsync(request.Text);
@@ -186,7 +186,7 @@ namespace ChatdollKit.Dialog
         }
 
 #pragma warning disable CS1998
-        protected virtual async UniTask<string> RecognizeSpeechAsync(AudioClip recordedVoice)
+        protected virtual async UniTask<string> RecognizeSpeechAsync(VoiceRecorderResponse recordedVoice)
         {
             throw new NotImplementedException("RecognizeSpeechAsync method should be implemented at the sub class of VoiceRequestProviderBase");
         }

@@ -38,10 +38,10 @@ namespace ChatdollKit.Dialog
             }
         }
 
-        protected override async UniTask ProcessVoiceAsync(AudioClip voice)
+        protected override async UniTask ProcessVoiceAsync(VoiceRecorderResponse voiceRecorderResponse)
         {
             // Recognize speech
-            var recognizedText = await RecognizeSpeechAsync(voice);
+            var recognizedText = await RecognizeSpeechAsync(voiceRecorderResponse);
             if (OnRecognizedAsync != null)
             {
                 await OnRecognizedAsync(recognizedText);
@@ -125,7 +125,7 @@ namespace ChatdollKit.Dialog
         }
 
 #pragma warning disable CS1998
-        protected virtual async UniTask<string> RecognizeSpeechAsync(AudioClip recordedVoice)
+        protected virtual async UniTask<string> RecognizeSpeechAsync(VoiceRecorderResponse recordedVoice)
         {
             throw new NotImplementedException("RecognizeSpeechAsync method should be implemented at the sub class of WakeWordListenerBase");
         }

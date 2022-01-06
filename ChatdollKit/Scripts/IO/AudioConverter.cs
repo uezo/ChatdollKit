@@ -2,17 +2,16 @@
 using System.Text;
 using UnityEngine;
 
-
 namespace ChatdollKit.IO
 {
     public static class AudioConverter
     {
-        public static string AudioClipToBase64(AudioClip audioClip)
+        public static string AudioClipToBase64(AudioClip audioClip, float[] samplingData = null)
         {
-            return Convert.ToBase64String(AudioClipToPCM(audioClip));
+            return Convert.ToBase64String(AudioClipToPCM(audioClip, samplingData));
         }
 
-        public static byte[] AudioClipToPCM(AudioClip audioClip)
+        public static byte[] AudioClipToPCM(AudioClip audioClip, float[] samplingData = null)
         {
             var pcm = new byte[audioClip.samples * audioClip.channels * 2 + 44];
 
@@ -31,9 +30,13 @@ namespace ChatdollKit.IO
             Array.Copy(Encoding.ASCII.GetBytes("data"), 0, pcm, 36, 4);
             Array.Copy(BitConverter.GetBytes((UInt32)audioClip.samples * 2), 0, pcm, 40, 4);
 
-            // Add PCM Data
-            var samplingData = new float[audioClip.samples * audioClip.channels];
-            audioClip.GetData(samplingData, 0);
+            if (samplingData == null)
+            {
+                // Try to get sampling data from audio clip. This will not work on WebGL platform
+                samplingData = new float[audioClip.samples * audioClip.channels];
+                audioClip.GetData(samplingData, 0);
+            }
+
             for (var i = 0; i < samplingData.Length; i++)
             {
                 // float to 16bit int to bytes

@@ -86,7 +86,7 @@ namespace ChatdollKit.IO
                         if (voiceRecorderResponse.Voice.length <= VoiceRecognitionMaximumLength)
                         {
 #pragma warning disable CS4014
-                            ProcessVoiceAsync(voiceRecorderResponse.Voice); // Do not await to continue listening
+                            ProcessVoiceAsync(voiceRecorderResponse); // Do not await to continue listening
 #pragma warning restore CS4014
                         }
                     }
@@ -103,7 +103,7 @@ namespace ChatdollKit.IO
         }
 
 #pragma warning disable CS1998
-        protected virtual async UniTask ProcessVoiceAsync(AudioClip voice)
+        protected virtual async UniTask ProcessVoiceAsync(VoiceRecorderResponse voiceRecorderResponse)
         {
 
         }

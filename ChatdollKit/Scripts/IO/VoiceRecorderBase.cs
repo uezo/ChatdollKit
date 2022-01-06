@@ -22,6 +22,7 @@ namespace ChatdollKit.IO
 
         // Runtime configurations
         protected float voiceDetectionThreshold;
+        protected float voiceDetectionMaxThreshold = 0.7f;
         protected float voiceDetectionMinimumLength;
         protected float silenceDurationToEndRecording;
         protected Action onListeningStart;
@@ -51,7 +52,7 @@ namespace ChatdollKit.IO
 
                 // Handle recorded voice
                 recordedData.AddRange(capturedData.Data);
-                if (capturedData.MaxVolume > voiceDetectionThreshold)
+                if (capturedData.MaxVolume > voiceDetectionThreshold && capturedData.MaxVolume < voiceDetectionMaxThreshold)
                 {
                     onDetectVoice?.Invoke(capturedData.MaxVolume);
 
@@ -78,14 +79,8 @@ namespace ChatdollKit.IO
                             var recordedLength = recordedData.Count / (float)(capturedData.Frequency * capturedData.ChannelCount) - silenceDurationToEndRecording;
                             if (recordedLength >= voiceDetectionMinimumLength)
                             {
-                                // Create AudioClip and copy recorded data
-                                var audioClip = AudioClip.Create(string.Empty, recordedData.Count, capturedData.ChannelCount, capturedData.Frequency, false);
-                                audioClip.SetData(recordedData.ToArray(), 0);
-
-                                // Give reference of audio clip to all audiences
-                                lastRecordedVoice = new VoiceRecorderResponse() { RecordingStartedAt = recordingStartTime, Voice = audioClip };
-
-                                onRecordingEnd?.Invoke(audioClip);
+                                lastRecordedVoice = new VoiceRecorderResponse(recordingStartTime, recordedData, capturedData.ChannelCount, capturedData.Frequency);
+                                onRecordingEnd?.Invoke(lastRecordedVoice.Voice);
                             }
                             else
                             {
@@ -178,5 +173,14 @@ namespace ChatdollKit.IO
     {
         public float RecordingStartedAt { get; set; }
         public AudioClip Voice { get; set; }
+        public float[] SamplingData { get; set; }
+
+        public VoiceRecorderResponse(float recordingStartedAt, List<float> samplingDataList, int channelCount, int frequency)
+        {
+            RecordingStartedAt = recordingStartedAt;
+            SamplingData = samplingDataList.ToArray();
+            Voice = AudioClip.Create(string.Empty, samplingDataList.Count, channelCount, frequency, false);
+            Voice.SetData(SamplingData, 0);
+        }
     }
 }
