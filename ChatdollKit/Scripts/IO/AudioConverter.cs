@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Text;
 using UnityEngine;
 
@@ -46,24 +47,39 @@ namespace ChatdollKit.IO
             return pcm;
         }
 
-        public static AudioClip PCMToAudioClip(byte[] pcm, string name = "AudioClip from PCM")
+        public static AudioClip PCMToAudioClip(byte[] pcm, string name = "AudioClip from PCM", bool searchDataChunk = false)
         {
             // Get wave info
             var channels = BitConverter.ToUInt16(pcm, 22);
             var sampleRate = BitConverter.ToInt32(pcm, 24);
-            var sampleLength = BitConverter.ToInt32(pcm, 40) / 2;
+            var ckIDPosition = searchDataChunk ? PatternAt(pcm, Encoding.ASCII.GetBytes("data")) : 36;
+            var sampleLength = BitConverter.ToInt32(pcm, ckIDPosition + 4) / 2;
 
             // Convert to sample data
             var samples = new float[sampleLength];
+            var headerLength = ckIDPosition + 8;    // ckID 4 + len 4
             for (var i = 0; i < sampleLength; i++)
             {
-                samples[i] = (float)BitConverter.ToInt16(pcm, i * 2 + 44) / UInt16.MaxValue;
+                samples[i] = (float)BitConverter.ToInt16(pcm, i * 2 + headerLength) / UInt16.MaxValue;
             }
 
             // Create AudioClip
             var audioClip = AudioClip.Create(name, sampleLength, channels, sampleRate, false);
             audioClip.SetData(samples, 0);
             return audioClip;
+        }
+
+        // Some voice generator returns the wave with variable length headers :(
+        public static int PatternAt(byte[] source, byte[] pattern)
+        {
+            for (int i = 0; i < source.Length; i++)
+            {
+                if (source.Skip(i).Take(pattern.Length).SequenceEqual(pattern))
+                {
+                    return i;
+                }
+            }
+            return -1;
         }
     }
 }
