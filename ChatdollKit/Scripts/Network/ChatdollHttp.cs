@@ -24,7 +24,7 @@ namespace ChatdollKit.Network
         // Get
         public async UniTask<ChatdollHttpResponse> GetAsync(string url, Dictionary<string, string> parameters = null, Dictionary<string, string> headers = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            return await SendRequestAsync(url, "GET", null, headers, parameters);
+            return await SendRequestAsync(url, "GET", null, headers, parameters, cancellationToken);
         }
 
         // Get and parse JSON response
@@ -32,7 +32,7 @@ namespace ChatdollKit.Network
         {
             var response = await SendRequestAsync(url, "GET", null, headers, parameters, cancellationToken);
             DebugFunc?.Invoke($"Response JSON: {response.Data}");
-            return JsonConvert.DeserializeObject<TResponse>((string)response.Data);
+            return JsonConvert.DeserializeObject<TResponse>(response.Text);
         }
 
         // Post form data as Key-Values
@@ -45,8 +45,8 @@ namespace ChatdollKit.Network
         public async UniTask<TResponse> PostFormAsync<TResponse>(string url, Dictionary<string, string> data, Dictionary<string, string> headers = null, Dictionary<string, string> parameters = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             var response = await PostFormAsync(url, data, headers, parameters, cancellationToken);
-            DebugFunc?.Invoke($"Response JSON: {(string)response.Data}");
-            return JsonConvert.DeserializeObject<TResponse>((string)response.Data);
+            DebugFunc?.Invoke($"Response JSON: {response.Text}");
+            return JsonConvert.DeserializeObject<TResponse>(response.Text);
         }
 
         // Post binary data
@@ -61,8 +61,8 @@ namespace ChatdollKit.Network
             DebugFunc?.Invoke($"data size: {data.Length}");
 
             var response = await PostBytesAsync(url, data, headers, parameters, cancellationToken);
-            DebugFunc?.Invoke($"Response JSON: {(string)response.Data}");
-            return JsonConvert.DeserializeObject<TResponse>((string)response.Data);
+            DebugFunc?.Invoke($"Response JSON: {response.Text}");
+            return JsonConvert.DeserializeObject<TResponse>(response.Text);
         }
 
         // Post JSON data
@@ -84,8 +84,8 @@ namespace ChatdollKit.Network
                 headers.Add("Content-Type", "application/json");
             }
             var response = await PostJsonAsync(url, data, headers, parameters, cancellationToken);
-            DebugFunc?.Invoke($"Response JSON: {(string)response.Data}");
-            return JsonConvert.DeserializeObject<TResponse>((string)response.Data);
+            DebugFunc?.Invoke($"Response JSON: {response.Text}");
+            return JsonConvert.DeserializeObject<TResponse>(response.Text);
         }
 
         // Send http request
@@ -170,7 +170,7 @@ namespace ChatdollKit.Network
 
                 // TODO: Enable to switch to get response data as bytes/text
                 //var responseData = request.downloadHandler.data;
-                return new ChatdollHttpResponse((int)request.responseCode, request.GetResponseHeaders(), request.downloadHandler.text);
+                return new ChatdollHttpResponse((int)request.responseCode, request.GetResponseHeaders(), request.downloadHandler.data, request.downloadHandler.text);
             }
         }
 
@@ -185,13 +185,15 @@ namespace ChatdollKit.Network
     {
         public int StatusCode;
         public Dictionary<string, string> Headers;
-        public object Data;
+        public byte[] Data;
+        public string Text;
 
-        public ChatdollHttpResponse(int statusCode, Dictionary<string, string> headers, object data)
+        public ChatdollHttpResponse(int statusCode, Dictionary<string, string> headers, byte[] data, string text)
         {
             StatusCode = statusCode;
             Headers = headers;
             Data = data;
+            Text = text;
         }
     }
 }
