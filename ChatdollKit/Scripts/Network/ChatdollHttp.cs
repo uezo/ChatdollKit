@@ -35,6 +35,20 @@ namespace ChatdollKit.Network
             return JsonConvert.DeserializeObject<TResponse>(response.Text);
         }
 
+        // Delete
+        public async UniTask<ChatdollHttpResponse> DeleteAsync(string url, Dictionary<string, string> parameters = null, Dictionary<string, string> headers = null, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            return await SendRequestAsync(url, "DELETE", null, headers, parameters, cancellationToken);
+        }
+
+        // Delete and parse JSON response
+        public async UniTask<TResponse> DeleteJsonAsync<TResponse>(string url, Dictionary<string, string> parameters = null, Dictionary<string, string> headers = null, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            var response = await SendRequestAsync(url, "DELETE", null, headers, parameters, cancellationToken);
+            DebugFunc?.Invoke($"Response JSON: {response.Data}");
+            return JsonConvert.DeserializeObject<TResponse>(response.Text);
+        }
+
         // Post form data as Key-Values
         public async UniTask<ChatdollHttpResponse> PostFormAsync(string url, Dictionary<string, string> data, Dictionary<string, string> headers = null, Dictionary<string, string> parameters = null, CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -68,22 +82,64 @@ namespace ChatdollKit.Network
         // Post JSON data
         public async UniTask<ChatdollHttpResponse> PostJsonAsync(string url, object data, Dictionary<string, string> headers = null, Dictionary<string, string> parameters = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var json = JsonConvert.SerializeObject(data);
-            return await SendRequestAsync(url, "POST", json, headers, parameters, cancellationToken);
+            return await SendJsonAsync(url, "POST", data, headers, parameters, cancellationToken);
         }
 
         // Post JSON data and parse JSON response
         public async UniTask<TResponse> PostJsonAsync<TResponse>(string url, object data, Dictionary<string, string> headers = null, Dictionary<string, string> parameters = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            if (headers == null)
-            {
-                headers = new Dictionary<string, string>();
-            }
+            return await SendJsonAsync<TResponse>(url, "POST", data, headers, parameters, cancellationToken);
+        }
+
+        // Patch JSON data
+        public async UniTask<ChatdollHttpResponse> PatchJsonAsync(string url, object data, Dictionary<string, string> headers = null, Dictionary<string, string> parameters = null, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            return await SendJsonAsync(url, "PATCH", data, headers, parameters, cancellationToken);
+        }
+
+        // Patch JSON data and parse JSON response
+        public async UniTask<TResponse> PatchJsonAsync<TResponse>(string url, object data, Dictionary<string, string> headers = null, Dictionary<string, string> parameters = null, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            return await SendJsonAsync<TResponse>(url, "PATCH", data, headers, parameters, cancellationToken);
+        }
+
+        // Put JSON data
+        public async UniTask<ChatdollHttpResponse> PutJsonAsync(string url, object data, Dictionary<string, string> headers = null, Dictionary<string, string> parameters = null, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            return await SendJsonAsync(url, "PUT", data, headers, parameters, cancellationToken);
+        }
+
+        // Put JSON data and parse JSON response
+        public async UniTask<TResponse> PutJsonAsync<TResponse>(string url, object data, Dictionary<string, string> headers = null, Dictionary<string, string> parameters = null, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            return await SendJsonAsync<TResponse>(url, "PUT", data, headers, parameters, cancellationToken);
+        }
+        // Send JSON data
+        public async UniTask<ChatdollHttpResponse> SendJsonAsync(string url, string method, object data, Dictionary<string, string> headers = null, Dictionary<string, string> parameters = null, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            headers = headers == null ? new Dictionary<string, string>() : headers;
             if (!headers.ContainsKey("Content-Type"))
             {
                 headers.Add("Content-Type", "application/json");
             }
-            var response = await PostJsonAsync(url, data, headers, parameters, cancellationToken);
+
+            var json = JsonConvert.SerializeObject(data);
+            return await SendRequestAsync(url, method, json, headers, parameters, cancellationToken);
+        }
+
+        // Send JSON data and parse JSON response
+        public async UniTask<TResponse> SendJsonAsync<TResponse>(string url, string method, object data, Dictionary<string, string> headers = null, Dictionary<string, string> parameters = null, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            headers = headers == null ? new Dictionary<string, string>() : headers;
+            if (!headers.ContainsKey("Content-Type"))
+            {
+                headers.Add("Content-Type", "application/json");
+            }
+
+            var json = JsonConvert.SerializeObject(data);
+
+            var response = await SendRequestAsync(url, method, json, headers, parameters, cancellationToken);
+
             DebugFunc?.Invoke($"Response JSON: {response.Text}");
             return JsonConvert.DeserializeObject<TResponse>(response.Text);
         }
@@ -168,8 +224,6 @@ namespace ChatdollKit.Network
                     throw new Exception($"Error: {request.error} \n {request.downloadHandler.text}");
                 }
 
-                // TODO: Enable to switch to get response data as bytes/text
-                //var responseData = request.downloadHandler.data;
                 return new ChatdollHttpResponse((int)request.responseCode, request.GetResponseHeaders(), request.downloadHandler.data, request.downloadHandler.text);
             }
         }
