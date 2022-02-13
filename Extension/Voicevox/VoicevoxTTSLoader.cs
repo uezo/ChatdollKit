@@ -1,9 +1,11 @@
-﻿using System.Text;
+﻿using System.Collections.Generic;
+using System.Text;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.Networking;
 using Cysharp.Threading.Tasks;
 using ChatdollKit.Model;
+using ChatdollKit.IO;
 
 namespace ChatdollKit.Extension.Voicevox
 {
@@ -52,47 +54,48 @@ namespace ChatdollKit.Extension.Voicevox
         {
             if (token.IsCancellationRequested) { return null; };
 
-            var audio_query = string.Empty;
-            using (var www = UnityWebRequest.Post(EndpointUrl + $"/audio_query?speaker={(decimal)Speaker}&text={UnityWebRequest.EscapeURL(voice.Text, Encoding.UTF8)}", ""))
-            {
-                www.timeout = Timeout;
-                www.downloadHandler = new DownloadHandlerBuffer();
-                await www.SendWebRequest().ToUniTask();
+            // Convert text to query for TTS from VOICEVOX server
+            var queryResp = await client.PostFormAsync(
+                EndpointUrl + $"/audio_query?speaker={(decimal)Speaker}&text={UnityWebRequest.EscapeURL(voice.Text, Encoding.UTF8)}",
+                new Dictionary<string, string>(), cancellationToken: token);
 
-                if (www.isNetworkError || www.isHttpError)
-                {
-                    Debug.LogError($"Error occured while processing voicevox get-query: {www.error}");
-                    return null;
-                }
-                else if (www.isDone)
-                {
-                    audio_query = www.downloadHandler.text;
-                }
-            }
+            var audioQuery = queryResp.Text;
 
-            if (string.IsNullOrEmpty(audio_query))
+            if (string.IsNullOrEmpty(audioQuery))
             {
                 Debug.LogError("Query for VOICEVOX is empty");
                 return null;
             }
-            if (Speaker == SpeakerName.四国めたん)
-            {
-                audio_query = audio_query.Replace("\"speedScale\":1.0", "\"speedScale\":0.9");
-            }
 
-            using (var www = UnityWebRequestMultimedia.GetAudioClip(EndpointUrl + $"/synthesis?speaker={(decimal)Speaker}", AudioType.WAV))
+            if (token.IsCancellationRequested) { return null; };
+
+            // Get audio data from VOICEBOX server
+            var url = EndpointUrl + $"/synthesis?speaker={(decimal)Speaker}";
+            var headers = new Dictionary<string, string>() { { "Content-Type", "application/json" } };
+            var data = Encoding.UTF8.GetBytes(audioQuery);
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+            return await DownloadAudioClipWebGLAsync(url, data, headers, token);
+#else
+            return await DownloadAudioClipNativeAsync(url, data, headers, token);
+#endif
+        }
+
+        protected async UniTask<AudioClip> DownloadAudioClipNativeAsync(string url, byte[] data, Dictionary<string, string> headers, CancellationToken token)
+        {
+            using (var www = UnityWebRequestMultimedia.GetAudioClip(url, AudioType.WAV))
             {
                 www.timeout = Timeout;
                 www.method = "POST";
 
                 // Header
-                www.SetRequestHeader("Content-Type", "application/json");
+                www.SetRequestHeader("Content-Type", headers["Content-Type"]);
 
                 // Body
-                www.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(audio_query));
+                www.uploadHandler = new UploadHandlerRaw(data);
 
                 // Send request
-                await www.SendWebRequest().ToUniTask();
+                await www.SendWebRequest();
 
                 if (www.isNetworkError || www.isHttpError)
                 {
@@ -104,6 +107,12 @@ namespace ChatdollKit.Extension.Voicevox
                 }
             }
             return null;
+        }
+
+        protected async UniTask<AudioClip> DownloadAudioClipWebGLAsync(string url, byte[] data, Dictionary<string, string> headers, CancellationToken token)
+        {
+            var audioResp = await client.PostBytesAsync(url, data, headers, cancellationToken: token);
+            return AudioConverter.PCMToAudioClip(audioResp.Data);
         }
     }
 }

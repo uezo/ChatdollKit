@@ -13,9 +13,16 @@ namespace ChatdollKit.Model
         public virtual string Name { get; } = string.Empty;
         public virtual bool IsDefault { get; set; } = false;
         public int Timeout = 10;
+        protected ChatdollHttp client;
 
         protected Dictionary<string, AudioClip> audioCache { get; set; } = new Dictionary<string, AudioClip>();
         protected Dictionary<string, UniTask<AudioClip>> audioDownloadTasks { get; set; } = new Dictionary<string, UniTask<AudioClip>>();
+
+        protected virtual void Start()
+        {
+            // Instantiate at Start() to allow user to update Timeout at Awake()
+            client = new ChatdollHttp(Timeout * 1000);
+        }
 
         public async UniTask<AudioClip> GetAudioClipAsync(Voice voice, CancellationToken cancellationToken)
         {
@@ -41,7 +48,7 @@ namespace ChatdollKit.Model
             audioDownloadTasks[voice.CacheKey] = DownloadAudioClipAsync(voice, cancellationToken).Preserve();
             await WaitDownloadCancellable(audioDownloadTasks[voice.CacheKey], cancellationToken);
 
-            if (audioDownloadTasks[voice.CacheKey].GetAwaiter().IsCompleted)
+            if (audioDownloadTasks.ContainsKey(voice.CacheKey) && audioDownloadTasks[voice.CacheKey].GetAwaiter().IsCompleted)
             {
                 var clip = audioDownloadTasks[voice.CacheKey].GetAwaiter().GetResult();
                 if (clip != null && clip.length > 0)
