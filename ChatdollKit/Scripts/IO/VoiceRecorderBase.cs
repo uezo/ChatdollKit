@@ -16,6 +16,7 @@ namespace ChatdollKit.IO
         // Status and timestamp
         public bool IsListening { get; private set; }
         public bool IsRecording { get; private set; }
+        public bool IsDetectingVoice { get; private set; }
         public bool IsEnabled;
         private float lastVoiceDetectedTime;
         private float recordingStartTime;
@@ -54,6 +55,7 @@ namespace ChatdollKit.IO
                 recordedData.AddRange(capturedData.Data);
                 if (capturedData.MaxVolume > voiceDetectionThreshold && capturedData.MaxVolume < voiceDetectionMaxThreshold)
                 {
+                    IsDetectingVoice = true;
                     onDetectVoice?.Invoke(capturedData.MaxVolume);
 
                     // Start or continue recording when the volume of captured sound is larger than threshold
@@ -69,6 +71,7 @@ namespace ChatdollKit.IO
                 }
                 else
                 {
+                    IsDetectingVoice = false;
                     if (IsRecording)
                     {
                         if (Time.time - lastVoiceDetectedTime >= silenceDurationToEndRecording)
