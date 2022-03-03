@@ -37,8 +37,6 @@ namespace ChatdollKit.Extension.Google
         public string Gender = "FEMALE";
         public string SpeakerName = "ja-JP-Standard-A";
 
-        private ChatdollHttp client = new ChatdollHttp();
-
         public void Configure(string apiKey, string language, string gender, string speakerName, bool overwrite = false)
         {
             ApiKey = string.IsNullOrEmpty(ApiKey) || overwrite ? apiKey : ApiKey;
