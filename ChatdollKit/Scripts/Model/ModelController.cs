@@ -65,6 +65,11 @@ namespace ChatdollKit.Model
             animator = gameObject.GetComponent<Animator>();
             blinkTokenSource = new CancellationTokenSource();
 
+            if (SkinnedMeshRenderer == null)
+            {
+                Debug.LogWarning("SkinnedMeshRenderer for face expression is not set to ModelController");
+            }
+
             // Load at Await() to overwrite at Start()
             LoadFaces();
 
