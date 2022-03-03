@@ -25,6 +25,10 @@ namespace ChatdollKit.Model
         {
             Name = name;
             Values = new List<BlendShapeValue>();
+            if (skinnedMeshRenderer == null)
+            {
+                return;
+            }
             for (var i = 0; i < skinnedMeshRenderer.sharedMesh.blendShapeCount; i++)
             {
                 var blendShapeName = skinnedMeshRenderer.sharedMesh.GetBlendShapeName(i);
