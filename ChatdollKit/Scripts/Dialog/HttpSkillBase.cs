@@ -30,6 +30,7 @@ namespace ChatdollKit.Dialog
             var httpSkillResponse = await httpClient.PostJsonAsync<HttpSkillResponse>(Uri, new HttpSkillRequest(request, state));
 
             // Update topic
+            state.Topic.Name = httpSkillResponse.State.Topic.Name;
             state.Topic.Status = httpSkillResponse.State.Topic.Status;
             state.Topic.IsFinished = httpSkillResponse.State.Topic.IsFinished;
             state.Topic.RequiredRequestType = httpSkillResponse.State.Topic.RequiredRequestType;
