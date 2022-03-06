@@ -9,9 +9,9 @@ namespace ChatdollKit.Dialog
     public class SimpleMessageWindow : MessageWindowBase
     {
         private Text MessageText;
-        public float MessageSpeed = 0.05f;
-        public float PreGap = 0.2f;
-        public float PostGap = 1.0f;
+        public float MessageSpeed = 0.03f;
+        public float PreGap = 0.1f;
+        public float PostGap = 0.7f;
         private string CurrentMessageId;
 
         public override void Show(string prompt = null)
