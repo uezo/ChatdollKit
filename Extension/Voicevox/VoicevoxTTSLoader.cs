@@ -13,8 +13,23 @@ namespace ChatdollKit.Extension.Voicevox
     {
         public enum SpeakerName
         {
-            四国めたん = 0,
-            ずんだもん = 1
+            四国めたん_あまあま = 0,
+            四国めたん_ノーマル = 2,
+            四国めたん_ツンツン = 6,
+            四国めたん_セクシー = 4,
+
+            ずんだもん_あまあま = 1,
+            ずんだもん_ノーマル = 3,
+            ずんだもん_ツンツン = 7,
+            ずんだもん_セクシー = 5,
+
+            春日部つむぎ_ノーマル = 8,
+            雨晴はう_ノーマル = 10,
+            波音リツ_ノーマル = 9,
+            玄野武宏_ノーマル = 11,
+            白上虎太郎_ノーマル = 12,
+            青山龍星_ノーマル = 13,
+            冥鳴ひまり_ノーマル = 14,
         }
 
         public override VoiceLoaderType Type { get; } = VoiceLoaderType.TTS;
@@ -41,7 +56,7 @@ namespace ChatdollKit.Extension.Voicevox
         public string EndpointUrl;
 
         [Header("Voice Settings")]
-        public SpeakerName Speaker = SpeakerName.四国めたん;
+        public SpeakerName Speaker = SpeakerName.雨晴はう_ノーマル;
 
         public void Configure(string endpointUrl, bool overwrite = false)
         {
