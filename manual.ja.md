@@ -1,6 +1,6 @@
 ﻿# ChatdollKit マニュアル
 
-version 0.3.2 | November 19, 2021 | &copy;2020 uezo | [🇬🇧English version](https://github.com/uezo/ChatdollKit/blob/master/manual.md)
+version 0.4.0 | March 26, 2022 | &copy;2020 uezo | [🇬🇧English version](https://github.com/uezo/ChatdollKit/blob/master/manual.md)
 
 
 - [セットアップ](#セットアップ)
@@ -72,8 +72,8 @@ Echoアプリケーションを動かすまでの基本的なセットアップ�
 ## パッケージのインポート
 
 - ChatdollKit
-- [JSON.NET for Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347)
 - [OVR LipSync](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/)
+- Unity 2019以前の場合のみ [JSON.NET for Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347)
 
 ## リソースの準備
 

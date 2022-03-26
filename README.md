@@ -3,6 +3,9 @@ ChatdollKit enables you to make your 3D model into a voice-enabled chatbot.
 
 [🇯🇵日本語のREADMEはこちら](https://github.com/uezo/ChatdollKit/blob/master/README.ja.md)
 
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit-overview.png" width="720">
+
+
 # ✨ Features
 
 - Model
@@ -22,15 +25,13 @@ ChatdollKit enables you to make your 3D model into a voice-enabled chatbot.
 
 ... and more! See [ChatdollKit Documentation](https://github.com/uezo/ChatdollKit/blob/master/manual.md) to learn details.
 
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit-overview.png" width="720">
-
 # 🥳 Run Demo
 
 We provide the demo that runs out-of-the-box even if you are too busy to walk through Quick Start below and don't have any API keys for speech services.👍
 
-1. Import dependencies [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347) and [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/)
-1. Import [Anime Girls Idle Animations Free](https://assetstore.unity.com/packages/3d/animations/anime-girl-idle-animations-free-150406) for idle motions
-1. Import [ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases) and [ChatdollKit_Demo.unitypackage](https://github.com/uezo/ChatdollKit/releases)
+1. Import dependencies: [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/). And, if you use Unity 2019 or ealier import [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347).
+1. Import motions: [Anime Girls Idle Animations Free](https://assetstore.unity.com/packages/3d/animations/anime-girl-idle-animations-free-150406)
+1. Import ChatdollKit: [ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases) and [ChatdollKit_Demo.unitypackage](https://github.com/uezo/ChatdollKit/releases)
 1. Open scene `Assets/ChatdollKit/Demo/DemoOOTB` and start application
 1. Press `Start chat` button on the inspector of `ChatdollApplication` attached to the 3D model, and input and send request message (e.g. 今日はいい天気ですね)
 
@@ -42,8 +43,9 @@ If you have API keys for Azure / Google / Watson speech service, open `Asset/Dem
 You can learn how to setup ChatdollKit by watching this 2 minutes video: https://www.youtube.com/watch?v=aJ0iDZ0o4Es
 
 1. 📦Import packages
-    - Import [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347) and [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/)
+    - Import [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/)
     - Import [ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases)
+    - For Unity 2019 or ealier: Import [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347) 
 
 1. 🐟Resource preparation
     - Import 3D model and put it on the scene
@@ -58,8 +60,8 @@ You can learn how to setup ChatdollKit by watching this 2 minutes video: https:/
 
 Download the latest version of [ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases) and import it into your Unity project after import dependencies;
 
-- [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347)
 - [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/)
+- Unity 2019 or ealier: [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347)
 
 If you want to create [Gatebox](https://www.gatebox.ai/en/) application also import [ChatdollKit Gatebox Extension](https://github.com/uezo/ChatdollKit/releases).
 
@@ -138,9 +140,24 @@ See the `MultiDialog` example. That is more rich application including:
 We are now preparing contents to create more rich virtual assistant using ChatdollKit.
 
 
+# 🌐 Run on WebGL
+
+Refer to the following tips for now. We are preparing demo for WebGL.
+
+- It takes 5-10 minutes to build. (It depends on machine spec)
+- Very hard to debug. Error message doesn't show the stacktrace: `To use dlopen, you need to use Emscripten’s linking support, see https://github.com/kripken/emscripten/wiki/Linking` 
+- Built-in Async/Await doesn't work (app stops at `await`) because JavaScript doesn't support threading. Use [UniTask](https://github.com/Cysharp/UniTask) included in ChatdollKit.
+- CORS required for HTTP requests.
+- Microphone is not supported. Use `ChatdollMicrophone` that is compatible with WebGL.
+- Compressed audio formats like MP3 are not supported. Use WAV in TTS Loaders.
+- OVRLipSync is not supported. Use [uLipSync](https://github.com/hecomi/uLipSync) and [uLipSyncWebGL](https://github.com/uezo/uLipSyncWebGL) instead.
+- If you want to show multibyte characters in message window put the font that includes multibyte characters to your project and set it to message windows.
+
+
 # ❤️ Thanks
 
 - [Tsukuyomi-chan 3D model](https://tyc.rei-yumesaki.net/) (3D model for demo) (c)[Rei Yumesaki](https://twitter.com/TYC_Project)
+- [uLipSync](https://github.com/hecomi/uLipSync) (LipSync) (c)[hecomi](https://twitter.com/hecomi)
 - [VOICEVOX](https://voicevox.hiroshiba.jp) (Text-to-Speech service for demo) (c)[Hiroshiba](https://twitter.com/hiho_karuta)
 - [Shikoku Metan and Zundamon](https://zunko.jp/con_voice.html) (Voice for demo, used in VOICEVOX TTS loader)
 
