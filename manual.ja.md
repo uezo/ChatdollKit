@@ -71,9 +71,10 @@ Echoアプリケーションを動かすまでの基本的なセットアップ�
 
 ## パッケージのインポート
 
-- ChatdollKit
-- [OVR LipSync](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/)
-- Unity 2019以前の場合のみ [JSON.NET for Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347)
+- [UniTask](https://github.com/Cysharp/UniTask)(Ver.2.3.1)
+- [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/)(v29)
+- [ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases)
+- Unity 2019以前の場合のみ [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347) 
 
 ## リソースの準備
 
