@@ -34,7 +34,7 @@ mergeInto(LibraryManager.library, {
                 document.webGLMicrophone.source = source;
                 document.webGLMicrophone.isRecording = 1;
 
-                console.log('record started by uezo new logic');
+                console.log("WebGLMicrophone started recording");
             })
             .catch(function(err) {
                 console.log("Failed in GetUserMedia: " + error);
