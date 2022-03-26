@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
-using System.Threading.Tasks;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 using ChatdollKit.IO;
 using ChatdollKit.Model;
 using ChatdollKit.Network;
@@ -37,13 +37,6 @@ namespace ChatdollKit.Extension.Google
         public string Gender = "FEMALE";
         public string SpeakerName = "ja-JP-Standard-A";
 
-        private ChatdollHttp client = new ChatdollHttp();
-
-        private void OnDestroy()
-        {
-            client?.Dispose();
-        }
-
         public void Configure(string apiKey, string language, string gender, string speakerName, bool overwrite = false)
         {
             ApiKey = string.IsNullOrEmpty(ApiKey) || overwrite ? apiKey : ApiKey;
@@ -52,7 +45,7 @@ namespace ChatdollKit.Extension.Google
             SpeakerName = string.IsNullOrEmpty(SpeakerName) || overwrite ? speakerName : SpeakerName;
         }
 
-        protected override async Task<AudioClip> DownloadAudioClipAsync(Voice voice, CancellationToken token)
+        protected override async UniTask<AudioClip> DownloadAudioClipAsync(Voice voice, CancellationToken token)
         {
             if (token.IsCancellationRequested) { return null; };
 

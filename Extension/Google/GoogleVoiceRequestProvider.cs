@@ -1,5 +1,5 @@
-﻿using System.Threading.Tasks;
-using UnityEngine;
+﻿using UnityEngine;
+using Cysharp.Threading.Tasks;
 using ChatdollKit.Dialog;
 using ChatdollKit.IO;
 
@@ -18,7 +18,7 @@ namespace ChatdollKit.Extension.Google
             Language = string.IsNullOrEmpty(Language) || overwrite ? language : Language;
         }
 
-        protected override async Task<string> RecognizeSpeechAsync(AudioClip recordedVoice)
+        protected override async UniTask<string> RecognizeSpeechAsync(VoiceRecorderResponse recordedVoice)
         {
             if (string.IsNullOrEmpty(ApiKey) || string.IsNullOrEmpty(Language))
             {
@@ -27,22 +27,21 @@ namespace ChatdollKit.Extension.Google
 
             var response = await client.PostJsonAsync<SpeechRecognitionResponse>(
                 $"https://speech.googleapis.com/v1/speech:recognize?key={ApiKey}",
-                new SpeechRecognitionRequest(recordedVoice, Language, UseEnhancedModel));
+                new SpeechRecognitionRequest(recordedVoice.Voice, Language, UseEnhancedModel, recordedVoice.SamplingData));
 
             return response?.results?[0]?.alternatives?[0]?.transcript ?? string.Empty;
         }
 
-#pragma warning disable CS0649
         // Models for request and response
         class SpeechRecognitionRequest
         {
             public SpeechRecognitionConfig config;
             public SpeechRecognitionAudio audio;
 
-            public SpeechRecognitionRequest(AudioClip audioClip, string languageCode, bool useEnhancedModel)
+            public SpeechRecognitionRequest(AudioClip audioClip, string languageCode, bool useEnhancedModel, float[] samplingData = null)
             {
                 config = new SpeechRecognitionConfig(audioClip, languageCode, useEnhancedModel);
-                audio = new SpeechRecognitionAudio(AudioConverter.AudioClipToBase64(audioClip));
+                audio = new SpeechRecognitionAudio(AudioConverter.AudioClipToBase64(audioClip, samplingData));
             }
         }
 

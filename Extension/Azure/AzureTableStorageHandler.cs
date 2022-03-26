@@ -7,7 +7,7 @@ using ChatdollKit.Network;
 
 namespace ChatdollKit.Extension.Azure
 {
-    public class AzureTableStorageHandler : IDisposable
+    public class AzureTableStorageHandler
     {
         public string StorageURI;
         public LogType MinLevel;
@@ -66,11 +66,6 @@ namespace ChatdollKit.Extension.Azure
 
             // Send request
             await client.PostJsonAsync(StorageURI, logJson, headers);
-        }
-
-        public void Dispose()
-        {
-            client?.Dispose();
         }
     }
 }

@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Threading;
-using System.Threading.Tasks;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 
 namespace ChatdollKit.IO
 {
     public class ShortPhraseListener : VoiceRecorderBase
     {
         public bool AutoStart = true;
-        public Func<string, Task> OnRecognizedAsync;
+        public Func<string, UniTask> OnRecognizedAsync;
 
         [Header("Test and Debug")]
         public bool PrintResult = false;
@@ -53,7 +53,7 @@ namespace ChatdollKit.IO
             voiceDetectionThreshold = ShouldRaiseThreshold() ? VoiceDetectionRaisedThreshold : VoiceDetectionThreshold;
         }
 
-        protected virtual async Task StartListeningAsync()
+        protected virtual async UniTask StartListeningAsync()
         {
             if (IsListening)
             {
@@ -86,7 +86,7 @@ namespace ChatdollKit.IO
                         if (voiceRecorderResponse.Voice.length <= VoiceRecognitionMaximumLength)
                         {
 #pragma warning disable CS4014
-                            ProcessVoiceAsync(voiceRecorderResponse.Voice); // Do not await to continue listening
+                            ProcessVoiceAsync(voiceRecorderResponse); // Do not await to continue listening
 #pragma warning restore CS4014
                         }
                     }
@@ -103,7 +103,7 @@ namespace ChatdollKit.IO
         }
 
 #pragma warning disable CS1998
-        protected virtual async Task ProcessVoiceAsync(AudioClip voice)
+        protected virtual async UniTask ProcessVoiceAsync(VoiceRecorderResponse voiceRecorderResponse)
         {
 
         }

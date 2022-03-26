@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using UnityEngine;
-
+using Cysharp.Threading.Tasks;
 
 namespace ChatdollKit.IO
 {
@@ -17,12 +16,14 @@ namespace ChatdollKit.IO
         // Status and timestamp
         public bool IsListening { get; private set; }
         public bool IsRecording { get; private set; }
+        public bool IsDetectingVoice { get; private set; }
         public bool IsEnabled;
         private float lastVoiceDetectedTime;
         private float recordingStartTime;
 
         // Runtime configurations
         protected float voiceDetectionThreshold;
+        protected float voiceDetectionMaxThreshold = 0.7f;
         protected float voiceDetectionMinimumLength;
         protected float silenceDurationToEndRecording;
         protected Action onListeningStart;
@@ -52,8 +53,9 @@ namespace ChatdollKit.IO
 
                 // Handle recorded voice
                 recordedData.AddRange(capturedData.Data);
-                if (capturedData.MaxVolume > voiceDetectionThreshold)
+                if (capturedData.MaxVolume > voiceDetectionThreshold && capturedData.MaxVolume < voiceDetectionMaxThreshold)
                 {
+                    IsDetectingVoice = true;
                     onDetectVoice?.Invoke(capturedData.MaxVolume);
 
                     // Start or continue recording when the volume of captured sound is larger than threshold
@@ -69,6 +71,7 @@ namespace ChatdollKit.IO
                 }
                 else
                 {
+                    IsDetectingVoice = false;
                     if (IsRecording)
                     {
                         if (Time.time - lastVoiceDetectedTime >= silenceDurationToEndRecording)
@@ -79,14 +82,8 @@ namespace ChatdollKit.IO
                             var recordedLength = recordedData.Count / (float)(capturedData.Frequency * capturedData.ChannelCount) - silenceDurationToEndRecording;
                             if (recordedLength >= voiceDetectionMinimumLength)
                             {
-                                // Create AudioClip and copy recorded data
-                                var audioClip = AudioClip.Create(string.Empty, recordedData.Count, capturedData.ChannelCount, capturedData.Frequency, false);
-                                audioClip.SetData(recordedData.ToArray(), 0);
-
-                                // Give reference of audio clip to all audiences
-                                lastRecordedVoice = new VoiceRecorderResponse() { RecordingStartedAt = recordingStartTime, Voice = audioClip };
-
-                                onRecordingEnd?.Invoke(audioClip);
+                                lastRecordedVoice = new VoiceRecorderResponse(recordingStartTime, recordedData, capturedData.ChannelCount, capturedData.Frequency);
+                                onRecordingEnd?.Invoke(lastRecordedVoice.Voice);
                             }
                             else
                             {
@@ -137,7 +134,7 @@ namespace ChatdollKit.IO
             onListeningStop?.Invoke();
         }
 
-        public async Task<VoiceRecorderResponse> GetVoiceAsync(float timeout, CancellationToken token)
+        public async UniTask<VoiceRecorderResponse> GetVoiceAsync(float timeout, CancellationToken token)
         {
             try
             {
@@ -159,7 +156,7 @@ namespace ChatdollKit.IO
                     {
                         return lastRecordedVoice;
                     }
-                    await Task.Delay(10);
+                    await UniTask.Delay(10);
                 }
             }
             catch (Exception ex)
@@ -179,5 +176,14 @@ namespace ChatdollKit.IO
     {
         public float RecordingStartedAt { get; set; }
         public AudioClip Voice { get; set; }
+        public float[] SamplingData { get; set; }
+
+        public VoiceRecorderResponse(float recordingStartedAt, List<float> samplingDataList, int channelCount, int frequency)
+        {
+            RecordingStartedAt = recordingStartedAt;
+            SamplingData = samplingDataList.ToArray();
+            Voice = AudioClip.Create(string.Empty, samplingDataList.Count, channelCount, frequency, false);
+            Voice.SetData(SamplingData, 0);
+        }
     }
 }

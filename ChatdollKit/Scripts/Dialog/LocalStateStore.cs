@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Threading.Tasks;
 using System.IO;
 using UnityEngine;
 using Newtonsoft.Json;
-
+using Cysharp.Threading.Tasks;
 
 namespace ChatdollKit.Dialog
 {
@@ -18,7 +17,7 @@ namespace ChatdollKit.Dialog
         }
 
         // Get state from file
-        public async Task<State> GetStateAsync(string userId)
+        public async UniTask<State> GetStateAsync(string userId)
         {
             var filePath = Path.Combine(saveDirectory, $"state_{userId}.json");
             if (!File.Exists(filePath))
@@ -59,7 +58,7 @@ namespace ChatdollKit.Dialog
         }
 
         // Save state to file
-        public async Task SaveStateAsync(State state)
+        public async UniTask SaveStateAsync(State state)
         {
             var filePath = Path.Combine(saveDirectory, $"state_{state.UserId}.json");
             var jsonString = JsonConvert.SerializeObject(state);
@@ -71,7 +70,7 @@ namespace ChatdollKit.Dialog
 
 #pragma warning disable CS1998
         // Delete state by removing file
-        public async Task DeleteStateAsync(string userId)
+        public async UniTask DeleteStateAsync(string userId)
         {
             var filePath = Path.Combine(saveDirectory, $"state_{userId}.json");
             if (File.Exists(filePath))

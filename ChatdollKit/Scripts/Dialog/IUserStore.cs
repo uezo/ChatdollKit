@@ -1,12 +1,11 @@
-﻿using System.Threading.Tasks;
-
+﻿using Cysharp.Threading.Tasks;
 
 namespace ChatdollKit.Dialog
 {
     public interface IUserStore
     {
-        Task<User> GetUserAsync(string userId);
-        Task SaveUserAsync(User user);
-        Task DeleteUserAsync(string userId);
+        UniTask<User> GetUserAsync(string userId);
+        UniTask SaveUserAsync(User user);
+        UniTask DeleteUserAsync(string userId);
     }
 }

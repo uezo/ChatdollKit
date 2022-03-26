@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
-using System.Threading.Tasks;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 using ChatdollKit.Dialog;
 using ChatdollKit.IO;
 
@@ -20,7 +20,7 @@ namespace ChatdollKit.Extension.Azure
             Region = string.IsNullOrEmpty(Region) || overwrite ? region : Region;
         }
 
-        protected override async Task<string> RecognizeSpeechAsync(AudioClip recordedVoice)
+        protected override async UniTask<string> RecognizeSpeechAsync(VoiceRecorderResponse recordedVoice)
         {
             if (string.IsNullOrEmpty(ApiKey) || string.IsNullOrEmpty(Region) || string.IsNullOrEmpty(Language))
             {
@@ -36,13 +36,12 @@ namespace ChatdollKit.Extension.Azure
             // https://docs.microsoft.com/ja-jp/azure/cognitive-services/speech-service/rest-speech-to-text#chunked-transfer
             var response = await client.PostBytesAsync<SpeechRecognitionResponse>(
                 $"https://{Region}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language={Language}",
-                AudioConverter.AudioClipToPCM(recordedVoice),
+                AudioConverter.AudioClipToPCM(recordedVoice.Voice, recordedVoice.SamplingData),
                 headers);
 
             return response?.DisplayText ?? string.Empty;
         }
 
-#pragma warning disable CS0649
         // Response from Azure STT
         class SpeechRecognitionResponse
         {

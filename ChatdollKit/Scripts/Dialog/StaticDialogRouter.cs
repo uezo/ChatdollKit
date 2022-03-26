@@ -1,13 +1,13 @@
 ﻿using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 
 namespace ChatdollKit.Dialog
 {
     public class StaticSkillRouter : SkillRouterBase
     {
 #pragma warning disable CS1998
-        public override async Task<IntentExtractionResult> ExtractIntentAsync(Request request, State state, CancellationToken token)
+        public override async UniTask<IntentExtractionResult> ExtractIntentAsync(Request request, State state, CancellationToken token)
         {
             if (topicResolver.Count == 1)
             {

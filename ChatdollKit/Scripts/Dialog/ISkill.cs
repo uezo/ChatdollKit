@@ -1,5 +1,5 @@
 ﻿using System.Threading;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 
 namespace ChatdollKit.Dialog
 {
@@ -7,9 +7,9 @@ namespace ChatdollKit.Dialog
     {
         string TopicName { get; }
         bool IsAvailable { get; }
-        Task<Response> PreProcessAsync(Request request, State state, CancellationToken token);
-        Task ShowWaitingAnimationAsync(Response response, Request request, State state, CancellationToken token);
-        Task<Response> ProcessAsync(Request request, State state, CancellationToken token);
-        Task ShowResponseAsync(Response response, Request request, State state, CancellationToken token);
+        UniTask<Response> PreProcessAsync(Request request, State state, CancellationToken token);
+        UniTask ShowWaitingAnimationAsync(Response response, Request request, State state, CancellationToken token);
+        UniTask<Response> ProcessAsync(Request request, State state, CancellationToken token);
+        UniTask ShowResponseAsync(Response response, Request request, State state, CancellationToken token);
     }
 }

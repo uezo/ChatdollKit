@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
-
 
 namespace ChatdollKit.Dialog
 {
@@ -15,9 +14,9 @@ namespace ChatdollKit.Dialog
         public Topic Topic { get; set; }
         public Dictionary<string, object> Data { get; set; }
         [JsonIgnore]
-        public Func<State, Task> saveFunc { get; set; }
+        public Func<State, UniTask> saveFunc { get; set; }
 
-        public State(string userId, string id = null, Func<State, Task> saveFunc = null)
+        public State(string userId, string id = null, Func<State, UniTask> saveFunc = null)
         {
             Id = id == null ? Guid.NewGuid().ToString() : id;
             UserId = userId;
@@ -34,9 +33,9 @@ namespace ChatdollKit.Dialog
             Data = new Dictionary<string, object>();
         }
 
-        public async Task SaveAsync()
+        public async UniTask SaveAsync()
         {
-            await saveFunc?.Invoke(this);
+            await saveFunc.Invoke(this);
         }
     }
 

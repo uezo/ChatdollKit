@@ -1,6 +1,6 @@
 ﻿# ChatdollKit Documentation
 
-version 0.3.2 | November 19, 2021 | &copy;2020 uezo | [🇯🇵Japanese version](https://github.com/uezo/ChatdollKit/blob/master/manual.ja.md)
+version 0.4.0 | March 26, 2022 | &copy;2020 uezo | [🇯🇵Japanese version](https://github.com/uezo/ChatdollKit/blob/master/manual.ja.md)
 
 - [Setup](#Setup)
     - [Import packages](#Import-packages)
@@ -72,9 +72,10 @@ In this section you can get how to build a Chatdoll with your own custom skill. 
 
 ## Import packages
 
-- ChatdollKit
-- [JSON.NET for Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347)
-- [OVR LipSync](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/)
+- [UniTask](https://github.com/Cysharp/UniTask)(Ver.2.3.1)
+- [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/)(v29)
+- [ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases)
+- Only for Unity 2019 or ealier: [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347) 
 
 ## Prepare resources
 

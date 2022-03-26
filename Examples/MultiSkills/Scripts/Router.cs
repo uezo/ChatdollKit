@@ -1,5 +1,5 @@
 ﻿using System.Threading;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using ChatdollKit.Dialog;
 
@@ -20,7 +20,7 @@ namespace ChatdollKit.Examples.MultiSkills
 
         // Extract intent and entities from request and state
 #pragma warning disable CS1998
-        public override async Task<IntentExtractionResult> ExtractIntentAsync(Request request, State state, CancellationToken token)
+        public override async UniTask<IntentExtractionResult> ExtractIntentAsync(Request request, State state, CancellationToken token)
         {
             if (request.Text.Contains(WeatherKeyword))
             {

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Threading;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using ChatdollKit.Network;
 
 namespace ChatdollKit.Dialog
@@ -10,12 +10,7 @@ namespace ChatdollKit.Dialog
         public string Uri;
         protected ChatdollHttp httpClient = new ChatdollHttp();
 
-        private void OnDestroy()
-        {
-            httpClient?.Dispose();
-        }
-
-        public override async Task<Response> PreProcessAsync(Request request, State state, CancellationToken token)
+        public override async UniTask<Response> PreProcessAsync(Request request, State state, CancellationToken token)
         {
             var httpSkillResponse = await httpClient.PostJsonAsync<HttpSkillResponse>(Uri, new HttpSkillRequest(request, state, true));
 
@@ -30,11 +25,12 @@ namespace ChatdollKit.Dialog
         }
 
         // Process skill on server
-        public override async Task<Response> ProcessAsync(Request request, State state, CancellationToken token)
+        public override async UniTask<Response> ProcessAsync(Request request, State state, CancellationToken token)
         {
             var httpSkillResponse = await httpClient.PostJsonAsync<HttpSkillResponse>(Uri, new HttpSkillRequest(request, state));
 
             // Update topic
+            state.Topic.Name = httpSkillResponse.State.Topic.Name;
             state.Topic.Status = httpSkillResponse.State.Topic.Status;
             state.Topic.IsFinished = httpSkillResponse.State.Topic.IsFinished;
             state.Topic.RequiredRequestType = httpSkillResponse.State.Topic.RequiredRequestType;

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 using ChatdollKit.Network;
 
 namespace ChatdollKit.Model
@@ -13,11 +13,18 @@ namespace ChatdollKit.Model
         public virtual string Name { get; } = string.Empty;
         public virtual bool IsDefault { get; set; } = false;
         public int Timeout = 10;
+        protected ChatdollHttp client;
 
         protected Dictionary<string, AudioClip> audioCache { get; set; } = new Dictionary<string, AudioClip>();
-        protected Dictionary<string, Task<AudioClip>> audioDownloadTasks { get; set; } = new Dictionary<string, Task<AudioClip>>();
+        protected Dictionary<string, UniTask<AudioClip>> audioDownloadTasks { get; set; } = new Dictionary<string, UniTask<AudioClip>>();
 
-        public async Task<AudioClip> GetAudioClipAsync(Voice voice, CancellationToken cancellationToken)
+        protected virtual void Start()
+        {
+            // Instantiate at Start() to allow user to update Timeout at Awake()
+            client = new ChatdollHttp(Timeout * 1000);
+        }
+
+        public async UniTask<AudioClip> GetAudioClipAsync(Voice voice, CancellationToken cancellationToken)
         {
             if (IsLoading(voice))
             {
@@ -38,11 +45,12 @@ namespace ChatdollKit.Model
             }
 
             // Start download when download in not in progress and cache doesn't exist
-            audioDownloadTasks[voice.CacheKey] = DownloadAudioClipAsync(voice, cancellationToken);
+            audioDownloadTasks[voice.CacheKey] = DownloadAudioClipAsync(voice, cancellationToken).Preserve();
             await WaitDownloadCancellable(audioDownloadTasks[voice.CacheKey], cancellationToken);
-            if (audioDownloadTasks[voice.CacheKey].IsCompleted)
+
+            if (audioDownloadTasks.ContainsKey(voice.CacheKey) && audioDownloadTasks[voice.CacheKey].GetAwaiter().IsCompleted)
             {
-                var clip = audioDownloadTasks[voice.CacheKey].Result;
+                var clip = audioDownloadTasks[voice.CacheKey].GetAwaiter().GetResult();
                 if (clip != null && clip.length > 0)
                 {
                     // Cache once regardless of UseCache to enable PreFetch
@@ -60,20 +68,23 @@ namespace ChatdollKit.Model
         }
 
 #pragma warning disable CS1998
-        protected virtual async Task<AudioClip> DownloadAudioClipAsync(Voice voice, CancellationToken cancellationToken)
+        protected virtual async UniTask<AudioClip> DownloadAudioClipAsync(Voice voice, CancellationToken cancellationToken)
         {
             throw new NotImplementedException("DownloadAudioClipAsync must be implemented");
         }
 #pragma warning restore CS1998
 
-        protected async Task WaitDownloadCancellable(Task<AudioClip> downloadTask, CancellationToken cancellationToken)
+        protected async UniTask WaitDownloadCancellable(UniTask<AudioClip> downloadTask, CancellationToken cancellationToken)
         {
             // NOTE: downloadTask continues (= IsLoading() is true) after cancel because it doesn't have cancellation token
 
             if (cancellationToken.IsCancellationRequested) { return; };
 
-            var cancellableTask = Task.Delay(Timeout * 1000, cancellationToken);
-            await Task.WhenAny(downloadTask, cancellableTask);  // WhenAny doesn't throw TaskCanceledException
+            var cancellableTask = UniTask.Delay(Timeout * 1000, cancellationToken: cancellationToken);
+            if (!downloadTask.GetAwaiter().IsCompleted)
+            {
+                await UniTask.WhenAny(downloadTask, cancellableTask);  // WhenAny doesn't throw OperationCanceledException
+            }
         }
 
         public bool HasCache(Voice voice)
@@ -86,7 +97,7 @@ namespace ChatdollKit.Model
             if (audioDownloadTasks.ContainsKey(voice.CacheKey))
             {
                 var task = audioDownloadTasks[voice.CacheKey];
-                if (task.Status < TaskStatus.RanToCompletion)
+                if (task.GetAwaiter().IsCompleted)
                 {
                     return true;
                 }

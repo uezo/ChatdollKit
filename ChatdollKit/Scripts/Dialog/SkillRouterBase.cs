@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using UnityEngine;
-using ChatdollKit.Model;
+using Cysharp.Threading.Tasks;
 
 namespace ChatdollKit.Dialog
 {
@@ -33,7 +32,7 @@ namespace ChatdollKit.Dialog
         }
 
 #pragma warning disable CS1998
-        public virtual async Task<IntentExtractionResult> ExtractIntentAsync(Request request, State state, CancellationToken token)
+        public virtual async UniTask<IntentExtractionResult> ExtractIntentAsync(Request request, State state, CancellationToken token)
         {
             throw new NotImplementedException("SkillRouterBase.ProcessAsync must be implemented");
         }

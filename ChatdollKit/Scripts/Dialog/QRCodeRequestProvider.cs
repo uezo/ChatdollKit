@@ -1,9 +1,7 @@
-﻿using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Threading;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 using ChatdollKit.IO;
-
 
 namespace ChatdollKit.Dialog
 {
@@ -15,7 +13,7 @@ namespace ChatdollKit.Dialog
         public ChatdollCamera ChatdollCamera;
 
         // Create request using voice recognition
-        public async Task<Request> GetRequestAsync(User user, State state, CancellationToken token, Request preRequest = null)
+        public async UniTask<Request> GetRequestAsync(User user, State state, CancellationToken token, Request preRequest = null)
         {
             var request = preRequest ?? new Request(RequestType);
             request.User = user;

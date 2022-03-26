@@ -1,9 +1,10 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.Networking;
+using Cysharp.Threading.Tasks;
 using ChatdollKit.Model;
-using ChatdollKit.Network;
+using ChatdollKit.IO;
 
 namespace ChatdollKit.Extension.Azure
 {
@@ -47,7 +48,7 @@ namespace ChatdollKit.Extension.Azure
             Region = string.IsNullOrEmpty(Region) || overwrite ? region : Region;
         }
 
-        protected override async Task<AudioClip> DownloadAudioClipAsync(Voice voice, CancellationToken token)
+        protected override async UniTask<AudioClip> DownloadAudioClipAsync(Voice voice, CancellationToken token)
         {
             if (token.IsCancellationRequested) { return null; };
 
@@ -57,22 +58,41 @@ namespace ChatdollKit.Extension.Azure
             }
 
             var url = $"https://{Region}.tts.speech.microsoft.com/cognitiveservices/v1";
+
+            var headers = new Dictionary<string, string>()
+            {
+                { "X-Microsoft-OutputFormat", AudioType == AudioType.MPEG ? "audio-16khz-32kbitrate-mono-mp3" : "riff-16khz-16bit-mono-pcm" },    // MP3 or Wave
+                { "Content-Type", "application/ssml+xml" },
+                { "Ocp-Apim-Subscription-Key", ApiKey }
+            };
+
+            var ttsLanguage = voice.GetTTSParam("language") as string ?? Language;
+            var ttsGender = voice.GetTTSParam("gender") as string ?? Gender;
+            var ttsSpeakerName = voice.GetTTSParam("speakerName") as string ?? SpeakerName;
+            var text = $"<speak version='1.0' xml:lang='{ttsLanguage}'><voice xml:lang='{ttsLanguage}' xml:gender='{ttsGender}' name='{ttsSpeakerName}'>{voice.Text}</voice></speak>";
+            var data = System.Text.Encoding.UTF8.GetBytes(text);
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+            return await DownloadAudioClipWebGLAsync(url, data, headers, token);
+#else
+            return await DownloadAudioClipNativeAsync(url, data, headers, token);
+#endif
+        }
+
+        protected async UniTask<AudioClip> DownloadAudioClipNativeAsync(string url, byte[] data, Dictionary<string, string> headers, CancellationToken token)
+        {
             using (var www = UnityWebRequestMultimedia.GetAudioClip(url, AudioType))
             {
                 www.timeout = Timeout;
                 www.method = "POST";
 
                 // Header
-                www.SetRequestHeader("X-Microsoft-OutputFormat", AudioType == AudioType.MPEG ? "audio-16khz-32kbitrate-mono-mp3" : "riff-16khz-16bit-mono-pcm");
-                www.SetRequestHeader("Content-Type", "application/ssml+xml");
-                www.SetRequestHeader("Ocp-Apim-Subscription-Key", ApiKey);
+                www.SetRequestHeader("X-Microsoft-OutputFormat", headers["X-Microsoft-OutputFormat"]);
+                www.SetRequestHeader("Content-Type", headers["Content-Type"]);
+                www.SetRequestHeader("Ocp-Apim-Subscription-Key", headers["Ocp-Apim-Subscription-Key"]);
 
                 // Body
-                var ttsLanguage = voice.GetTTSParam("language") as string ?? Language;
-                var ttsGender = voice.GetTTSParam("gender") as string ?? Gender;
-                var ttsSpeakerName = voice.GetTTSParam("speakerName") as string ?? SpeakerName;
-                var text = $"<speak version='1.0' xml:lang='{ttsLanguage}'><voice xml:lang='{ttsLanguage}' xml:gender='{ttsGender}' name='{ttsSpeakerName}'>{voice.Text}</voice></speak>";
-                www.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(text));
+                www.uploadHandler = new UploadHandlerRaw(data);
 
                 // Send request
                 await www.SendWebRequest();
@@ -87,6 +107,12 @@ namespace ChatdollKit.Extension.Azure
                 }
             }
             return null;
+        }
+
+        protected async UniTask<AudioClip> DownloadAudioClipWebGLAsync(string url, byte[] data, Dictionary<string, string> headers, CancellationToken token)
+        {
+            var resp = await client.PostBytesAsync(url, data, headers, cancellationToken: token);
+            return AudioConverter.PCMToAudioClip(resp.Data, searchDataChunk: true);
         }
     }
 }

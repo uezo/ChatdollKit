@@ -3,6 +3,8 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 
 [🇬🇧English version is here](https://github.com/uezo/ChatdollKit/blob/master/README.ja.md)
 
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit-overview.png" width="720">
+
 # ✨ 主な特長
 
 - モデル制御
@@ -22,13 +24,11 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 
 ... などなど！
 
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit-overview.png" width="720">
-
 # 🥳 デモの実行
 
 クイックスタートを試す時間のない方やスピーチサービスのAPIをお持ちでない方のために、すぐに実行可能なデモを提供しています。👍
 
-1. 依存ライブラリの [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347) と [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/) をインポート
+1. 依存ライブラリの [UniTask](https://github.com/Cysharp/UniTask)(Ver.2.3.1) と [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/)(v29) をインポート。Unity 2019以前の場合は[JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347) もインポート。
 1. アイドルモーション用に [Anime Girls Idle Animations Free](https://assetstore.unity.com/packages/3d/animations/anime-girl-idle-animations-free-150406) もインポート
 1. ChatdollKit本体 [ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases) とデモパッケージ [ChatdollKit_Demo.unitypackage](https://github.com/uezo/ChatdollKit/releases) をインポート
 1. シーン `Assets/ChatdollKit/Demo/DemoOOTB` を開いて実行
@@ -42,8 +42,10 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 セットアップ手順についてはこちらの2分程度の動画をご覧いただくとより簡単に理解できます: https://www.youtube.com/watch?v=aJ0iDZ0o4Es
 
 1. 📦パッケージのインポート
-    - [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347) と [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/) のインポート
-    - [ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases) のインポート
+    - [UniTask](https://github.com/Cysharp/UniTask)(Ver.2.3.1)
+    - [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/)(v29)
+    - [ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases)
+    - Unity 2019以前の場合のみ [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347)
 
 1. 🐟リソースの準備
     - 3Dモデルをインポートしてシーンに追加
@@ -51,8 +53,8 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
     - [Azure Speech Services](https://azure.microsoft.com/ja-jp/services/cognitive-services/speech-services/)、[Google Cloud Speech API](https://cloud.google.com/speech-to-text/) または [Watson](https://cloud.ibm.com/) のAPIキーの取得
 
 1. 🍣セットアップ
-    - おうむ返し（Echo）のExampleを3Dモデルに追加してインスペクターでAPIキーなどを設定
-    - インスペクターのコンテキストメニューから`Setup ModelController`と`Setup Animator`を実行
+    - おうむ返し（Echo）のExampleを3Dモデルに追加して `MainAzure` / `MainGoogle` / `MainWatson` のインスペクターでAPIキーなどを設定
+    - `ModelController` のインスペクターのコンテキストメニューから`Setup ModelController`と`Setup Animator`を実行
 
 本READMEのほか、[ChatdollKit マニュアル](https://github.com/uezo/ChatdollKit/blob/master/manual.ja.md)に各機能の網羅的な説明がありますので参照ください。
 
@@ -61,8 +63,9 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 
 最新版の [ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases) をダウンロードして、任意のUnityプロジェクトにインポートしてください。また、以下の依存ライブラリもインポートが必要です。
 
-- [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347)
-- [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/)
+- [UniTask](https://github.com/Cysharp/UniTask)(Ver.2.3.1)
+- [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/)(v29)
+- Unity 2019以前の場合のみ [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347)
 
 [Gatebox](https://www.gatebox.ai/)アプリを作る場合、ChatdollKitのリリースパッケージと一緒に公開されている[ChatdollKit Gatebox Extension](https://github.com/uezo/ChatdollKit/releases)もインポートしてください。
 
@@ -136,6 +139,20 @@ Examplesに同梱の`MultiDialog`の実装サンプルを確認ください。
 - 対話の処理：`TranslateDialog`をみると、リクエスト文言を利用して翻訳APIを叩き、結果を応答する一連の例が実装されています
 
 ChatdollKitを利用した複雑で実用的なバーチャルアシスタントの開発方法については、現在コンテンツを準備中です。
+
+
+# 🌐 WebGLでの実行
+
+さしあたっては以下のTipsを参考にしてください。加えてWebGL用のデモを公開予定です。
+
+- ビルドに5-10分くらいかかる。（マシンスペックによる）
+- デバッグがとても大変。どこでエラーが起きたのか、ログには表示されない: `To use dlopen, you need to use Emscripten’s linking support, see https://github.com/kripken/emscripten/wiki/Linking` 
+- C#標準の Async/Await が利用できない（そこでコードが止まる）。JavaScriptがシングルスレッドなことに依存していると思われる。かわりに [UniTask](https://github.com/Cysharp/UniTask) を利用しましょう
+- WebGLアプリのホスト先と異なるドメインとHTTP通信するにはCORSへの対応が必要
+- Unity標準のマイクは動作しない。ネイティブ・WebGL双方で意識せず利用できる`ChatdollMicrophone`を使いましょう
+- MP3などの圧縮音源の再生ができない。TTSLoader（読み上げ）のフォーマットをWaveにしましょう
+- OVRLipSyncが動作しない。かわりに [uLipSync](https://github.com/hecomi/uLipSync) と [uLipSyncWebGL](https://github.com/uezo/uLipSyncWebGL) との組み合わせを使いましょう
+- 日本語等のマルチバイト文字を表示したいとき、それが含まれるフォントをプロジェクトに同梱する必要がある。メッセージウィンドウが標準でArialなので、これをM+など別のものに変更しましょう
 
 
 # ❤️ 謝辞
