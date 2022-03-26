@@ -1,14 +1,15 @@
 {
     "name": "ChatdollKit",
     "references": [
-        "LipSync"
+        "GUID:f51ebe6a0ceec4240a699833d6309b23"
     ],
-    "optionalUnityReferences": [],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,
-    "defineConstraints": []
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }
