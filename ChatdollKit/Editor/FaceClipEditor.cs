@@ -117,20 +117,21 @@ public class FaceClipEditor : Editor
                 if (!string.IsNullOrEmpty(currentFaceName.Trim()))
                 {
                     // Update or add to list
-                    var faceToUpdate = faceClips.Where(f => f.Name == currentFaceName).FirstOrDefault();
-                    if (faceToUpdate == null)
+                    var faceIndexToUpdate = faceClips.Select(f => f.Name).ToList().IndexOf(currentFaceName);
+                    if (faceIndexToUpdate > -1)
                     {
-                        faceClips.Add(new FaceClip(currentFaceName, skinnedMeshRenderer));
+                        faceClips[faceIndexToUpdate] = new FaceClip(currentFaceName, skinnedMeshRenderer);
                     }
                     else
                     {
-                        faceToUpdate = new FaceClip(currentFaceName, skinnedMeshRenderer);
+                        faceClips.Add(new FaceClip(currentFaceName, skinnedMeshRenderer));
                     }
 
                     // Select item
                     selectedFaceIndex = faceClips.Select(f => f.Name).ToList().IndexOf(currentFaceName);
 
                     // Save to asset
+                    modelController.FaceClipConfiguration.FaceClips = faceClips;
                     EditorUtility.SetDirty(modelController.FaceClipConfiguration);
                     AssetDatabase.SaveAssets();
                 }
