@@ -81,9 +81,11 @@ namespace ChatdollKit.IO
                     onError = OnError;
 
                     var voiceRecorderResponse = await GetVoiceAsync(0.0f, token);
-                    if (voiceRecorderResponse != null && voiceRecorderResponse.Voice != null)
+                    if (voiceRecorderResponse != null)
                     {
-                        if (voiceRecorderResponse.Voice.length <= VoiceRecognitionMaximumLength)
+                        if (!string.IsNullOrEmpty(voiceRecorderResponse.Text) ||
+                            (voiceRecorderResponse.Voice != null && voiceRecorderResponse.Voice.length <= VoiceRecognitionMaximumLength)
+                        )
                         {
 #pragma warning disable CS4014
                             ProcessVoiceAsync(voiceRecorderResponse); // Do not await to continue listening
