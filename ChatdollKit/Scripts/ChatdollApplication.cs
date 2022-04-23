@@ -278,13 +278,19 @@ namespace ChatdollKit
         // Send text to WakeWordListener instead of voice
         public virtual void SendWakeWord(string text)
         {
-            wakeWordListener.TextInput = text;
+            if (wakeWordListener != null)
+            {
+                wakeWordListener.TextInput = text;
+            }
         }
 
         // Send text to VoiceRequestProvider instead of voice
         public virtual void SendTextRequest(string text)
         {
-            voiceRequestProvider.TextInput = text;
+            if (voiceRequestProvider != null)
+            {
+                voiceRequestProvider.TextInput = text;
+            }
         }
 
         public virtual string GetConfigName()

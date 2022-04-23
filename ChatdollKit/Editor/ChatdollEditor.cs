@@ -11,6 +11,7 @@ namespace ChatdollKit
     public class ChatdollEditor : Editor
     {
         private string requestText = string.Empty;
+        private string wakewordText = string.Empty;
 
         public override void OnInspectorGUI()
         {
@@ -30,6 +31,17 @@ namespace ChatdollKit
                 if (GUILayout.Button("Stop Chat"))
                 {
                     app.StopChat();
+                }
+                GUILayout.EndHorizontal();
+
+                // Send wakeword button
+                GUILayout.BeginHorizontal();
+                wakewordText = EditorGUILayout.TextField(wakewordText);
+                if (GUILayout.Button("Send WakeWord"))
+                {
+                    app.SendWakeWord(wakewordText);
+                    wakewordText = string.Empty;
+                    GUI.FocusControl(string.Empty); // Remove focus to clear input field
                 }
                 GUILayout.EndHorizontal();
 

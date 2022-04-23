@@ -40,15 +40,26 @@ namespace ChatdollKit.Dialog
 
         protected override async UniTask ProcessVoiceAsync(VoiceRecorderResponse voiceRecorderResponse)
         {
-            // Recognize speech
-            var recognizedText = await RecognizeSpeechAsync(voiceRecorderResponse);
-            if (OnRecognizedAsync != null)
+            var recognizedText = string.Empty;
+            if (!string.IsNullOrEmpty(voiceRecorderResponse.Text))
             {
-                await OnRecognizedAsync(recognizedText);
+                recognizedText = voiceRecorderResponse.Text;
+                if (PrintResult)
+                {
+                    Debug.Log($"Text input(WakeWordListener): {recognizedText}");
+                }
             }
-            if (PrintResult)
+            else
             {
-                Debug.Log($"Recognized(WakeWordListener): {recognizedText}");
+                recognizedText = await RecognizeSpeechAsync(voiceRecorderResponse);
+                if (OnRecognizedAsync != null)
+                {
+                    await OnRecognizedAsync(recognizedText);
+                }
+                if (PrintResult)
+                {
+                    Debug.Log($"Recognized(WakeWordListener): {recognizedText}");
+                }
             }
 
             var extractedWakeWord = (ExtractWakeWord ?? ExtractWakeWordDefault).Invoke(recognizedText);
