@@ -3,9 +3,9 @@ using UnityEngine;
 using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
 
-namespace ChatdollKit.Dialog
+namespace ChatdollKit.Dialog.Processor
 {
-    public class MemoryUserStore : MonoBehaviour, IUserStore
+    public class MemoryUserStore : IUserStore
     {
         private Dictionary<string, User> users = new Dictionary<string, User>();
 

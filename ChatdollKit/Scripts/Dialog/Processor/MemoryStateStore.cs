@@ -4,9 +4,9 @@ using UnityEngine;
 using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
 
-namespace ChatdollKit.Dialog
+namespace ChatdollKit.Dialog.Processor
 {
-    public class MemoryStateStore : MonoBehaviour, IStateStore
+    public class MemoryStateStore : IStateStore
     {
         public int TimeoutSeconds = 300;
         private Dictionary<string, State> states = new Dictionary<string, State>();
@@ -24,23 +24,23 @@ namespace ChatdollKit.Dialog
                 {
                     // Create new state when timeout
                     Debug.Log("State created (Timeout)");
-                    state = new State(userId);
+                    return new State(userId);
                 }
                 else
                 {
-                    // Just update timestamp
+                    // Just update timestamp and IsNew
+                    Debug.Log("Using existing state");
                     state.UpdatedAt = DateTime.UtcNow;
+                    state.IsNew = false;
+                    // Return the deep copy of the state to avoid updating stored state directly
+                    return JsonConvert.DeserializeObject<State>(JsonConvert.SerializeObject(state));
                 }
             }
             else
             {
-                // Create and store new State
-                state = new State(userId);
-                states[userId] = state;
+                // Create new State
+                return new State(userId);
             }
-
-            // Return the deep copy of the state
-            return JsonConvert.DeserializeObject<State>(JsonConvert.SerializeObject(state));
         }
 
         public async UniTask SaveStateAsync(State state)

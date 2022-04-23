@@ -1,6 +1,7 @@
 ﻿using System.Threading;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
+
 namespace ChatdollKit.Dialog
 {
     // Unity2018 support (inspector does not support interface)

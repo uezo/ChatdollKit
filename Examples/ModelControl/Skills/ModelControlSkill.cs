@@ -1,13 +1,14 @@
 ﻿using System.Threading;
 using Cysharp.Threading.Tasks;
 using ChatdollKit.Dialog;
+using ChatdollKit.Dialog.Processor;
 
 namespace ChatdollKit.Examples.ModelControl
 {
     public class ModelControlSkill : SkillBase
     {
 #pragma warning disable CS1998
-        public override async UniTask<Response> ProcessAsync(Request request, State state, CancellationToken token)
+        public override async UniTask<Response> ProcessAsync(Request request, State state, User user, CancellationToken token)
         {
             // NOTE: Register "Smile", "Angry" and "Sad" facial expression before running this example
 

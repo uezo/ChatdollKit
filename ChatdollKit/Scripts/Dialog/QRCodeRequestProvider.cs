@@ -13,10 +13,9 @@ namespace ChatdollKit.Dialog
         public ChatdollCamera ChatdollCamera;
 
         // Create request using voice recognition
-        public async UniTask<Request> GetRequestAsync(User user, State state, CancellationToken token, Request preRequest = null)
+        public async UniTask<Request> GetRequestAsync(CancellationToken token)
         {
-            var request = preRequest ?? new Request(RequestType);
-            request.User = user;
+            var request = new Request(RequestType);
 
             if (ChatdollCamera != null)
             {

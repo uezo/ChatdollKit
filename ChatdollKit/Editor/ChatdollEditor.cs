@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEditor;
 using ChatdollKit.Dialog;
+using ChatdollKit.Dialog.Processor;
 using ChatdollKit.IO;
 using ChatdollKit.Model;
 
@@ -9,8 +10,7 @@ namespace ChatdollKit
     [CustomEditor(typeof(ChatdollApplication), true)]
     public class ChatdollEditor : Editor
     {
-        private GUIStyle headerStyle = new GUIStyle();
-        private string dummyText = string.Empty;
+        private string requestText = string.Empty;
 
         public override void OnInspectorGUI()
         {
@@ -34,13 +34,12 @@ namespace ChatdollKit
                 GUILayout.EndHorizontal();
 
                 // Send request button
-                app.voiceRequestProvider.UseDummy = EditorGUILayout.ToggleLeft("Send text request instead of voice", app.voiceRequestProvider.UseDummy);
                 GUILayout.BeginHorizontal();
-                dummyText = EditorGUILayout.TextField(dummyText);
-                if (GUILayout.Button("Send"))
+                requestText = EditorGUILayout.TextField(requestText);
+                if (GUILayout.Button("Send Request"))
                 {
-                    app.voiceRequestProvider.DummyText = dummyText;
-                    dummyText = string.Empty;
+                    app.SendTextRequest(requestText);
+                    requestText = string.Empty;
                     GUI.FocusControl(string.Empty); // Remove focus to clear input field
                 }
                 GUILayout.EndHorizontal();
@@ -91,9 +90,6 @@ namespace ChatdollKit
 
             // Voice loaders
             DestroyComponents(gameObject.GetComponents<IVoiceLoader>());
-
-            // Prompter
-            DestroyComponents(gameObject.GetComponents<HttpPrompter>());
 
             // Router
             DestroyComponents(gameObject.GetComponents<ISkillRouter>());

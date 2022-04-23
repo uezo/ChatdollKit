@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
 
-namespace ChatdollKit.Dialog
+namespace ChatdollKit.Dialog.Processor
 {
     public class State
     {
@@ -44,15 +44,11 @@ namespace ChatdollKit.Dialog
         public string Name { get; set; }
         public string Status { get; set; }
         public bool IsFirstTurn { get; set; }
-        public bool IsFinished { get; set; }
         public Priority Priority { get; set; }
-        public RequestType RequiredRequestType { get; set; }
 
         public Topic()
         {
             IsFirstTurn = true;
-            IsFinished = true;
-            RequiredRequestType = RequestType.Voice;
         }
     }
 }

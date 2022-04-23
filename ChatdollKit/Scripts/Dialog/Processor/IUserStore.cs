@@ -1,6 +1,6 @@
 ﻿using Cysharp.Threading.Tasks;
 
-namespace ChatdollKit.Dialog
+namespace ChatdollKit.Dialog.Processor
 {
     public interface IUserStore
     {

@@ -18,8 +18,6 @@ namespace ChatdollKit.Dialog
         public List<string> IgnoreWords = new List<string>() { "。", "、", "？", "！" };
 
         [Header("Test and Debug")]
-        public bool UseDummy = false;
-        public string DummyText = string.Empty;
         public bool PrintResult = false;
 
         [Header("Voice Recorder Settings")]
@@ -40,11 +38,11 @@ namespace ChatdollKit.Dialog
 
         // Actions for each status
 #pragma warning disable CS1998
-        public Func<Request, State, CancellationToken, UniTask> OnStartListeningAsync;
+        public Func<Request, CancellationToken, UniTask> OnStartListeningAsync;
         public Func<string, UniTask> OnRecognizedAsync;
-        public Func<Request, State, CancellationToken, UniTask> OnFinishListeningAsync;
-        public Func<Request, State, CancellationToken, UniTask> OnErrorAsync
-            = async (r, c, t) => { Debug.LogWarning("VoiceRequestProvider.OnErrorAsync is not implemented"); };
+        public Func<Request, CancellationToken, UniTask> OnFinishListeningAsync;
+        public Func<Request, CancellationToken, UniTask> OnErrorAsync
+            = async (r, t) => { Debug.LogWarning("VoiceRequestProvider.OnErrorAsync is not implemented"); };
 #pragma warning restore CS1998
 
         // Private and protected members for recording voice and recognize task
@@ -52,7 +50,7 @@ namespace ChatdollKit.Dialog
         protected ChatdollHttp client = new ChatdollHttp();
 
 #pragma warning disable CS1998
-        private async UniTask OnStartListeningDefaultAsync(Request request, State state, CancellationToken token)
+        private async UniTask OnStartListeningDefaultAsync(Request request, CancellationToken token)
         {
             if (MessageWindow != null)
             {
@@ -64,7 +62,7 @@ namespace ChatdollKit.Dialog
             }
         }
 
-        private async UniTask OnFinishListeningDefaultAsync(Request request, State state, CancellationToken token)
+        private async UniTask OnFinishListeningDefaultAsync(Request request, CancellationToken token)
         {
             if (MessageWindow != null)
             {
@@ -78,13 +76,9 @@ namespace ChatdollKit.Dialog
 #pragma warning restore CS1998
 
         // Create request using voice recognition
-        public async UniTask<Request> GetRequestAsync(User user, State state, CancellationToken token, Request preRequest = null)
+        public async UniTask<Request> GetRequestAsync(CancellationToken token)
         {
-            if (preRequest != null && !string.IsNullOrEmpty(preRequest.Text))
-            {
-                preRequest.User = user;
-                return preRequest;
-            }
+            var request = new Request(RequestType);
 
             voiceDetectionThreshold = VoiceDetectionThreshold;
             voiceDetectionMinimumLength = VoiceDetectionMinimumLength;
@@ -98,9 +92,6 @@ namespace ChatdollKit.Dialog
 
             StartListening();
 
-            var request = preRequest ?? new Request(RequestType);
-            request.User = user;
-
             try
             {
                 // Update RecognitionId
@@ -108,32 +99,27 @@ namespace ChatdollKit.Dialog
                 recognitionId = currentRecognitionId;
 
                 // Invoke action before start recognition
-                await (OnStartListeningAsync ?? OnStartListeningDefaultAsync).Invoke(request, state, token);
+                await (OnStartListeningAsync ?? OnStartListeningDefaultAsync).Invoke(request, token);
 
-                // For debugging and testing
-                if (UseDummy)
+                // Get voice from recorder
+                var voiceRecorderResponse = await GetVoiceAsync(ListeningTimeout, token);
+
+                // Exit if RecognitionId is updated by another request
+                if (recognitionId != currentRecognitionId)
                 {
-                    while (string.IsNullOrWhiteSpace(DummyText) && !token.IsCancellationRequested)
-                    {
-                        await UniTask.Delay(1);
-                    }
-                    if (!token.IsCancellationRequested)
-                    {
-                        await UniTask.Delay(1000);
-                        request.Text = DummyText;
-                    }
-                    DummyText = string.Empty;   // NOTE: Value on inspector will not be cleared
+                    Debug.Log($"Id was updated by another request: Current {currentRecognitionId} / Global {recognitionId}");
                 }
-                else
+                else if (voiceRecorderResponse != null)
                 {
-                    var voiceRecorderResponse = await GetVoiceAsync(ListeningTimeout, token);
-
-                    // Exit if RecognitionId is updated by another request
-                    if (recognitionId != currentRecognitionId)
+                    if (!string.IsNullOrEmpty(voiceRecorderResponse.Text))
                     {
-                        Debug.Log($"Id was updated by another request: Current {currentRecognitionId} / Global {recognitionId}");
+                        request.Text = voiceRecorderResponse.Text;
+                        if (PrintResult)
+                        {
+                            Debug.Log($"Text input(VoiceRequestProvider): {request.Text}");
+                        }
                     }
-                    else if (voiceRecorderResponse != null && voiceRecorderResponse.Voice != null)
+                    else if (voiceRecorderResponse.Voice != null)
                     {
                         request.Text = await RecognizeSpeechAsync(voiceRecorderResponse);
                         if (OnRecognizedAsync != null)
@@ -173,13 +159,13 @@ namespace ChatdollKit.Dialog
             catch (Exception ex)
             {
                 Debug.LogError($"Error occured in recognizing speech: {ex.Message}\n{ex.StackTrace}");
-                await OnErrorAsync(request, state, token);
+                await OnErrorAsync(request, token);
             }
             finally
             {
                 StopListening();
                 // Invoke action after recognition
-                await (OnFinishListeningAsync ?? OnFinishListeningDefaultAsync).Invoke(request, state, token);
+                await (OnFinishListeningAsync ?? OnFinishListeningDefaultAsync).Invoke(request, token);
             }
 
             return request;

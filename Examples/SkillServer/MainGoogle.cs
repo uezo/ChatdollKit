@@ -4,8 +4,6 @@ using ChatdollKit.Extension.Google;
 
 namespace ChatdollKit.Examples.SkillServer
 {
-    [RequireComponent(typeof(HttpPrompter))]
-    [RequireComponent(typeof(HttpSkillRouter))]
     public class MainGoogle : GoogleApplication
     {
         [Header("Application Language")]
@@ -28,22 +26,7 @@ namespace ChatdollKit.Examples.SkillServer
                 ? AppLanguage == EchoLanguage.Japanese ? "ja-JP" : "en-US"
                 : Language;
 
-            var prompter = GetComponent<HttpPrompter>();
-            prompter.PingUri = MakeUri(prompter.PingUri, "ping");
-            prompter.PromptUri = MakeUri(prompter.PromptUri, "prompt");
-
-            var router = GetComponent<HttpSkillRouter>();
-            router.SkillsUri = MakeUri(router.SkillsUri, "skills");
-            router.IntentExtractorUri = MakeUri(router.IntentExtractorUri, "intent");
-
             base.Awake();
-        }
-
-        private string MakeUri(string componentValue, string path)
-        {
-            return string.IsNullOrEmpty(componentValue)
-                ? ServerUrl.EndsWith("/") ? ServerUrl + path : ServerUrl + "/" + path
-                : componentValue;
         }
 
         public enum EchoLanguage
