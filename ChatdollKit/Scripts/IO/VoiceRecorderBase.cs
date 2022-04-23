@@ -33,6 +33,9 @@ namespace ChatdollKit.IO
         protected Action<AudioClip> onRecordingEnd;
         protected Action<Exception> onError;
 
+        // Testing and debugging
+        public string TextInput { get; set; }
+
         private void LateUpdate()
         {
             // Return if disabled or not listening
@@ -152,6 +155,12 @@ namespace ChatdollKit.IO
                     {
                         break; // Timeout
                     }
+                    if (!string.IsNullOrEmpty(TextInput))
+                    {
+                        var response = new VoiceRecorderResponse(TextInput);
+                        TextInput = string.Empty;
+                        return response;
+                    }
                     if (lastRecordedVoice != null && lastRecordedVoice.RecordingStartedAt > requestTimestamp)
                     {
                         return lastRecordedVoice;
@@ -177,6 +186,7 @@ namespace ChatdollKit.IO
         public float RecordingStartedAt { get; set; }
         public AudioClip Voice { get; set; }
         public float[] SamplingData { get; set; }
+        public string Text { get; set; }
 
         public VoiceRecorderResponse(float recordingStartedAt, List<float> samplingDataList, int channelCount, int frequency)
         {
@@ -184,6 +194,11 @@ namespace ChatdollKit.IO
             SamplingData = samplingDataList.ToArray();
             Voice = AudioClip.Create(string.Empty, samplingDataList.Count, channelCount, frequency, false);
             Voice.SetData(SamplingData, 0);
+        }
+
+        public VoiceRecorderResponse(string text)
+        {
+            Text = text;
         }
     }
 }

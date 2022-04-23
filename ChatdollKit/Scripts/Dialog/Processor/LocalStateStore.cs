@@ -4,7 +4,7 @@ using UnityEngine;
 using Newtonsoft.Json;
 using Cysharp.Threading.Tasks;
 
-namespace ChatdollKit.Dialog
+namespace ChatdollKit.Dialog.Processor
 {
     public class LocalStateStore : MonoBehaviour, IStateStore
     {
@@ -43,9 +43,10 @@ namespace ChatdollKit.Dialog
                 }
                 else
                 {
-                    // Just update timestamp
+                    // Just update timestamp and IsNew
                     Debug.Log("Using existing state");
                     state.UpdatedAt = DateTime.UtcNow;
+                    state.IsNew = false;
                     return state;
                 }
             }

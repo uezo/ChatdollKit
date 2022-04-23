@@ -60,12 +60,12 @@ namespace ChatdollKit.Extension.Gatebox
             {
                 if (dialogController.IsChatting)
                 {
-                    dialogController.StopChat();
+                    dialogController.StopDialog();
                 }
                 else
                 {
 #pragma warning disable CS4014
-                    dialogController.StartChatAsync(GetUserId());
+                    dialogController.StartDialogAsync(new Dialog.DialogRequest(GetUserId()));
 #pragma warning restore CS4014
                 }
             };

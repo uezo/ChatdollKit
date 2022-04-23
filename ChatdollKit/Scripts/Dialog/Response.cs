@@ -8,7 +8,6 @@ namespace ChatdollKit.Dialog
     {
         public string Id { get; }
         public DateTime CreatedAt { get; }
-        public string Text { get; set; }
         public List<AnimatedVoiceRequest> AnimatedVoiceRequests { get; set; }
         public AnimatedVoiceRequest AnimatedVoiceRequest
         {
@@ -22,12 +21,15 @@ namespace ChatdollKit.Dialog
             }
         }
         public virtual object Payloads { get; set; }
+        public bool EndTopic { get; set; } = true;
+        public bool EndConversation { get; set; } = false;
+        public RequestType NextTurnRequestType { get; set; } = RequestType.Voice;
+        public string SkillName { get; set; }
 
         public Response(string id)
         {
             Id = id;
             CreatedAt = DateTime.UtcNow;
-            Text = string.Empty;
             AnimatedVoiceRequests = new List<AnimatedVoiceRequest>();
             AnimatedVoiceRequests.Add(new AnimatedVoiceRequest());
         }

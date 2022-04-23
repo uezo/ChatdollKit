@@ -140,7 +140,7 @@ namespace ChatdollKit.Dialog
         public int SuffixAllowance = 4;
         public string Intent;
         public Priority IntentPriority = Priority.Normal;
-        public RequestType RequestType = RequestType.None;
+        public RequestType RequestType = RequestType.Voice;
         public int InlineRequestMinimumLength = 0;
         public string RecognizedText { get; private set; }
         public string InlineRequestText { get; private set; }

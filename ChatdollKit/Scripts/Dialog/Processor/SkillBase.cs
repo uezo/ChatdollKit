@@ -4,7 +4,7 @@ using UnityEngine;
 using Cysharp.Threading.Tasks;
 using ChatdollKit.Model;
 
-namespace ChatdollKit.Dialog
+namespace ChatdollKit.Dialog.Processor
 {
     public class SkillBase : MonoBehaviour, ISkill
     {
@@ -69,7 +69,7 @@ namespace ChatdollKit.Dialog
 
         // Process skill
 #pragma warning disable CS1998
-        public virtual async UniTask<Response> ProcessAsync(Request request, State state, CancellationToken token)
+        public virtual async UniTask<Response> ProcessAsync(Request request, State state, User user, CancellationToken token)
         {
             throw new NotImplementedException("SkillBase.ProcessAsync must be implemented");
         }

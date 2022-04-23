@@ -4,9 +4,9 @@ using System.Threading;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
 
-namespace ChatdollKit.Dialog
+namespace ChatdollKit.Dialog.Processor
 {
-    public class SkillRouterBase : MonoBehaviour, ISkillRouter
+    public class SkillRouterBase : ISkillRouter
     {
         protected Dictionary<string, ISkill> topicResolver = new Dictionary<string, ISkill>();
 
@@ -40,7 +40,7 @@ namespace ChatdollKit.Dialog
 
         public virtual ISkill Route(Request request, State state, CancellationToken token)
         {
-            if (shouldStartTopic(request, state))
+            if (ShouldStartTopic(request, state))
             {
                 if (!request.Intent.IsAdhoc)
                 {
@@ -60,10 +60,6 @@ namespace ChatdollKit.Dialog
                 else
                 {
                     // Do not update topic when request is adhoc
-                    if (!string.IsNullOrEmpty(state.Topic.Name))
-                    {
-                        state.Topic.IsFinished = false;
-                    }
                 }
 
                 return topicResolver[request.Intent.Name];
@@ -79,7 +75,7 @@ namespace ChatdollKit.Dialog
             }
         }
 
-        private bool shouldStartTopic(Request request, State state)
+        private bool ShouldStartTopic(Request request, State state)
         {
             if (!request.HasIntent())
             {

@@ -2,6 +2,7 @@
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using ChatdollKit.Dialog;
+using ChatdollKit.Dialog.Processor;
 using ChatdollKit.Network;
 
 namespace ChatdollKit.Examples.MultiSkills
@@ -19,7 +20,7 @@ namespace ChatdollKit.Examples.MultiSkills
             }
         }
 
-        public override async UniTask<Response> ProcessAsync(Request request, State state, CancellationToken token)
+        public override async UniTask<Response> ProcessAsync(Request request, State state, User user, CancellationToken token)
         {
             var response = new Response(request.Id);
 
@@ -35,7 +36,7 @@ namespace ChatdollKit.Examples.MultiSkills
             response.AddVoiceTTS((a3rtResponse?.results?[0]?.reply ?? string.Empty) + "。");
 
             // Set false to continue chatting after this response
-            state.Topic.IsFinished = false;
+            response.EndTopic = false;
 
             return response;
         }

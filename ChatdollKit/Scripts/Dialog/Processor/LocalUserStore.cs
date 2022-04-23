@@ -5,7 +5,7 @@ using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
 
 
-namespace ChatdollKit.Dialog
+namespace ChatdollKit.Dialog.Processor
 {
     public class LocalUserStore : MonoBehaviour, IUserStore
     {
