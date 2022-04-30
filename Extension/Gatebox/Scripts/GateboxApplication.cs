@@ -1,6 +1,7 @@
 ﻿using System;
 using UnityEngine;
 using com.gateboxlab.gateboxsdk;
+using ChatdollKit.Dialog;
 
 namespace ChatdollKit.Extension.Gatebox
 {
@@ -58,14 +59,14 @@ namespace ChatdollKit.Extension.Gatebox
             };
             OnGateboxButtonDoubleTap = () =>
             {
-                if (dialogController.IsChatting)
+                if (DialogController.IsChatting)
                 {
-                    dialogController.StopDialog();
+                    DialogController.StopDialog();
                 }
                 else
                 {
 #pragma warning disable CS4014
-                    dialogController.StartDialogAsync(new Dialog.DialogRequest(GetUserId()));
+                    DialogController.StartDialogAsync();
 #pragma warning restore CS4014
                 }
             };
@@ -75,6 +76,8 @@ namespace ChatdollKit.Extension.Gatebox
             OnHumanSensorLeftOff = () => { IsHumanSensorLeftOn = false; };
             OnHumanSensorRightOn = () => { IsHumanSensorRightOn = true; };
             OnHumanSensorRightOff = () => { IsHumanSensorRightOn = false; };
+
+            DialogController.GetClientId = () => { return GateboxDevices.GetCustomerID(); };
         }
 
         protected virtual void Start()
@@ -123,24 +126,18 @@ namespace ChatdollKit.Extension.Gatebox
             }
         }
 
-        protected override string GetUserId()
-        {
-            var gateboxCustomerId = GateboxDevices.GetCustomerID();
-            return !string.IsNullOrEmpty(gateboxCustomerId) ? gateboxCustomerId : base.GetUserId();
-        }
-
         protected virtual void SetLEDColors()
         {
             // Set LEDs Color for each status
-            if (dialogController.IsError)
+            if (DialogController.IsError)
             {
                 StageLED.SetColor(ErrorColor); StatusLED.SetColor(ErrorColor);
             }
-            else if (voiceRequestProvider.IsListening)
+            else if (((VoiceRequestProviderBase)DialogController.RequestProviders[RequestType.Voice]).IsListening)
             {
                 StageLED.SetColor(ListeningColor); StatusLED.SetColor(ListeningColor);
             }
-            else if (dialogController.IsChatting)
+            else if (DialogController.IsChatting)
             {
                 StageLED.SetColor(ChattingColor); StatusLED.SetColor(ChattingColor);
             }

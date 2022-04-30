@@ -1,43 +1,43 @@
 ﻿using UnityEngine;
-using ChatdollKit.Dialog;
+using ChatdollKit.Dialog.Processor;
 using ChatdollKit.Extension.Watson;
 
 namespace ChatdollKit.Examples.SkillServer
 {
+    [RequireComponent(typeof(RemoteRequestProcessor))]
     public class MainWatson : WatsonApplication
     {
-        [Header("Application Language")]
-        public EchoLanguage AppLanguage = EchoLanguage.Japanese;
+        [Header("Remote Request Processor")]
+        public string BaseUrl = string.Empty;
 
-        [Header("Server configurations")]
-        public string ServerUrl = "http://localhost:12345";
-
-        protected override void Awake()
+        protected override void OnComponentsReady()
         {
-            WakeWord = string.IsNullOrEmpty(WakeWord)
-                ? AppLanguage == EchoLanguage.Japanese ? "こんにちは" : "hello"
-                : WakeWord;
+            base.OnComponentsReady();
 
-            CancelWord = string.IsNullOrEmpty(CancelWord)
-                ? AppLanguage == EchoLanguage.Japanese ? "おしまい" : "finish"
-                : CancelWord;
-
-            STTModel = string.IsNullOrEmpty(STTModel)
-                ? AppLanguage == EchoLanguage.Japanese ? "ja-JP_BroadbandModel" : "en-US_BroadbandModel"
-                : STTModel;
-
-            STTRemoveWordSeparation = AppLanguage == EchoLanguage.Japanese ? true : false;
-
-            TTSSpeakerName = string.IsNullOrEmpty(TTSSpeakerName)
-                ? AppLanguage == EchoLanguage.Japanese ? "ja-JP_EmiV3Voice" : "en-US_EmilyV3Voice"
-                : TTSSpeakerName;
-
-            base.Awake();
+            GetComponent<RemoteRequestProcessor>().BaseUrl = BaseUrl;
         }
 
-        public enum EchoLanguage
+        public override ScriptableObject LoadConfig()
         {
-            Japanese, English
+            var config = base.LoadConfig();
+
+            if (config != null)
+            {
+                BaseUrl = ((WatsonRemoteApplicationConfig)config).BaseUrl;
+            }
+
+            return config;
+        }
+
+        public override ScriptableObject CreateConfig(ScriptableObject config = null)
+        {
+            var appConfig = config == null ? WatsonRemoteApplicationConfig.CreateInstance<WatsonRemoteApplicationConfig>() : (WatsonRemoteApplicationConfig)config;
+
+            appConfig.BaseUrl = BaseUrl;
+
+            base.CreateConfig(appConfig);
+
+            return appConfig;
         }
     }
 }

@@ -17,9 +17,27 @@ namespace ChatdollKit.Extension.Azure
         [Header("Remote Log")]
         public string LogTableUri;
 
-        protected override void OnComponentsReady(ScriptableObject config)
+        protected override void OnComponentsReady()
         {
-            // Apply configuraton to this app and its components
+            base.OnComponentsReady();
+
+            // Remote log
+            if (!string.IsNullOrEmpty(LogTableUri))
+            {
+                Debug.unityLogger.filterLogType = LogType.Warning;
+                var azureHandler = new AzureTableStorageHandler(LogTableUri, LogType.Warning);
+                Application.logMessageReceived += azureHandler.HandleLog;
+            }
+
+            GetComponent<AzureWakeWordListener>().Configure(ApiKey, Language, Region);
+            GetComponent<AzureVoiceRequestProvider>().Configure(ApiKey, Language, Region);
+            GetComponent<AzureTTSLoader>().Configure(ApiKey, Language, Gender, SpeakerName, Region);
+        }
+
+        public override ScriptableObject LoadConfig()
+        {
+            var config = base.LoadConfig();
+
             if (config != null)
             {
                 var appConfig = (AzureApplicationConfig)config;
@@ -31,24 +49,12 @@ namespace ChatdollKit.Extension.Azure
                 SpeakerName = appConfig.SpeakerName;
             }
 
-            // Remote log
-            if (!string.IsNullOrEmpty(LogTableUri))
-            {
-                Debug.unityLogger.filterLogType = LogType.Warning;
-                var azureHandler = new AzureTableStorageHandler(LogTableUri, LogType.Warning);
-                Application.logMessageReceived += azureHandler.HandleLog;
-            }
-
-            (wakeWordListener as AzureWakeWordListener)?.Configure(ApiKey, Language, Region);
-            (voiceRequestProvider as AzureVoiceRequestProvider)?.Configure(ApiKey, Language, Region);
-            (gameObject.GetComponent<AzureTTSLoader>())?.Configure(ApiKey, Language, Gender, SpeakerName, Region);
+            return config;
         }
 
         public override ScriptableObject CreateConfig(ScriptableObject config = null)
         {
-            var appConfig = (AzureApplicationConfig)base.CreateConfig(
-                config ?? ScriptableObject.CreateInstance<AzureApplicationConfig>()
-            );
+            var appConfig = config == null ? AzureApplicationConfig.CreateInstance<AzureApplicationConfig>() : (AzureApplicationConfig)config;
 
             appConfig.LogTableUri = LogTableUri;
             appConfig.SpeechApiKey = ApiKey;
@@ -56,6 +62,8 @@ namespace ChatdollKit.Extension.Azure
             appConfig.Language = Language;
             appConfig.Gender = Gender;
             appConfig.SpeakerName = SpeakerName;
+
+            base.CreateConfig(appConfig);
 
             return appConfig;
         }
