@@ -7,7 +7,7 @@ using ChatdollKit.Model;
 
 namespace ChatdollKit
 {
-    [CustomEditor(typeof(ChatdollApplication), true)]
+    [CustomEditor(typeof(ChatdollKit), true)]
     public class ChatdollEditor : Editor
     {
         private string requestText = string.Empty;
@@ -15,7 +15,7 @@ namespace ChatdollKit
 
         public override void OnInspectorGUI()
         {
-            var app = target as ChatdollApplication;
+            var app = target as ChatdollKit;
 
             // Playmode only
             if (EditorApplication.isPlaying)
@@ -109,11 +109,11 @@ namespace ChatdollKit
                 return;
             }
 
-            var chatdoll = menuCommand.context as ChatdollApplication;
+            var chatdoll = menuCommand.context as ChatdollKit;
             var gameObject = chatdoll.gameObject;
 
             // Main Application
-            DestroyComponents(gameObject.GetComponents<ChatdollApplication>());
+            DestroyComponents(gameObject.GetComponents<ChatdollKit>());
 
             // RequestProviders and WakeWordListener
             DestroyComponents(gameObject.GetComponents<IRequestProvider>());

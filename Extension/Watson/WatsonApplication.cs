@@ -5,7 +5,7 @@ namespace ChatdollKit.Extension.Watson
     [RequireComponent(typeof(WatsonWakeWordListener))]
     [RequireComponent(typeof(WatsonVoiceRequestProvider))]
     [RequireComponent(typeof(WatsonTTSLoader))]
-    public class WatsonApplication : ChatdollApplication
+    public class WatsonApplication : ChatdollKit
     {
         [Header("Watson Speach-to-Text Service")]
         public string STTApiKey;

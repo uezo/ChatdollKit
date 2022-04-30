@@ -5,7 +5,7 @@ namespace ChatdollKit.Extension.Azure
     [RequireComponent(typeof(AzureWakeWordListener))]
     [RequireComponent(typeof(AzureVoiceRequestProvider))]
     [RequireComponent(typeof(AzureTTSLoader))]
-    public class AzureApplication : ChatdollApplication
+    public class AzureApplication : ChatdollKit
     {
         [Header("Azure Speech Services")]
         public string ApiKey = string.Empty;
