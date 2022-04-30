@@ -20,18 +20,41 @@ namespace ChatdollKit.Dialog
                 AnimatedVoiceRequests[AnimatedVoiceRequests.Count - 1] = value;
             }
         }
+        public string Text
+        {
+            get
+            {
+                if (AnimatedVoiceRequest.AnimatedVoices.Count > 0 && AnimatedVoiceRequest.AnimatedVoices[0].Voices.Count > 0)
+                {
+                    return AnimatedVoiceRequest.AnimatedVoices[0].Voices[0].Text;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
         public virtual object Payloads { get; set; }
-        public bool EndTopic { get; set; } = true;
-        public bool EndConversation { get; set; } = false;
-        public RequestType NextTurnRequestType { get; set; } = RequestType.Voice;
+        public bool EndTopic { get; set; }
+        public bool EndConversation { get; set; }
+        public RequestType NextTurnRequestType { get; set; }
         public string SkillName { get; set; }
 
-        public Response(string id)
+        public Response(string id, string text = null, bool endTopic = true, bool endConversation = false, RequestType nextTurnRequestType = RequestType.Voice, string skillName = null)
         {
             Id = id;
             CreatedAt = DateTime.UtcNow;
             AnimatedVoiceRequests = new List<AnimatedVoiceRequest>();
             AnimatedVoiceRequests.Add(new AnimatedVoiceRequest());
+            EndTopic = endTopic;
+            EndConversation = endConversation;
+            NextTurnRequestType = nextTurnRequestType;
+            SkillName = skillName;
+
+            if (!string.IsNullOrEmpty(text))
+            {
+                AnimatedVoiceRequest.AddVoiceTTS(text);
+            }
         }
 
         public void AddVoice(string name, float preGap = 0.0f, float postGap = 0.0f, string description = null, bool asNewFrame = false)
