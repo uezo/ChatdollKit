@@ -414,7 +414,7 @@ namespace ChatdollKit.Dialog
         private MessageWindowBase InstantiateMessageWindow()
         {
             // Create instance of SimpleMessageWindow
-            var messageWindowGameObject = Resources.Load<GameObject>("Prefabs/SimpleMessageWindow/SimpleMessageWindow");
+            var messageWindowGameObject = Resources.Load<GameObject>("Prefabs/SimpleMessageWindow");
             if (messageWindowGameObject != null)
             {
                 var messageWindowGameObjectInstance = Instantiate(messageWindowGameObject);
