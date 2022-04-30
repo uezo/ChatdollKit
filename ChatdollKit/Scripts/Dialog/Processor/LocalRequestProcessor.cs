@@ -11,12 +11,6 @@ namespace ChatdollKit.Dialog.Processor
         protected IStateStore StateStore { get; set; }
         protected ISkillRouter SkillRouter { get; set; }
 
-        // Actions for each status
-#pragma warning disable CS1998
-        public Func<Request, CancellationToken, UniTask> OnNoIntentAsync
-            = async (r, t) => { Debug.LogWarning("LocalRequestProcessor.OnNoIntentAsync is not implemented"); };
-#pragma warning restore CS1998
-
         public LocalRequestProcessor(IUserStore userStore, IStateStore stateStore, ISkillRouter skillRouter, ISkill[] skills)
         {
             UserStore = userStore ?? new MemoryUserStore();
@@ -82,8 +76,7 @@ namespace ChatdollKit.Dialog.Processor
 
                 if (!request.HasIntent() && string.IsNullOrEmpty(state.Topic.Name))
                 {
-                    // Just exit loop without clearing state when NoIntent
-                    await OnNoIntentAsync(request, token);
+                    // End conversation without clearing state when intent and topic is not set
                     return null;
                 }
                 else

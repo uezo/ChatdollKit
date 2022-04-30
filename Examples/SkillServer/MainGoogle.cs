@@ -1,37 +1,43 @@
 ﻿using UnityEngine;
-using ChatdollKit.Dialog;
+using ChatdollKit.Dialog.Processor;
 using ChatdollKit.Extension.Google;
 
 namespace ChatdollKit.Examples.SkillServer
 {
+    [RequireComponent(typeof(RemoteRequestProcessor))]
     public class MainGoogle : GoogleApplication
     {
-        [Header("Application Language")]
-        public EchoLanguage AppLanguage = EchoLanguage.Japanese;
+        [Header("Remote Request Processor")]
+        public string BaseUrl = string.Empty;
 
-        [Header("Server configurations")]
-        public string ServerUrl = "http://localhost:12345";
-
-        protected override void Awake()
+        protected override void OnComponentsReady()
         {
-            WakeWord = string.IsNullOrEmpty(WakeWord)
-                ? AppLanguage == EchoLanguage.Japanese ? "こんにちは" : "hello"
-                : WakeWord;
+            base.OnComponentsReady();
 
-            CancelWord = string.IsNullOrEmpty(CancelWord)
-                ? AppLanguage == EchoLanguage.Japanese ? "おしまい" : "finish"
-                : CancelWord;
-
-            Language = string.IsNullOrEmpty(Language)
-                ? AppLanguage == EchoLanguage.Japanese ? "ja-JP" : "en-US"
-                : Language;
-
-            base.Awake();
+            GetComponent<RemoteRequestProcessor>().BaseUrl = BaseUrl;
         }
 
-        public enum EchoLanguage
+        public override ScriptableObject LoadConfig()
         {
-            Japanese, English
+            var config = base.LoadConfig();
+
+            if (config != null)
+            {
+                BaseUrl = ((GoogleRemoteApplicationConfig)config).BaseUrl;
+            }
+
+            return config;
+        }
+
+        public override ScriptableObject CreateConfig(ScriptableObject config = null)
+        {
+            var appConfig = config == null ? GoogleRemoteApplicationConfig.CreateInstance<GoogleRemoteApplicationConfig>() : (GoogleRemoteApplicationConfig)config;
+
+            appConfig.BaseUrl = BaseUrl;
+
+            base.CreateConfig(appConfig);
+
+            return appConfig;
         }
     }
 }
