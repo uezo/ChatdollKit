@@ -28,6 +28,9 @@ namespace ChatdollKit
                     app.StartChatAsync();
 #pragma warning restore CS4014
                 }
+
+                GUILayout.Space(5.0f);
+
                 if (GUILayout.Button("Stop Chat"))
                 {
                     app.StopChat();
@@ -45,9 +48,14 @@ namespace ChatdollKit
                 }
                 GUILayout.EndHorizontal();
 
+                GUILayout.Space(5.0f);
+
                 // Send request button
                 GUILayout.BeginHorizontal();
                 requestText = EditorGUILayout.TextField(requestText);
+
+                GUILayout.Space(5.0f);
+
                 if (GUILayout.Button("Send Request"))
                 {
                     app.SendTextRequest(requestText);
@@ -63,6 +71,19 @@ namespace ChatdollKit
             GUILayout.Space(20.0f);
 
             // Always available
+            GUILayout.BeginHorizontal();
+
+            if (GUILayout.Button("Load Config"))
+            {
+                var config = app.LoadConfig();
+                if (config == null)
+                {
+                    Debug.LogWarning("Implement `CreateConfig()` to save configuration");
+                }
+            }
+
+            GUILayout.Space(5.0f);
+
             if (GUILayout.Button("Save Config"))
             {
                 var config = app.CreateConfig();
@@ -72,10 +93,11 @@ namespace ChatdollKit
                 }
                 else
                 {
-                    var configName = string.IsNullOrEmpty(app.ApplicationName) ? app.name : app.ApplicationName;
-                    AssetDatabase.CreateAsset(config, $"Assets/Resources/{configName}.asset");
+                    AssetDatabase.CreateAsset(config, $"Assets/Resources/{app.ApplicationName}.asset");
                 }
             }
+
+            GUILayout.EndHorizontal();
         }
 
         // Remove ChatdollKit components and objects
