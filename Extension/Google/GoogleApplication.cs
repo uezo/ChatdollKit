@@ -5,7 +5,7 @@ namespace ChatdollKit.Extension.Google
     [RequireComponent(typeof(GoogleWakeWordListener))]
     [RequireComponent(typeof(GoogleVoiceRequestProvider))]
     [RequireComponent(typeof(GoogleTTSLoader))]
-    public class GoogleApplication : ChatdollApplication
+    public class GoogleApplication : ChatdollKit
     {
         [Header("Google Cloud Speech API")]
         public string ApiKey;

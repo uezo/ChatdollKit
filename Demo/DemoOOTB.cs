@@ -1,6 +1,6 @@
 ﻿namespace ChatdollKit.Demo
 {
-    public class DemoOOTB : ChatdollApplication
+    public class DemoOOTB : ChatdollKit
     {
 
     }

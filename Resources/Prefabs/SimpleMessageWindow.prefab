@@ -193,7 +193,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 1
     m_LineSpacing: 1
-  m_Text: 
+  m_Text: (Listening...)
 --- !u!1 &5272824456044995717
 GameObject:
   m_ObjectHideFlags: 0

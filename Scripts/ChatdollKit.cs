@@ -9,7 +9,7 @@ namespace ChatdollKit
 {
     [RequireComponent(typeof(ModelController))]
     [RequireComponent(typeof(DialogController))]
-    public class ChatdollApplication : MonoBehaviour
+    public class ChatdollKit : MonoBehaviour
     {
         [Header("Application Identifier")]
         public string ApplicationName;

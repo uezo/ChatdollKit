@@ -6,7 +6,7 @@ using ChatdollKit.Dialog;
 namespace ChatdollKit.Extension.Gatebox
 {
     [RequireComponent(typeof(GateboxSDK))]
-    public class GateboxApplication : ChatdollApplication
+    public class GateboxApplication : ChatdollKit
     {
         // LED Colors for each status
         [Header("LED Colors for each status")]
