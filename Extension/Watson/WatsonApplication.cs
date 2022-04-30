@@ -5,7 +5,7 @@ namespace ChatdollKit.Extension.Watson
     [RequireComponent(typeof(WatsonWakeWordListener))]
     [RequireComponent(typeof(WatsonVoiceRequestProvider))]
     [RequireComponent(typeof(WatsonTTSLoader))]
-    public class WatsonApplication : ChatdollApplication
+    public class WatsonApplication : ChatdollKit
     {
         [Header("Watson Speach-to-Text Service")]
         public string STTApiKey;
@@ -18,9 +18,17 @@ namespace ChatdollKit.Extension.Watson
         public string TTSBaseUrl;
         public string TTSSpeakerName;
 
-        protected override void OnComponentsReady(ScriptableObject config)
+        protected override void OnComponentsReady()
         {
-            // Apply configuraton to this app and its components
+            GetComponent<WatsonWakeWordListener>().Configure(STTApiKey, STTModel, STTBaseUrl, STTRemoveWordSeparation);
+            GetComponent<WatsonVoiceRequestProvider>().Configure(STTApiKey, STTModel, STTBaseUrl, STTRemoveWordSeparation);
+            GetComponent<WatsonTTSLoader>().Configure(TTSApiKey, TTSBaseUrl, TTSSpeakerName);
+        }
+
+        public override ScriptableObject LoadConfig()
+        {
+            var config = base.LoadConfig();
+
             if (config != null)
             {
                 var appConfig = (WatsonApplicationConfig)config;
@@ -33,16 +41,12 @@ namespace ChatdollKit.Extension.Watson
                 TTSSpeakerName = appConfig.TTSSpeakerName;
             }
 
-            (wakeWordListener as WatsonWakeWordListener)?.Configure(STTApiKey, STTModel, STTBaseUrl, STTRemoveWordSeparation);
-            (voiceRequestProvider as WatsonVoiceRequestProvider)?.Configure(STTApiKey, STTModel, STTBaseUrl, STTRemoveWordSeparation);
-            (gameObject.GetComponent<WatsonTTSLoader>())?.Configure(TTSApiKey, TTSBaseUrl, TTSSpeakerName);
+            return config;
         }
 
         public override ScriptableObject CreateConfig(ScriptableObject config = null)
         {
-            var appConfig = (WatsonApplicationConfig)base.CreateConfig(
-                config ?? ScriptableObject.CreateInstance<WatsonApplicationConfig>()
-            );
+            var appConfig = config == null ? WatsonApplicationConfig.CreateInstance<WatsonApplicationConfig>() : (WatsonApplicationConfig)config;
 
             appConfig.STTApiKey = STTApiKey;
             appConfig.STTBaseUrl = STTBaseUrl;
@@ -51,6 +55,8 @@ namespace ChatdollKit.Extension.Watson
             appConfig.TTSApiKey = TTSApiKey;
             appConfig.TTSBaseUrl = TTSBaseUrl;
             appConfig.TTSSpeakerName = TTSSpeakerName;
+
+            base.CreateConfig(appConfig);
 
             return appConfig;
         }

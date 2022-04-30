@@ -14,8 +14,17 @@ namespace ChatdollKit.Extension.Gatebox
         public string Gender = "FEMALE";
         public string SpeakerName = "ja-JP-Standard-A";
 
-        protected override void OnComponentsReady(ScriptableObject config)
+        protected override void OnComponentsReady()
         {
+            GetComponent<GoogleWakeWordListener>().Configure(ApiKey, Language);
+            GetComponent<GoogleVoiceRequestProvider>().Configure(ApiKey, Language);
+            GetComponent<GoogleTTSLoader>().Configure(ApiKey, Language, Gender, SpeakerName);
+        }
+
+        public override ScriptableObject LoadConfig()
+        {
+            var config = base.LoadConfig();
+
             if (config != null)
             {
                 var appConfig = (GoogleApplicationConfig)config;
@@ -23,21 +32,19 @@ namespace ChatdollKit.Extension.Gatebox
                 Language = appConfig.Language;
             }
 
-            (wakeWordListener as GoogleWakeWordListener)?.Configure(ApiKey, Language);
-            (voiceRequestProvider as GoogleVoiceRequestProvider)?.Configure(ApiKey, Language);
-            (gameObject.GetComponent<GoogleTTSLoader>())?.Configure(ApiKey, Language, Gender, SpeakerName);
+            return config;
         }
 
         public override ScriptableObject CreateConfig(ScriptableObject config = null)
         {
-            var appConfig = (GoogleApplicationConfig)base.CreateConfig(
-                config ?? ScriptableObject.CreateInstance<GoogleApplicationConfig>()
-            );
+            var appConfig = config == null ? GoogleApplicationConfig.CreateInstance<GoogleApplicationConfig>() : (GoogleApplicationConfig)config;
 
             appConfig.SpeechApiKey = ApiKey;
             appConfig.Language = Language;
             appConfig.Gender = Gender;
             appConfig.SpeakerName = SpeakerName;
+
+            base.CreateConfig(appConfig);
 
             return appConfig;
         }

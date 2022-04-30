@@ -1,60 +1,43 @@
 ﻿using UnityEngine;
-using ChatdollKit.Dialog;
+using ChatdollKit.Dialog.Processor;
 using ChatdollKit.Extension.Watson;
 
 namespace ChatdollKit.Examples.SkillServer
 {
-    [RequireComponent(typeof(HttpPrompter))]
-    [RequireComponent(typeof(HttpSkillRouter))]
+    [RequireComponent(typeof(RemoteRequestProcessor))]
     public class MainWatson : WatsonApplication
     {
-        [Header("Application Language")]
-        public EchoLanguage AppLanguage = EchoLanguage.Japanese;
+        [Header("Remote Request Processor")]
+        public string BaseUrl = string.Empty;
 
-        [Header("Server configurations")]
-        public string ServerUrl = "http://localhost:12345";
-
-        protected override void Awake()
+        protected override void OnComponentsReady()
         {
-            WakeWord = string.IsNullOrEmpty(WakeWord)
-                ? AppLanguage == EchoLanguage.Japanese ? "こんにちは" : "hello"
-                : WakeWord;
+            base.OnComponentsReady();
 
-            CancelWord = string.IsNullOrEmpty(CancelWord)
-                ? AppLanguage == EchoLanguage.Japanese ? "おしまい" : "finish"
-                : CancelWord;
-
-            STTModel = string.IsNullOrEmpty(STTModel)
-                ? AppLanguage == EchoLanguage.Japanese ? "ja-JP_BroadbandModel" : "en-US_BroadbandModel"
-                : STTModel;
-
-            STTRemoveWordSeparation = AppLanguage == EchoLanguage.Japanese ? true : false;
-
-            TTSSpeakerName = string.IsNullOrEmpty(TTSSpeakerName)
-                ? AppLanguage == EchoLanguage.Japanese ? "ja-JP_EmiV3Voice" : "en-US_EmilyV3Voice"
-                : TTSSpeakerName;
-
-            var prompter = GetComponent<HttpPrompter>();
-            prompter.PingUri = MakeUri(prompter.PingUri, "ping");
-            prompter.PromptUri = MakeUri(prompter.PromptUri, "prompt");
-
-            var router = GetComponent<HttpSkillRouter>();
-            router.SkillsUri = MakeUri(router.SkillsUri, "skills");
-            router.IntentExtractorUri = MakeUri(router.IntentExtractorUri, "intent");
-
-            base.Awake();
+            GetComponent<RemoteRequestProcessor>().BaseUrl = BaseUrl;
         }
 
-        private string MakeUri(string componentValue, string path)
+        public override ScriptableObject LoadConfig()
         {
-            return string.IsNullOrEmpty(componentValue)
-                ? ServerUrl.EndsWith("/") ? ServerUrl + path : ServerUrl + "/" + path
-                : componentValue;
+            var config = base.LoadConfig();
+
+            if (config != null)
+            {
+                BaseUrl = ((WatsonRemoteApplicationConfig)config).BaseUrl;
+            }
+
+            return config;
         }
 
-        public enum EchoLanguage
+        public override ScriptableObject CreateConfig(ScriptableObject config = null)
         {
-            Japanese, English
+            var appConfig = config == null ? WatsonRemoteApplicationConfig.CreateInstance<WatsonRemoteApplicationConfig>() : (WatsonRemoteApplicationConfig)config;
+
+            appConfig.BaseUrl = BaseUrl;
+
+            base.CreateConfig(appConfig);
+
+            return appConfig;
         }
     }
 }
