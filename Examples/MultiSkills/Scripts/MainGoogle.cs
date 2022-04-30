@@ -12,21 +12,9 @@ namespace ChatdollKit.Examples.MultiSkills
         public string ChatA3RTApiKey;
         public WeatherSkill.WeatherLocation WeatherLocation = WeatherSkill.WeatherLocation.Tokyo;
 
-        protected override void OnComponentsReady()
+        protected override void OnComponentsReady(ScriptableObject config)
         {
-            var translationSkill = gameObject.GetComponent<TranslateSkill>();
-            translationSkill.ApiKey = TranslationApiKey;
-            translationSkill.Engine = TranslateSkill.TranslationEngine.Google;
-            translationSkill.BaseUrl = TranslationBaseUrl;
-            gameObject.GetComponent<ChatA3RTSkill>().A3RTApiKey = ChatA3RTApiKey;
-            gameObject.GetComponent<WeatherSkill>().MyLocation = WeatherLocation;
-
-            DialogController.ChatdollCamera.DecodeCode = QRCodeDecoder.DecodeByZXing;
-        }
-
-        public override ScriptableObject LoadConfig()
-        {
-            var config = base.LoadConfig();
+            base.OnComponentsReady(config);
 
             if (config != null)
             {
@@ -36,18 +24,25 @@ namespace ChatdollKit.Examples.MultiSkills
                 ChatA3RTApiKey = appConfig.ChatA3RTApiKey;
             }
 
-            return config;
+            var translationSkill = gameObject.GetComponent<TranslateSkill>();
+            translationSkill.ApiKey = TranslationApiKey;
+            translationSkill.Engine = TranslateSkill.TranslationEngine.Google;
+            translationSkill.BaseUrl = TranslationBaseUrl;
+            gameObject.GetComponent<ChatA3RTSkill>().A3RTApiKey = ChatA3RTApiKey;
+            gameObject.GetComponent<WeatherSkill>().MyLocation = WeatherLocation;
+
+            ChatdollCamera.DecodeCode = QRCodeDecoder.DecodeByZXing;
         }
 
         public override ScriptableObject CreateConfig(ScriptableObject config = null)
         {
-            var appConfig = config == null ? GoogleMultiSkillConfig.CreateInstance<GoogleMultiSkillConfig>() : (GoogleMultiSkillConfig)config;
+            var appConfig = (GoogleMultiSkillConfig)base.CreateConfig(
+                config ?? ScriptableObject.CreateInstance<GoogleMultiSkillConfig>()
+            );
 
             appConfig.TranslationApiKey = TranslationApiKey;
             appConfig.TranslationBaseUrl = TranslationBaseUrl;
             appConfig.ChatA3RTApiKey = ChatA3RTApiKey;
-
-            base.CreateConfig(appConfig);
 
             return appConfig;
         }

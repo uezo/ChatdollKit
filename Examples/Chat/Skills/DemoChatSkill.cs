@@ -5,7 +5,6 @@ using UnityEngine.Networking;
 using Cysharp.Threading.Tasks;
 using ChatdollKit.Dialog;
 using ChatdollKit.Network;
-using ChatdollKit.Dialog.Processor;
 
 namespace ChatdollKit.Examples.Chat
 {
@@ -13,7 +12,7 @@ namespace ChatdollKit.Examples.Chat
     {
         private ChatdollHttp client = new ChatdollHttp();
 
-        public override async UniTask<Response> ProcessAsync(Request request, State state, User user, CancellationToken token)
+        public override async UniTask<Response> ProcessAsync(Request request, State state, CancellationToken token)
         {
             // Build and return response message
             var response = new Response(request.Id);
@@ -25,7 +24,7 @@ namespace ChatdollKit.Examples.Chat
             {
                 Random.InitState(System.DateTime.Now.Millisecond);
                 response.AddVoiceTTS(chatResponse.outputs[0].val[Random.Range(0, chatResponse.outputs[0].val.Count)]);
-                response.EndTopic = false; // Continue chatting
+                state.Topic.IsFinished = false; // Continue chatting
             }
             else
             {

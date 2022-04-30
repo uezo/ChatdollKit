@@ -5,7 +5,7 @@ namespace ChatdollKit.Extension.Azure
     [RequireComponent(typeof(AzureWakeWordListener))]
     [RequireComponent(typeof(AzureVoiceRequestProvider))]
     [RequireComponent(typeof(AzureTTSLoader))]
-    public class AzureApplication : ChatdollKit
+    public class AzureApplication : ChatdollApplication
     {
         [Header("Azure Speech Services")]
         public string ApiKey = string.Empty;
@@ -17,27 +17,9 @@ namespace ChatdollKit.Extension.Azure
         [Header("Remote Log")]
         public string LogTableUri;
 
-        protected override void OnComponentsReady()
+        protected override void OnComponentsReady(ScriptableObject config)
         {
-            base.OnComponentsReady();
-
-            // Remote log
-            if (!string.IsNullOrEmpty(LogTableUri))
-            {
-                Debug.unityLogger.filterLogType = LogType.Warning;
-                var azureHandler = new AzureTableStorageHandler(LogTableUri, LogType.Warning);
-                Application.logMessageReceived += azureHandler.HandleLog;
-            }
-
-            GetComponent<AzureWakeWordListener>().Configure(ApiKey, Language, Region);
-            GetComponent<AzureVoiceRequestProvider>().Configure(ApiKey, Language, Region);
-            GetComponent<AzureTTSLoader>().Configure(ApiKey, Language, Gender, SpeakerName, Region);
-        }
-
-        public override ScriptableObject LoadConfig()
-        {
-            var config = base.LoadConfig();
-
+            // Apply configuraton to this app and its components
             if (config != null)
             {
                 var appConfig = (AzureApplicationConfig)config;
@@ -49,12 +31,24 @@ namespace ChatdollKit.Extension.Azure
                 SpeakerName = appConfig.SpeakerName;
             }
 
-            return config;
+            // Remote log
+            if (!string.IsNullOrEmpty(LogTableUri))
+            {
+                Debug.unityLogger.filterLogType = LogType.Warning;
+                var azureHandler = new AzureTableStorageHandler(LogTableUri, LogType.Warning);
+                Application.logMessageReceived += azureHandler.HandleLog;
+            }
+
+            (wakeWordListener as AzureWakeWordListener)?.Configure(ApiKey, Language, Region);
+            (voiceRequestProvider as AzureVoiceRequestProvider)?.Configure(ApiKey, Language, Region);
+            (gameObject.GetComponent<AzureTTSLoader>())?.Configure(ApiKey, Language, Gender, SpeakerName, Region);
         }
 
         public override ScriptableObject CreateConfig(ScriptableObject config = null)
         {
-            var appConfig = config == null ? AzureApplicationConfig.CreateInstance<AzureApplicationConfig>() : (AzureApplicationConfig)config;
+            var appConfig = (AzureApplicationConfig)base.CreateConfig(
+                config ?? ScriptableObject.CreateInstance<AzureApplicationConfig>()
+            );
 
             appConfig.LogTableUri = LogTableUri;
             appConfig.SpeechApiKey = ApiKey;
@@ -62,8 +56,6 @@ namespace ChatdollKit.Extension.Azure
             appConfig.Language = Language;
             appConfig.Gender = Gender;
             appConfig.SpeakerName = SpeakerName;
-
-            base.CreateConfig(appConfig);
 
             return appConfig;
         }

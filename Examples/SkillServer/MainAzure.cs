@@ -1,43 +1,54 @@
 ﻿using UnityEngine;
-using ChatdollKit.Dialog.Processor;
+using ChatdollKit.Dialog;
 using ChatdollKit.Extension.Azure;
 
 namespace ChatdollKit.Examples.SkillServer
 {
-    [RequireComponent(typeof(RemoteRequestProcessor))]
+    [RequireComponent(typeof(HttpPrompter))]
+    [RequireComponent(typeof(HttpSkillRouter))]
     public class MainAzure : AzureApplication
     {
-        [Header("Remote Request Processor")]
-        public string BaseUrl = string.Empty;
+        [Header("Application Language")]
+        public EchoLanguage AppLanguage = EchoLanguage.Japanese;
 
-        protected override void OnComponentsReady()
+        [Header("Server configurations")]
+        public string ServerUrl = "http://localhost:12345";
+
+        protected override void Awake()
         {
-            base.OnComponentsReady();
+            WakeWord = string.IsNullOrEmpty(WakeWord)
+                ? AppLanguage == EchoLanguage.Japanese ? "こんにちは" : "hello"
+                : WakeWord;
 
-            GetComponent<RemoteRequestProcessor>().BaseUrl = BaseUrl;
+            CancelWord = string.IsNullOrEmpty(CancelWord)
+                ? AppLanguage == EchoLanguage.Japanese ? "おしまい" : "finish"
+                : CancelWord;
+
+            Language = string.IsNullOrEmpty(Language)
+                ? AppLanguage == EchoLanguage.Japanese ? "ja-JP" : "en-US"
+                : Language;
+
+            var prompter = GetComponent<HttpPrompter>();
+            prompter.PingUri = MakeUri(prompter.PingUri, "ping");
+            prompter.PromptUri = MakeUri(prompter.PromptUri, "prompt");
+
+            var router = GetComponent<HttpSkillRouter>();
+            router.SkillsUri = MakeUri(router.SkillsUri, "skills");
+            router.IntentExtractorUri = MakeUri(router.IntentExtractorUri, "intent");
+            
+            base.Awake();
         }
 
-        public override ScriptableObject LoadConfig()
+        private string MakeUri(string componentValue, string path)
         {
-            var config = base.LoadConfig();
-
-            if (config != null)
-            {
-                BaseUrl = ((AzureRemoteApplicationConfig)config).BaseUrl;
-            }
-
-            return config;
+            return string.IsNullOrEmpty(componentValue)
+                ? ServerUrl.EndsWith("/") ? ServerUrl + path : ServerUrl + "/" + path
+                : componentValue;
         }
 
-        public override ScriptableObject CreateConfig(ScriptableObject config = null)
+        public enum EchoLanguage
         {
-            var appConfig = config == null ? AzureRemoteApplicationConfig.CreateInstance<AzureRemoteApplicationConfig>() : (AzureRemoteApplicationConfig)config;
-
-            appConfig.BaseUrl = BaseUrl;
-
-            base.CreateConfig(appConfig);
-
-            return appConfig;
+            Japanese, English
         }
     }
 }

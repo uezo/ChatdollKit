@@ -19,17 +19,9 @@ namespace ChatdollKit.Extension.Gatebox
         public string TTSBaseUrl;
         public string TTSSpeakerName;
 
-        protected override void OnComponentsReady()
+        protected override void OnComponentsReady(ScriptableObject config)
         {
-            GetComponent<WatsonWakeWordListener>().Configure(STTApiKey, STTModel, STTBaseUrl, STTRemoveWordSeparation);
-            GetComponent<WatsonVoiceRequestProvider>().Configure(STTApiKey, STTModel, STTBaseUrl, STTRemoveWordSeparation);
-            GetComponent<WatsonTTSLoader>().Configure(TTSApiKey, TTSBaseUrl, TTSSpeakerName);
-        }
-
-        public override ScriptableObject LoadConfig()
-        {
-            var config = base.LoadConfig();
-
+            // Apply configuraton to this app and its components
             if (config != null)
             {
                 var appConfig = (WatsonApplicationConfig)config;
@@ -42,12 +34,16 @@ namespace ChatdollKit.Extension.Gatebox
                 TTSSpeakerName = appConfig.TTSSpeakerName;
             }
 
-            return config;
+            (wakeWordListener as WatsonWakeWordListener)?.Configure(STTApiKey, STTModel, STTBaseUrl, STTRemoveWordSeparation);
+            (voiceRequestProvider as WatsonVoiceRequestProvider)?.Configure(STTApiKey, STTModel, STTBaseUrl, STTRemoveWordSeparation);
+            (gameObject.GetComponent<WatsonTTSLoader>())?.Configure(TTSApiKey, TTSBaseUrl, TTSSpeakerName);
         }
 
         public override ScriptableObject CreateConfig(ScriptableObject config = null)
         {
-            var appConfig = config == null ? WatsonApplicationConfig.CreateInstance<WatsonApplicationConfig>() : (WatsonApplicationConfig)config;
+            var appConfig = (WatsonApplicationConfig)base.CreateConfig(
+                config ?? ScriptableObject.CreateInstance<WatsonApplicationConfig>()
+            );
 
             appConfig.STTApiKey = STTApiKey;
             appConfig.STTBaseUrl = STTBaseUrl;
@@ -56,8 +52,6 @@ namespace ChatdollKit.Extension.Gatebox
             appConfig.TTSApiKey = TTSApiKey;
             appConfig.TTSBaseUrl = TTSBaseUrl;
             appConfig.TTSSpeakerName = TTSSpeakerName;
-
-            base.CreateConfig(appConfig);
 
             return appConfig;
         }

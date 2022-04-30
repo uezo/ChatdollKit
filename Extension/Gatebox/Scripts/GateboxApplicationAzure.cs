@@ -18,8 +18,18 @@ namespace ChatdollKit.Extension.Gatebox
         [Header("Remote Log")]
         public string LogTableUri;
 
-        protected override void OnComponentsReady()
+        protected override void OnComponentsReady(ScriptableObject config)
         {
+            // Apply configuraton to this app and its components
+            if (config != null)
+            {
+                var appConfig = (AzureApplicationConfig)config;
+                LogTableUri = appConfig.LogTableUri;
+                ApiKey = appConfig.SpeechApiKey;
+                Region = appConfig.Region;
+                Language = appConfig.Language;
+            }
+
             // Remote log
             if (!string.IsNullOrEmpty(LogTableUri))
             {
@@ -28,32 +38,16 @@ namespace ChatdollKit.Extension.Gatebox
                 Application.logMessageReceived += azureHandler.HandleLog;
             }
 
-            (DialogController.WakeWordListener as AzureWakeWordListener)?.Configure(ApiKey, Language, Region);
-            (DialogController.RequestProviders[Dialog.RequestType.Voice] as AzureVoiceRequestProvider)?.Configure(ApiKey, Language, Region);
-            (GetComponent<AzureTTSLoader>())?.Configure(ApiKey, Language, Gender, SpeakerName, Region);
-        }
-
-        public override ScriptableObject LoadConfig()
-        {
-            var config = base.LoadConfig();
-
-            if (config != null)
-            {
-                var appConfig = (AzureApplicationConfig)config;
-                LogTableUri = appConfig.LogTableUri;
-                ApiKey = appConfig.SpeechApiKey;
-                Region = appConfig.Region;
-                Language = appConfig.Language;
-                Gender = appConfig.Gender;
-                SpeakerName = appConfig.SpeakerName;
-            }
-
-            return config;
+            (wakeWordListener as AzureWakeWordListener)?.Configure(ApiKey, Language, Region);
+            (voiceRequestProvider as AzureVoiceRequestProvider)?.Configure(ApiKey, Language, Region);
+            (gameObject.GetComponent<AzureTTSLoader>())?.Configure(ApiKey, Language, Gender, SpeakerName, Region);
         }
 
         public override ScriptableObject CreateConfig(ScriptableObject config = null)
         {
-            var appConfig = config == null ? AzureApplicationConfig.CreateInstance<AzureApplicationConfig>() : (AzureApplicationConfig)config;
+            var appConfig = (AzureApplicationConfig)base.CreateConfig(
+                config ?? ScriptableObject.CreateInstance<AzureApplicationConfig>()
+            );
 
             appConfig.LogTableUri = LogTableUri;
             appConfig.SpeechApiKey = ApiKey;
@@ -61,8 +55,6 @@ namespace ChatdollKit.Extension.Gatebox
             appConfig.Language = Language;
             appConfig.Gender = Gender;
             appConfig.SpeakerName = SpeakerName;
-
-            base.CreateConfig(appConfig);
 
             return appConfig;
         }

@@ -2,7 +2,6 @@
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using ChatdollKit.Dialog;
-using ChatdollKit.Dialog.Processor;
 
 namespace ChatdollKit.Examples.ModelControl
 {
