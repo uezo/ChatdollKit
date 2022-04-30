@@ -22,16 +22,16 @@ namespace ChatdollKit.Dialog
         public string ClientId { get; set; }
         public Dictionary<string, string> Tokens { get; set; } = new Dictionary<string, string>();
 
-        public Request(RequestType type)
+        public Request(RequestType type, string text = null, bool isCanceled = false)
         {
             Id = Guid.NewGuid().ToString();
             Type = type;
             CreatedAt = DateTime.UtcNow;
-            Text = string.Empty;
+            Text = text ?? string.Empty;
             Payloads = new List<object>();
             Intent = null;
             Entities = new Dictionary<string, object>();
-            IsCanceled = false;
+            IsCanceled = isCanceled;
         }
 
         public bool IsSet()
