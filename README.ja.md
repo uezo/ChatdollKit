@@ -24,7 +24,7 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
     - カメラとQRコードリーダー
 
 ... などなど！
-本READMEのほか、[ChatdollKit マニュアル](https://github.com/uezo/ChatdollKit/blob/master/manual.ja.md)に各機能の網羅的な説明がありますので参照ください。
+本READMEのほか、[ChatdollKit マニュアル](Documents/manual.ja.md)に各機能の網羅的な説明がありますので参照ください。
 
 # 🚀 クイックスタート
 
@@ -65,7 +65,7 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 
 ### ModelControllerの設定
 
-インスペクターのコンテキストメニューから`Setup ModelController`を選択すると、LipSync等が自動的に設定されます。セットアップ後、`Blink Blend Shape Name`に値が設定されていない場合は、目を閉じるためのシェイプキーの名前を入力してください。これらの手順をすべて手動で行うには [Appendix1. ModelControllerの手動設定](appendix.ja.md#appendix-1-modelcontrollerの手動設定) を参照してください。
+インスペクターのコンテキストメニューから`Setup ModelController`を選択すると、LipSync等が自動的に設定されます。セットアップ後、`Blink Blend Shape Name`に値が設定されていない場合は、目を閉じるためのシェイプキーの名前を入力してください。これらの手順をすべて手動で行うには [Appendix1. ModelControllerの手動設定](Documents/appendix.ja.md#appendix-1-modelcontrollerの手動設定) を参照してください。
 
 <img src="Documents/Images/02_03_modelcontroller.png" width="640">
 
@@ -79,7 +79,7 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 
 `AnimatorController`の自動生成が終わったら、デフォルトのアイドルアニメーションを変更したい場合はアニメーターコントローラーの`Default`ステートに紐づけられたアニメーションクリップを変更しましょう。
 
-これらの手順を手動で行うには、[Appendix2. Animatorの手動設定](appendix.ja.md#appendix-2-animatorの手動設定) を参照してください。
+これらの手順を手動で行うには、[Appendix2. Animatorの手動設定](Documents/appendix.ja.md#appendix-2-animatorの手動設定) を参照してください。
 
 <img src="Documents/Images/03_02_animator.png" width="640">
 

@@ -24,7 +24,7 @@ ChatdollKit enables you to make your 3D model into a voice-enabled chatbot. [ðŸ‡
     - Wakeword
     - Camera and QR Code
 
-... and more! See [ChatdollKit Documentation](https://github.com/uezo/ChatdollKit/blob/master/manual.md) to learn details.
+... and more! See [ChatdollKit Documentation](Documents/manual.md) to learn details.
 
 
 # ðŸš€ Quick start
@@ -69,7 +69,7 @@ On the inspector of `DialogController`, set `Wake Word` to start conversation, `
 
 ### ModelController
 
-Select `Setup ModelController` in the context menu of ModelController and set the name of shapekey for blink to `Blink Blend Shape Name` if it is not set after setup. If you want to setup manually, see [Appendix1. Setup ModelController manually](appendix.md#appendix-1-setup-modelcontroller-manually)
+Select `Setup ModelController` in the context menu of ModelController and set the name of shapekey for blink to `Blink Blend Shape Name` if it is not set after setup. If you want to setup manually, see [Appendix1. Setup ModelController manually](Documents/appendix.md#appendix-1-setup-modelcontroller-manually)
 
 <img src="Documents/Images/02_03_modelcontroller.png" width="640">
 
@@ -84,7 +84,7 @@ In this case you can select to put clips on `Base Layer` or create layers named 
 
 After creating Animator Controller you can select default idle animation by editing `Default` status if you want to change.
 
-If you want to setup manually, see [Appendix2. Setup Animator manually](appendix.md#appendix-2-setup-animator-manually)
+If you want to setup manually, see [Appendix2. Setup Animator manually](Documents/appendix.md#appendix-2-setup-animator-manually)
 
 <img src="Documents/Images/03_02_animator.png" width="640">
 
