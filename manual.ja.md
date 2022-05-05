@@ -1,6 +1,6 @@
 ﻿# ChatdollKit マニュアル
 
-version 0.4.0 | March 26, 2022 | &copy;2020 uezo | [🇬🇧English version](https://github.com/uezo/ChatdollKit/blob/master/manual.md)
+version 0.5.0 | 🎏 May 5, 2022 | &copy;2020 uezo | [🇬🇧English version](https://github.com/uezo/ChatdollKit/blob/master/manual.md)
 
 
 - [セットアップ](#セットアップ)
@@ -28,10 +28,13 @@ version 0.4.0 | March 26, 2022 | &copy;2020 uezo | [🇬🇧English version](htt
     - [まばたき](#まばたき)
 
 - [対話の制御](#対話の制御)
-    - [カスタムスキル追加の基本](#カスタムスキル追加の基本)
-    - [リクエストとステート](#リクエストとステート)
+    - [対話フローの全体像](#対話フローの全体像)
+    - [プロンプト](#プロンプト)
+    - [スキル](#スキル)
+    - [リクエスト、ステート、ユーザー](#リクエストステートユーザー)
         - [Request](#request)
         - [State](#state)
+        - [User](#user)
     - [話題の継続](#話題の継続)
     - [事前処理](#事前処理)
     - [対話処理のルーティング](#対話処理のルーティング)
@@ -41,6 +44,10 @@ version 0.4.0 | March 26, 2022 | &copy;2020 uezo | [🇬🇧English version](htt
         - [エンティティの抽出](#エンティティの抽出)
 
 - [入出力の制御](#入出力の制御)
+    - [ウェイクワード](#ウェイクワード)
+        - [WakeWord Settings](#wakeword-settings)
+        - [Test and Debug](#test-and-debug-1)
+        - [Voice Recorder Settings](#voice-recorder-settings-1)
     - [音声による処理要求](#音声による処理要求)
         - [Cancellation Settings](#cancellation-settings)
         - [Test and Debug](#test-and-debug)
@@ -53,14 +60,10 @@ version 0.4.0 | March 26, 2022 | &copy;2020 uezo | [🇬🇧English version](htt
         - [WakeWordにリクエストタイプを指定](#wakewordにリクエストタイプを指定-1)
         - [Skillの中でリクエストタイプを指定](#skillの中でリクエストタイプを指定-1)
         - [QRコードのデコード処理](#qrコードのデコード処理)
-    - [ウェイクワード](#ウェイクワード)
-        - [WakeWord Settings](#wakeword-settings)
-        - [Test and Debug](#test-and-debug-1)
-        - [Voice Recorder Settings](#voice-recorder-settings-1)
-    - [プロンプト](#プロンプト)
-    - [高度な利用方法](#高度な利用方法)
-        - [形態素解析](#形態素解析)
-        - [対話処理のサーバーサイド実装](#対話処理のサーバーサイド実装)
+
+- [高度な利用方法](#高度な利用方法)
+    - [対話処理のサーバーサイド実装](#対話処理のサーバーサイド実装)
+    - [形態素解析](#形態素解析)
 
 - [おわりに](#おわりに)
 
@@ -92,13 +95,13 @@ ChatdollKitを3Dモデルに適用するには、以下の通りカスタムア�
 
 ```csharp
 using UnityEngine;
-using ChatdollKit.Extension.Azure;  // or ChatdollKit.Extension.Google
+using ChatdollKit.Extension.Azure;  // or ChatdollKit.Extension.Google, ChatdollKit.Extension.Watson
 using ChatdollKit.Examples.Skills;
 
 namespace MyChatdollApp
 {
     [RequireComponent(typeof(EchoSkill))]
-    public class MyApp : AzureApplication  // or GoogleApplication
+    public class MyApp : ChatdollKitAzure  // or ChatdollKitGoogle, ChatdollKitWatson
     {
 
     }
@@ -130,9 +133,9 @@ namespace MyChatdollApp
 動作確認用に`ChatdollKit/Examples/Skills`から`EchoSkill`を3Dモデルにアタッチして、Unityエディタの実行ボタンを押下してください。以下の通り対話を進行できるか確認してみましょう。
 
 - ユーザー「こんにちは」
-- Chatdoll「どうしたの？」
+- App「どうしたの？」
 - ユーザー「これはテストです」
-- Chatdoll「これはテストです」
+- App「これはテストです」
 
 
 # モデル動作の制御
@@ -371,88 +374,104 @@ modelController.AddIdleAnimation(idle05, weight: 2);
 
 # 対話の制御
 
-話題に応じた対話処理を、ChatdollKitでは`Skill`と呼んでおり、作成するには`ISkill`インターフェイスを実装します。また、基本的な処理を実装済みの`SkillBase`を継承することでより簡単な手順で作成することもできます。
+ChatdollKitは対話制御のための機能を提供しています。基本的に、これらの機能は一般的なチャットボット開発の概念に沿ったものになっています。
 
-## カスタムスキル追加の基本
+## 対話フローの全体像
 
-以下はおうむ返しのSkillの実装です。最小限の実装としては、この例のように`ProcessAsync`をオーバーライドして各種処理の実行やその結果に応じたレスポンスメッセージの組み立てを行います。
+基本的な対話の流れは以下の通りです。
+
+- ユーザー「こんにちは」 <- ウェイクワード
+- アプリ「どうしたの？」 <- プロンプト
+- ユーザー「今日の天気は？」 <- リクエスト
+- アプリ（要求を解析し、天気スキルに処理を移譲） <- ルーティング
+- アプリ（天気スキルにて要求を処理） <- スキル処理
+- アプリ「今日は一日中晴れだよ」 <- レスポンス
+
+
+## プロンプト
+
+リクエストを要求する発話・アニメーションなどをChatdollKitではプロンプトと呼びます。インスペクター上で設定することもできますが、コードベースでより詳細な指定をするには `ChatdollKit.OnPromptAsync` に当該処理をセットすることでカスタマイズすることができます。
+
+```csharp
+// プロンプトの発話・アニメーション・表情を定義
+var promptAnimatedVoiceRequest = new AnimatedVoiceRequest();
+promptAnimatedVoiceRequest.AddVoiceTTS("どうしたの、お兄ちゃん？", preGap: 0.5f);
+promptAnimatedVoiceRequest.AddAnimation("PromptPose");
+promptAnimatedVoiceRequest.AddFace("Smile");
+　：
+　：
+
+// プロンプトの処理に割当
+chatdoll.OnPromptAsync = async (preRequest, user, state, token) =>
+{
+    await modelController.AnimatedSay(promptAnimatedVoiceRequest, token);
+};
+```
+
+## スキル
+
+`Skill`はユーザーの要求を対話を通じて処理するためのコンポーネントで、基本的な処理の実装を含む`SkillBase`を継承して作成することができます。以下の例のように`ProcessAsync`に当該処理を記述し、アプリからの応答を`Response`にセットしてリターンしてください。この応答内容は`SkillBase.ShowResponseAsync()`で処理されます。
 
 ```csharp
 using System.Threading;
 using System.Threading.Tasks;
 using ChatdollKit.Dialog;
+using ChatdollKit.Dialog.Processor;
 
-namespace ChatdollKit.Examples.Dialogs
+public class EchoSkill : SkillBase
 {
-    public class EchoSkill : SkillBase
+    public override async Task<Response> ProcessAsync(Request request, State state, User user, CancellationToken token)
     {
-        public override async Task<Response> ProcessAsync(Request request, State state, CancellationToken token)
-        {
-            // レスポンスの生成
-            var response = new Response(request.Id);
+        // レスポンスの生成
+        var response = new Response(request.Id);
 
-            // ユーザーの発話内容の読み上げをレスポンスにセット
-            response.AddVoiceTTS($"{request.Text}");
+        // ユーザーの発話内容の読み上げをレスポンスにセット
+        response.AddVoiceTTS(request.Text);
 
-            return response;
-        }
+        return response;
     }
 }
 ```
 
-なお`response`には`AnimatedVoiceRequest`の各種Addメソッド群が用意されいるため、上記例は`response.AnimatedVoiceRequest.AddVoiceTTS`と同義です。`response`に設定した発話やアニメーションはChatdollKitにより自動的に実行されます。
 
-## リクエストとステート
+## リクエスト、ステート、ユーザー
 
-`ProcessAsync`の引数として渡される`request`と`state`には、それぞれ今回のターンの要求情報とこれまでの文脈に関する情報が格納されています。これはWebアプリケーションにおけるリクエストとセッションとの関係と同じです。
+`ProcessAsync`の引数として渡される`request`と`state`と`user`には、それぞれ今回のターンの要求情報とこれまでの文脈に関する情報が格納されています。これはWebアプリケーションにおけるリクエストとセッションとの関係と同じです。
 
 ### Request
 
-リクエストの都度生成・破棄される情報。このうち`User`については永続化される情報です。
+リクエストの都度生成・破棄される情報。
 
-- Entities: リクエストに含まれる情報を格納。「東京の天気は？」の「東京」など
 - Id: リクエストを一意に特定するID
-- Intent: 発話の意図。詳細は対話処理のルーティングを参照
-- IntentPriority: 発話の意図の優先度。詳細は対話処理のルーティングを参照
-- IsAdhoc: アドホックな割り込み要求かどうか。詳細は対話処理のルーティングを参照
-- IsCanceled: 既にキャンセルされた要求かどうか
-- Payloads: 発話された文言以外のデータ。写真など
-- Text: 発話された文言
-- Timestamp: リクエストが生成された日時
 - Type: 要求の形式。`Voice`、`Camera`、`QRCode`
-- User: リクエスト元のユーザー情報
-    - Data: 永続化対象のユーザー情報。たとえば生年月日や趣味など
-    - DeviceId: デバイスを一意に指定するID
-    - Id: ユーザーを一意に特定するID
-    - Name: ユーザーの名前
-    - Nickname: ユーザーのニックネーム
+- CreatedAt: リクエストが生成された日時
+- Text: 発話された文言
+- Payloads: 発話された文言以外のデータ。写真など
+- Intent: 発話の意図。詳細は [ルーティング](#対話処理のルーティング) を参照
+    - Name: インテントの名称 (weather, translation, chatting, など)
+    - Priority: 発話の意図の優先度。詳細は [ルーティング](#対話処理のルーティング) を参照
+    - IsAdhoc:アドホックな割り込み要求かどうか。詳細は [ルーティング](#対話処理のルーティング) を参照
+- Entities: リクエストに含まれる情報を格納。「東京の天気は？」の「東京」など
 - Words: 形態素解析結果。詳細は高度な利用方法参照
+- IsCanceled: 既にキャンセルされた要求かどうか
+- ClientId: クライアントアプリケーション（および、必要に応じてその所有者）を一意に特定するID
+- Tokens: クライアントを認証するための情報
 
-なおユーザー情報を更新すると、その内容は自動的に保存されます。ただし対話処理が以上終了した場合は保存されません。
-
-```csharp
-// 対話処理が正常終了したとき、以下の情報が保存されます
-request.User.Nickname = "うえぞうちゃん";
-request.User.Data["FavoriteFood"] = "そば";
-```
 
 ### State
 
 複数のリクエストを跨いで一定時間維持される情報。このうち`Topic`については話題の終了時に破棄されます。
 
-- Data: 文脈データ
 - Id: ステートを一意に特定するID
-- IsNew: 対話処理がちょうど今始まったところかどうか
-- Timestamp: ステートが最後に更新された日時
-- Topic: 対話中の話題
-    - ContinueTopic: 次のリクエストにおいても話題を継続するかどうか
-    - IsNew: この話題が今始まったところかどうか
-    - Name: 話題の名称
-    - Previous: 前回のリクエスト時の話題
-    - Priority: 話題の優先度。インテントの優先度がセットされる。また、話題を継続しているとき、インテントの優先度がこの値よりも大きければ話題が切り替わる
-    - RequiredRequestType: 次回リクエストの形式を指定。詳細はカメラによる要求・QRコードによる要求を参照
-    - Status: 話題のステータス。対話シナリオの進行管理のために自由に利用
 - UserId: ユーザーのID。ステートの取得・永続化キー
+- UpdatedAt: ステートが最後に更新された日時
+- IsNew: このターン以前の何らかの対話文脈を継続していないか
+- Topic: 対話中の話題
+    - Name: 話題の名称
+    - Status: 話題のステータス。対話シナリオの進行管理のために自由に利用
+    - IsFirstTurn: この話題が今始まったところかどうか
+    - Priority: 話題の優先度。インテントの優先度がセットされる。また、話題を継続しているとき、インテントの優先度がこの値よりも大きければ話題が切り替わる
+- Data: 文脈データ
 
 なお`Topic.Status`の利用例は以下の通り。
 
@@ -470,9 +489,27 @@ else if (state.Topic.Status == "NoPlace")
 }
 ```
 
+### User
+
+ユーザーに関する情報。複数のリクエストはもちろん、話題の終了等に関わらず保持され続ける。
+
+- Id: ユーザーを一意に特定するID
+- DeviceId: デバイスを一意に指定するID
+- Name: ユーザーの名前
+- Nickname: ユーザーのニックネーム
+- Data: 永続化対象のユーザー情報。たとえば生年月日や趣味など
+
+なおユーザー情報を更新すると、その内容は自動的に保存されます。ただし対話処理が以上終了した場合は保存されません。
+
+```csharp
+// 対話処理が正常終了したとき、以下の情報が保存されます
+user.Nickname = "うえぞうちゃん";
+user.Data["FavoriteFood"] = "そば";
+```
+
 ## 話題の継続
 
-リクエスト・レスポンスの1ターンで終わらせず文脈を維持して話題を継続したい場合、`state.Topic.IsFinished`を`false`にします。
+リクエスト・レスポンスの1ターンで終わらせず文脈を維持して話題を継続したい場合、`response.EndTopic`を`false`にします。
 
 ```csharp
 if (state.Topic.IsFirstTurn)
@@ -480,7 +517,7 @@ if (state.Topic.IsFirstTurn)
     // 初回ターンでは翻訳すべき文言の問いかけ
     response.AddVoiceTTS("翻訳ですね？何を翻訳しますか？");
     // 次回の発話も翻訳として処理されるように話題終了フラグを下げる
-    state.Topic.IsFinished = false;
+    response.EndTopic = false;
 }
 else
 {
@@ -488,6 +525,10 @@ else
     response.AddVoiceTTS(translatedText);
 }
 ```
+
+If you want to stop conversation completely set `true` to `response.EndConversation`. The message window will be hidden and the app stop waiting request after this response.
+
+もし話題のみならず対話フロー全体を終了するには、`response.EndConversation`に`true`をセットしてください。対話が終了し、次のターンのリクエストを待つメッセージウィンドウが表示されなくなります。
 
 ## 事前処理
 
@@ -583,15 +624,15 @@ if (request.Text.Contains("天気"))
 制約事項としてアドホックリクエストは1ターンで完結する必要があります。具体的なイメージは以下の通りです。
 
 - ユーザー「翻訳して」
-- Chatdoll「何を翻訳しますか？」
+- App「何を翻訳しますか？」
 - ユーザー「これはペンです。」
-- Chatdoll「This is a pen.」
+- App「This is a pen.」
 - ユーザー「これはオレンジですか？」
-- Chatdoll「Is this an orange?」
+- App「Is this an orange?」
 - ユーザー「今日の天気は？」 ←Adhocリクエスト
-- Chatdoll「晴れです」
+- App「晴れです」
 - ユーザー「ありがとう」
-- Chatdoll「Thank you.」 ←元に戻っている
+- App「Thank you.」 ←元に戻っている
 
 ### エンティティの抽出
 
@@ -617,6 +658,39 @@ if (request.Text.Contains("翻訳"))
 
 
 # 入出力の制御
+
+ChatdollKitはカメラやマイクなどのデバイスを利用した入出力機能を提供します。
+
+## ウェイクワード
+
+AIスマートスピーカーの多くは、その製品名などの合言葉を呼ぶことでリクエスト受付状態となりますが、この合言葉のことをウェイクワードと呼びます。ChatdollKitでは`WakeWordListener`を使用することでウェイクワードによって特定の処理（対話処理の開始など）を呼び出すことができます。
+実際に利用するコンポーネントは特定の音声認識サービスを利用したものになるため、`AzureWakeWordListener`や`GoogleWakeWordListener`となります。`WakeWordListenerBase`を継承してAzure・Google以外のサービスを利用したリスナを追加することもできます。
+
+### WakeWord Settings
+
+- Wake Words: 処理を起動する合言葉およびその付随情報。複数登録可
+    - Text: 合言葉の文言。音声認識サービスが認識可能な一般的な文言が望ましい
+    - Prefix Allowance: 合言葉よりも前に付加された文字列の許容数。例えば「ねえ、」を許容したい場合は3を設定
+    - Suffix Allowance: 合言葉よりも後に付加された文字列の許容数。例えば「ちゃん」を許容したい場合は3を設定
+    - Intent: 特定のウェイクワードを呼ばれた場合に特定の話題を開始したい場合に指定
+    - Request Type: 特定のウェイクワードを呼ばれた場合に、例えばQRコードによるリクエストとしたい場合に指定
+    - Inline Request Minumum Length: ウェイクワードに続けてリクエスト本文を含む場合の最低長。例えば「妹ちゃん」がウェイクワードのとき、「妹ちゃん、天気教えて」で「天気教えて」をリクエストとして送信したい場合は5以上を設定
+- Cancel Words: 対話を終了する合言葉。複数登録可
+- Ignore Words: 句読点など音声認識後の文字列から削除したいもの。複数登録可
+- Auto Start: 起動時に自動でウェイクワードの監視を開始するかどうかの設定。デフォルトはtrue
+
+### Test and Debug
+
+- Print Result: コンソールに聞き取った文言を出力するかどうかの設定
+
+### Voice Recorder Settings
+
+- Voice Detection Threshold: 聞き取りの最低音量。ノイズの多い環境ではこの値を大きくしてください
+- Voice Detection Minimum Length: ウェイクワードとして認識する最低長（秒）。この値よりも長い発話をウェイクワードとして認識します
+- Silence Duration To End Recording: 発話終了とみなすまでの空白長（秒）
+- Voice Recognition Maximum Length: これ以上長い発話は音声認識しないようにする設定
+
+
 
 ## 音声による処理要求
 
@@ -661,14 +735,14 @@ WakeWordListenerにウェイクワードを登録する際、Request Typeに`Cam
 
 ### Skillの中でリクエストタイプを指定
 
-対話処理の中で`state.Topic.RequiredRequestType`に`RequestType.Camera`を指定することで、次回のリクエストをカメラによる撮影にすることができます。
+対話処理の中で`response.NextTurnRequestType`に`RequestType.Camera`を指定することで、次回のリクエストをカメラによる撮影にすることができます。
 
 ```csharp
 if (state.Topic.IsFirstTurn)
 {
     // 次のリクエストの形式をカメラに設定して話題を継続
-    state.Topic.RequiredRequestType = RequestType.Camera;
-    state.Topic.IsFinished = false;
+    response.NextTurnRequestType = RequestType.Camera;
+    response.EndTopic = false;
     response.AddVoiceTTS("いいよ。笑ってね。");
 }
 else
@@ -709,14 +783,14 @@ WakeWordListenerにウェイクワードを登録する際、Request Typeに`QRC
 
 ### Skillの中でリクエストタイプを指定
 
-対話処理の中で`state.Topic.RequiredRequestType`に`RequestType.QRCode`を指定することで、次回のリクエストをQRコードリーダーによる読み取りにすることができます。
+対話処理の中で`response.NextTurnRequestType`に`RequestType.QRCode`を指定することで、次回のリクエストをQRコードリーダーによる読み取りにすることができます。
 
 ```csharp
 if (state.Topic.IsFirstTurn)
 {
     // 次のリクエストの形式をQRコードリーダーに設定して話題を継続
-    state.Topic.RequiredRequestType = RequestType.QRCode;
-    state.Topic.IsFinished = false;
+    response.NextTurnRequestType = RequestType.QRCode;
+    response.EndTopic = false;
     response.AddVoiceTTS("いらっしゃいませ。受付用のQRコードを見せてください。");
 }
 else
@@ -749,65 +823,28 @@ ChatdollCamera.DecodeCode = (texture) =>
 };
 ```
 
-## ウェイクワード
-
-AIスマートスピーカーの多くは、その製品名などの合言葉を呼ぶことでリクエスト受付状態となりますが、この合言葉のことをウェイクワードと呼びます。ChatdollKitでは`WakeWordListener`を使用することでウェイクワードによって特定の処理（対話処理の開始など）を呼び出すことができます。
-実際に利用するコンポーネントは特定の音声認識サービスを利用したものになるため、`AzureWakeWordListener`や`GoogleWakeWordListener`となります。`WakeWordListenerBase`を継承してAzure・Google以外のサービスを利用したリスナを追加することもできます。
-
-### WakeWord Settings
-
-- Wake Words: 処理を起動する合言葉およびその付随情報。複数登録可
-    - Text: 合言葉の文言。音声認識サービスが認識可能な一般的な文言が望ましい
-    - Prefix Allowance: 合言葉よりも前に付加された文字列の許容数。例えば「ねえ、」を許容したい場合は3を設定
-    - Suffix Allowance: 合言葉よりも後に付加された文字列の許容数。例えば「ちゃん」を許容したい場合は3を設定
-    - Intent: 特定のウェイクワードを呼ばれた場合に特定の話題を開始したい場合に指定
-    - Request Type: 特定のウェイクワードを呼ばれた場合に、例えばQRコードによるリクエストとしたい場合に指定
-    - Inline Request Minumum Length: ウェイクワードに続けてリクエスト本文を含む場合の最低長。例えば「妹ちゃん」がウェイクワードのとき、「妹ちゃん、天気教えて」で「天気教えて」をリクエストとして送信したい場合は5以上を設定
-- Cancel Words: 対話を終了する合言葉。複数登録可
-- Ignore Words: 句読点など音声認識後の文字列から削除したいもの。複数登録可
-- Auto Start: 起動時に自動でウェイクワードの監視を開始するかどうかの設定。デフォルトはtrue
-
-### Test and Debug
-
-- Print Result: コンソールに聞き取った文言を出力するかどうかの設定
-
-### Voice Recorder Settings
-
-- Voice Detection Threshold: 聞き取りの最低音量。ノイズの多い環境ではこの値を大きくしてください
-- Voice Detection Minimum Length: ウェイクワードとして認識する最低長（秒）。この値よりも長い発話をウェイクワードとして認識します
-- Silence Duration To End Recording: 発話終了とみなすまでの空白長（秒）
-- Voice Recognition Maximum Length: これ以上長い発話は音声認識しないようにする設定
-
-
-## プロンプト
-
-リクエストを要求する発話・アニメーションなどをChatdollKitではプロンプトと呼んでおり、これをカスタマイズすることができます。イメージは以下の通りです。
-
-- 妹ちゃん（ウェイクワード）
-- どうしたの？（プロンプト）　←これ
-- 今日の天気は？（リクエスト）
-- 晴れだよ（レスポンス）
-
-アプリケーション雛形の`ChatdollApplication`や`AzureApplication`またはそれらのサブクラスを利用している場合、インスペクター上で設定することもできますが、コードベースでより詳細な指定をすることも可能です。
-
-```csharp
-// プロンプトの発話・アニメーション・表情を定義
-var promptAnimatedVoiceRequest = new AnimatedVoiceRequest();
-promptAnimatedVoiceRequest.AddVoiceTTS("どうしたの、お兄ちゃん？", preGap: 0.5f);
-promptAnimatedVoiceRequest.AddAnimation("PromptPose");
-promptAnimatedVoiceRequest.AddFace("Smile");
-　：
-　：
-
-// プロンプトの処理に割当
-chatdoll.OnPromptAsync = async (preRequest, user, state, token) =>
-{
-    await modelController.AnimatedSay(promptAnimatedVoiceRequest, token);
-};
-```
-
 
 # 高度な利用方法
+
+## 対話処理のサーバーサイド実装
+
+対話処理の変更をアプリケーションの再配布なしに反映させること等を目的として、対話処理をサーバーサイドに配置することができます。
+
+### サーバーの準備
+
+サーバーサイドのSDKについてはPythonベースのものを公開しています。
+
+https://github.com/uezo/chatdollkit-server-python/blob/main/README.ja.md
+
+PyPI経由で`chatdollkit`をインストールしたのち、上記リポジトリーからサンプルコードを取得して実行しましょう。
+
+```bash
+$ pip install chatdollkit
+```
+
+### クライアントの準備
+
+`Dialog/Processor/RemoteRequestProcessor`をアタッチしたら、インスペクター上で前の手順で準備したサーバーのURLを`Base Url`に入力してください。スキルサーバーのサンプルはおうむ返しになります。
 
 ## 形態素解析
 
@@ -838,31 +875,11 @@ public class WordNode
 なおUnityのサポート対象のあらゆるプラットフォームで動作する形態素解析エンジンを探すのは難しいかもしれませんので、その観点からも対話処理全体をサーバーサイドで実装し、形態素解析も当該サーバ上で行うことをお勧めします。
 
 
-## 対話処理のサーバーサイド実装
-
-対話処理の変更をアプリケーションの再配布なしに反映させること等を目的として、対話処理（SkillRouterおよびSkill）をサーバーサイドに配置することができます。
-
-### スキルサーバーの準備
-
-サーバーサイドのSDKについてはPythonベースのものを公開しています。
-
-https://github.com/uezo/chatdollkit-server-python/blob/main/README.ja.md
-
-PyPI経由で`chatdollkit`をインストールしたのち、上記リポジトリーからサンプルコードを取得して実行しましょう。
-
-### クライアントの準備
-
-実験的なコンポーネントですが、`HttpSkillRouter`や`HttpPrompt`をアタッチすることでスキルサーバーのAPIと連携できるようになります。サンプルを`Examples/SkillServer`に提供していますので、まずはこれを利用してみてください。
-
-- リソースやパッケージをインポートし、3Dモデルをシーンに配置します。この手順はREADMEの[📦パッケージのインポート](https://github.com/uezo/ChatdollKit/blob/master/README.ja.md#-パッケージのインポート) と [🐟リソースの準備](https://github.com/uezo/ChatdollKit/blob/master/README.ja.md#-リソースの準備)と同じです。
-- `MainAzure`か`MainGoogle`を3Dモデルにアタッチすると、必要なChatdollKit関連コンポーネントがあわせてアタッチされます。
-- APIキー、言語、リージョン（Azureのみ）を`MainAzure`または`MainGoogle`のインスペクターで設定します。ウェイクワードやキャンセルワードなどを空にした場合はデフォルトではそれぞれ「こんにちは」「おしまい」が設定されます。
-- サーバーAPIが起動済みであることを確認してUnity上で実行ボタンを押します。実行状態になったらウェイクワード（デフォルトでは「こんにちは」）を話しかけて、サーバー側に設定されたプロンプトやスキルが実行できることを確認しましょう。スキルサーバーのサンプルではおうむ返しになります。
-
-
 # おわりに
 
 ChatdollKitを利用するための一通りの説明は以上となります。わからないことがありましたらお気軽にお問い合わせください。
 
+- [Issues](https://github.com/uezo/ChatdollKit/issues)
+- [@uezochan](https://twitter.com/uezochan) (Twitter)
 
 以上

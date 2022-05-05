@@ -1,6 +1,6 @@
 ﻿# ChatdollKit Documentation
 
-version 0.4.0 | March 26, 2022 | &copy;2020 uezo | [🇯🇵Japanese version](https://github.com/uezo/ChatdollKit/blob/master/manual.ja.md)
+version 0.5.0 | 🎏 May 5, 2022 | &copy;2020 uezo | [🇯🇵Japanese version](https://github.com/uezo/ChatdollKit/blob/master/manual.ja.md)
 
 - [Setup](#Setup)
     - [Import packages](#Import-packages)
@@ -30,9 +30,10 @@ version 0.4.0 | March 26, 2022 | &copy;2020 uezo | [🇯🇵Japanese version](ht
     - [Conversation flow](#Conversation-flow)
     - [Prompt](#Prompt)
     - [Skill](#Skill)
-    - [Request and State](#Request-and-State)
+    - [Request, State and User](#request-state-and-user)
         - [Request](#request)
         - [State](#state)
+        - [User](#user)
     - [Multi-turn conversation](#Multi-turn-conversation)
     - [Pre-processing](#Pre-processing)
     - [Routing](#Routing)
@@ -60,7 +61,7 @@ version 0.4.0 | March 26, 2022 | &copy;2020 uezo | [🇯🇵Japanese version](ht
         - [Decode QR Code](#Decode-QR-Code)
 
 - [Deep dive](#Deep-dive)
-    - [Use Skill server (Experimental)](#Use-Skill-server-(Experimental))
+    - [Processing request on remote server](#processing-request-on-remote-server)
     - [Morphological Analysis (Japanese only)](#Morphological-Analysis-(Japanese-only))
 
 - [Support](#Support)
@@ -79,7 +80,7 @@ In this section you can get how to build a Chatdoll with your own custom skill. 
 
 ## Prepare resources
 
-- Add 3D model to a scene and configure components like DynamicBone and shader
+- Add 3D model to the scene and configure components like DynamicBone and shader
 - Put animation clips to `Assets/Animations`. [Anime Girls Idle Animations Free](https://assetstore.unity.com/packages/3d/animations/anime-girl-idle-animations-free-150406) is a nice asset.
 - Get API key for Speech service at [Azure Speech Services](https://azure.microsoft.com/ja-jp/services/cognitive-services/speech-services/) or [Google Cloud Speech API](https://cloud.google.com/speech-to-text/)
 
@@ -99,7 +100,7 @@ using ChatdollKit.Examples.Skills;
 namespace MyChatdollApp
 {
     [RequireComponent(typeof(EchoSkill))]
-    public class MyApp : AzureApplication  // or GoogleApplication
+    public class MyApp : ChatdollKitAzure  // or ChatdollKitGoogle, ChatdollKitWatson
     {
 
     }
@@ -368,15 +369,15 @@ ChatdollKit provides features to control conversation. Basically these features 
 This is the basic conversation frow.
 
 - User: "Hello" <- wake word
-- Chatdoll: "May I help you?" <- prompt
+- App: "May I help you?" <- prompt
 - User: "How is the weather today?" <- request
-- Chatdoll: (determine WeatherSkill to process this request) <- routing
-- Chatdoll: (process this request with WeatherSkill) <- skill
-- Chatdoll: "It's fine today" <- response
+- App: (determine WeatherSkill to process this request) <- routing
+- App: (process this request with WeatherSkill) <- skill
+- App: "It's fine today" <- response
 
 ## Prompt
 
-Prompt is the message and motion that requires to user to input request. Set function to `chatdoll.OnPromptAsync` in your main application like below or set prompt message on inspector instead if you use `ChatdollApplication` or its subclass. 
+Prompt is the message and motion that requires to user to input request. Set function to `ChatdollKit.OnPromptAsync` in your main application like below or set prompt message on inspector instead if you use `ChatdollKit` or its subclass. 
 
 ```csharp
 // Message, motion and face expression for prompt
@@ -400,16 +401,17 @@ chatdoll.OnPromptAsync = async (preRequest, user, state, token) =>
 using System.Threading;
 using System.Threading.Tasks;
 using ChatdollKit.Dialog;
+using ChatdollKit.Dialog.Processor;
 
 public class EchoSkill : SkillBase
 {
-    public override async Task<Response> ProcessAsync(Request request, State state, CancellationToken token)
+    public override async Task<Response> ProcessAsync(Request request, State state, User user, CancellationToken token)
     {
         // Make response with request id
         var response = new Response(request.Id);
 
         // Set echo voice
-        response.AddVoiceTTS($"{request.Text}");
+        response.AddVoiceTTS(request.Text);
 
         return response;
     }
@@ -419,9 +421,9 @@ public class EchoSkill : SkillBase
 `response` has `AnimatedVoiceRequest` internally and has some `Add*` methods for shortcut. For example `response.AddVoiceTTS` equals to `response.AnimatedVoiceRequest.AddVoiceTTS`. If you make your skill by extending `SkillBase`, the voices, animations and face expressions will be played by `SkillBase.ShowResponseAsync()`.
 
 
-## Request and State
+## Request, State and User
 
-`Request request` and `State state` passed as arguments for `ProcessAsync` are similar to Request and Session in Web application.
+`Request request`, `State state` and `User user` passed as arguments for `ProcessAsync` are similar to Request and Session in Web application.
 
 ### Request
 
@@ -429,13 +431,7 @@ public class EchoSkill : SkillBase
 
 - Id: Key to identify the request.
 - Type: Type of request. `Voice`, `Camera` and `QRCode`.
-- Timestamp: The date and time of this request is created.
-- User: User information who make this request
-    - Data: Key-Value data of the user.
-    - DeviceId: Key to identify the device.
-    - Id: key to identify the user.
-    - Name: Name of the user.
-    - Nickname: Nickname of the user.
+- CreatedAt: The date and time of this request is created.
 - Text: Input message as text.
 - Payloads: Data attached to this request like photo.
 - Intent: Intent extracted from user's input.
@@ -445,14 +441,9 @@ public class EchoSkill : SkillBase
 - Entities: Data included in this request. e.g. "Tokyo" for weather intent.
 - Words: Result of morphological analysis. See also [Morphological Analysis](#Morphological-Analysis-(Japanese-only)).
 - IsCanceled: Cancellation request or not.
+- ClientId: Identifier of this application. (and its owner, if required)
+- Tokens: Tokens to verify the client.
 
-Note that updated `User` information is saved automatically except for the case that the conversation has errors.
-
-```csharp
-// Update user info in skill. This will be saved automatically at the end of this turn.
-request.User.Nickname = "uezo";
-request.User.Data["FavoriteFood"] = "soba";
-```
 
 ### State
 
@@ -460,16 +451,15 @@ request.User.Data["FavoriteFood"] = "soba";
 
 - Id: Key to indentify this state.
 - UserId: User's Id who owns this state.
-- Timestamp: Last update date and time.
+- UpdatedAt: Last update date and time.
 - IsNew: Newly created or get from store
 - Topic: Topic of conversation
     - Name: Name
     - Status: Status
     - IsFirstTurn: First turn or not.
-    - IsFinished: Conversation is finished or not. Default is `true`. Set `false` in your skill if you want to keep topic in next turn.
     - Priority: Priority to determine to continue this topic in comparison with `Intent.Priority`.
-    - RequiredRequestType: Request type in next turn that the skill requires.
 - Data: Key-value data of this topic. This data is available as long as the topic continues.
+
 
 The usage of `Topic.Status` is like below.
 
@@ -487,9 +477,28 @@ else if (state.Topic.Status == "NoPlace")
 }
 ```
 
+### User
+
+`User` is the information of the user.
+
+- Id: key to identify the user.
+- DeviceId: Key to identify the device.
+- Name: Name of the user.
+- Nickname: Nickname of the user.
+- Data: Key-Value data of the user.
+
+Note that updated `User` information is saved automatically except for the case that the conversation has errors.
+
+```csharp
+// Update user info in skill. This will be saved automatically at the end of this turn.
+user.Nickname = "uezo";
+user.Data["FavoriteFood"] = "soba";
+```
+
+
 ## Multi-turn conversation
 
-Set `false` to `state.Topic.IsFinished` in your skill to continue the current topic in the next turn.
+Set `false` to `response.EndTopic` in your skill to continue the current topic in the next turn.
 
 ```csharp
 if (state.Topic.IsFirstTurn)
@@ -508,7 +517,7 @@ if (state.Topic.IsFirstTurn)
     }
 
     // Set false to continue
-    state.Topic.IsFinished = false;
+    response.EndTopic = false;
 }
 else
 {
@@ -519,6 +528,8 @@ else
     response.AddVoiceTTS(translatedText);
 }
 ```
+
+If you want to stop conversation completely set `true` to `response.EndConversation`. The message window will be hidden and the app stop waiting request after this response.
 
 ## Pre-processing
 
@@ -620,15 +631,15 @@ else if (request.Text.Contains("translate"))
 Note that Adhoc intent should finish in the first turn, can't continue topic.
 
 - User: "Translate to Japanese please"
-- Chatdoll: "Tell me the sentence to translate" <-translation(first turn)
+- App: "Tell me the sentence to translate" <-translation(first turn)
 - User: "I will have soba for lunch"
-- Chatdoll: "私はお昼にそばを食べます" <-translation(continue)
+- App: "私はお昼にそばを食べます" <-translation(continue)
 - User: "Udon for dinner"
-- Chatdoll: "夜はうどんです" <-translation(continue)
+- App: "夜はうどんです" <-translation(continue)
 - User: "How is the weather in Tokyo?"
-- Chatdoll: "It's fine today" <-weather(first turn)
+- App: "It's fine today" <-weather(first turn)
 - User: "Thank you"
-- Chatdoll: "ありがとう" <-translation(continue)
+- App: "ありがとう" <-translation(continue)
 
 
 # I/O
@@ -702,20 +713,20 @@ You can configure wake words on the inspector of WakeWordListener.
 To launch camera when the wake word recognized, set `Camera` to the RequestType on inspector of WakeWordLister. Also set an intent to process the picture with.
 
 - User: "Hey, take an picture" <- wake word
-- Chatdoll: "Okay. Smile!" <- prompt
+- App: "Okay. Smile!" <- prompt
 (Launch camera and take an picture)  <- request
-- Chatdoll: "Sent you by messanger" <- response
+- App: "Sent you by messanger" <- response
 
 ### Use camera in conversation
 
-Set `RequestType.Camera` to `state.Topic.RequiredRequestType` to use camera request in the next turn.
+Set `RequestType.Camera` to `response.NextTurnRequestType` to use camera request in the next turn.
 
 ```csharp
 if (state.Topic.IsFirstTurn)
 {
     // Set camera to request type for the next turn
-    state.Topic.RequiredRequestType = RequestType.Camera;
-    state.Topic.IsFinished = false;
+    response.NextTurnRequestType = RequestType.Camera;
+    response.EndTopic = false;
     response.AddVoiceTTS("Okay, smile!");
 }
 else
@@ -733,11 +744,11 @@ else
 ```
 
 - User: "Hey, chatdoll" <- wake word
-- Chatdoll: "May I help you?" <- prompt
+- App: "May I help you?" <- prompt
 - User: "Take an picture" <- voice request (1st turn)
-- Chatdoll: "Okay. Smile!" <- response (1st turn)
+- App: "Okay. Smile!" <- response (1st turn)
 (Launch camera and take an picture)  <- camera request (2nd turn)
-- Chatdoll: "Sent you by messanger" <- response (2nd turn)
+- App: "Sent you by messanger" <- response (2nd turn)
 
 
 ## QRCode Request
@@ -749,20 +760,20 @@ else
 To launch QRCode reader when the wake word recognized, set `QRCode` to the RequestType on inspector of WakeWordLister. Also set an intent to process the QR Code with.
 
 - User: "Hello" <- wake word
-- Chatdoll: "Hello. Let me see QR Code for check in" <- prompt
+- App: "Hello. Let me see QR Code for check in" <- prompt
 (Launch QR Code reader and decode it)  <- request
-- Chatdoll: "Nice to meet you, Kunikida-san from Numazu Bank" <- response
+- App: "Nice to meet you, Kunikida-san from Numazu Bank" <- response
 
 ### Read in conversation
 
-Set `RequestType.QRCode` to `state.Topic.RequiredRequestType` to use QRCode request in the next turn.
+Set `RequestType.QRCode` to `response.NextTurnRequestType` to use QRCode request in the next turn.
 
 ```csharp
 if (state.Topic.IsFirstTurn)
 {
     // Set QRCode to request type for the next turn
-    state.Topic.RequiredRequestType = RequestType.QRCode;
-    state.Topic.IsFinished = false;
+    response.NextTurnRequestType = RequestType.QRCode;
+    response.EndTopic = false;
     response.AddVoiceTTS("Let me see QR Code for check in.");
 }
 else
@@ -774,11 +785,11 @@ else
 ```
 
 - User: "Hey, chatdoll" <- wake word
-- Chatdoll: "May I help you?" <- prompt
+- App: "May I help you?" <- prompt
 - User: "Check in, please" <- (1st turn)
-- Chatdoll: "Let me see QR Code for check in" <- response (1st turn)
+- App: "Let me see QR Code for check in" <- response (1st turn)
 (Launch QR Code reader and decode it)  <- QRCode request (2nd turn)
-- Chatdoll: "Nice to meet you, Kunikida-san from Numazu Bank" <- response (2nd turn)
+- App: "Nice to meet you, Kunikida-san from Numazu Bank" <- response (2nd turn)
 
 
 ### Decode QR Code
@@ -800,26 +811,25 @@ ChatdollCamera.DecodeCode = (texture) =>
 
 # Deep dive
 
-## Use Skill server (Experimental)
+## Processing request on remote server
 
 You can host skills as a REST API server on any platforms you like and use it from ChatdollKit so that you can update skills without updating client application.
 
-### Setup Skill server
+### Setup server
 
 We provide server side SDK for Python.
 
 https://github.com/uezo/chatdollkit-server-python/blob/main/README.md
 
-### Setup Skill client (ChatdollKit device)
+Install it from PyPI and start sample application.
 
-Attach `HttpSkillRouter` and `HttpPrompt` to your 3D model to use skill server (experimental components). We provide an example in `Examples/SkillServer`.
+```bash
+$ pip install chatdollkit
+```
 
-- Import resources and put and configure your 3D model to the scene. This procedure is the same as [📦Import packages](https://github.com/uezo/ChatdollKit/blob/master/README.md#-import-packages) and [🐟Resource preparation](https://github.com/uezo/ChatdollKit/blob/master/README.md#-resource-preparation) in README.
-- Attach `MainAzure` or `MainGoogle` to your 3D Model. Related ChatdollKit components are also attached.
-- Configure API Key, Language and Region(Azure only) on the inspector of `MainAzure` or `MainGoogle`.
-- Make sure that the skill server is already running then press Play button to run the application. 
-- Say wake word to start conversation (echo). Wake word is "hello" by default.
+### Setup client (Unity)
 
+Attach `Dialog/Processor/RemoteRequestProcessor` and set `Base Url` of the server that you created on the previous step. Make sure that the server is already running then press Play button to run the application.
 
 ## Morphological Analysis (Japanese only)
 
@@ -848,3 +858,6 @@ Note that the supported platform of MeCab is limited so we recommend you to host
 # Support
 
 Feel free to post issue to this repository if you have any questions, suggestions or any kinds of opinions.
+
+- [Issues](https://github.com/uezo/ChatdollKit/issues)
+- [@uezochan](https://twitter.com/uezochan) (Twitter)
