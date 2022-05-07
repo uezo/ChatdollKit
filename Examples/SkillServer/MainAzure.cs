@@ -5,7 +5,7 @@ using ChatdollKit.Extension.Azure;
 namespace ChatdollKit.Examples.SkillServer
 {
     [RequireComponent(typeof(RemoteRequestProcessor))]
-    public class MainAzure : AzureApplication
+    public class MainAzure : ChatdollKitAzure
     {
         [Header("Remote Request Processor")]
         public string BaseUrl = string.Empty;

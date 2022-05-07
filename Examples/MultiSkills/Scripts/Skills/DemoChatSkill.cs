@@ -7,7 +7,7 @@ using ChatdollKit.Dialog;
 using ChatdollKit.Network;
 using ChatdollKit.Dialog.Processor;
 
-namespace ChatdollKit.Examples.Chat
+namespace ChatdollKit.Examples.MultiSkills
 {
     public class DemoChatSkill : SkillBase
     {

@@ -5,7 +5,7 @@ using ChatdollKit.Extension.Google;
 namespace ChatdollKit.Examples.SkillServer
 {
     [RequireComponent(typeof(RemoteRequestProcessor))]
-    public class MainGoogle : GoogleApplication
+    public class MainGoogle : ChatdollKitGoogle
     {
         [Header("Remote Request Processor")]
         public string BaseUrl = string.Empty;

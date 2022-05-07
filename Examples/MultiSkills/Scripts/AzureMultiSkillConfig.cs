@@ -3,13 +3,10 @@ using ChatdollKit.Extension.Azure;
 
 namespace ChatdollKit.Examples.MultiSkills
 {
-    public class AzureMultiSkillConfig : AzureApplicationConfig
+    public class AzureMultiSkillConfig : ChatdollKitAzureConfig
     {
         [Header("Azure Translation API")]
         public string TranslationApiKey;
         public string TranslationBaseUrl;
-
-        [Header("ChatA3RT")]
-        public string ChatA3RTApiKey;
     }
 }

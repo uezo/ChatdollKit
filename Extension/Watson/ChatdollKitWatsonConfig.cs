@@ -2,7 +2,7 @@
 
 namespace ChatdollKit.Extension.Watson
 {
-    public class WatsonApplicationConfig : ScriptableObject
+    public class ChatdollKitWatsonConfig : ScriptableObject
     {
         [Header("Watson Speach-to-Text Service")]
         public string STTApiKey;

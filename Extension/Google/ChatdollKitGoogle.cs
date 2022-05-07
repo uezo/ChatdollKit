@@ -5,7 +5,7 @@ namespace ChatdollKit.Extension.Google
     [RequireComponent(typeof(GoogleWakeWordListener))]
     [RequireComponent(typeof(GoogleVoiceRequestProvider))]
     [RequireComponent(typeof(GoogleTTSLoader))]
-    public class GoogleApplication : ChatdollKit
+    public class ChatdollKitGoogle : ChatdollKit
     {
         [Header("Google Cloud Speech API")]
         public string ApiKey;
@@ -15,6 +15,8 @@ namespace ChatdollKit.Extension.Google
 
         protected override void OnComponentsReady()
         {
+            base.OnComponentsReady();
+
             GetComponent<GoogleWakeWordListener>().Configure(ApiKey, Language);
             GetComponent<GoogleVoiceRequestProvider>().Configure(ApiKey, Language);
             GetComponent<GoogleTTSLoader>().Configure(ApiKey, Language, Gender, SpeakerName);
@@ -26,7 +28,7 @@ namespace ChatdollKit.Extension.Google
 
             if (config != null)
             {
-                var appConfig = (GoogleApplicationConfig)config;
+                var appConfig = (ChatdollKitGoogleConfig)config;
                 ApiKey = appConfig.SpeechApiKey;
                 Language = appConfig.Language;
             }
@@ -36,7 +38,7 @@ namespace ChatdollKit.Extension.Google
 
         public override ScriptableObject CreateConfig(ScriptableObject config = null)
         {
-            var appConfig = config == null ? GoogleApplicationConfig.CreateInstance<GoogleApplicationConfig>() : (GoogleApplicationConfig)config;
+            var appConfig = config == null ? ChatdollKitGoogleConfig.CreateInstance<ChatdollKitGoogleConfig>() : (ChatdollKitGoogleConfig)config;
 
             appConfig.SpeechApiKey = ApiKey;
             appConfig.Language = Language;

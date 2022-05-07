@@ -197,13 +197,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 824770274}
-  m_LocalRotation: {x: 0.044038285, y: -0.04817989, z: 0.0012945542, w: 0.9978666}
-  m_LocalPosition: {x: 0.25, y: 0.93, z: -1.53}
+  m_LocalRotation: {x: -0.0019156653, y: 0.99872535, z: -0.04401269, w: 0.024635002}
+  m_LocalPosition: {x: -0.06, y: 0.861, z: 1.685}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 5.0490003, y: -5.5330005, z: -0.095000006}
+  m_LocalEulerAnglesHint: {x: 5.038, y: 177.15901, z: -0.34500003}
 --- !u!137 &1213650869 stripped
 SkinnedMeshRenderer:
   m_CorrespondingSourceObject: {fileID: 6760534963885608630, guid: 6b631a2eb6c944a84bad4248475ac503,
@@ -353,7 +353,7 @@ PrefabInstance:
     - target: {fileID: 8717752560027440001, guid: 6b631a2eb6c944a84bad4248475ac503,
         type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8717752560027440001, guid: 6b631a2eb6c944a84bad4248475ac503,
         type: 3}
@@ -363,7 +363,7 @@ PrefabInstance:
     - target: {fileID: 8717752560027440001, guid: 6b631a2eb6c944a84bad4248475ac503,
         type: 3}
       propertyPath: m_LocalRotation.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8717752560027440001, guid: 6b631a2eb6c944a84bad4248475ac503,
         type: 3}
@@ -378,7 +378,7 @@ PrefabInstance:
     - target: {fileID: 8717752560027440001, guid: 6b631a2eb6c944a84bad4248475ac503,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 180
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8717752560027440001, guid: 6b631a2eb6c944a84bad4248475ac503,
         type: 3}
@@ -419,14 +419,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ApplicationName: Demo-Azure-MultiSkills
-  WakeWord: "\u3053\u3093\u306B\u3061\u306F"
-  CancelWord: "\u304A\u3057\u307E\u3044"
-  PromptVoice: "\u3069\u3046\u3057\u305F\u306E\uFF1F"
-  PromptVoiceType: 2
-  PromptFace: 
-  PromptAnimation: 
-  MessageWindow: {fileID: 0}
-  ChatdollCamera: {fileID: 0}
+  ModelController: {fileID: 0}
+  DialogController: {fileID: 0}
   ApiKey: 
   Region: 
   Language: ja-JP
@@ -435,7 +429,6 @@ MonoBehaviour:
   LogTableUri: 
   TranslationApiKey: 
   TranslationBaseUrl: https://api.cognitive.microsofttranslator.com
-  ChatA3RTApiKey: 
   WeatherLocation: 130010
 --- !u!114 &1621422569
 MonoBehaviour:
@@ -465,6 +458,30 @@ MonoBehaviour:
   CameraCaption: 
   SelfTimerSeconds: 3
   ChatdollCamera: {fileID: 0}
+--- !u!114 &1621422571
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1621422566}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 649daf9edaefc4207b3d2186e545704a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  WakeWord: "\u3053\u3093\u306B\u3061\u306F"
+  CancelWord: "\u304A\u3057\u307E\u3044"
+  PromptVoice: "\u3069\u3046\u3057\u305F\u306E\uFF1F"
+  PromptVoiceType: 2
+  PromptFace: 
+  PromptAnimation: 
+  ErrorVoice: "\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F"
+  ErrorVoiceType: 2
+  ErrorFace: 
+  ErrorAnimation: 
+  MessageWindow: {fileID: 0}
+  ChatdollCamera: {fileID: 0}
 --- !u!114 &1621422572
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -490,8 +507,7 @@ MonoBehaviour:
   BlinkTransitionToClose: 0.01
   BlinkTransitionToOpen: 0.02
   SkinnedMeshRenderer: {fileID: 1213650869}
-  FaceClipConfiguration: {fileID: 11400000, guid: 56562b6f67368428eb49d06adae5f60a,
-    type: 2}
+  FaceClipConfiguration: {fileID: 0}
   FaceFadeStep: 5
 --- !u!114 &1621422573
 MonoBehaviour:
@@ -509,7 +525,7 @@ MonoBehaviour:
   _Name: Azure
   _IsDefault: 1
   ApiKey: 
-  Region: japanwest
+  Region: 
   Language: ja-JP
   Gender: Female
   SpeakerName: ja-JP-HarukaRUS
@@ -533,8 +549,6 @@ MonoBehaviour:
   - "\u3001"
   - "\uFF1F"
   - "\uFF01"
-  UseDummy: 0
-  DummyText: 
   PrintResult: 0
   VoiceDetectionThreshold: 0.1
   VoiceDetectionMinimumLength: 0.3
@@ -598,13 +612,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 1621422566}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 88613ef4c556e4cd8b2e574eeda219ba, type: 3}
+  m_Script: {fileID: 11500000, guid: 3814efe6f8b5c492a9d3132c89e8d9cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  WeatherKeyword: "\u5929\u6C17"
-  TranslateKeyword: "\u7FFB\u8A33"
-  CameraKeyword: "\u5199\u771F"
-  QRCodeKeyword: "QR\u30B3\u30FC\u30C9"
+  Name: 
 --- !u!114 &1621422578
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -627,11 +638,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 1621422566}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7499f46bf30314d44bff14e7148e32b4, type: 3}
+  m_Script: {fileID: 11500000, guid: 88613ef4c556e4cd8b2e574eeda219ba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Name: 
-  A3RTApiKey: 
+  WeatherKeyword: "\u5929\u6C17"
+  TranslateKeyword: "\u7FFB\u8A33"
+  CameraKeyword: "\u5199\u771F"
+  QRCodeKeyword: "QR\u30B3\u30FC\u30C9"
 --- !u!114 &1621422580
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -8,7 +8,7 @@ namespace ChatdollKit.Examples.MultiSkills
 {
     [RequireComponent(typeof(WeatherSkill))]
     [RequireComponent(typeof(TranslateSkill))]
-    [RequireComponent(typeof(ChatA3RTSkill))]
+    [RequireComponent(typeof(DemoChatSkill))]
     [RequireComponent(typeof(EchoSkill))]
     [RequireComponent(typeof(CameraSkill))]
     [RequireComponent(typeof(QRCodeSkill))]
@@ -46,9 +46,9 @@ namespace ChatdollKit.Examples.MultiSkills
                 return new IntentExtractionResult("qrcode");
             }
 
-            if (IsAvailableTopic("chata3rt", true))
+            if (IsAvailableTopic("demochat", true))
             {
-                return new IntentExtractionResult("chata3rt", Priority.Lowest);
+                return new IntentExtractionResult("demochat", Priority.Lowest);
             }
 
             return new IntentExtractionResult("echo");

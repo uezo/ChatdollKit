@@ -5,7 +5,7 @@ namespace ChatdollKit.Extension.Watson
     [RequireComponent(typeof(WatsonWakeWordListener))]
     [RequireComponent(typeof(WatsonVoiceRequestProvider))]
     [RequireComponent(typeof(WatsonTTSLoader))]
-    public class WatsonApplication : ChatdollKit
+    public class ChatdollKitWatson : ChatdollKit
     {
         [Header("Watson Speach-to-Text Service")]
         public string STTApiKey;
@@ -31,7 +31,7 @@ namespace ChatdollKit.Extension.Watson
 
             if (config != null)
             {
-                var appConfig = (WatsonApplicationConfig)config;
+                var appConfig = (ChatdollKitWatsonConfig)config;
                 STTApiKey = appConfig.STTApiKey;
                 STTBaseUrl = appConfig.STTBaseUrl;
                 STTModel = appConfig.STTModel;
@@ -46,7 +46,7 @@ namespace ChatdollKit.Extension.Watson
 
         public override ScriptableObject CreateConfig(ScriptableObject config = null)
         {
-            var appConfig = config == null ? WatsonApplicationConfig.CreateInstance<WatsonApplicationConfig>() : (WatsonApplicationConfig)config;
+            var appConfig = config == null ? ChatdollKitWatsonConfig.CreateInstance<ChatdollKitWatsonConfig>() : (ChatdollKitWatsonConfig)config;
 
             appConfig.STTApiKey = STTApiKey;
             appConfig.STTBaseUrl = STTBaseUrl;

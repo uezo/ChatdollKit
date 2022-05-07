@@ -166,7 +166,7 @@ PrefabInstance:
     - target: {fileID: 8717752560027440001, guid: 6b631a2eb6c944a84bad4248475ac503,
         type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8717752560027440001, guid: 6b631a2eb6c944a84bad4248475ac503,
         type: 3}
@@ -176,7 +176,7 @@ PrefabInstance:
     - target: {fileID: 8717752560027440001, guid: 6b631a2eb6c944a84bad4248475ac503,
         type: 3}
       propertyPath: m_LocalRotation.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8717752560027440001, guid: 6b631a2eb6c944a84bad4248475ac503,
         type: 3}
@@ -191,7 +191,7 @@ PrefabInstance:
     - target: {fileID: 8717752560027440001, guid: 6b631a2eb6c944a84bad4248475ac503,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 180
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8717752560027440001, guid: 6b631a2eb6c944a84bad4248475ac503,
         type: 3}
@@ -245,7 +245,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Name: 
-  Engine: 0
+  Engine: 1
   ApiKey: 
   BaseUrl: 
 --- !u!114 &10516573
@@ -257,11 +257,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 10516568}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7499f46bf30314d44bff14e7148e32b4, type: 3}
+  m_Script: {fileID: 11500000, guid: 3814efe6f8b5c492a9d3132c89e8d9cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   Name: 
-  A3RTApiKey: 
 --- !u!114 &10516574
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -319,21 +318,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ApplicationName: Demo-Google-MultiSkills
-  WakeWord: "\u3053\u3093\u306B\u3061\u306F"
-  CancelWord: "\u304A\u3057\u307E\u3044"
-  PromptVoice: "\u3069\u3046\u3057\u305F\u306E\uFF1F"
-  PromptVoiceType: 2
-  PromptFace: 
-  PromptAnimation: 
-  MessageWindow: {fileID: 0}
-  ChatdollCamera: {fileID: 0}
+  ModelController: {fileID: 0}
+  DialogController: {fileID: 0}
   ApiKey: 
   Language: ja-JP
   Gender: FEMALE
   SpeakerName: ja-JP-Standard-A
   TranslationApiKey: 
   TranslationBaseUrl: https://translation.googleapis.com/language/translate/v2
-  ChatA3RTApiKey: 
   WeatherLocation: 130010
 --- !u!114 &10516578
 MonoBehaviour:
@@ -373,8 +365,6 @@ MonoBehaviour:
   - "\u3001"
   - "\uFF1F"
   - "\uFF01"
-  UseDummy: 0
-  DummyText: 
   PrintResult: 0
   VoiceDetectionThreshold: 0.1
   VoiceDetectionMinimumLength: 0.3
@@ -409,9 +399,32 @@ MonoBehaviour:
   BlinkTransitionToClose: 0.01
   BlinkTransitionToOpen: 0.02
   SkinnedMeshRenderer: {fileID: 10516569}
-  FaceClipConfiguration: {fileID: 11400000, guid: 56562b6f67368428eb49d06adae5f60a,
-    type: 2}
+  FaceClipConfiguration: {fileID: 0}
   FaceFadeStep: 5
+--- !u!114 &10516581
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 10516568}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 649daf9edaefc4207b3d2186e545704a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  WakeWord: "\u3053\u3093\u306B\u3061\u306F"
+  CancelWord: "\u304A\u3057\u307E\u3044"
+  PromptVoice: "\u3069\u3046\u3057\u305F\u306E\uFF1F"
+  PromptVoiceType: 2
+  PromptFace: 
+  PromptAnimation: 
+  ErrorVoice: "\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F"
+  ErrorVoiceType: 2
+  ErrorFace: 
+  ErrorAnimation: 
+  MessageWindow: {fileID: 0}
+  ChatdollCamera: {fileID: 0}
 --- !u!114 &10516582
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -496,6 +509,89 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Name: 
+--- !u!1 &756776558
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 756776561}
+  - component: {fileID: 756776560}
+  - component: {fileID: 756776559}
+  m_Layer: 0
+  m_Name: Main Camera
+  m_TagString: MainCamera
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!81 &756776559
+AudioListener:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 756776558}
+  m_Enabled: 1
+--- !u!20 &756776560
+Camera:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 756776558}
+  m_Enabled: 1
+  serializedVersion: 2
+  m_ClearFlags: 1
+  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_projectionMatrixMode: 1
+  m_GateFitMode: 2
+  m_FOVAxisMode: 0
+  m_SensorSize: {x: 36, y: 24}
+  m_LensShift: {x: 0, y: 0}
+  m_FocalLength: 50
+  m_NormalizedViewPortRect:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1
+    height: 1
+  near clip plane: 0.3
+  far clip plane: 1000
+  field of view: 60
+  orthographic: 0
+  orthographic size: 5
+  m_Depth: -1
+  m_CullingMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_RenderingPath: -1
+  m_TargetTexture: {fileID: 0}
+  m_TargetDisplay: 0
+  m_TargetEye: 3
+  m_HDR: 1
+  m_AllowMSAA: 1
+  m_AllowDynamicResolution: 0
+  m_ForceIntoRT: 0
+  m_OcclusionCulling: 1
+  m_StereoConvergence: 10
+  m_StereoSeparation: 0.022
+--- !u!4 &756776561
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 756776558}
+  m_LocalRotation: {x: -0.0019156653, y: 0.99872535, z: -0.04401269, w: 0.024635002}
+  m_LocalPosition: {x: -0.06, y: 0.861, z: 1.685}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 5.038, y: 177.15901, z: -0.34500003}
 --- !u!1 &1043467913
 GameObject:
   m_ObjectHideFlags: 0
@@ -588,89 +684,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
---- !u!1 &1257642436
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1257642439}
-  - component: {fileID: 1257642438}
-  - component: {fileID: 1257642437}
-  m_Layer: 0
-  m_Name: Main Camera
-  m_TagString: MainCamera
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!81 &1257642437
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1257642436}
-  m_Enabled: 1
---- !u!20 &1257642438
-Camera:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1257642436}
-  m_Enabled: 1
-  serializedVersion: 2
-  m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
-  m_projectionMatrixMode: 1
-  m_GateFitMode: 2
-  m_FOVAxisMode: 0
-  m_SensorSize: {x: 36, y: 24}
-  m_LensShift: {x: 0, y: 0}
-  m_FocalLength: 50
-  m_NormalizedViewPortRect:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 1
-    height: 1
-  near clip plane: 0.3
-  far clip plane: 1000
-  field of view: 60
-  orthographic: 0
-  orthographic size: 5
-  m_Depth: -1
-  m_CullingMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_RenderingPath: -1
-  m_TargetTexture: {fileID: 0}
-  m_TargetDisplay: 0
-  m_TargetEye: 3
-  m_HDR: 1
-  m_AllowMSAA: 1
-  m_AllowDynamicResolution: 0
-  m_ForceIntoRT: 0
-  m_OcclusionCulling: 1
-  m_StereoConvergence: 10
-  m_StereoSeparation: 0.022
---- !u!4 &1257642439
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1257642436}
-  m_LocalRotation: {x: 0.044038285, y: -0.04817989, z: 0.0012945542, w: 0.9978666}
-  m_LocalPosition: {x: 0.25, y: 0.93, z: -1.53}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 5.0490003, y: -5.5330005, z: -0.095000006}
 --- !u!1 &1373286114
 GameObject:
   m_ObjectHideFlags: 0

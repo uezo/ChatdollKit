@@ -3,7 +3,7 @@ using ChatdollKit.Extension.Watson;
 
 namespace ChatdollKit.Examples.SkillServer
 {
-    public class WatsonRemoteApplicationConfig : WatsonApplicationConfig
+    public class WatsonRemoteApplicationConfig : ChatdollKitWatsonConfig
     {
         [Header("Remote Url")]
         public string BaseUrl;
