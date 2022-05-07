@@ -5,7 +5,7 @@ namespace ChatdollKit.Extension.Azure
     [RequireComponent(typeof(AzureWakeWordListener))]
     [RequireComponent(typeof(AzureVoiceRequestProvider))]
     [RequireComponent(typeof(AzureTTSLoader))]
-    public class AzureApplication : ChatdollKit
+    public class ChatdollKitAzure : ChatdollKit
     {
         [Header("Azure Speech Services")]
         public string ApiKey = string.Empty;
@@ -40,7 +40,7 @@ namespace ChatdollKit.Extension.Azure
 
             if (config != null)
             {
-                var appConfig = (AzureApplicationConfig)config;
+                var appConfig = (ChatdollKitAzureConfig)config;
                 LogTableUri = appConfig.LogTableUri;
                 ApiKey = appConfig.SpeechApiKey;
                 Region = appConfig.Region;
@@ -54,7 +54,7 @@ namespace ChatdollKit.Extension.Azure
 
         public override ScriptableObject CreateConfig(ScriptableObject config = null)
         {
-            var appConfig = config == null ? AzureApplicationConfig.CreateInstance<AzureApplicationConfig>() : (AzureApplicationConfig)config;
+            var appConfig = config == null ? ChatdollKitAzureConfig.CreateInstance<ChatdollKitAzureConfig>() : (ChatdollKitAzureConfig)config;
 
             appConfig.LogTableUri = LogTableUri;
             appConfig.SpeechApiKey = ApiKey;

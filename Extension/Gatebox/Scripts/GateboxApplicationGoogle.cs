@@ -27,7 +27,7 @@ namespace ChatdollKit.Extension.Gatebox
 
             if (config != null)
             {
-                var appConfig = (GoogleApplicationConfig)config;
+                var appConfig = (ChatdollKitGoogleConfig)config;
                 ApiKey = appConfig.SpeechApiKey;
                 Language = appConfig.Language;
             }
@@ -37,7 +37,7 @@ namespace ChatdollKit.Extension.Gatebox
 
         public override ScriptableObject CreateConfig(ScriptableObject config = null)
         {
-            var appConfig = config == null ? GoogleApplicationConfig.CreateInstance<GoogleApplicationConfig>() : (GoogleApplicationConfig)config;
+            var appConfig = config == null ? ChatdollKitGoogleConfig.CreateInstance<ChatdollKitGoogleConfig>() : (ChatdollKitGoogleConfig)config;
 
             appConfig.SpeechApiKey = ApiKey;
             appConfig.Language = Language;

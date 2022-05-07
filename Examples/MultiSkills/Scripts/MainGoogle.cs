@@ -4,21 +4,21 @@ using ChatdollKit.Extension.Google;
 namespace ChatdollKit.Examples.MultiSkills
 {
     [RequireComponent(typeof(Router))]
-    public class MainGoogle : GoogleApplication
+    public class MainGoogle : ChatdollKitGoogle
     {
         [Header("Skill settings")]
         public string TranslationApiKey;
         public string TranslationBaseUrl = "https://translation.googleapis.com/language/translate/v2";
-        public string ChatA3RTApiKey;
         public WeatherSkill.WeatherLocation WeatherLocation = WeatherSkill.WeatherLocation.Tokyo;
 
         protected override void OnComponentsReady()
         {
+            base.OnComponentsReady();
+
             var translationSkill = gameObject.GetComponent<TranslateSkill>();
             translationSkill.ApiKey = TranslationApiKey;
             translationSkill.Engine = TranslateSkill.TranslationEngine.Google;
             translationSkill.BaseUrl = TranslationBaseUrl;
-            gameObject.GetComponent<ChatA3RTSkill>().A3RTApiKey = ChatA3RTApiKey;
             gameObject.GetComponent<WeatherSkill>().MyLocation = WeatherLocation;
 
             DialogController.ChatdollCamera.DecodeCode = QRCodeDecoder.DecodeByZXing;
@@ -33,7 +33,6 @@ namespace ChatdollKit.Examples.MultiSkills
                 var appConfig = (GoogleMultiSkillConfig)config;
                 TranslationApiKey = appConfig.TranslationApiKey;
                 TranslationBaseUrl = appConfig.TranslationBaseUrl;
-                ChatA3RTApiKey = appConfig.ChatA3RTApiKey;
             }
 
             return config;
@@ -45,7 +44,6 @@ namespace ChatdollKit.Examples.MultiSkills
 
             appConfig.TranslationApiKey = TranslationApiKey;
             appConfig.TranslationBaseUrl = TranslationBaseUrl;
-            appConfig.ChatA3RTApiKey = ChatA3RTApiKey;
 
             base.CreateConfig(appConfig);
 

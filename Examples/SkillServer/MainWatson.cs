@@ -5,7 +5,7 @@ using ChatdollKit.Extension.Watson;
 namespace ChatdollKit.Examples.SkillServer
 {
     [RequireComponent(typeof(RemoteRequestProcessor))]
-    public class MainWatson : WatsonApplication
+    public class MainWatson : ChatdollKitWatson
     {
         [Header("Remote Request Processor")]
         public string BaseUrl = string.Empty;

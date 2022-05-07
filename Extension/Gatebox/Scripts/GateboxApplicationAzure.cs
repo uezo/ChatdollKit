@@ -39,7 +39,7 @@ namespace ChatdollKit.Extension.Gatebox
 
             if (config != null)
             {
-                var appConfig = (AzureApplicationConfig)config;
+                var appConfig = (ChatdollKitAzureConfig)config;
                 LogTableUri = appConfig.LogTableUri;
                 ApiKey = appConfig.SpeechApiKey;
                 Region = appConfig.Region;
@@ -53,7 +53,7 @@ namespace ChatdollKit.Extension.Gatebox
 
         public override ScriptableObject CreateConfig(ScriptableObject config = null)
         {
-            var appConfig = config == null ? AzureApplicationConfig.CreateInstance<AzureApplicationConfig>() : (AzureApplicationConfig)config;
+            var appConfig = config == null ? ChatdollKitAzureConfig.CreateInstance<ChatdollKitAzureConfig>() : (ChatdollKitAzureConfig)config;
 
             appConfig.LogTableUri = LogTableUri;
             appConfig.SpeechApiKey = ApiKey;

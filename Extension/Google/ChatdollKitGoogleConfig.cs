@@ -2,7 +2,7 @@
 
 namespace ChatdollKit.Extension.Google
 {
-    public class GoogleApplicationConfig : ScriptableObject
+    public class ChatdollKitGoogleConfig : ScriptableObject
     {
         [Header("Google Speech API")]
         public string SpeechApiKey;

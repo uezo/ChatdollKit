@@ -32,7 +32,7 @@ namespace ChatdollKit.Extension.Gatebox
 
             if (config != null)
             {
-                var appConfig = (WatsonApplicationConfig)config;
+                var appConfig = (ChatdollKitWatsonConfig)config;
                 STTApiKey = appConfig.STTApiKey;
                 STTBaseUrl = appConfig.STTBaseUrl;
                 STTModel = appConfig.STTModel;
@@ -47,7 +47,7 @@ namespace ChatdollKit.Extension.Gatebox
 
         public override ScriptableObject CreateConfig(ScriptableObject config = null)
         {
-            var appConfig = config == null ? WatsonApplicationConfig.CreateInstance<WatsonApplicationConfig>() : (WatsonApplicationConfig)config;
+            var appConfig = config == null ? ChatdollKitWatsonConfig.CreateInstance<ChatdollKitWatsonConfig>() : (ChatdollKitWatsonConfig)config;
 
             appConfig.STTApiKey = STTApiKey;
             appConfig.STTBaseUrl = STTBaseUrl;

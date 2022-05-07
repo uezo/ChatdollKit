@@ -2,7 +2,7 @@
 
 namespace ChatdollKit.Extension.Azure
 {
-    public class AzureApplicationConfig : ScriptableObject
+    public class ChatdollKitAzureConfig : ScriptableObject
     {
         [Header("Remote Log")]
         public string LogTableUri;

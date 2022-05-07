@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEditor;
+using System.IO;
 using ChatdollKit.Dialog;
 using ChatdollKit.Dialog.Processor;
 using ChatdollKit.IO;

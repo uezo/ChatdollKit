@@ -17,13 +17,13 @@ namespace ChatdollKit.Dialog
 
         [Header("Prompt")]
         [SerializeField] protected string PromptVoice;
-        [SerializeField] protected VoiceSource PromptVoiceType;
+        [SerializeField] protected VoiceSource PromptVoiceType = VoiceSource.TTS;
         [SerializeField] protected string PromptFace;
         [SerializeField] protected string PromptAnimation;
 
         [Header("Error")]
         [SerializeField] protected string ErrorVoice;
-        [SerializeField] protected VoiceSource ErrorVoiceType;
+        [SerializeField] protected VoiceSource ErrorVoiceType = VoiceSource.TTS;
         [SerializeField] protected string ErrorFace;
         [SerializeField] protected string ErrorAnimation;
 
