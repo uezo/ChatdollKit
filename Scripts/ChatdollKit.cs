@@ -7,27 +7,46 @@ using ChatdollKit.Model;
 
 namespace ChatdollKit
 {
+    public enum CloudService
+    {
+        Other,
+        Azure,
+        Google,
+        Watson
+    }
+
     [RequireComponent(typeof(ModelController))]
     [RequireComponent(typeof(DialogController))]
     public class ChatdollKit : MonoBehaviour
     {
         [Header("Application Identifier")]
         public string ApplicationName;
+        [HideInInspector] public ModelController ModelController;
+        [HideInInspector] public DialogController DialogController;
+        [HideInInspector]  public CloudService SpeechService = CloudService.Other;
 
-        public ModelController ModelController;
-        public DialogController DialogController;
+        // Azure
+        [HideInInspector] public string AzureApiKey = string.Empty;
+        [HideInInspector] public string AzureRegion = string.Empty;
+        [HideInInspector] public string AzureLanguage = "ja-JP";
+        [HideInInspector] public string AzureGender = "Female";
+        [HideInInspector] public string AzureSpeakerName = "ja-JP-HarukaRUS";
 
-        public Action OnDialogComponentsReady
-        {
-            get
-            {
-                return DialogController.OnComponentsReady;
-            }
-            set
-            {
-                DialogController.OnComponentsReady = value;
-            }
-        }
+        // Google
+        [HideInInspector] public string GoogleApiKey = string.Empty;
+        [HideInInspector] public string GoogleLanguage = "ja-JP";
+        [HideInInspector] public string GoogleGender = "FEMALE";
+        [HideInInspector] public string GoogleSpeakerName = "ja-JP-Standard-A";
+
+        // Watson
+        [HideInInspector] public string WatsonTTSApiKey = string.Empty;
+        [HideInInspector] public string WatsonTTSBaseUrl = string.Empty;
+        [HideInInspector] public string WatsonTTSSpeakerName = "ja-JP_EmiV3Voice";
+        [HideInInspector] public string WatsonSTTApiKey = string.Empty;
+        [HideInInspector] public string WatsonSTTBaseUrl = string.Empty;
+        [HideInInspector] public string WatsonSTTModel = "ja-JP_BroadbandModel";
+        [HideInInspector] public bool WatsonSTTRemoveWordSeparation = true;
+
         public Func<WakeWord, UniTask> OnWakeAsync
         {
             get
@@ -92,7 +111,6 @@ namespace ChatdollKit
         {
             ModelController = GetComponent<ModelController>();
             DialogController = GetComponent<DialogController>();
-            OnDialogComponentsReady = OnComponentsReady;
         }
 
         public async UniTask StartChatAsync()
@@ -116,14 +134,14 @@ namespace ChatdollKit
         {
         }
 
-        public virtual ScriptableObject LoadConfig()
+        public virtual ChatdollKitConfig LoadConfig()
         {
-            return Resources.Load<ScriptableObject>(ApplicationName);
+            return ChatdollKitConfig.Load(this, ApplicationName);
         }
 
-        public virtual ScriptableObject CreateConfig(ScriptableObject config = null)
+        public virtual ChatdollKitConfig CreateConfig()
         {
-            return ScriptableObject.CreateInstance<ScriptableObject>();
+            return ChatdollKitConfig.Create(this);
         }
 
         // Send text to WakeWordListener instead of voice

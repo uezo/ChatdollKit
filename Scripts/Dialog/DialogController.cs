@@ -44,7 +44,6 @@ namespace ChatdollKit.Dialog
 
         // Actions for each status
         public Func<string> GetClientId { get; set; }
-        public Action OnComponentsReady { get; set; }
         public Func<WakeWord, UniTask> OnWakeAsync { get; set; }
         public Func<DialogRequest, CancellationToken, UniTask> OnPromptAsync { get; set; }
         public Func<Request, CancellationToken, UniTask> OnRequestAsync { get; set; }
@@ -54,7 +53,7 @@ namespace ChatdollKit.Dialog
         private void Awake()
         {
             // Get components
-            WakeWordListener = GetComponent<WakeWordListenerBase>();
+            var wakeWordListeners = GetComponents<WakeWordListenerBase>();
             requestProcessor = GetComponent<IRequestProcessor>();
             modelController = GetComponent<ModelController>();
             var attachedRequestProviders = GetComponents<IRequestProvider>();
@@ -95,8 +94,6 @@ namespace ChatdollKit.Dialog
                 Debug.LogWarning("Request providers are missing");
             }
 
-            OnComponentsReady?.Invoke();
-
             // Setup RequestProcessor
             if (requestProcessor == null)
             {
@@ -113,6 +110,14 @@ namespace ChatdollKit.Dialog
             }
 
             // Wakeword Listener
+            foreach (var wwl in wakeWordListeners)
+            {
+                if (wwl.enabled)
+                {
+                    WakeWordListener = wwl;
+                    break;
+                }
+            }
             if (WakeWordListener != null)
             {
                 // Register wakeword

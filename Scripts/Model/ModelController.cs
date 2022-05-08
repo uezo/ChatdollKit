@@ -74,8 +74,13 @@ namespace ChatdollKit.Model
             LoadFaces();
 
             // Web and TTS voice loaders
-            foreach (var loader in gameObject.GetComponents<IVoiceLoader>())
+            foreach (var loader in gameObject.GetComponents<WebVoiceLoaderBase>())
             {
+                if (!loader.enabled)
+                {
+                    continue;
+                }
+
                 if (loader.Type == VoiceLoaderType.Web)
                 {
                     VoiceDownloadFunc = loader.GetAudioClipAsync;
