@@ -27,6 +27,10 @@ namespace ChatdollKit.Dialog
         [SerializeField] protected string ErrorFace;
         [SerializeField] protected string ErrorAnimation;
 
+        [Header("Request Processing")]
+        public bool UseRemoteServer = false;
+        public string BaseUrl = string.Empty;
+
         [Header("Message Window")]
         public MessageWindowBase MessageWindow;
 
@@ -54,7 +58,6 @@ namespace ChatdollKit.Dialog
         {
             // Get components
             var wakeWordListeners = GetComponents<WakeWordListenerBase>();
-            requestProcessor = GetComponent<IRequestProcessor>();
             modelController = GetComponent<ModelController>();
             var attachedRequestProviders = GetComponents<IRequestProvider>();
             var userStore = GetComponent<IUserStore>();
@@ -95,6 +98,30 @@ namespace ChatdollKit.Dialog
             }
 
             // Setup RequestProcessor
+            if (UseRemoteServer)
+            {
+                Debug.Log($"Use RemoteRequestProcessor: {BaseUrl}");
+                requestProcessor = GetComponent<RemoteRequestProcessor>() ?? gameObject.AddComponent<RemoteRequestProcessor>();
+                ((RemoteRequestProcessor)requestProcessor).BaseUrl = BaseUrl;
+                OnPromptAsync = ((RemoteRequestProcessor)requestProcessor).PromptAsync;
+            }
+            else
+            {
+                requestProcessor = GetComponent<IRequestProcessor>();
+                if (requestProcessor == null)
+                {
+                    // Create local request processor with components
+                    Debug.Log("Use LocalRequestProcessor");
+                    requestProcessor = new LocalRequestProcessor(
+                        userStore, stateStore, skillRouter, skills
+                    );
+                }
+                else
+                {
+                    Debug.Log($"Use attached request processor: {requestProcessor.GetType()}");
+                }
+            }
+
             if (requestProcessor == null)
             {
                 // Create local request processor with components
