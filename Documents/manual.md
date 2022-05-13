@@ -1,16 +1,10 @@
 ﻿# ChatdollKit Documentation
 
-version 0.5.0 | 🎏 May 5, 2022 | &copy;2020 uezo | [🇯🇵Japanese version](https://github.com/uezo/ChatdollKit/blob/master/manual.ja.md)
+version 0.5.0 | 🎏 May 5, 2022 | &copy;2020 uezo | [🇯🇵Japanese version](./manual.ja.md)
 
 - [Setup](#Setup)
-    - [Import packages](#Import-packages)
-    - [Prepare resources](#Prepare-resources)
-    - [Setup ChatdollKit](#Setup-ChatdollKit)
-        - [Build custom application](#Build-custom-application)
-        - [Configure application](#Configure-application)
-        - [Setup ModelController](#Setup-ModelController)
-        - [Configure Animator](#Configure-Animator)
-    - [Run echo](#Run-echo)
+    - [ChatdollKit configurations](#chatdollkit-configurations)
+    - [DialogController configurations](#dialogcontroller-configurations)
 
 - [Control 3D model](#Control-3D-model)
     - [Speech](#Speech)
@@ -69,72 +63,30 @@ version 0.5.0 | 🎏 May 5, 2022 | &copy;2020 uezo | [🇯🇵Japanese version](
 
 # Setup
 
-In this section you can get how to build a Chatdoll with your own custom skill. See [README](https://github.com/uezo/ChatdollKit/blob/master/README.md) to get started with Echo skill.
+See [README](https://github.com/uezo/ChatdollKit/blob/master/README.ja.md) to learn how to setup. To learn to make your own custom skills see [Skill](#Skill) , or, to learn to switch skills by request message see [Routing](#Routing).
 
-## Import packages
+## ChatdollKit configurations
 
-- [UniTask](https://github.com/Cysharp/UniTask)(Ver.2.3.1)
-- [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/)(v29)
-- [ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases)
-- Only for Unity 2019 or ealier: [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347) 
+- Application Name: (Required) Name of application
+- Speech Service: (Required) Cloud service for speech recognition and text-to-speech. You can select Azure/Google/Watson or Other to setup by yourself manually.
+- API Key, etc: Service specific configurations
 
-## Prepare resources
+## DialogController configurations
 
-- Add 3D model to the scene and configure components like DynamicBone and shader
-- Put animation clips to `Assets/Animations`. [Anime Girls Idle Animations Free](https://assetstore.unity.com/packages/3d/animations/anime-girl-idle-animations-free-150406) is a nice asset.
-- Get API key for Speech service at [Azure Speech Services](https://azure.microsoft.com/ja-jp/services/cognitive-services/speech-services/) or [Google Cloud Speech API](https://cloud.google.com/speech-to-text/)
-
-## Setup ChatdollKit
-
-Make and attach custom application to your 3D model and configure related components.
-
-### Make empty custom application
-
-Make `Assets/Scripts/MyChatdollApp.cs` like below and attach it to your 3D model.
-
-```csharp
-using UnityEngine;
-using ChatdollKit.Extension.Azure;  // or ChatdollKit.Extension.Google
-using ChatdollKit.Examples.Skills;
-
-namespace MyChatdollApp
-{
-    [RequireComponent(typeof(EchoSkill))]
-    public class MyApp : ChatdollKitAzure  // or ChatdollKitGoogle, ChatdollKitWatson
-    {
-
-    }
-}
-```
-
-### Configure application
-
-Configure like below on inspentor of `MyApp`.
-
-- Wake Word: Hello
-- Cancel Word: Stop
-- Prompt Voice: May I help you?
-- Prompt Voice Type: TTS
-- Api Key: [API key for Azure Speech Services or Google Cloud Speech]
-- Region: [Region. Azure only.]
-- Language: en-US
-
-### Setup ModelController
-
-Execute `Setup ModelController` in the context menu of ModelController. If nothing is set to `Blink Blend Shape Name` yet, set ShapeKey for blinking manually.
-
-### Configure Animator
-
-Execute `Setup Animator` in the cotext menu of ModelController. Select the directory that contains animation clips in the dialog.
-
-## Run echo
-
-Press Play button on Unity Editor. Confirm conversation like below.
-
-- You "Hello"
-- Chatdoll "May I help you?"
-- You "This is a test"
-- Chatdoll "This is a test"
+- Wake Word: (Required) The word to make app waiting for request. This is like "Hey Siri" or "Okay, Google" for AI smart speakers. See also see [WakeWord](#wake-word) if you want to configure multiple wakewords or wakeword that triggers a topic.
+- Cancel Word: (Required) The word to stop the conversation.
+- Prompt Voice: (Required) Prompt message to require the request message from user.
+- Prompt Voice Type: (Required) Local (File on local computer) / Web (File on Web) / TTS (Text-to-Speech service)
+- Prompt Face: Face expression on prompt
+- Prompt Animation: Animation on prompt. The name of status in AnimatorController.
+- Error Voice: Error message
+- Error Voice Type: Local (File on local computer) / Web (File on Web) / TTS (Text-to-Speech service)
+- Error Face: Face expression on error
+- Error Animation: Animation on error. The name of status in AnimatorController.
+- Use Remote Server: Use skills on remote server instead of local skills.
+- Base Url: Url of skill server
+- Message Window: Window to show the message from user. Default is `SimpleMessageWindow`.
+- ChatdollCamera: Camera to capture photo or QR Code. Default is `ChatdollCamera`.
 
 
 # Control 3D model
@@ -829,7 +781,7 @@ $ pip install chatdollkit
 
 ### Setup client (Unity)
 
-Attach `Dialog/Processor/RemoteRequestProcessor` and set `Base Url` of the server that you created on the previous step. Make sure that the server is already running then press Play button to run the application.
+Set `true` to `Use Remote Server` and set the url of the server to `Base Url` on the inspector of `DialogController`. Make sure that the server is already running then press Play button to run the application.
 
 ## Morphological Analysis (Japanese only)
 

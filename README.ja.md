@@ -51,9 +51,8 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 
 ## 🍣 ChatdollKitの設定
 
-`ChatdollKit/Extensions` から `ChatdollKitAzure`、 `ChatdollKitGoogle` または `ChatdollKitWatson` を3Dモデルに追加してください。アニメーション、音声、表情をコントロールする`ModelController`やその他必要なコンポーネントが合わせて追加されます。
-
-また、必要最小限の設定として、APIキーやリージョン、ベースURLなどいくつかの項目のみ設定します。
+`ChatdollKit/Scripts/ChatdollKit` を3Dモデルに追加してください。アニメーション、音声、表情をコントロールする`ModelController`やその他必要なコンポーネントが合わせて追加されます。
+また、`ChatdollKit`のインスペクター上で音声認識・読み上げサービス（Azure/Google/Watson）を選択し、APIキーなど必要な情報を入力してください。
 
 <img src="Documents/Images/02_01_chatdollkit.png" width="640">
 
