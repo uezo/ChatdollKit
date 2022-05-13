@@ -53,12 +53,11 @@ In this README, I use [Anime Girls Idle Animations Free](https://assetstore.unit
 
 ## 🍣 ChatdollKit configuration
 
-Add `ChatdollKitAzure`, `ChatdollKitGoogle` or `ChatdollKitWatson` from `ChatdollKit/Extensions` to the 3D model. Required components will also be added automatically.
+Add `ChatdollKit/Scripts/ChatdollKit` to the 3D model. Required components will also be added automatically.
 
-Then, set API key and some properties like Region and BaseUrl on inspector of ChatdollKit.
+Then, select the speech service (Azure/Google/Watson) you use and set API key and some properties like Region and BaseUrl on inspector of ChatdollKit.
 
 <img src="Documents/Images/02_01_chatdollkit.png" width="640">
-
 
 ### DialogController
 

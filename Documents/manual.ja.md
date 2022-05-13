@@ -1,17 +1,10 @@
 ﻿# ChatdollKit マニュアル
 
-version 0.5.0 | 🎏 May 5, 2022 | &copy;2020 uezo | [🇬🇧English version](https://github.com/uezo/ChatdollKit/blob/master/manual.md)
-
+version 0.5.0 | 🎏 May 5, 2022 | &copy;2020 uezo | [🇬🇧English version](./manual.md)
 
 - [セットアップ](#セットアップ)
-    - [パッケージのインポート](#パッケージのインポート)
-    - [リソースの準備](#リソースの準備)
-    - [ChatdollKitのセットアップ](#chatdollkitのセットアップ)
-        - [カスタムアプリケーションの作成](#カスタムアプリケーションの作成)
-        - [アプリケーションの設定](#アプリケーションの設定)
-        - [ModelControllerの設定](#modelcontrollerの設定)
-        - [Animatorの設定](#animatorの設定)
-    - [動作確認](#動作確認)
+    - [ChatdollKitの設定](#chatdollkitの設定)
+    - [DialogControllerの設定](#dialogcontrollerの設定)
 
 - [モデル動作の制御](#モデル動作の制御)
     - [発話](#発話)
@@ -70,72 +63,32 @@ version 0.5.0 | 🎏 May 5, 2022 | &copy;2020 uezo | [🇬🇧English version](h
 
 # セットアップ
 
-Echoアプリケーションを動かすまでの基本的なセットアップ方法は[README](https://github.com/uezo/ChatdollKit/blob/master/README.ja.md)の通りですが、ここではカスタムアプリケーションを作成する前提で説明します。スクリーンショットなどは省略していますので、必要に応じて[README](https://github.com/uezo/ChatdollKit/blob/master/README.ja.md)も合わせて参照ください。
+セットアップの手順は[README](https://github.com/uezo/ChatdollKit/blob/master/README.ja.md)の通りです。Quick startではおうむ返しスキルのみを利用していますが、その他のスキルの作成方法は[スキル](#スキル)のパートを、また、複数スキルの使い分け（「天気」と言ったら天気予報スキル、「電車」といったら乗り換え案内スキル、など）については[対話処理のルーティング](#対話処理のルーティング)のパートを参照してください。
 
-## パッケージのインポート
+以下では、`ChatdollKit`および`DialogController`のインスペクターでの設定項目についてのみ解説します。
 
-- [UniTask](https://github.com/Cysharp/UniTask)(Ver.2.3.1)
-- [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/)(v29)
-- [ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases)
-- Unity 2019以前の場合のみ [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347) 
+## ChatdollKitの設定
 
-## リソースの準備
+- Application Name: (必須) アプリケーションの名称。コンフィグ情報の保存などに利用されます
+- Speech Service: (必須) 音声認識・読み上げに利用するクラウドサービス。Azure/Google/Watsonのいずれかを選択するか、それ以外を利用または手動でセットアップする場合はOtherを選択してください
+- API Key等: 各クラウドサービス固有の設定項目です
 
-- シーンへの3Dモデルの配置。Shaderの設定や揺れものの設定なども行う
-- アニメーションクリップを入手して`Assets/Animations`フォルダへ配置。オススメは[Anime Girls Idle Animations Free](https://assetstore.unity.com/packages/3d/animations/anime-girl-idle-animations-free-150406)
-- [Azure Speech Services](https://azure.microsoft.com/ja-jp/services/cognitive-services/speech-services/) または [Google Cloud Speech API](https://cloud.google.com/speech-to-text/) のAPIキーの取得
+## DialogControllerの設定
 
-## ChatdollKitのセットアップ
-
-ChatdollKitを3Dモデルに適用するには、以下の通りカスタムアプリケーションを作成・アタッチして、関連するコンポーネントを設定します。
-
-### カスタムアプリケーションの作成
-
-`Assets/Scripts`など任意の場所に以下の内容の`MyChatdollApp.cs`を作成します。名前は何でも構いません。作成したら3Dモデルにアタッチしてください。
-
-```csharp
-using UnityEngine;
-using ChatdollKit.Extension.Azure;  // or ChatdollKit.Extension.Google, ChatdollKit.Extension.Watson
-using ChatdollKit.Examples.Skills;
-
-namespace MyChatdollApp
-{
-    [RequireComponent(typeof(EchoSkill))]
-    public class MyApp : ChatdollKitAzure  // or ChatdollKitGoogle, ChatdollKitWatson
-    {
-
-    }
-}
-```
-
-### アプリケーションの設定
-
-`MyApp`のインスペクターで以下の通り設定します。
-
-- Wake Word: こんにちは
-- Cancel Word: おしまい
-- Prompt Voice: どうしたの？
-- Prompt Voice Type: TTS
-- Api Key: （Azure Speech ServicesまたはGoogle Cloud SpeechのAPIキー）
-- Region: （リージョン。Azureの場合のみ設定）
-- Language: ja-JP
-
-### ModelControllerの設定
-
-インスペクターのコンテキストメニューから`Setup ModelController`を実行します。もし`Blink Blend Shape Name`が空欄のままなときは、3Dモデルの目を閉じるためのシェイプキーの名前を入力してください。まばたきに使用します。
-
-### Animatorの設定
-
-インスペクターのコンテキストメニューから`Setup Animator`を実行します。読み込むアニメーションクリップの格納先を尋ねられますので、アニメーションクリップの配置先を選択してください。
-
-## 動作確認
-
-動作確認用に`ChatdollKit/Examples/Skills`から`EchoSkill`を3Dモデルにアタッチして、Unityエディタの実行ボタンを押下してください。以下の通り対話を進行できるか確認してみましょう。
-
-- ユーザー「こんにちは」
-- App「どうしたの？」
-- ユーザー「これはテストです」
-- App「これはテストです」
+- Wake Word: (必須) リクエストの聞き取り待機状態に移行するための合言葉です。「Hey Siri」や「Okay, Google」に相当するものです。複数のウェイクワードや特定の話題を開始するためのウェイクワードを登録するには、[WakeWord](#ウェイクワード)を参照してください
+- Cancel Word: (必須) 対話を終了するための合言葉です
+- Prompt Voice: (必須) WakeWordを認識し、リクエストを要求するフレーズです
+- Prompt Voice Type: (必須) Local（コンピューター上の音声ファイル）、Web（HTTP(S)で取得可能な音声ファイル）、TTS（テキスト読み上げサービス）が選択できます
+- Prompt Face: プロンプト発話時の表情です
+- Prompt Animation: プロンプト発話時に実行するアニメーションの名称です。AnimatorControllerに登録されたものと一致している必要があります
+- Error Voice: エラーが発生したことを知らせるフレーズです
+- Error Voice Type: Local（コンピューター上の音声ファイル）、Web（HTTP(S)で取得可能な音声ファイル）、TTS（テキスト読み上げサービス）が選択できます
+- Error Face: エラーお知らせ時の表情です
+- Error Animation: エラーお知らせ時に実行するアニメーションの名称です。AnimatorControllerに登録されたものと一致している必要があります
+- Use Remote Server: ローカルではなく遠隔サーバー上に配置したスキルを利用するか否かです
+- Base Url: 遠隔サーバーのURLです
+- Message Window: ユーザーの発言内容を表示するウィンドウです。未指定の場合はデフォルトで`SimpleMessageWindow`が利用されます
+- ChatdollCamera: 写真撮影やQRコードの読み取りに利用するカメラです。未指定の場合はデフォルトで`ChatdollCamera`が利用されます
 
 
 # モデル動作の制御
@@ -844,7 +797,8 @@ $ pip install chatdollkit
 
 ### クライアントの準備
 
-`Dialog/Processor/RemoteRequestProcessor`をアタッチしたら、インスペクター上で前の手順で準備したサーバーのURLを`Base Url`に入力してください。スキルサーバーのサンプルはおうむ返しになります。
+`DialogController`のインスペクター上で`Use Remote Server`にチェックし、先ほどの手順で起動したサーバーのURLを`Base Url`に入力してください。実行するとサーバー側にリクエストが送信され、サーバーから返されたレスポンスが表示されるようになります。
+
 
 ## 形態素解析
 
