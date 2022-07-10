@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
+using Newtonsoft.Json;
 using Cysharp.Threading.Tasks;
 using ChatdollKit.Dialog;
 using ChatdollKit.Dialog.Processor;
@@ -83,6 +84,23 @@ namespace ChatdollKit.Extension.Watson
                 // Make Response
                 var skillResponse = new Response(request.Id);
                 skillResponse.AddVoiceTTS(watsonResponse.output.generic[0].text);
+                if (
+                    watsonResponse.output.generic.Count > 1
+                    && watsonResponse.output.generic[1].response_type == "iframe"
+                    && !string.IsNullOrEmpty(watsonResponse.output.generic[1].source)
+                    )
+                {
+                    // Add animation and face expression to skillResponse (experimental)
+                    var animAndFace = JsonConvert.DeserializeObject<Dictionary<string, string>>(watsonResponse.output.generic[1].source);
+                    if (animAndFace.ContainsKey("animation"))
+                    {
+                        skillResponse.AddAnimation(animAndFace["animation"]);
+                    }
+                    if (animAndFace.ContainsKey("face"))
+                    {
+                        skillResponse.AddFace(animAndFace["face"]);
+                    }
+                }
 
                 // Show Response
                 await modelController.AnimatedSay(skillResponse.AnimatedVoiceRequest, token);
@@ -134,7 +152,10 @@ namespace ChatdollKit.Extension.Watson
 
         class ResponseGeneric
         {
+            public string response_type;
             public string text;
+            public string title;
+            public string source;
         }
 
         class ResponseContext
