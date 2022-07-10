@@ -41,7 +41,7 @@ namespace ChatdollKit.Extension.Watson
                 AudioConverter.AudioClipToPCM(recordedVoice.Voice, recordedVoice.SamplingData),
                 headers);
 
-            var recognizedText = response?.results?[0]?.alternatives?[0]?.transcript ?? string.Empty;
+            var recognizedText = response?.results?.Count > 0 ? response.results[0]?.alternatives?[0]?.transcript ?? string.Empty : string.Empty;
             if (RemoveWordSeparation)
             {
                 recognizedText = recognizedText.Replace(" ", "");

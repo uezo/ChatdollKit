@@ -113,11 +113,11 @@ namespace ChatdollKit
             DialogController = GetComponent<DialogController>();
         }
 
-        public async UniTask StartChatAsync()
+        public async UniTask StartChatAsync(DialogRequest dialogRequest = null)
         {
             if (DialogController != null)
             {
-                await DialogController.StartDialogAsync();
+                await DialogController.StartDialogAsync(dialogRequest);
             }
             else
             {
