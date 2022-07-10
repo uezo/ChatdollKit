@@ -17,6 +17,11 @@ namespace ChatdollKit.Dialog.Processor
 
         protected virtual void Awake()
         {
+            modelController = GetComponent<ModelController>();
+        }
+
+        protected virtual void Start()
+        {
             if (string.IsNullOrEmpty(BaseUrl))
             {
                 Debug.LogWarning("Base Url of the remote server is not configured.");
@@ -26,8 +31,6 @@ namespace ChatdollKit.Dialog.Processor
                 // Warm up server
                 _ = client.GetAsync(BaseUrl + "/ping");
             }
-
-            modelController = GetComponent<ModelController>();
         }
 
         public virtual async UniTask PromptAsync(DialogRequest dialogRequest, CancellationToken token)
