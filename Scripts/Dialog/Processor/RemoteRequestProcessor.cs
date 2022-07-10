@@ -8,7 +8,7 @@ using ChatdollKit.Network;
 
 namespace ChatdollKit.Dialog.Processor
 {
-    public class RemoteRequestProcessor : MonoBehaviour, IRequestProcessor
+    public class RemoteRequestProcessor : MonoBehaviour, IRequestProcessorWithPrompt
     {
         public string BaseUrl = string.Empty;
         protected ChatdollHttp client = new ChatdollHttp();
@@ -21,13 +21,16 @@ namespace ChatdollKit.Dialog.Processor
             {
                 Debug.LogWarning("Base Url of the remote server is not configured.");
             }
+            else
+            {
+                // Warm up server
+                _ = client.GetAsync(BaseUrl + "/ping");
+            }
 
-            // Warm up server
-            _ = client.GetAsync(BaseUrl + "/ping");
             modelController = GetComponent<ModelController>();
         }
 
-        public async UniTask PromptAsync(DialogRequest dialogRequest, CancellationToken token)
+        public virtual async UniTask PromptAsync(DialogRequest dialogRequest, CancellationToken token)
         {
             AnimatedVoiceRequest promptAnimatedVoice = null;
 
@@ -45,7 +48,7 @@ namespace ChatdollKit.Dialog.Processor
             }
         }
 
-        public async UniTask<Response> ProcessRequestAsync(Request request, CancellationToken token)
+        public virtual async UniTask<Response> ProcessRequestAsync(Request request, CancellationToken token)
         {
             try
             {

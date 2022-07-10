@@ -103,7 +103,6 @@ namespace ChatdollKit.Dialog
                 Debug.Log($"Use RemoteRequestProcessor: {BaseUrl}");
                 requestProcessor = GetComponent<RemoteRequestProcessor>() ?? gameObject.AddComponent<RemoteRequestProcessor>();
                 ((RemoteRequestProcessor)requestProcessor).BaseUrl = BaseUrl;
-                OnPromptAsync = ((RemoteRequestProcessor)requestProcessor).PromptAsync;
             }
             else
             {
@@ -122,18 +121,14 @@ namespace ChatdollKit.Dialog
                 }
             }
 
-            if (requestProcessor == null)
+            // Prompter
+            if (requestProcessor is IRequestProcessorWithPrompt)
             {
-                // Create local request processor with components
-                Debug.Log("Use LocalRequestProcessor");
-                requestProcessor = new LocalRequestProcessor(
-                    userStore, stateStore, skillRouter, skills
-                );
+                OnPromptAsync = ((IRequestProcessorWithPrompt)requestProcessor).PromptAsync;
             }
-            else if (requestProcessor is RemoteRequestProcessor)
+            else
             {
-                Debug.Log("Use RemoteRequestProcessor");
-                OnPromptAsync = ((RemoteRequestProcessor)requestProcessor).PromptAsync;
+                OnPromptAsync = OnPromptAsyncDefault;
             }
 
             // Wakeword Listener
@@ -226,7 +221,7 @@ namespace ChatdollKit.Dialog
         }
 
         // OnPrompt
-        private async UniTask OnPromptAsyncDefault(CancellationToken token)
+        private async UniTask OnPromptAsyncDefault(DialogRequest dialogRequest, CancellationToken token)
         {
             var PromptAnimatedVoiceRequest = new AnimatedVoiceRequest() { StartIdlingOnEnd = false };
 
@@ -311,14 +306,7 @@ namespace ChatdollKit.Dialog
                 // Prompt
                 if (!dialogRequest.SkipPrompt)
                 {
-                    if (OnPromptAsync != null)
-                    {
-                        await OnPromptAsync(dialogRequest, token);
-                    }
-                    else
-                    {
-                        await OnPromptAsyncDefault(token);
-                    }
+                    await OnPromptAsync(dialogRequest, token);
                 }
 
                 // Set RequestType for the first turn
