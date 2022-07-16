@@ -106,7 +106,8 @@ namespace ChatdollKit.Extension.Watson
                 await modelController.AnimatedSay(skillResponse.AnimatedVoiceRequest, token);
 
                 // Control conversation loop
-                if (watsonResponse.context.skills["main skill"].user_defined.end_conversation == true)
+                if (watsonResponse.context.skills["main skill"].user_defined != null
+                    && watsonResponse.context.skills["main skill"].user_defined.end_conversation == true)
                 {
                     skillResponse.EndConversation = true;
                 }
