@@ -210,10 +210,23 @@ public class FaceClipEditor : Editor
         if (modelController.AvatarModel == null)
         {
             // Get target avator model to control
-            var animator = modelController.gameObject.GetComponentInParent<Animator>();
-            if (animator != null && animator.isHuman)
+            var animators = FindObjectsOfType<Animator>().Where(a => a.isHuman);
+            if (animators.Count() == 1)
             {
-                modelController.AvatarModel = animator.gameObject;
+                modelController.AvatarModel = animators.First().gameObject;
+            }
+            else if (animators.Count() > 1)
+            {
+                var animator = modelController.gameObject.GetComponentInParent<Animator>();
+                if (animator != null && animator.isHuman)
+                {
+                    modelController.AvatarModel = animator.gameObject;
+                }
+                else
+                {
+                    Debug.LogError($"{animators.Count()} avatars found. Set 3D model to setup to AvatorModel of ModelController.");
+                    return;
+                }
             }
             else
             {
