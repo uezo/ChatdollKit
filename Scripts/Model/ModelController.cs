@@ -141,6 +141,9 @@ namespace ChatdollKit.Model
         {
             // Update blink status
             blinkAction?.Invoke();
+
+            // Move to avatar position (because this game object includes AudioSource)
+            gameObject.transform.position = AvatarModel.transform.position;
         }
 
         private void OnDestroy()
