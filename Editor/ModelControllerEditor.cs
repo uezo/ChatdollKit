@@ -174,7 +174,7 @@ public class FaceClipEditor : Editor
             // Create face configuration asset
             AssetDatabase.CreateAsset(
                 faceClipConfiguration,
-                $"Assets/Resources/Faces-{modelController.gameObject.name}-{DateTime.Now.ToString("yyyyMMddHHmmSS")}.asset");
+                $"Assets/Resources/Faces-{modelController.AvatarModel.gameObject.name}-{DateTime.Now.ToString("yyyyMMddHHmmSS")}.asset");
             EditorUtility.SetDirty(modelController.FaceClipConfiguration);
             AssetDatabase.SaveAssets();
 
@@ -207,8 +207,23 @@ public class FaceClipEditor : Editor
     {
         var modelController = menuCommand.context as ModelController;
 
+        if (modelController.AvatarModel == null)
+        {
+            // Get target avator model to control
+            var animator = modelController.gameObject.GetComponentInParent<Animator>();
+            if (animator != null && animator.isHuman)
+            {
+                modelController.AvatarModel = animator.gameObject;
+            }
+            else
+            {
+                Debug.LogError("Set AvatorModel to ModelController before setup.");
+                return;
+            }
+        }
+
         // Get SkinnedMeshRenderer for facial expression
-        var skinnedMeshRenderers = modelController.gameObject.GetComponentsInChildren<SkinnedMeshRenderer>();
+        var skinnedMeshRenderers = modelController.AvatarModel.gameObject.GetComponentsInChildren<SkinnedMeshRenderer>();
         var facialSkinnedMeshRenderer = GetFacialSkinnedMeshRenderer(skinnedMeshRenderers);
         if (facialSkinnedMeshRenderer == null)
         {
@@ -230,7 +245,7 @@ public class FaceClipEditor : Editor
             }
             AssetDatabase.CreateAsset(
                 faceClipConfiguration,
-                $"Assets/Resources/Faces-{modelController.gameObject.name}-{DateTime.Now.ToString("yyyyMMddHHmmss")}.asset");
+                $"Assets/Resources/Faces-{modelController.AvatarModel.gameObject.name}-{DateTime.Now.ToString("yyyyMMddHHmmss")}.asset");
             modelController.FaceClipConfiguration = faceClipConfiguration;
         }
 
@@ -269,6 +284,8 @@ public class FaceClipEditor : Editor
                 lipSyncHelperType.GetMethod("Reset").Invoke(lipSyncHelper, null);
             }
         }
+
+        EditorUtility.SetDirty(modelController);
     }
 
     // Setup Animator
@@ -292,7 +309,7 @@ public class FaceClipEditor : Editor
 
             // Make path to create new animator controller
             var animatorControllerPath = "Assets" + animationClipFolderPath.Replace(Application.dataPath, string.Empty);
-            animatorControllerPath = Path.Combine(animatorControllerPath, $"{modelController.gameObject.name}.controller");
+            animatorControllerPath = Path.Combine(animatorControllerPath, $"{modelController.AvatarModel.gameObject.name}.controller");
 
             if (AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(animatorControllerPath) != null)
             {
@@ -337,7 +354,7 @@ public class FaceClipEditor : Editor
             }
 
             // Set controller to animator
-            var animator = modelController.gameObject.GetComponent<Animator>();
+            var animator = modelController.AvatarModel.gameObject.GetComponent<Animator>();
             if (animator != null)
             {
                 animator.runtimeAnimatorController = animatorController;

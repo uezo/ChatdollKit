@@ -10,6 +10,10 @@ namespace ChatdollKit.Model
     // Model controller
     public class ModelController : MonoBehaviour
     {
+        // Avator
+        [Header("Avatar")]
+        public GameObject AvatarModel;
+
         // Audio
         [Header("Voice")]
         public AudioSource AudioSource;
@@ -62,7 +66,7 @@ namespace ChatdollKit.Model
 
         private void Awake()
         {
-            animator = gameObject.GetComponent<Animator>();
+            animator = AvatarModel.gameObject.GetComponent<Animator>();
             blinkTokenSource = new CancellationTokenSource();
 
             if (SkinnedMeshRenderer == null)
