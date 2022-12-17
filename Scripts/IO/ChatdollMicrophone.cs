@@ -134,6 +134,12 @@ namespace ChatdollKit.IO
             StopListening();
         }
 
+        public void ChangeInputDevice(string deviceName)
+        {
+            DeviceName = deviceName;
+            StartListening();
+        }
+
         public void StartListening()
         {
             // (Re)start microphone
