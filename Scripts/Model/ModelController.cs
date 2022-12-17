@@ -61,6 +61,14 @@ namespace ChatdollKit.Model
         private FaceRequest DefaultFace;
         public int FaceFadeStep = 5;
 
+        // LipSync
+        public enum LipSyncHelper
+        {
+            OVRLipSyncHelper, None
+        }
+        [Header("LipSync")]
+        public LipSyncHelper LipSyncHelperType;
+
         // History recorder for debug and test
         public ActionHistoryRecorder History;
 

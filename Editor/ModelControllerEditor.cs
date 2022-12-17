@@ -252,25 +252,8 @@ public class FaceClipEditor : Editor
         // Set blink target
         modelController.BlinkBlendShapeName = GetBlinkTargetName(modelController.SkinnedMeshRenderer);
 
-        // Add VoiceAudio object to the one that may have viseme
-        var voiceAudioObject = facialSkinnedMeshRenderer.gameObject.transform.Find("VoiceAudio")?.gameObject;
-        if (voiceAudioObject == null)
-        {
-            voiceAudioObject = new GameObject("VoiceAudio");
-            voiceAudioObject.transform.parent = facialSkinnedMeshRenderer.gameObject.transform;
-        }
-        // Add and configure AudioSource
-        var voiceAudio = voiceAudioObject.GetComponent<AudioSource>();
-        if (voiceAudio == null)
-        {
-            voiceAudio = voiceAudioObject.AddComponent<AudioSource>();
-        }
-        voiceAudio.playOnAwake = false;
-        // Set AudioSource to ModelController
-        modelController.AudioSource = voiceAudio;
-
         // Add OVRLipSyncHelper
-        var lipSyncHelperType = GetTypeByClassName("OVRLipSyncHelper");
+        var lipSyncHelperType = GetTypeByClassName(modelController.LipSyncHelperType.ToString());
         if (lipSyncHelperType != null)
         {
             var lipSyncHelper = modelController.gameObject.GetComponent(lipSyncHelperType);
