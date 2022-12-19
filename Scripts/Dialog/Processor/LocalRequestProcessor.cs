@@ -22,8 +22,15 @@ namespace ChatdollKit.Dialog.Processor
             {
                 foreach (var skill in skills)
                 {
-                    SkillRouter.RegisterSkill(skill);
-                    Debug.Log($"Skill '{skill.TopicName}' registered successfully");
+                    try
+                    {
+                        SkillRouter.RegisterSkill(skill);
+                        Debug.Log($"Skill '{skill.TopicName}' registered successfully");
+                    }
+                    catch(Exception ex)
+                    {
+                        Debug.LogWarning($"Failed to register '{skill.TopicName}': {ex.Message}\n{ex.StackTrace}");
+                    }
                 }
             }
             else

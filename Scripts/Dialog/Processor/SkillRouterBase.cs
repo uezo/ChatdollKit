@@ -6,7 +6,7 @@ using Cysharp.Threading.Tasks;
 
 namespace ChatdollKit.Dialog.Processor
 {
-    public class SkillRouterBase : MonoBehaviour, ISkillRouter
+    public class SkillRouterBase : ISkillRouter
     {
         protected Dictionary<string, ISkill> topicResolver = new Dictionary<string, ISkill>();
 
