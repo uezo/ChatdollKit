@@ -140,7 +140,7 @@ namespace ChatdollKit.Extension.uLipSyncEx
         {
             return new Dictionary<string, int>()
             {
-                { "A", 0 }, { "I", 0 }, { "U", 0 }, { "E", 0 }, { "O", 0 }, { "N", 0 }, { "-", 0 }
+                { "A", 0 }, { "I", 0 }, { "U", 0 }, { "E", 0 }, { "O", 0 }, { "N", -1 }, { "-", -1 }
             };
         }
 

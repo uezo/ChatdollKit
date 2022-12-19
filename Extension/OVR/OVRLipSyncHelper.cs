@@ -152,7 +152,10 @@ namespace ChatdollKit.Extension.OVR
 
         private Dictionary<string, int> GetVRMBlendShapeMap(Mesh mesh)
         {
-            var blendShapeMap = new Dictionary<string, int>();
+            var blendShapeMap = new Dictionary<string, int>()
+            {
+                { "sil", -1 }, { "nn", -1 }
+            };
 
             for (var i = 0; i < mesh.blendShapeCount; i++)
             {
@@ -183,11 +186,6 @@ namespace ChatdollKit.Extension.OVR
                 else if (mesh.GetBlendShapeName(i).EndsWith("Fcl_MTH_O"))
                 {
                     blendShapeMap["oh"] = i;
-                }
-                else if (mesh.GetBlendShapeName(i).EndsWith("Fcl_MTH_Close"))
-                {
-                    blendShapeMap["sil"] = i;
-                    blendShapeMap["nn"] = i;
                 }
             }
 
