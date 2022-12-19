@@ -64,7 +64,7 @@ namespace ChatdollKit.Model
         // LipSync
         public enum LipSyncHelper
         {
-            OVRLipSyncHelper, None
+            OVRLipSyncHelper, uLipSyncHelper, None
         }
         [Header("LipSync")]
         public LipSyncHelper LipSyncHelperType;
