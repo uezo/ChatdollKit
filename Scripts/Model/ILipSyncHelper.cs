@@ -3,5 +3,6 @@
     public interface ILipSyncHelper
     {
         void ResetViseme();
+        void ConfigureViseme();
     }
 }

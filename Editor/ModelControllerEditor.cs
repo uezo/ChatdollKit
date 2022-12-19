@@ -265,20 +265,16 @@ public class FaceClipEditor : Editor
         // Set blink target
         modelController.BlinkBlendShapeName = GetBlinkTargetName(modelController.SkinnedMeshRenderer);
 
-        // Add OVRLipSyncHelper
+        // Add LipSyncHelper
         var lipSyncHelperType = GetTypeByClassName(modelController.LipSyncHelperType.ToString());
         if (lipSyncHelperType != null)
         {
-            var lipSyncHelper = modelController.gameObject.GetComponent(lipSyncHelperType);
+            var lipSyncHelper = (ILipSyncHelper)modelController.gameObject.GetComponent(lipSyncHelperType);
             if (lipSyncHelper == null)
             {
-                modelController.gameObject.AddComponent(lipSyncHelperType);
+                lipSyncHelper = (ILipSyncHelper)modelController.gameObject.AddComponent(lipSyncHelperType);
             }
-            else
-            {
-                // Reset if already exists
-                lipSyncHelperType.GetMethod("Reset").Invoke(lipSyncHelper, null);
-            }
+            lipSyncHelper.ConfigureViseme();
         }
 
         EditorUtility.SetDirty(modelController);
