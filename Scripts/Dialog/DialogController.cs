@@ -66,8 +66,8 @@ namespace ChatdollKit.Dialog
             var skills = GetComponents<ISkill>();
 
             // Make instances if not set
-            MessageWindow = MessageWindow != null ? MessageWindow : InstantiateMessageWindow();
-            ChatdollCamera = ChatdollCamera != null ? ChatdollCamera : InstantiateCamera();
+            MessageWindow = Instantiate(MessageWindow);
+            ChatdollCamera = Instantiate(ChatdollCamera);
 
             // Request providers
             var cameraRequestProvider = GetComponent<CameraRequestProvider>() ?? gameObject.AddComponent<CameraRequestProvider>();
@@ -428,35 +428,6 @@ namespace ChatdollKit.Dialog
             // Create new TokenSource and return its token
             dialogTokenSource = new CancellationTokenSource();
             return dialogTokenSource.Token;
-        }
-
-        // Make instance of MessageWindow
-        private MessageWindowBase InstantiateMessageWindow()
-        {
-            // Create instance of SimpleMessageWindow
-            var messageWindowGameObject = Resources.Load<GameObject>("Prefabs/SimpleMessageWindow");
-            if (messageWindowGameObject != null)
-            {
-                var messageWindowGameObjectInstance = Instantiate(messageWindowGameObject);
-                messageWindowGameObjectInstance.name = messageWindowGameObject.name;
-                return messageWindowGameObjectInstance.GetComponent<SimpleMessageWindow>();
-            }
-
-            return null;
-        }
-
-        // Make instance of Camera
-        private ChatdollCamera InstantiateCamera()
-        {
-            var cameraGameObject = Resources.Load<GameObject>("Prefabs/ChatdollCamera");
-            if (cameraGameObject != null)
-            {
-                var cameraGameObjectInstance = Instantiate(cameraGameObject);
-                cameraGameObjectInstance.name = cameraGameObject.name;
-                return cameraGameObjectInstance.GetComponent<ChatdollCamera>();
-            }
-
-            return null;
         }
     }
 }

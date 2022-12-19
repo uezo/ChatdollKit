@@ -174,7 +174,7 @@ public class FaceClipEditor : Editor
             // Create face configuration asset
             AssetDatabase.CreateAsset(
                 faceClipConfiguration,
-                $"Assets/Resources/Faces-{modelController.gameObject.name}-{DateTime.Now.ToString("yyyyMMddHHmmSS")}.asset");
+                $"Assets/Resources/Faces-{modelController.AvatarModel.gameObject.name}-{DateTime.Now.ToString("yyyyMMddHHmmSS")}.asset");
             EditorUtility.SetDirty(modelController.FaceClipConfiguration);
             AssetDatabase.SaveAssets();
 
@@ -207,8 +207,36 @@ public class FaceClipEditor : Editor
     {
         var modelController = menuCommand.context as ModelController;
 
+        if (modelController.AvatarModel == null)
+        {
+            // Get target avator model to control
+            var animators = FindObjectsOfType<Animator>().Where(a => a.isHuman);
+            if (animators.Count() == 1)
+            {
+                modelController.AvatarModel = animators.First().gameObject;
+            }
+            else if (animators.Count() > 1)
+            {
+                var animator = modelController.gameObject.GetComponentInParent<Animator>();
+                if (animator != null && animator.isHuman)
+                {
+                    modelController.AvatarModel = animator.gameObject;
+                }
+                else
+                {
+                    Debug.LogError($"{animators.Count()} avatars found. Set 3D model to setup to AvatorModel of ModelController.");
+                    return;
+                }
+            }
+            else
+            {
+                Debug.LogError("Set AvatorModel to ModelController before setup.");
+                return;
+            }
+        }
+
         // Get SkinnedMeshRenderer for facial expression
-        var skinnedMeshRenderers = modelController.gameObject.GetComponentsInChildren<SkinnedMeshRenderer>();
+        var skinnedMeshRenderers = modelController.AvatarModel.gameObject.GetComponentsInChildren<SkinnedMeshRenderer>();
         var facialSkinnedMeshRenderer = GetFacialSkinnedMeshRenderer(skinnedMeshRenderers);
         if (facialSkinnedMeshRenderer == null)
         {
@@ -230,32 +258,15 @@ public class FaceClipEditor : Editor
             }
             AssetDatabase.CreateAsset(
                 faceClipConfiguration,
-                $"Assets/Resources/Faces-{modelController.gameObject.name}-{DateTime.Now.ToString("yyyyMMddHHmmss")}.asset");
+                $"Assets/Resources/Faces-{modelController.AvatarModel.gameObject.name}-{DateTime.Now.ToString("yyyyMMddHHmmss")}.asset");
             modelController.FaceClipConfiguration = faceClipConfiguration;
         }
 
         // Set blink target
         modelController.BlinkBlendShapeName = GetBlinkTargetName(modelController.SkinnedMeshRenderer);
 
-        // Add VoiceAudio object to the one that may have viseme
-        var voiceAudioObject = facialSkinnedMeshRenderer.gameObject.transform.Find("VoiceAudio")?.gameObject;
-        if (voiceAudioObject == null)
-        {
-            voiceAudioObject = new GameObject("VoiceAudio");
-            voiceAudioObject.transform.parent = facialSkinnedMeshRenderer.gameObject.transform;
-        }
-        // Add and configure AudioSource
-        var voiceAudio = voiceAudioObject.GetComponent<AudioSource>();
-        if (voiceAudio == null)
-        {
-            voiceAudio = voiceAudioObject.AddComponent<AudioSource>();
-        }
-        voiceAudio.playOnAwake = false;
-        // Set AudioSource to ModelController
-        modelController.AudioSource = voiceAudio;
-
         // Add OVRLipSyncHelper
-        var lipSyncHelperType = GetTypeByClassName("OVRLipSyncHelper");
+        var lipSyncHelperType = GetTypeByClassName(modelController.LipSyncHelperType.ToString());
         if (lipSyncHelperType != null)
         {
             var lipSyncHelper = modelController.gameObject.GetComponent(lipSyncHelperType);
@@ -269,6 +280,8 @@ public class FaceClipEditor : Editor
                 lipSyncHelperType.GetMethod("Reset").Invoke(lipSyncHelper, null);
             }
         }
+
+        EditorUtility.SetDirty(modelController);
     }
 
     // Setup Animator
@@ -292,7 +305,7 @@ public class FaceClipEditor : Editor
 
             // Make path to create new animator controller
             var animatorControllerPath = "Assets" + animationClipFolderPath.Replace(Application.dataPath, string.Empty);
-            animatorControllerPath = Path.Combine(animatorControllerPath, $"{modelController.gameObject.name}.controller");
+            animatorControllerPath = Path.Combine(animatorControllerPath, $"{modelController.AvatarModel.gameObject.name}.controller");
 
             if (AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(animatorControllerPath) != null)
             {
@@ -337,7 +350,7 @@ public class FaceClipEditor : Editor
             }
 
             // Set controller to animator
-            var animator = modelController.gameObject.GetComponent<Animator>();
+            var animator = modelController.AvatarModel.gameObject.GetComponent<Animator>();
             if (animator != null)
             {
                 animator.runtimeAnimatorController = animatorController;
