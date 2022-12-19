@@ -434,10 +434,11 @@ public class FaceClipEditor : Editor
         var mesh = skinnedMeshRenderer.sharedMesh;
         for (var i = 0; i < mesh.blendShapeCount; i++)
         {
-            var shapeName = mesh.GetBlendShapeName(i).ToLower();
-            if (!shapeName.Contains("left") && !shapeName.Contains("right"))
+            var shapeName = mesh.GetBlendShapeName(i);
+            var shapeNameLower = shapeName.ToLower();
+            if (!shapeNameLower.Contains("left") && !shapeNameLower.Contains("right"))
             {
-                if (shapeName.Contains("blink") || (shapeName.Contains("eye") && shapeName.Contains("close")))
+                if (shapeNameLower.Contains("blink") || (shapeNameLower.Contains("eye") && shapeNameLower.Contains("close")))
                 {
                     return shapeName;
                 }
