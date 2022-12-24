@@ -53,7 +53,7 @@ In this README, I use [Anime Girls Idle Animations Free](https://assetstore.unit
 
 ## 🍣 ChatdollKit configuration
 
-Add `ChatdollKit/Scripts/ChatdollKit` to the 3D model. Required components will also be added automatically.
+Add `ChatdollKit/Prefabs/ChatdollKit` to the scene.
 
 Then, select the speech service (Azure/Google/Watson) you use and set API key and some properties like Region and BaseUrl on inspector of ChatdollKit.
 
@@ -86,6 +86,13 @@ After creating Animator Controller you can select default idle animation by edit
 If you want to setup manually, see [Appendix2. Setup Animator manually](Documents/appendix.md#appendix-2-setup-animator-manually)
 
 <img src="Documents/Images/03_02_animator.png" width="640">
+
+
+### Add skill
+
+Attach `Examples/Echo/Skills/EchoSkill` to `ChatdollKit`. This is a skill for echo.
+
+<img src="Documents/Images/04_add_echo_skill.png" width="640">
 
 
 ## 🥳 Run

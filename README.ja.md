@@ -51,7 +51,7 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 
 ## 🍣 ChatdollKitの設定
 
-`ChatdollKit/Scripts/ChatdollKit` を3Dモデルに追加してください。アニメーション、音声、表情をコントロールする`ModelController`やその他必要なコンポーネントが合わせて追加されます。
+`ChatdollKit/Prefabs/ChatdollKit` をシーンに追加してください。アニメーション、音声、表情をコントロールする`ModelController`やその他必要なコンポーネントがセットアップされています。
 また、`ChatdollKit`のインスペクター上で音声認識・読み上げサービス（Azure/Google/Watson）を選択し、APIキーなど必要な情報を入力してください。
 
 <img src="Documents/Images/02_01_chatdollkit.png" width="640">
@@ -81,6 +81,13 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 これらの手順を手動で行うには、[Appendix2. Animatorの手動設定](Documents/appendix.ja.md#appendix-2-animatorの手動設定) を参照してください。
 
 <img src="Documents/Images/03_02_animator.png" width="640">
+
+### スキルの追加
+
+動作確認用に `Examples/Echo/Skills/EchoSkill` を`ChatdollKit`にアタッチします。これはおうむ返しのスキルです。
+
+<img src="Documents/Images/04_add_echo_skill.png" width="640">
+
 
 ## 🥳 動作確認
 
