@@ -45,9 +45,9 @@ namespace ChatdollKit.IO
 #endif
 
 #if UNITY_WEBGL && !UNITY_EDITOR
-            if (gameObject.GetComponent<ChatdollKit.IO.WebGLMicrophone>() == null)
+            if (gameObject.GetComponent<Microphone>() == null)
             {
-                gameObject.AddComponent<ChatdollKit.IO.WebGLMicrophone>();
+                gameObject.AddComponent<Microphone>();
             }
 #endif
         }
