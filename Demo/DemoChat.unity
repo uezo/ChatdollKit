@@ -408,13 +408,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 1329729873}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4cbefe31b7de640178e99851ffe6bc1f, type: 3}
+  m_Script: {fileID: 11500000, guid: c272f4a00ee954d90be7053bd01902f2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   Name: 
   apiKey: 
-  maxTokens: 1000
-  temperature: 0
+  model: gpt-3.5-turbo
+  maxTokens: 2000
+  temperature: 0.5
+  userRole: Human
+  assistantRole: AI
+  chatCondition: 
+  historyTurns: 10
 --- !u!1 &1696877355
 GameObject:
   m_ObjectHideFlags: 0
