@@ -36,7 +36,7 @@ namespace ChatdollKit.Extension.Azure
         public string Region = "japanwest";
         public string Language = "ja-JP";
         public string Gender = "Female";
-        public string SpeakerName = "ja-JP-HarukaRUS";
+        public string SpeakerName = "ja-JP-AoiNeural";
         public AudioType AudioType = AudioType.MPEG;
 
         public void Configure(string apiKey, string language, string gender, string speakerName, string region, bool overwrite = false)
