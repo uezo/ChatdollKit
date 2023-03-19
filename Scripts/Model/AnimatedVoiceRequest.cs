@@ -9,17 +9,15 @@ namespace ChatdollKit.Model
     public class AnimatedVoiceRequest
     {
         public List<AnimatedVoice> AnimatedVoices { get; set; }
-        public bool DisableBlink { get; set; }
         public bool StopIdlingOnStart { get; set; }
         public bool StartIdlingOnEnd { get; set; }
         public bool StopLayeredAnimations { get; set; }
         public string BaseLayerName { get; set; }
 
         [JsonConstructor]
-        public AnimatedVoiceRequest(List<AnimatedVoice> animatedVoice = null, bool disableBlink = true, bool startIdlingOnEnd = true, bool stopIdlingOnStart = true, bool stopLayeredAnimations = true, string baseLayerName = null)
+        public AnimatedVoiceRequest(List<AnimatedVoice> animatedVoice = null, bool startIdlingOnEnd = true, bool stopIdlingOnStart = true, bool stopLayeredAnimations = true, string baseLayerName = null)
         {
             AnimatedVoices = animatedVoice ?? new List<AnimatedVoice>();
-            DisableBlink = disableBlink;
             StartIdlingOnEnd = startIdlingOnEnd;
             StopIdlingOnStart = stopIdlingOnStart;
             StopLayeredAnimations = stopLayeredAnimations;

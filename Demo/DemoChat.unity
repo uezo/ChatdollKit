@@ -198,6 +198,11 @@ PrefabInstance:
       propertyPath: m_BlendShapeWeights.Array.size
       value: 57
       objectReference: {fileID: 0}
+    - target: {fileID: 4475296871658738048, guid: 0c9ca5c14ded346c680f1982172421aa,
+        type: 3}
+      propertyPath: m_BlendShapeWeights.Array.data[13]
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0c9ca5c14ded346c680f1982172421aa, type: 3}
 --- !u!137 &317768613 stripped
@@ -219,6 +224,16 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2765722604369824890, guid: e45104055b25d486584d2e1bccd0e283,
+        type: 3}
+      propertyPath: blinkBlendShapeName
+      value: Fcl_EYE_Close
+      objectReference: {fileID: 0}
+    - target: {fileID: 2765722604369824890, guid: e45104055b25d486584d2e1bccd0e283,
+        type: 3}
+      propertyPath: skinnedMeshRenderer
+      value: 
+      objectReference: {fileID: 317768613}
     - target: {fileID: 2893757556556708096, guid: e45104055b25d486584d2e1bccd0e283,
         type: 3}
       propertyPath: m_Name

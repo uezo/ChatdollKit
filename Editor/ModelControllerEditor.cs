@@ -263,7 +263,9 @@ public class FaceClipEditor : Editor
         }
 
         // Set blink target
-        modelController.BlinkBlendShapeName = GetBlinkTargetName(modelController.SkinnedMeshRenderer);
+        var blinker = modelController.gameObject.GetComponent<Blink>();
+        blinker.Setup(modelController.SkinnedMeshRenderer);
+        EditorUtility.SetDirty(blinker);
 
         // Add LipSyncHelper
         var lipSyncHelperType = GetTypeByClassName(modelController.LipSyncHelperType.ToString());

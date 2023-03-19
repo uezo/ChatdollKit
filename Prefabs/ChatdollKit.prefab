@@ -258,6 +258,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2893757556556708109}
   - component: {fileID: 2893757556556708150}
+  - component: {fileID: 2765722604369824890}
   - component: {fileID: 2893757556556708105}
   - component: {fileID: 2893757556556708104}
   - component: {fileID: 2893757556556708107}
@@ -304,17 +305,30 @@ MonoBehaviour:
   AnimationFadeLength: 0.5
   IdleAnimationDefaultDuration: 10
   AnimatorDefaultState: Default
-  BlinkBlendShapeName: 
-  MinBlinkIntervalToClose: 3
-  MaxBlinkIntervalToClose: 5
-  MinBlinkIntervalToOpen: 0.05
-  MaxBlinkIntervalToOpen: 0.1
-  BlinkTransitionToClose: 0.01
-  BlinkTransitionToOpen: 0.02
   SkinnedMeshRenderer: {fileID: 0}
   FaceClipConfiguration: {fileID: 0}
   FaceFadeStep: 5
   LipSyncHelperType: 0
+--- !u!114 &2765722604369824890
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2893757556556708096}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9404657f54e784e79b02b31022b7d2ec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  skinnedMeshRenderer: {fileID: 0}
+  blinkBlendShapeName: 
+  minBlinkIntervalToClose: 3
+  maxBlinkIntervalToClose: 5
+  minBlinkIntervalToOpen: 0.05
+  maxBlinkIntervalToOpen: 0.1
+  blinkTransitionToClose: 0.01
+  blinkTransitionToOpen: 0.02
 --- !u!114 &2893757556556708105
 MonoBehaviour:
   m_ObjectHideFlags: 0

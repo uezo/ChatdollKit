@@ -7,7 +7,7 @@ using Cysharp.Threading.Tasks;
 
 namespace ChatdollKit.Model
 {
-    // Model controller
+    [RequireComponent(typeof(Blink))]
     public class ModelController : MonoBehaviour
     {
         // Avator
@@ -35,24 +35,6 @@ namespace ChatdollKit.Model
         private CancellationTokenSource idleTokenSource;
         public string AnimatorDefaultState = "Default";
 
-        // Blink
-        [Header("Blink")]
-        public string BlinkBlendShapeName;
-        private int blinkShapeIndex;
-        public float MinBlinkIntervalToClose = 3.0f;
-        public float MaxBlinkIntervalToClose = 5.0f;
-        public float MinBlinkIntervalToOpen = 0.05f;
-        public float MaxBlinkIntervalToOpen = 0.1f;
-        public float BlinkTransitionToClose = 0.01f;
-        public float BlinkTransitionToOpen = 0.02f;
-        private float blinkIntervalToClose;
-        private float blinkIntervalToOpen;
-        private float blinkWeight = 0.0f;
-        private float blinkVelocity = 0.0f;
-        public bool IsBlinkEnabled { get; private set; } = false;
-        private Action blinkAction;
-        private CancellationTokenSource blinkTokenSource;
-
         // Face Expression
         [Header("Face")]
         public SkinnedMeshRenderer SkinnedMeshRenderer;
@@ -75,7 +57,6 @@ namespace ChatdollKit.Model
         private void Awake()
         {
             animator = AvatarModel.gameObject.GetComponent<Animator>();
-            blinkTokenSource = new CancellationTokenSource();
 
             if (SkinnedMeshRenderer == null)
             {
@@ -125,30 +106,16 @@ namespace ChatdollKit.Model
                 AddIdleAnimation(AnimatorDefaultState);
             }
             _ = StartIdlingAsync();
-
-            // Start blink
-            if (string.IsNullOrEmpty(BlinkBlendShapeName))
-            {
-                Debug.LogWarning("Blink is disabled because BlinkBlendShapeName is not defined");
-            }
-            else
-            {
-                _ = StartBlinkAsync(true);
-            }
         }
 
         private void LateUpdate()
         {
-            // Update blink status
-            blinkAction?.Invoke();
-
             // Move to avatar position (because this game object includes AudioSource)
             gameObject.transform.position = AvatarModel.transform.position;
         }
 
         private void OnDestroy()
         {
-            blinkTokenSource?.Cancel();
             idleTokenSource?.Cancel();
         }
 
@@ -191,7 +158,7 @@ namespace ChatdollKit.Model
         }
 
         // Shortcut to register idling animation
-        public void AddIdleAnimation(string animationName, string faceName = null, float duration = 0.0f, float fadeLength = -1.0f, float blendWeight = 1.0f, float preGap = 0.0f, bool disableBlink = false, int weight = 1)
+        public void AddIdleAnimation(string animationName, string faceName = null, float duration = 0.0f, float fadeLength = -1.0f, float blendWeight = 1.0f, float preGap = 0.0f, int weight = 1)
         {
             var animatedVoiceRequest = new AnimatedVoiceRequest();
             animatedVoiceRequest.AddAnimation(
@@ -200,7 +167,6 @@ namespace ChatdollKit.Model
                 fadeLength, blendWeight, preGap, "idle", true);
             animatedVoiceRequest.AddFace(
                 faceName ?? DefaultFace.Faces[0].Name, description: "idle");
-            animatedVoiceRequest.DisableBlink = disableBlink;
             AddIdleAnimation(animatedVoiceRequest, weight);
         }
 
@@ -224,12 +190,6 @@ namespace ChatdollKit.Model
         // Speak with animation and face expression
         public async UniTask AnimatedSay(AnimatedVoiceRequest request, CancellationToken token)
         {
-            // Stop blink
-            if (request.DisableBlink && !token.IsCancellationRequested)
-            {
-                StopBlink();
-            }
-
             // Stop default animation loop
             if (request.StopIdlingOnStart && !token.IsCancellationRequested)
             {
@@ -247,7 +207,7 @@ namespace ChatdollKit.Model
                 UniTask animationTask;
                 if (animatedVoice.Animations != null && animatedVoice.Animations.Count > 0)
                 {
-                    animationTask = Animate(new AnimationRequest(animatedVoice.Animations, false, false, false, request.StopLayeredAnimations), token);
+                    animationTask = Animate(new AnimationRequest(animatedVoice.Animations, false, false, request.StopLayeredAnimations), token);
                 }
                 else
                 {
@@ -262,7 +222,7 @@ namespace ChatdollKit.Model
                 if (animatedVoice.Voices.Count > 0)
                 {
                     // Wait for the requested voices end
-                    await Say(new VoiceRequest(animatedVoice.Voices, false), token);
+                    await Say(new VoiceRequest(animatedVoice.Voices), token);
                 }
                 else
                 {
@@ -282,12 +242,6 @@ namespace ChatdollKit.Model
             {
                 _ = SetDefaultFace();
             }
-
-            // Restart blink
-            if (request.DisableBlink && !token.IsCancellationRequested)
-            {
-                _ = StartBlinkAsync();
-            }
         }
 
         // Speak one phrase
@@ -304,12 +258,6 @@ namespace ChatdollKit.Model
         {
             // Stop speech
             StopSpeech();
-
-            // Stop blink
-            if (request.DisableBlink && !token.IsCancellationRequested)
-            {
-                StopBlink();
-            }
 
             // Prefetch Web/TTS voice
             if (UsePrefetch)
@@ -416,12 +364,6 @@ namespace ChatdollKit.Model
 
             // Reset viseme
             lipSyncHelper?.ResetViseme();
-
-            // Restart blink
-            if (request.DisableBlink && !token.IsCancellationRequested)
-            {
-                _ = StartBlinkAsync();
-            }
         }
 
         // Start downloading voices from web/TTS
@@ -506,12 +448,6 @@ namespace ChatdollKit.Model
         // Do animations
         public async UniTask Animate(AnimationRequest request, CancellationToken token)
         {
-            // Stop blink
-            if (request.DisableBlink && !token.IsCancellationRequested)
-            {
-                StopBlink();
-            }
-
             // Stop default animation loop
             if (request.StopIdlingOnStart && !token.IsCancellationRequested)
             {
@@ -539,12 +475,6 @@ namespace ChatdollKit.Model
             if (request.StartIdlingOnEnd && request.BaseLayerAnimations.Count > 0 && request.BaseLayerAnimations.Last().Duration > 0)
             {
                 _ = StartIdlingAsync();
-            }
-
-            // Restart blink
-            if (request.DisableBlink && !token.IsCancellationRequested)
-            {
-                _ = StartBlinkAsync();
             }
         }
 
@@ -698,82 +628,6 @@ namespace ChatdollKit.Model
                 var asDefault = faceClip.Name.ToLower() == "default" || faceClip.Name.ToLower() == "neutral";
                 AddFace(faceClip, asDefault);
             }
-        }
-
-        // Initialize and start blink
-        public async UniTask StartBlinkAsync(bool startNew = false)
-        {
-            // Return with doing nothing when already blinking
-            if (IsBlinkEnabled && startNew == false)
-            {
-                return;
-            }
-
-            // Initialize
-            blinkShapeIndex = SkinnedMeshRenderer.sharedMesh.GetBlendShapeIndex(BlinkBlendShapeName);
-            blinkWeight = 0f;
-            blinkVelocity = 0f;
-            blinkAction = null;
-
-            // Open the eyes
-            SkinnedMeshRenderer.SetBlendShapeWeight(blinkShapeIndex, 0);
-
-            // Enable blink
-            IsBlinkEnabled = true;
-
-            if (!startNew)
-            {
-                return;
-            }
-
-            // Start new blink loop
-            History?.Add("Start blink");
-            while (true)
-            {
-                if (blinkTokenSource.Token.IsCancellationRequested)
-                {
-                    break;
-                }
-
-                // Close eyes
-                blinkIntervalToClose = UnityEngine.Random.Range(MinBlinkIntervalToClose, MaxBlinkIntervalToClose);
-                await UniTask.Delay((int)(blinkIntervalToClose * 1000));
-                blinkAction = CloseEyesOnUpdate;
-                // Open eyes
-                blinkIntervalToOpen = UnityEngine.Random.Range(MinBlinkIntervalToOpen, MaxBlinkIntervalToOpen);
-                await UniTask.Delay((int)(blinkIntervalToOpen * 1000));
-                blinkAction = OpenEyesOnUpdate;
-            }
-        }
-
-        // Stop blink
-        public void StopBlink()
-        {
-            History?.Add("Stop blink");
-            IsBlinkEnabled = false;
-            SkinnedMeshRenderer.SetBlendShapeWeight(blinkShapeIndex, 0);
-        }
-
-        // Action for closing eyes called on every updates
-        private void CloseEyesOnUpdate()
-        {
-            if (!IsBlinkEnabled)
-            {
-                return;
-            }
-            blinkWeight = Mathf.SmoothDamp(blinkWeight, 1, ref blinkVelocity, BlinkTransitionToClose);
-            SkinnedMeshRenderer.SetBlendShapeWeight(blinkShapeIndex, blinkWeight * 100);
-        }
-
-        // Action for opening eyes called on every updates
-        private void OpenEyesOnUpdate()
-        {
-            if (!IsBlinkEnabled)
-            {
-                return;
-            }
-            blinkWeight = Mathf.SmoothDamp(blinkWeight, 0, ref blinkVelocity, BlinkTransitionToOpen);
-            SkinnedMeshRenderer.SetBlendShapeWeight(blinkShapeIndex, blinkWeight * 100);
         }
     }
 }

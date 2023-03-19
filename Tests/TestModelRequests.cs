@@ -72,7 +72,6 @@ namespace ChatdollKit.Tests
         {
             // Without params
             var voiceRequest = new VoiceRequest();
-            Assert.IsTrue(voiceRequest.DisableBlink);
 
             voiceRequest.AddVoice("LocalVoice");
             voiceRequest.AddVoiceWeb("https://voice.url");
@@ -108,8 +107,7 @@ namespace ChatdollKit.Tests
             Assert.IsTrue(ttsVoice.UseCache);
 
             // With params
-            var voiceRequestP = new VoiceRequest(disableBlink: false);
-            Assert.IsFalse(voiceRequestP.DisableBlink);
+            var voiceRequestP = new VoiceRequest();
 
             voiceRequestP.AddVoice("LocalVoice", 0.1f, 0.2f);
             voiceRequestP.AddVoiceWeb("https://voice.url", 0.1f, 0.2f, useCache: false);
@@ -237,7 +235,6 @@ namespace ChatdollKit.Tests
         {
             var animationRequest = new AnimationRequest();
             Assert.AreEqual(new Dictionary<string, List<Model.Animation>>(), animationRequest.Animations);
-            Assert.IsTrue(animationRequest.DisableBlink);
             Assert.IsTrue(animationRequest.StartIdlingOnEnd);
             Assert.IsTrue(animationRequest.StopIdlingOnStart);
             Assert.IsTrue(animationRequest.StopLayeredAnimations);
@@ -298,12 +295,11 @@ namespace ChatdollKit.Tests
                     }
                 }
             };
-            var animationRequestP = new AnimationRequest(animations, false, false, false, false, "Base Layer");
+            var animationRequestP = new AnimationRequest(animations, false, false, false, "Base Layer");
             Assert.AreEqual(2, animationRequestP.Animations.Count);
             Assert.AreEqual(2, animationRequestP.Animations[string.Empty].Count);   // not "Base Layer"
             Assert.AreEqual(1, animationRequestP.Animations["UpperBody"].Count);
             Assert.AreEqual(2, animationRequestP.BaseLayerAnimations.Count);
-            Assert.IsFalse(animationRequestP.DisableBlink);
             Assert.IsFalse(animationRequestP.StartIdlingOnEnd);
             Assert.IsFalse(animationRequestP.StopIdlingOnStart);
             Assert.IsFalse(animationRequestP.StopLayeredAnimations);
@@ -325,7 +321,6 @@ namespace ChatdollKit.Tests
         {
             var animatedVoiceRequest = new AnimatedVoiceRequest();
             Assert.AreEqual(new Dictionary<string, List<AnimatedVoice>>(), animatedVoiceRequest.AnimatedVoices);
-            Assert.IsTrue(animatedVoiceRequest.DisableBlink);
             Assert.IsTrue(animatedVoiceRequest.StartIdlingOnEnd);
             Assert.IsTrue(animatedVoiceRequest.StopIdlingOnStart);
             Assert.IsTrue(animatedVoiceRequest.StopLayeredAnimations);

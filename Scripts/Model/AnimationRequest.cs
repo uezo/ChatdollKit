@@ -7,16 +7,14 @@ namespace ChatdollKit.Model
     public class AnimationRequest
     {
         public Dictionary<string, List<Animation>> Animations { get; set; }
-        public bool DisableBlink { get; set; }
         public bool StopIdlingOnStart { get; set; }
         public bool StartIdlingOnEnd { get; set; }
         public bool StopLayeredAnimations { get; set; }
         private string baseLayerName { get; set; }
 
-        public AnimationRequest(Dictionary<string, List<Animation>> animations = null, bool disableBlink = true, bool startIdlingOnEnd = true, bool stopIdlingOnStart = true, bool stopLayeredAnimations = true, string baseLayerName = null)
+        public AnimationRequest(Dictionary<string, List<Animation>> animations = null, bool startIdlingOnEnd = true, bool stopIdlingOnStart = true, bool stopLayeredAnimations = true, string baseLayerName = null)
         {
             Animations = animations ?? new Dictionary<string, List<Animation>>();
-            DisableBlink = disableBlink;
             StartIdlingOnEnd = startIdlingOnEnd;
             StopIdlingOnStart = stopIdlingOnStart;
             StopLayeredAnimations = stopLayeredAnimations;

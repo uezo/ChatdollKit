@@ -415,10 +415,9 @@ namespace ChatdollKit.Dialog
 
             if (startIdling)
             {
-                // Start idling, default face and blink. `startIdling` is true when no successive animated voice
+                // Start idling and set default face. `startIdling` is true when no successive animated voice
                 _ = modelController?.StartIdlingAsync();
                 _ = modelController?.SetDefaultFace();
-                _ = modelController?.StartBlinkAsync();
             }
         }
 

@@ -7,12 +7,10 @@ namespace ChatdollKit.Model
     public class VoiceRequest
     {
         public List<Voice> Voices { get; set; }
-        public bool DisableBlink { get; set; }
 
-        public VoiceRequest(List<Voice> voices = null, bool disableBlink = true)
+        public VoiceRequest(List<Voice> voices = null)
         {
             Voices = voices ?? new List<Voice>();
-            DisableBlink = disableBlink;
         }
 
         public VoiceRequest(params string[] voiceNames) : this()
