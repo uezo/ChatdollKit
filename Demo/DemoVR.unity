@@ -186,7 +186,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 4
+  m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &348088068
 PrefabInstance:
@@ -279,12 +279,6 @@ SkinnedMeshRenderer:
     type: 3}
   m_PrefabInstance: {fileID: 348088068}
   m_PrefabAsset: {fileID: 0}
---- !u!4 &348088071 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2976792424189562836, guid: 0c9ca5c14ded346c680f1982172421aa,
-    type: 3}
-  m_PrefabInstance: {fileID: 348088068}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &444530211
 GameObject:
   m_ObjectHideFlags: 0
@@ -364,8 +358,18 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
-    m_TransformParent: {fileID: 348088071}
+    m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2765722604369824890, guid: e45104055b25d486584d2e1bccd0e283,
+        type: 3}
+      propertyPath: blinkBlendShapeName
+      value: Fcl_EYE_Close
+      objectReference: {fileID: 0}
+    - target: {fileID: 2765722604369824890, guid: e45104055b25d486584d2e1bccd0e283,
+        type: 3}
+      propertyPath: skinnedMeshRenderer
+      value: 
+      objectReference: {fileID: 348088070}
     - target: {fileID: 2893757556556708096, guid: e45104055b25d486584d2e1bccd0e283,
         type: 3}
       propertyPath: m_Name
@@ -405,7 +409,7 @@ PrefabInstance:
     - target: {fileID: 2893757556556708109, guid: e45104055b25d486584d2e1bccd0e283,
         type: 3}
       propertyPath: m_RootOrder
-      value: 5
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 2893757556556708109, guid: e45104055b25d486584d2e1bccd0e283,
         type: 3}
@@ -420,12 +424,12 @@ PrefabInstance:
     - target: {fileID: 2893757556556708109, guid: e45104055b25d486584d2e1bccd0e283,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0
+      value: 1.4
       objectReference: {fileID: 0}
     - target: {fileID: 2893757556556708109, guid: e45104055b25d486584d2e1bccd0e283,
         type: 3}
       propertyPath: m_LocalRotation.w
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2893757556556708109, guid: e45104055b25d486584d2e1bccd0e283,
         type: 3}
@@ -435,7 +439,7 @@ PrefabInstance:
     - target: {fileID: 2893757556556708109, guid: e45104055b25d486584d2e1bccd0e283,
         type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2893757556556708109, guid: e45104055b25d486584d2e1bccd0e283,
         type: 3}
@@ -476,8 +480,138 @@ PrefabInstance:
         type: 3}
       propertyPath: FaceClipConfiguration
       value: 
-      objectReference: {fileID: 11400000, guid: 1e9d7b0f653b2784c9d8734fa0903e64,
+      objectReference: {fileID: 11400000, guid: 1d711d208fb0341d9a7ea69e20a87b62,
         type: 2}
+    - target: {fileID: 3307809761914509636, guid: e45104055b25d486584d2e1bccd0e283,
+        type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4738993740896985298, guid: e45104055b25d486584d2e1bccd0e283,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6839400818860624369, guid: e45104055b25d486584d2e1bccd0e283,
+        type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7443860407171112592, guid: e45104055b25d486584d2e1bccd0e283,
+        type: 3}
+      propertyPath: skinnedMeshRenderer
+      value: 
+      objectReference: {fileID: 348088070}
+    - target: {fileID: 7443860407171112592, guid: e45104055b25d486584d2e1bccd0e283,
+        type: 3}
+      propertyPath: blendShapes.Array.size
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 7443860407171112592, guid: e45104055b25d486584d2e1bccd0e283,
+        type: 3}
+      propertyPath: blendShapes.Array.data[0].index
+      value: 39
+      objectReference: {fileID: 0}
+    - target: {fileID: 7443860407171112592, guid: e45104055b25d486584d2e1bccd0e283,
+        type: 3}
+      propertyPath: blendShapes.Array.data[1].index
+      value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 7443860407171112592, guid: e45104055b25d486584d2e1bccd0e283,
+        type: 3}
+      propertyPath: blendShapes.Array.data[2].index
+      value: 41
+      objectReference: {fileID: 0}
+    - target: {fileID: 7443860407171112592, guid: e45104055b25d486584d2e1bccd0e283,
+        type: 3}
+      propertyPath: blendShapes.Array.data[3].index
+      value: 42
+      objectReference: {fileID: 0}
+    - target: {fileID: 7443860407171112592, guid: e45104055b25d486584d2e1bccd0e283,
+        type: 3}
+      propertyPath: blendShapes.Array.data[4].index
+      value: 43
+      objectReference: {fileID: 0}
+    - target: {fileID: 7443860407171112592, guid: e45104055b25d486584d2e1bccd0e283,
+        type: 3}
+      propertyPath: blendShapes.Array.data[5].index
+      value: -1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7443860407171112592, guid: e45104055b25d486584d2e1bccd0e283,
+        type: 3}
+      propertyPath: blendShapes.Array.data[6].index
+      value: -1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7443860407171112592, guid: e45104055b25d486584d2e1bccd0e283,
+        type: 3}
+      propertyPath: blendShapes.Array.data[0].phoneme
+      value: A
+      objectReference: {fileID: 0}
+    - target: {fileID: 7443860407171112592, guid: e45104055b25d486584d2e1bccd0e283,
+        type: 3}
+      propertyPath: blendShapes.Array.data[1].phoneme
+      value: I
+      objectReference: {fileID: 0}
+    - target: {fileID: 7443860407171112592, guid: e45104055b25d486584d2e1bccd0e283,
+        type: 3}
+      propertyPath: blendShapes.Array.data[2].phoneme
+      value: U
+      objectReference: {fileID: 0}
+    - target: {fileID: 7443860407171112592, guid: e45104055b25d486584d2e1bccd0e283,
+        type: 3}
+      propertyPath: blendShapes.Array.data[3].phoneme
+      value: E
+      objectReference: {fileID: 0}
+    - target: {fileID: 7443860407171112592, guid: e45104055b25d486584d2e1bccd0e283,
+        type: 3}
+      propertyPath: blendShapes.Array.data[4].phoneme
+      value: O
+      objectReference: {fileID: 0}
+    - target: {fileID: 7443860407171112592, guid: e45104055b25d486584d2e1bccd0e283,
+        type: 3}
+      propertyPath: blendShapes.Array.data[5].phoneme
+      value: N
+      objectReference: {fileID: 0}
+    - target: {fileID: 7443860407171112592, guid: e45104055b25d486584d2e1bccd0e283,
+        type: 3}
+      propertyPath: blendShapes.Array.data[6].phoneme
+      value: '-'
+      objectReference: {fileID: 0}
+    - target: {fileID: 7443860407171112592, guid: e45104055b25d486584d2e1bccd0e283,
+        type: 3}
+      propertyPath: blendShapes.Array.data[0].maxWeight
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7443860407171112592, guid: e45104055b25d486584d2e1bccd0e283,
+        type: 3}
+      propertyPath: blendShapes.Array.data[1].maxWeight
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7443860407171112592, guid: e45104055b25d486584d2e1bccd0e283,
+        type: 3}
+      propertyPath: blendShapes.Array.data[2].maxWeight
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7443860407171112592, guid: e45104055b25d486584d2e1bccd0e283,
+        type: 3}
+      propertyPath: blendShapes.Array.data[3].maxWeight
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7443860407171112592, guid: e45104055b25d486584d2e1bccd0e283,
+        type: 3}
+      propertyPath: blendShapes.Array.data[4].maxWeight
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7443860407171112592, guid: e45104055b25d486584d2e1bccd0e283,
+        type: 3}
+      propertyPath: blendShapes.Array.data[5].maxWeight
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7443860407171112592, guid: e45104055b25d486584d2e1bccd0e283,
+        type: 3}
+      propertyPath: blendShapes.Array.data[6].maxWeight
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e45104055b25d486584d2e1bccd0e283, type: 3}
 --- !u!1 &537043702 stripped
@@ -486,72 +620,6 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 537043701}
   m_PrefabAsset: {fileID: 0}
---- !u!82 &537043703 stripped
-AudioSource:
-  m_CorrespondingSourceObject: {fileID: -6319102202658376751, guid: e45104055b25d486584d2e1bccd0e283,
-    type: 3}
-  m_PrefabInstance: {fileID: 537043701}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &537043704
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 537043702}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f43c520a9bad8a3489109c869f454576, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  audioSource: {fileID: 537043703}
-  provider: 1
-  enableAcceleration: 1
-  enableKeyboardInput: 0
-  enableTouchInput: 0
-  audioLoopback: 1
-  loopbackKey: 108
-  showVisemes: 0
-  debugVisemesKey: 100
-  skipAudioSource: 0
-  gain: 1
-  debugLaughterKey: 104
-  showLaughter: 0
-  laughterScore: 0
---- !u!114 &537043705
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 537043702}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b0b97b38f2f1fd24185315141a6c6a56, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  skinnedMeshRenderer: {fileID: 348088070}
-  visemeToBlendTargets: ffffffff29000000290000002a00000028000000280000002800000028000000ffffffff28000000270000002a000000280000002b00000029000000
-  enableVisemeTestKeys: 0
-  visemeTestKeys: 600000000900000071000000770000006500000072000000740000007900000075000000690000006f000000700000005b0000005d0000005c000000
-  laughterKey: 301
-  laughterBlendTarget: 15
-  laughterThreshold: 0.5
-  laughterMultiplier: 1.5
-  smoothAmount: 70
---- !u!114 &537043706
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 537043702}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7c53aa136e2e6486bb93bdcc565c18bd, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  LipSyncContext: {fileID: 537043704}
 --- !u!114 &537043710
 MonoBehaviour:
   m_ObjectHideFlags: 0

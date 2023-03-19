@@ -1,10 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using ChatdollKit.Model;
 using uLipSync;
 
-namespace ChatdollKit.Extension.uLipSyncEx
+namespace ChatdollKit.Model
 {
     public class uLipSyncHelper : MonoBehaviour, ILipSyncHelper
     {
@@ -18,18 +17,7 @@ namespace ChatdollKit.Extension.uLipSyncEx
         {
             // Get GameObjects
             var modelController = gameObject.GetComponent<ModelController>();
-            if (modelController == null || modelController.AudioSource == null)
-            {
-                Debug.LogError("Add and setup ModelController before. You can retry setting up LipSync by selecting `Reset` in the context menu of OVRLipSyncHelper.");
-                return;
-            }
-
-            // Get/Add uLipSyncBlendShape
             var uLipSyncBlendShape = gameObject.GetComponent<uLipSyncBlendShape>();
-            if (uLipSyncBlendShape == null)
-            {
-                uLipSyncBlendShape = gameObject.AddComponent<uLipSyncBlendShape>();
-            }
 
             // Configure uLipSyncBlendShape
             uLipSyncBlendShape.skinnedMeshRenderer = modelController.SkinnedMeshRenderer;
@@ -54,23 +42,6 @@ namespace ChatdollKit.Extension.uLipSyncEx
             foreach (var map in blendShapeMap)
             {
                 uLipSyncBlendShape.blendShapes.Add(new uLipSyncBlendShape.BlendShapeInfo() { phoneme = map.Key, index = map.Value, maxWeight = 1 });
-            }
-
-            // Get/Add uLipSync
-            var uLipSyncMain = gameObject.GetComponent<uLipSync.uLipSync>();
-            if (uLipSyncMain == null)
-            {
-                uLipSyncMain = gameObject.AddComponent<uLipSync.uLipSync>();
-            }
-
-            // Add listener
-            UnityEditor.Events.UnityEventTools.AddPersistentListener(uLipSyncMain.onLipSyncUpdate, uLipSyncBlendShape.OnLipSyncUpdate);
-
-            // Set profile
-            var profiles = UnityEditor.AssetDatabase.FindAssets("-Profile-Female");
-            if (profiles.Length > 0)
-            {
-                uLipSyncMain.profile = UnityEditor.AssetDatabase.LoadAssetAtPath<Profile>(UnityEditor.AssetDatabase.GUIDToAssetPath(profiles.First()));
             }
         }
 

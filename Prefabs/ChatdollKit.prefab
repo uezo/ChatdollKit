@@ -265,6 +265,9 @@ GameObject:
   - component: {fileID: -6319102202658376751}
   - component: {fileID: 1011412479596385445}
   - component: {fileID: 7201188432993092321}
+  - component: {fileID: 5961072085055072626}
+  - component: {fileID: 7443860407171112592}
+  - component: {fileID: 2448531312791225379}
   m_Layer: 0
   m_Name: ChatdollKit
   m_TagString: Untagged
@@ -308,7 +311,6 @@ MonoBehaviour:
   SkinnedMeshRenderer: {fileID: 0}
   FaceClipConfiguration: {fileID: 0}
   FaceFadeStep: 5
-  LipSyncHelperType: 0
 --- !u!114 &2765722604369824890
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -535,6 +537,65 @@ MonoBehaviour:
   voiceNotDetectedColor:
     serializedVersion: 2
     rgba: 4294967295
+--- !u!114 &5961072085055072626
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2893757556556708096}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 87560e04aa74c7a41acb9c87051c3b02, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  profile: {fileID: 11400000, guid: 04d8d7db6114a384aaabeb1d02dd2013, type: 2}
+  onLipSyncUpdate:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 7443860407171112592}
+        m_MethodName: OnLipSyncUpdate
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  outputSoundGain: 1
+  audioSourceProxy: {fileID: 0}
+--- !u!114 &7443860407171112592
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2893757556556708096}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2163de355e8fd8e4b83b631e07455323, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  updateMethod: 0
+  skinnedMeshRenderer: {fileID: 0}
+  blendShapes: []
+  minVolume: -2.5
+  maxVolume: -1.5
+  smoothness: 0.05
+--- !u!114 &2448531312791225379
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2893757556556708096}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 50c7597a9b3234424884aef9d7167841, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &3851585051435924807
 GameObject:
   m_ObjectHideFlags: 0
