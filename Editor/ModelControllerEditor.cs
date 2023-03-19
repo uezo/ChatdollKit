@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEditor.Animations;
 using UnityEditor;
 using Newtonsoft.Json;
+using uLipSync;
 using ChatdollKit.Model;
 
 [CustomEditor(typeof(ModelController))]
@@ -261,25 +262,17 @@ public class FaceClipEditor : Editor
                 $"Assets/Resources/Faces-{modelController.AvatarModel.gameObject.name}-{DateTime.Now.ToString("yyyyMMddHHmmss")}.asset");
             modelController.FaceClipConfiguration = faceClipConfiguration;
         }
+        EditorUtility.SetDirty(modelController);
 
         // Set blink target
         var blinker = modelController.gameObject.GetComponent<Blink>();
         blinker.Setup(modelController.SkinnedMeshRenderer);
         EditorUtility.SetDirty(blinker);
 
-        // Add LipSyncHelper
-        var lipSyncHelperType = GetTypeByClassName(modelController.LipSyncHelperType.ToString());
-        if (lipSyncHelperType != null)
-        {
-            var lipSyncHelper = (ILipSyncHelper)modelController.gameObject.GetComponent(lipSyncHelperType);
-            if (lipSyncHelper == null)
-            {
-                lipSyncHelper = (ILipSyncHelper)modelController.gameObject.AddComponent(lipSyncHelperType);
-            }
-            lipSyncHelper.ConfigureViseme();
-        }
-
-        EditorUtility.SetDirty(modelController);
+        // Configure uLipSyncHelper
+        var lipSyncHelper = modelController.gameObject.GetComponent<uLipSyncHelper>();
+        lipSyncHelper.ConfigureViseme();
+        EditorUtility.SetDirty(modelController.gameObject.GetComponent<uLipSyncBlendShape>());
     }
 
     // Setup Animator
