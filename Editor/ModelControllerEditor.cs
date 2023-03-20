@@ -54,36 +54,45 @@ public class FaceClipEditor : Editor
             }
         }
 
-        // Get SkinnedMeshRenderer for facial expression
-        var skinnedMeshRenderers = modelController.AvatarModel.gameObject.GetComponentsInChildren<SkinnedMeshRenderer>();
-        var facialSkinnedMeshRenderer = GetFacialSkinnedMeshRenderer(skinnedMeshRenderers);
-        if (facialSkinnedMeshRenderer == null)
-        {
-            Debug.LogError("SkinnedMeshRenderer for facial expression not found");
-            return;
-        }
-        modelController.SkinnedMeshRenderer = facialSkinnedMeshRenderer;
-
-        // Set blink target
-        var blinker = modelController.gameObject.GetComponent<Blink>();
-        if (blinker != null)
-        {
-            blinker.Setup(modelController.SkinnedMeshRenderer);
-            EditorUtility.SetDirty(blinker);
-        }
-
-        // Set facial skinned mesh renderer if VRC Avator
-        var faceProxy = modelController.gameObject.GetComponent<VRCFaceExpressionProxy>();
-        if (faceProxy != null)
-        {
-            faceProxy.SkinnedMeshRenderer = modelController.SkinnedMeshRenderer;
-        }
-        EditorUtility.SetDirty(faceProxy);
-
         // Configure uLipSyncHelper
         var lipSyncHelper = modelController.gameObject.GetComponent<uLipSyncHelper>();
         lipSyncHelper.ConfigureViseme();
         EditorUtility.SetDirty(modelController.gameObject.GetComponent<uLipSyncBlendShape>());
+
+        // Blink and FaceExpression
+        var blinker = modelController.gameObject.GetComponent<Blink>();
+        var faceProxy = modelController.gameObject.GetComponent<VRCFaceExpressionProxy>();
+
+        if (blinker == null && faceProxy == null)
+        {
+            // Nothing to set SkinnedMeshRenderer
+            return;
+        }
+
+        var skinnedMeshRenderers = modelController.AvatarModel.gameObject.GetComponentsInChildren<SkinnedMeshRenderer>();
+        var facialSkinnedMeshRenderer = GetFacialSkinnedMeshRenderer(skinnedMeshRenderers);
+        if (facialSkinnedMeshRenderer != null)
+        {
+            modelController.SkinnedMeshRenderer = facialSkinnedMeshRenderer;
+
+            // Set blink target
+            if (blinker != null)
+            {
+                blinker.Setup(modelController.SkinnedMeshRenderer);
+                EditorUtility.SetDirty(blinker);
+            }
+
+            // Set facial skinned mesh renderer if VRC Avator
+            if (faceProxy != null)
+            {
+                faceProxy.SkinnedMeshRenderer = modelController.SkinnedMeshRenderer;
+            }
+            EditorUtility.SetDirty(faceProxy);
+        }
+        else
+        {
+            Debug.LogError("SkinnedMeshRenderer that has facial shapekeys not found.");
+        }
     }
 
     // Setup Animator
