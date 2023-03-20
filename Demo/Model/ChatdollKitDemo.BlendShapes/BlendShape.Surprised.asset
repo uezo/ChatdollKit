@@ -17,7 +17,10 @@ MonoBehaviour:
   Preset: 0
   Values:
   - RelativePath: Face
-    Index: 5
+    Index: 10
+    Weight: 100
+  - RelativePath: Face
+    Index: 21
     Weight: 100
   MaterialValues: []
   IsBinary: 0

@@ -285,6 +285,11 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2332337390490511413, guid: e45104055b25d486584d2e1bccd0e283,
+        type: 3}
+      propertyPath: SkinnedMeshRenderer
+      value: 
+      objectReference: {fileID: 317768613}
     - target: {fileID: 2765722604369824890, guid: e45104055b25d486584d2e1bccd0e283,
         type: 3}
       propertyPath: blinkBlendShapeName

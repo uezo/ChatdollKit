@@ -391,7 +391,6 @@ namespace ChatdollKit.Dialog
                     // NOTE: Cancel is triggered not only when just canceled but when invoked another chat session
                     // Restart idling animation and reset face expression
                     _ = modelController?.StartIdlingAsync();
-                    _ = modelController?.SetDefaultFace();
                 }
             }
         }
@@ -415,9 +414,8 @@ namespace ChatdollKit.Dialog
 
             if (startIdling)
             {
-                // Start idling and set default face. `startIdling` is true when no successive animated voice
+                // Start idling. `startIdling` is true when no successive animated voice
                 _ = modelController?.StartIdlingAsync();
-                _ = modelController?.SetDefaultFace();
             }
         }
 

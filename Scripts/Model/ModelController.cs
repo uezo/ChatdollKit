@@ -7,7 +7,6 @@ using Cysharp.Threading.Tasks;
 
 namespace ChatdollKit.Model
 {
-    [RequireComponent(typeof(Blink))]
     public class ModelController : MonoBehaviour
     {
         // Avator
@@ -38,10 +37,7 @@ namespace ChatdollKit.Model
         // Face Expression
         [Header("Face")]
         public SkinnedMeshRenderer SkinnedMeshRenderer;
-        public FaceClipConfiguration FaceClipConfiguration;
-        private Dictionary<string, FaceClip> faceClips = new Dictionary<string, FaceClip>();
-        private FaceRequest DefaultFace;
-        public int FaceFadeStep = 5;
+        private IFaceExpressionProxy faceExpressionProxy;
 
         // History recorder for debug and test
         public ActionHistoryRecorder History;
@@ -49,14 +45,6 @@ namespace ChatdollKit.Model
         private void Awake()
         {
             animator = AvatarModel.gameObject.GetComponent<Animator>();
-
-            if (SkinnedMeshRenderer == null)
-            {
-                Debug.LogWarning("SkinnedMeshRenderer for face expression is not set to ModelController");
-            }
-
-            // Load at Await() to overwrite at Start()
-            LoadFaces();
 
             // Web and TTS voice loaders
             foreach (var loader in gameObject.GetComponents<WebVoiceLoaderBase>())
@@ -78,18 +66,13 @@ namespace ChatdollKit.Model
 
             // Get lipSyncHelper
             lipSyncHelper = gameObject.GetComponent<ILipSyncHelper>();
+
+            // Face expression proxy
+            faceExpressionProxy = gameObject.GetComponent<IFaceExpressionProxy>();
         }
 
         private void Start()
         {
-            if (DefaultFace == null)
-            {
-                // Set default face if not registered
-                Debug.LogWarning("Default face expression is not registered. Temprarily use zero-weigths-face as default.");
-                AddFace("DefaultFace", new Dictionary<string, float>(), asDefault: true);
-            }
-            _ = SetDefaultFace();
-
             // Start default animation
             if (idleAnimatedVoiceRequests.Count == 0)
             {
@@ -111,6 +94,7 @@ namespace ChatdollKit.Model
             idleTokenSource?.Cancel();
         }
 
+#region Idling
         // Start idling
         public async UniTask StartIdlingAsync()
         {
@@ -157,8 +141,10 @@ namespace ChatdollKit.Model
                 animationName,
                 duration == 0.0f ? IdleAnimationDefaultDuration : duration,
                 fadeLength, blendWeight, preGap, "idle", true);
-            animatedVoiceRequest.AddFace(
-                faceName ?? DefaultFace.Faces[0].Name, description: "idle");
+            if (faceName != null)
+            {
+                animatedVoiceRequest.AddFace(faceName, description: "idle");
+            }
             AddIdleAnimation(animatedVoiceRequest, weight);
         }
 
@@ -178,6 +164,7 @@ namespace ChatdollKit.Model
                 idleWeightedIndexes.Add(index);
             }
         }
+#endregion
 
         // Speak with animation and face expression
         public async UniTask AnimatedSay(AnimatedVoiceRequest request, CancellationToken token)
@@ -208,7 +195,7 @@ namespace ChatdollKit.Model
                 
                 if (animatedVoice.Faces != null && animatedVoice.Faces.Count > 0)
                 {
-                    _ = SetFace(new FaceRequest(animatedVoice.Faces, false));
+                    _ = SetFace(new FaceRequest(animatedVoice.Faces), token);
                 }
 
                 if (animatedVoice.Voices.Count > 0)
@@ -228,14 +215,9 @@ namespace ChatdollKit.Model
             {
                 _ = StartIdlingAsync();
             }
-
-            // Restore default face expression
-            if (request.StartIdlingOnEnd)
-            {
-                _ = SetDefaultFace();
-            }
         }
 
+#region Speech
         // Speak one phrase
         public async UniTask Say(string voiceName, float preGap = 0f, float postGap = 0f)
         {
@@ -436,7 +418,10 @@ namespace ChatdollKit.Model
 
             return ret;
         }
+#endregion
 
+
+#region Animation
         // Do animations
         public async UniTask Animate(AnimationRequest request, CancellationToken token)
         {
@@ -518,108 +503,19 @@ namespace ChatdollKit.Model
                 }
             }
         }
+#endregion
 
-        // Set default face expression
-        public async UniTask SetDefaultFace()
-        {
-            History?.Add("Set default face");
-            await SetFace(DefaultFace);
-        }
 
-        // Set face expression
-        public async UniTask SetFace(string name, float duration = 0.0f, string description = null)
-        {
-            await SetFace(new FaceRequest(new List<FaceExpression>() { new FaceExpression(name, duration, description) }));
-        }
-
+#region Face Expression
         // Set face expressions
-        public async UniTask SetFace(FaceRequest request)
+        public async UniTask SetFace(FaceRequest request, CancellationToken token)
         {
             foreach (var face in request.Faces)
             {
-                History?.Add(face);
-                if (faceClips.ContainsKey(face.Name))
-                {
-                    if (FaceFadeStep == 0)
-                    {
-                        // Change immediately when step is 0
-                        foreach (var blendShapeValue in faceClips[face.Name].Values)
-                        {
-                            SkinnedMeshRenderer.SetBlendShapeWeight(blendShapeValue.Index, blendShapeValue.Weight);
-                        }
-                    }
-                    else
-                    {
-                        // Calculate the weights to be added at each steps
-                        var weightsForEachSteps = new Dictionary<int, List<float>>();
-                        foreach (var blendShapeValue in faceClips[face.Name].Values)
-                        {
-                            var currentWeight = SkinnedMeshRenderer.GetBlendShapeWeight(blendShapeValue.Index);
-                            weightsForEachSteps.Add(blendShapeValue.Index, new List<float>());
-                            var weightToAdd = (blendShapeValue.Weight - currentWeight) / FaceFadeStep;
-                            for (var i = 0; i < FaceFadeStep - 1; i++)
-                            {
-                                weightsForEachSteps[blendShapeValue.Index].Add(currentWeight + weightToAdd * (i + 1));
-                            }
-                            weightsForEachSteps[blendShapeValue.Index].Add(blendShapeValue.Weight);
-                        }
-
-                        // Apply weights
-                        for (var i = 0; i < FaceFadeStep; i++)
-                        {
-                            foreach (var blendShapeValue in faceClips[face.Name].Values)
-                            {
-                                SkinnedMeshRenderer.SetBlendShapeWeight(blendShapeValue.Index, weightsForEachSteps[blendShapeValue.Index][i]);
-                            }
-                            await UniTask.Delay(10);
-                        }
-                    }
-                    await UniTask.Delay((int)(face.Duration * 1000));
-                }
-                else
-                {
-                    Debug.LogWarning($"FaceClip not exists: {face.Name}");
-                }
-            }
-
-            // Reset default face expression
-            if (request.DefaultOnEnd && request.Faces.Last().Duration > 0)
-            {
-                _ = SetDefaultFace();
+                faceExpressionProxy.SetExpressionSmoothly(face.Name, 1.0f);
+                await UniTask.Delay((int)(face.Duration * 1000), cancellationToken: token);
             }
         }
-
-        // Register FaceClip
-        public void AddFace(FaceClip faceClip, bool asDefault = false)
-        {
-            faceClips[faceClip.Name] = faceClip;
-            if (asDefault)
-            {
-                DefaultFace = new FaceRequest();
-                DefaultFace.AddFace(faceClip.Name, 0.0f, "default face");
-            }
-        }
-
-        // Register weights for face expression name
-        public void AddFace(string name, Dictionary<string, float> weights, bool asDefault = false)
-        {
-            AddFace(new FaceClip(name, SkinnedMeshRenderer, weights), asDefault);
-        }
-
-        // Load faces from config
-        private void LoadFaces()
-        {
-            if (FaceClipConfiguration == null)
-            {
-                Debug.LogWarning("Face configuration is not set");
-                return;
-            }
-
-            foreach (var faceClip in FaceClipConfiguration.FaceClips)
-            {
-                var asDefault = faceClip.Name.ToLower() == "default" || faceClip.Name.ToLower() == "neutral";
-                AddFace(faceClip, asDefault);
-            }
-        }
+#endregion
     }
 }
