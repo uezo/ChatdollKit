@@ -66,8 +66,11 @@ public class FaceClipEditor : Editor
 
         // Set blink target
         var blinker = modelController.gameObject.GetComponent<Blink>();
-        blinker.Setup(modelController.SkinnedMeshRenderer);
-        EditorUtility.SetDirty(blinker);
+        if (blinker != null)
+        {
+            blinker.Setup(modelController.SkinnedMeshRenderer);
+            EditorUtility.SetDirty(blinker);
+        }
 
         // Set facial skinned mesh renderer if VRC Avator
         var faceProxy = modelController.gameObject.GetComponent<VRCFaceExpressionProxy>();

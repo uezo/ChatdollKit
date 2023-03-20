@@ -9,7 +9,7 @@ namespace ChatdollKit.Model
         public SkinnedMeshRenderer SkinnedMeshRenderer;
         private Dictionary<string, FaceClip> faceClips = new Dictionary<string, FaceClip>();
         private Dictionary<string, float> faceValues = new Dictionary<string, float>();
-        private Blink blinker;
+        private IBlink blinker;
 
         [SerializeField]
         private float smoothTime = 0.2f;
@@ -21,7 +21,7 @@ namespace ChatdollKit.Model
         private void Awake()
         {
             SkinnedMeshRenderer = gameObject.GetComponent<ModelController>().SkinnedMeshRenderer;
-            blinker = gameObject.GetComponent<Blink>();
+            blinker = gameObject.GetComponent<IBlink>();
             LoadFaces();
             if (faceClips.Count == 0)
             {

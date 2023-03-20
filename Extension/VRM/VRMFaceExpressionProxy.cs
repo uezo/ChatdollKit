@@ -8,7 +8,7 @@ namespace ChatdollKit.Extension.VRM
     public class VRMFaceExpressionProxy : MonoBehaviour, IFaceExpressionProxy
     {
         private VRMBlendShapeProxy blendShapeProxy;
-        private Blink blinker;
+        private IBlink blinker;
 
         [SerializeField]
         private float smoothTime = 0.2f;
@@ -20,7 +20,7 @@ namespace ChatdollKit.Extension.VRM
         private void Awake()
         {
             blendShapeProxy = gameObject.GetComponent<ModelController>().AvatarModel.gameObject.GetComponent<VRMBlendShapeProxy>();
-            blinker = gameObject.GetComponent<Blink>();
+            blinker = gameObject.GetComponent<IBlink>();
         }
 
         private void Update()

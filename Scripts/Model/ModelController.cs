@@ -7,7 +7,6 @@ using Cysharp.Threading.Tasks;
 
 namespace ChatdollKit.Model
 {
-    [RequireComponent(typeof(Blink))]
     public class ModelController : MonoBehaviour
     {
         // Avator
