@@ -20,188 +20,6 @@ public class FaceClipEditor : Editor
     private int selectedFaceIndex;
     private string currentFaceName;
 
-    public override void OnInspectorGUI()
-    {
-        base.OnInspectorGUI();
-        var modelController = target as ModelController;
-        var skinnedMeshRenderer = modelController.SkinnedMeshRenderer;
-        var ButtonLayout = new GUILayoutOption[] { GUILayout.Width(80) };
-
-        if (skinnedMeshRenderer != null)
-        {
-            if (modelController.FaceClipConfiguration == null)
-            {
-                // Clear local list
-                faceClips = null;
-
-                if (GUILayout.Button("Import JSON (migration)"))
-                {
-                    LoadFacesFromJson();
-                }
-
-                return;
-            }
-
-            previousConfigName = currentConfigName;
-            currentConfigName = modelController.FaceClipConfiguration.name;
-
-            // Reset flag to determine selection changed
-            var selectionChanged = false;
-
-            // Load data on started or configuration changed
-            if (faceClips == null || currentConfigName != previousConfigName)
-            {
-                faceClips = modelController.FaceClipConfiguration.FaceClips;
-                if (faceClips.Count > 0)
-                {
-                    selectionChanged = true;
-                    selectedFaceIndex = 0;
-                }
-                else
-                {
-                    selectedFaceIndex = -1;
-                    currentFaceName = string.Empty;
-                }
-            }
-
-            EditorGUILayout.BeginHorizontal();
-
-            // Pulldown selection
-            previousSelectedFaceIndex = selectedFaceIndex;
-            selectedFaceIndex = EditorGUILayout.Popup(selectedFaceIndex, faceClips.Select(f => new GUIContent(f.Name)).ToArray());
-            if (faceClips.Count > 0 && previousSelectedFaceIndex != selectedFaceIndex)
-            {
-                selectionChanged = true;
-            }
-
-            // Remove face
-            if (GUILayout.Button("Remove", ButtonLayout))
-            {
-                if (faceClips.Count > 0)
-                {
-                    // Remove from list
-                    var faceToRemove = faceClips.Where(f => f.Name == currentFaceName).First();
-                    faceClips.Remove(faceToRemove);
-
-                    // Save to asset
-                    EditorUtility.SetDirty(modelController.FaceClipConfiguration);
-                    AssetDatabase.SaveAssets();
-
-                    // Select item
-                    if (faceClips.Count == 0)
-                    {
-                        // Nothing to be selected when no item exists
-                        selectedFaceIndex = -1;
-                        currentFaceName = string.Empty;
-                    }
-                    else
-                    {
-                        if (selectedFaceIndex == 0)
-                        {
-                            selectedFaceIndex = 0;
-                        }
-                        else
-                        {
-                            selectedFaceIndex--;
-                        }
-                        selectionChanged = true;
-                    }
-                }
-            }
-            EditorGUILayout.EndHorizontal();
-
-            // Add or update face
-            EditorGUILayout.BeginHorizontal();
-            currentFaceName = GUILayout.TextField(currentFaceName);
-            if (GUILayout.Button("Capture", ButtonLayout))
-            {
-                if (!string.IsNullOrEmpty(currentFaceName.Trim()))
-                {
-                    // Update or add to list
-                    var faceIndexToUpdate = faceClips.Select(f => f.Name).ToList().IndexOf(currentFaceName);
-                    if (faceIndexToUpdate > -1)
-                    {
-                        faceClips[faceIndexToUpdate] = new FaceClip(currentFaceName, skinnedMeshRenderer);
-                    }
-                    else
-                    {
-                        faceClips.Add(new FaceClip(currentFaceName, skinnedMeshRenderer));
-                    }
-
-                    // Select item
-                    selectedFaceIndex = faceClips.Select(f => f.Name).ToList().IndexOf(currentFaceName);
-
-                    // Save to asset
-                    modelController.FaceClipConfiguration.FaceClips = faceClips;
-                    EditorUtility.SetDirty(modelController.FaceClipConfiguration);
-                    AssetDatabase.SaveAssets();
-                }
-            }
-            EditorGUILayout.EndHorizontal();
-
-            // Change current name and blend shapes when selection changed
-            if (selectionChanged)
-            {
-                currentFaceName = faceClips[selectedFaceIndex].Name;
-                foreach (var blendShapeValue in faceClips[selectedFaceIndex].Values)
-                {
-                    skinnedMeshRenderer.SetBlendShapeWeight(blendShapeValue.Index, blendShapeValue.Weight);
-                }
-            }
-        }
-    }
-
-    // Migrate face configuration from JSON
-    public void LoadFacesFromJson()
-    {
-        var path = EditorUtility.OpenFilePanel("Select FaceClip configuration", "", "json");
-        if (path.Length == 0)
-        {
-            return;
-        }
-
-        try
-        {
-            var modelController = target as ModelController;
-
-            // Load faces from JSON
-            var faces = GetFacesFromFile(path);
-
-            // Create ScriptableObject and set face clips
-            var faceClipConfiguration = CreateInstance<FaceClipConfiguration>();
-            modelController.FaceClipConfiguration = faceClipConfiguration;
-            modelController.FaceClipConfiguration.FaceClips = faces;
-
-            // Create face configuration asset
-            AssetDatabase.CreateAsset(
-                faceClipConfiguration,
-                $"Assets/Resources/Faces-{modelController.AvatarModel.gameObject.name}-{DateTime.Now.ToString("yyyyMMddHHmmSS")}.asset");
-            EditorUtility.SetDirty(modelController.FaceClipConfiguration);
-            AssetDatabase.SaveAssets();
-
-            // Set face clips to local list
-            faceClips = modelController.FaceClipConfiguration.FaceClips;
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError($"Failed to import face clips from JSON: {ex.Message}\n{ex.StackTrace}");
-        }
-    }
-
-    // Get faces from JSON file
-    private List<FaceClip> GetFacesFromFile(string path)
-    {
-        var storedFaces = new List<FaceClip>();
-
-        var faceJsonString = File.ReadAllText(path);
-        if (faceJsonString != null)
-        {
-            storedFaces = JsonConvert.DeserializeObject<List<FaceClip>>(faceJsonString);
-        }
-
-        return storedFaces;
-    }
-
     // Setup ModelController
     [MenuItem("CONTEXT/ModelController/Setup ModelController")]
     private static void Setup(MenuCommand menuCommand)
@@ -246,28 +64,18 @@ public class FaceClipEditor : Editor
         }
         modelController.SkinnedMeshRenderer = facialSkinnedMeshRenderer;
 
-        // Create and set face configuration
-        if (modelController.FaceClipConfiguration == null)
-        {
-            // Create new FaceClipConfiguration and add Neutral face
-            var faceClipConfiguration = CreateInstance<FaceClipConfiguration>();
-            faceClipConfiguration.FaceClips.Add(new FaceClip("Neutral", facialSkinnedMeshRenderer, new Dictionary<string, float>()));
-
-            if (!AssetDatabase.IsValidFolder("Assets/Resources"))
-            {
-                AssetDatabase.CreateFolder("Assets", "Resources");
-            }
-            AssetDatabase.CreateAsset(
-                faceClipConfiguration,
-                $"Assets/Resources/Faces-{modelController.AvatarModel.gameObject.name}-{DateTime.Now.ToString("yyyyMMddHHmmss")}.asset");
-            modelController.FaceClipConfiguration = faceClipConfiguration;
-        }
-        EditorUtility.SetDirty(modelController);
-
         // Set blink target
         var blinker = modelController.gameObject.GetComponent<Blink>();
         blinker.Setup(modelController.SkinnedMeshRenderer);
         EditorUtility.SetDirty(blinker);
+
+        // Set facial skinned mesh renderer if VRC Avator
+        var faceProxy = modelController.gameObject.GetComponent<VRCFaceExpressionProxy>();
+        if (faceProxy != null)
+        {
+            faceProxy.SkinnedMeshRenderer = modelController.SkinnedMeshRenderer;
+        }
+        EditorUtility.SetDirty(faceProxy);
 
         // Configure uLipSyncHelper
         var lipSyncHelper = modelController.gameObject.GetComponent<uLipSyncHelper>();
@@ -422,39 +230,5 @@ public class FaceClipEditor : Editor
         {
             return skinnedMeshRenderers[maxIndex];
         }
-    }
-
-    private static string GetBlinkTargetName(SkinnedMeshRenderer skinnedMeshRenderer)
-    {
-        var mesh = skinnedMeshRenderer.sharedMesh;
-        for (var i = 0; i < mesh.blendShapeCount; i++)
-        {
-            var shapeName = mesh.GetBlendShapeName(i);
-            var shapeNameLower = shapeName.ToLower();
-            if (!shapeNameLower.Contains("left") && !shapeNameLower.Contains("right"))
-            {
-                if (shapeNameLower.Contains("blink") || (shapeNameLower.Contains("eye") && shapeNameLower.Contains("close")))
-                {
-                    return shapeName;
-                }
-            }
-        }
-
-        return string.Empty;
-    }
-
-    public static Type GetTypeByClassName(string className)
-    {
-        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-        {
-            foreach (Type type in assembly.GetTypes())
-            {
-                if (type.Name == className)
-                {
-                    return type;
-                }
-            }
-        }
-        return null;
     }
 }

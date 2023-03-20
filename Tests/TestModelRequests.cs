@@ -203,7 +203,6 @@ namespace ChatdollKit.Tests
         public void TestFaceRequest()
         {
             var faceRequest = new FaceRequest();
-            Assert.IsTrue(faceRequest.DefaultOnEnd);
             faceRequest.AddFace("Smile");
             faceRequest.AddFace("Angry", 1.1f, "angry face");
 
