@@ -516,9 +516,9 @@ GameObject:
   - component: {fileID: 2578082578656311330}
   - component: {fileID: 1337861223029298097}
   - component: {fileID: 2838698582534349907}
-  - component: {fileID: 7048727747212721888}
   - component: {fileID: 4623211974465567425}
   - component: {fileID: 4623211974465567424}
+  - component: {fileID: 570943475975462891}
   m_Layer: 0
   m_Name: ChatdollKitVRM
   m_TagString: Untagged
@@ -834,18 +834,6 @@ MonoBehaviour:
   minVolume: -2.5
   maxVolume: -1.5
   smoothness: 0.05
---- !u!114 &7048727747212721888
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7494064416744276931}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 50c7597a9b3234424884aef9d7167841, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &4623211974465567425
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -877,6 +865,18 @@ MonoBehaviour:
   maxBlinkIntervalToOpen: 0.1
   blinkTransitionToClose: 0.01
   blinkTransitionToOpen: 0.02
+--- !u!114 &570943475975462891
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7494064416744276931}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 88ed540c0acd2415c80091d2652f5555, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &8456465946533480324
 GameObject:
   m_ObjectHideFlags: 0
