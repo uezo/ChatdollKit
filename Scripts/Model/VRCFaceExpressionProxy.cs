@@ -9,6 +9,7 @@ namespace ChatdollKit.Model
         public SkinnedMeshRenderer SkinnedMeshRenderer;
         private Dictionary<string, FaceClip> faceClips = new Dictionary<string, FaceClip>();
         private Dictionary<string, float> faceValues = new Dictionary<string, float>();
+        private Blink blinker;
 
         [SerializeField]
         private float smoothTime = 0.2f;
@@ -20,6 +21,7 @@ namespace ChatdollKit.Model
         private void Awake()
         {
             SkinnedMeshRenderer = gameObject.GetComponent<ModelController>().SkinnedMeshRenderer;
+            blinker = gameObject.GetComponent<Blink>();
             LoadFaces();
             if (faceClips.Count == 0)
             {
@@ -32,6 +34,15 @@ namespace ChatdollKit.Model
         {
             if (changeStartAt > 0)
             {
+                if (currentFaceName == "Neutral")
+                {
+                    _ = blinker.StartBlinkAsync();
+                }
+                else
+                {
+                    blinker.StopBlink();
+                }
+
                 var elapsed = Time.realtimeSinceStartup - changeStartAt;
                 var velocity = elapsed / smoothTime + velocityAtStart;
 
