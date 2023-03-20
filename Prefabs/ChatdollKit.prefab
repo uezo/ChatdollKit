@@ -268,6 +268,7 @@ GameObject:
   - component: {fileID: 5961072085055072626}
   - component: {fileID: 7443860407171112592}
   - component: {fileID: 2448531312791225379}
+  - component: {fileID: 2332337390490511413}
   m_Layer: 0
   m_Name: ChatdollKit
   m_TagString: Untagged
@@ -309,8 +310,6 @@ MonoBehaviour:
   IdleAnimationDefaultDuration: 10
   AnimatorDefaultState: Default
   SkinnedMeshRenderer: {fileID: 0}
-  FaceClipConfiguration: {fileID: 0}
-  FaceFadeStep: 5
 --- !u!114 &2765722604369824890
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -596,6 +595,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50c7597a9b3234424884aef9d7167841, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &2332337390490511413
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2893757556556708096}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 435e12243870945a5a306c4ebb05699b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  FaceClipConfiguration: {fileID: 0}
+  SkinnedMeshRenderer: {fileID: 0}
+  smoothTime: 0.2
 --- !u!1 &3851585051435924807
 GameObject:
   m_ObjectHideFlags: 0
