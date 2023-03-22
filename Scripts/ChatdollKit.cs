@@ -30,7 +30,7 @@ namespace ChatdollKit
         [HideInInspector] public string AzureRegion = string.Empty;
         [HideInInspector] public string AzureLanguage = "ja-JP";
         [HideInInspector] public string AzureGender = "Female";
-        [HideInInspector] public string AzureSpeakerName = "ja-JP-HarukaRUS";
+        [HideInInspector] public string AzureSpeakerName = "ja-JP-AoiNeural";
 
         // Google
         [HideInInspector] public string GoogleApiKey = string.Empty;
