@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
-using Newtonsoft.Json;
 using ChatdollKit.Dialog;
 using ChatdollKit.Dialog.Processor;
 using ChatdollKit.Model;
@@ -37,7 +36,8 @@ namespace ChatdollKit.Examples.ChatGPT
             // If you want make multi-skill virtual agent move this code to where common logic should be implemented like main app.
             var processingAnimation = new AnimatedVoiceRequest();
             processingAnimation.AddAnimation("AGIA_Idle_concern_01_right_hand_front", duration: 20.0f);
-            processingAnimation.AddFace("Blink");
+            processingAnimation.AddFace("Blink", duration: 10.0f);
+            processingAnimation.AddFace("Neutral");
             var neutralFaceRequest = new FaceRequest();
             neutralFaceRequest.AddFace("Neutral");
 
@@ -111,11 +111,27 @@ namespace ChatdollKit.Examples.ChatGPT
 
             // Call API
             var chatHttpResponse = await client.PostJsonAsync<ChatGPTResponse>("https://api.openai.com/v1/chat/completions", data, headers, cancellationToken: token);
-            var responseText = chatHttpResponse.choices[0].message["content"].Trim();
+            var chatGPTResponseText = chatHttpResponse.choices[0].message["content"].Trim();
 
             // Make chat response
             var response = new Response(request.Id);
-            var responseTextToSplit = ParseResponse(responseText).Replace("。", "。|").Replace("！", "！|").Replace("？", "？|").Replace("\n", "");
+            UpdateResponse(response, chatGPTResponseText);
+
+            // Update histories
+            histories.Add(messages.Last());
+            histories.Add(new Dictionary<string, string>() {
+                { "role", "assistant" },
+                { "content", chatGPTResponseText }
+            });
+
+            return response;
+        }
+
+        protected virtual Response UpdateResponse(Response response, string chatGPTResponseText)
+        {
+            // Override this method if you want to parse some data and text to speech from message from OpenAI.
+
+            var responseTextToSplit = chatGPTResponseText.Replace("。", "。|").Replace("！", "！|").Replace("？", "？|").Replace("\n", "");
 
             foreach (var text in responseTextToSplit.Split('|'))
             {
@@ -126,35 +142,7 @@ namespace ChatdollKit.Examples.ChatGPT
                 }
             }
 
-            // Update histories
-            histories.Add(messages.Last());
-            histories.Add(new Dictionary<string, string>() {
-                { "role", "assistant" },
-                { "content", responseText }
-            });
-
             return response;
-        }
-
-        protected virtual string ParseResponse(string responseText)
-        {
-            // Override this method if you want to parse some data and text to speech from message from OpenAI.
-
-            // e.g. Parse emotion params and response text
-            //var responseJson = JsonConvert.DeserializeObject<Dictionary<string, string>>(responseText);
-
-            //var emotions = new Dictionary<string, int>()
-            //{
-            //    { "joy", int.Parse(responseJson["joy"]) },
-            //    { "angry", int.Parse(responseJson["angry"]) },
-            //    { "sorrow", int.Parse(responseJson["sorrow"]) },
-            //    { "fun", int.Parse(responseJson["fun"]) }
-            //};
-            //Debug.Log(JsonConvert.SerializeObject(emotions));
-
-            //return responseJson["response_text"];
-
-            return responseText;
         }
 
         public class ChatGPTResponse
