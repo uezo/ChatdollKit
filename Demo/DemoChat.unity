@@ -237,51 +237,6 @@ SkinnedMeshRenderer:
     type: 3}
   m_PrefabInstance: {fileID: 317768612}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &409679211
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 409679213}
-  - component: {fileID: 409679212}
-  m_Layer: 0
-  m_Name: VRMLoader
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &409679212
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 409679211}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0fe55bcdf554a4ac388a884434767019, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  VRMFilePath: 
-  modelController: {fileID: 2893757555470248029}
---- !u!4 &409679213
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 409679211}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.4812869, y: 0.9712496, z: -0.21797773}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_RootOrder: 5
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1483195893
 GameObject:
   m_ObjectHideFlags: 0
@@ -550,18 +505,6 @@ MonoBehaviour:
   User1stShot: 
   Assistant1stShot: 
   HistoryTurns: 10
---- !u!114 &2893757555470248029 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7494064416744276981, guid: 9923f5ee8d02c4f658216c52051a0d17,
-    type: 3}
-  m_PrefabInstance: {fileID: 4623211973538491283}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2893757555470248016}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dbe823670680445ab88dfd996ec87ed2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1001 &4623211973538491283
 PrefabInstance:
   m_ObjectHideFlags: 0
