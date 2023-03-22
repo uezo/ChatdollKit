@@ -542,14 +542,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Name: 
-  apiKey: 
-  model: gpt-3.5-turbo
-  maxTokens: 2000
-  temperature: 0.5
-  userRole: Human
-  assistantRole: AI
-  chatCondition: 
-  historyTurns: 10
+  ApiKey: 
+  Model: gpt-3.5-turbo
+  MaxTokens: 2000
+  Temperature: 0.5
+  ChatCondition: You are my sister. We are very close and we speak in a casual manner.
+  User1stShot: 
+  Assistant1stShot: 
+  HistoryTurns: 10
 --- !u!114 &2893757555470248029 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 7494064416744276981, guid: 9923f5ee8d02c4f658216c52051a0d17,
