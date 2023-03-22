@@ -37,6 +37,21 @@ namespace ChatdollKit.Dialog
         [Header("Camera")]
         public ChatdollCamera ChatdollCamera;
 
+        // Dialog Status
+        public enum DialogStatus
+        {
+            Idling,
+            Initializing,
+            Prompting,
+            PreparingFirstTurn,
+            TurnStarted,
+            Listening,
+            Processing,
+            Responding,
+            Finalizing
+        }
+        public DialogStatus Status { get; private set; }
+
         public bool IsChatting { get; private set; }
         public bool IsError { get; private set; }
 
@@ -51,6 +66,30 @@ namespace ChatdollKit.Dialog
         public Func<WakeWord, UniTask> OnWakeAsync { get; set; }
         public Func<DialogRequest, CancellationToken, UniTask> OnPromptAsync { get; set; }
         public Func<Request, CancellationToken, UniTask> OnRequestAsync { get; set; }
+        public Func<Request, CancellationToken, UniTask> OnStartShowingWaitingAnimationAsync
+        {
+            set
+            {
+                if (requestProcessor is LocalRequestProcessor)
+                {
+                    ((LocalRequestProcessor)requestProcessor).OnStartShowingWaitingAnimationAsync = value;
+                }
+            }
+        }
+        public Func<Response, CancellationToken, UniTask> OnStartShowingResponseAsync
+        {
+            set
+            {
+                if (requestProcessor is LocalRequestProcessor)
+                {
+                    ((LocalRequestProcessor)requestProcessor).OnStartShowingResponseAsync = async (response, token) =>
+                    {
+                        Status = DialogStatus.Responding;
+                        await value(response, token);
+                    };
+                }
+            }
+        }
         public Func<Response, CancellationToken, UniTask> OnResponseAsync { get; set; }
         public Func<Request, Exception, CancellationToken, UniTask> OnErrorAsync { get; set; }
 
@@ -100,12 +139,14 @@ namespace ChatdollKit.Dialog
             // Setup RequestProcessor
             if (UseRemoteServer)
             {
+                // Remote
                 Debug.Log($"Use RemoteRequestProcessor: {BaseUrl}");
                 requestProcessor = GetComponent<RemoteRequestProcessor>() ?? gameObject.AddComponent<RemoteRequestProcessor>();
                 ((RemoteRequestProcessor)requestProcessor).BaseUrl = BaseUrl;
             }
             else
             {
+                // Local
                 requestProcessor = GetComponent<IRequestProcessor>();
                 if (requestProcessor == null)
                 {
@@ -181,6 +222,8 @@ namespace ChatdollKit.Dialog
                 // Raise voice detection threshold when chatting
                 WakeWordListener.ShouldRaiseThreshold = () => { return IsChatting; };
             }
+
+            Status = DialogStatus.Idling;
         }
 
         // OnDestroy
@@ -287,6 +330,8 @@ namespace ChatdollKit.Dialog
         // Start chatting loop
         public async UniTask StartDialogAsync(DialogRequest dialogRequest = null)
         {
+            Status = DialogStatus.Initializing;
+
             if (dialogRequest == null)
             {
                 dialogRequest = new DialogRequest(GetClientId == null ? GetClientIdDefault() : GetClientId());
@@ -306,10 +351,12 @@ namespace ChatdollKit.Dialog
                 // Prompt
                 if (!dialogRequest.SkipPrompt)
                 {
+                    Status = DialogStatus.Prompting;
                     await OnPromptAsync(dialogRequest, token);
                 }
 
                 // Set RequestType for the first turn
+                Status = DialogStatus.PreparingFirstTurn;
                 var requestType = RequestType.Voice;
                 if (dialogRequest.WakeWord != null)
                 {
@@ -322,11 +369,14 @@ namespace ChatdollKit.Dialog
                 // Chat loop. Exit when session ends, canceled or error occures
                 while (true)
                 {
+                    Status = DialogStatus.TurnStarted;
+
                     if (token.IsCancellationRequested) { return; }
 
                     if (request == null)
                     {
                         // Get request (microphone / camera / QR code, etc)
+                        Status = DialogStatus.Listening;
                         var requestProvider = RequestProviders[requestType];
                         request = await requestProvider.GetRequestAsync(token);
                         request.ClientId = dialogRequest.ClientId;
@@ -343,6 +393,7 @@ namespace ChatdollKit.Dialog
                     {
                         await OnRequestAsync(request, token);
                     }
+                    Status = DialogStatus.Processing;
                     var skillResponse = await requestProcessor.ProcessRequestAsync(request, token);
                     if (OnResponseAsync != null)
                     {
@@ -350,6 +401,7 @@ namespace ChatdollKit.Dialog
                     }
 
                     // Controll conversation loop
+                    Status = DialogStatus.Finalizing;
                     if (skillResponse == null || skillResponse.EndConversation)
                     {
                         break;
