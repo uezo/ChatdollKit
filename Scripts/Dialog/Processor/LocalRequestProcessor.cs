@@ -10,6 +10,8 @@ namespace ChatdollKit.Dialog.Processor
         protected IUserStore UserStore { get; set; }
         protected IStateStore StateStore { get; set; }
         protected ISkillRouter SkillRouter { get; set; }
+        public Func<Request, CancellationToken, UniTask> OnStartShowingWaitingAnimationAsync { get; set; }
+        public Func<Response, CancellationToken, UniTask> OnStartShowingResponseAsync { get; set; }
 
         public LocalRequestProcessor(IUserStore userStore, IStateStore stateStore, ISkillRouter skillRouter, ISkill[] skills)
         {
@@ -110,6 +112,10 @@ namespace ChatdollKit.Dialog.Processor
                 var preProcessResponse = await skill.PreProcessAsync(request, state, token);
 
                 // Start showing waiting animation
+                if (OnStartShowingWaitingAnimationAsync != null)
+                {
+                    await OnStartShowingWaitingAnimationAsync(request, token);
+                }
                 var waitingAnimationTask = skill.ShowWaitingAnimationAsync(preProcessResponse, request, state, token);
 
                 // Process skill
@@ -122,6 +128,11 @@ namespace ChatdollKit.Dialog.Processor
                 if (token.IsCancellationRequested) { return null; }
 
                 // Show response from skill
+                if (OnStartShowingResponseAsync != null)
+                {
+                    await OnStartShowingResponseAsync(skillResponse, token);
+                }
+
                 await skill.ShowResponseAsync(skillResponse, request, state, token);
                 if (token.IsCancellationRequested) { return null; }
 
