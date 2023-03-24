@@ -85,7 +85,6 @@ namespace ChatdollKit.Model
 
         private void Start()
         {
-            // Start default animation
             if (idleAnimations.Count == 0)
             {
                 // Set idle animation if not registered
@@ -94,7 +93,9 @@ namespace ChatdollKit.Model
                     IdleAnimationKey, IdleAnimationValue, IdleAnimationDefaultDuration
                 ));
             }
-            StartIdling();
+
+            // NOTE: Do not start idling here to prevent overwrite the animation that user invokes at Start() in other module.
+            // Don't worry, idling will be started at UpdateAnimation() if user doesn't invoke their custom animation.
         }
 
         private void Update()
@@ -111,9 +112,13 @@ namespace ChatdollKit.Model
 
 #region Idling
         // Start idling
-        public void StartIdling()
+        public void StartIdling(bool resetStartTime = true)
         {
             GetAnimation = GetIdleAnimation;
+            if (resetStartTime)
+            {
+                animationStartAt = 0;
+            }
         }
 
         // Stop idling
@@ -396,7 +401,11 @@ namespace ChatdollKit.Model
             if (animationToRun == null)
             {
                 // Start idling instead when animationToRun is null
-                StartIdling();
+                // `resetStartTime = false`: When idling, GetIdleAnimation() returns null if idle animation is not timeout.
+                // So, StartIdling() will be called every frame while idle animation is not timeout.
+                // If set 0 `animationStartAt` everytime StartIdling() called, idle animation changes every frame.
+                // This `false` prevents reset `animationStartAt` to keep running idle animation.
+                StartIdling(false);
                 return;
             }
 
@@ -421,7 +430,9 @@ namespace ChatdollKit.Model
 
             if (animationStartAt > 0 && Time.realtimeSinceStartup - animationStartAt > currentAnimation.Duration)
             {
-                // Remove the first animation after the duration passed
+                // Remove the first animation and reset animationStartAt when:
+                // - Not right after the Animate() called (animationStartAt > 0)
+                // - Animation is timeout (Time.realtimeSinceStartup - animationStartAt > currentAnimation.Duration)
                 animationQueue.RemoveAt(0);
                 animationStartAt = 0;
             }
@@ -433,8 +444,19 @@ namespace ChatdollKit.Model
 
         private Animation GetIdleAnimation()
         {
-            var i = UnityEngine.Random.Range(0, idleWeightedIndexes.Count);
-            return idleAnimations[idleWeightedIndexes[i]];            
+            if (currentAnimation == null || animationStartAt == 0 || Time.realtimeSinceStartup - animationStartAt > currentAnimation.Duration)
+            {
+                // Return random idle animation when:
+                // - Animation is not running currently (currentAnimation == null)
+                // - Right after StartIdling() called (animationStartAt == 0)
+                // - Idle animation is timeout (Time.realtimeSinceStartup - animationStartAt > currentAnimation.Duration)
+                var i = UnityEngine.Random.Range(0, idleWeightedIndexes.Count);
+                return idleAnimations[idleWeightedIndexes[i]];
+            }
+            else
+            {
+                return default;
+            }
         }
 #endregion
 
