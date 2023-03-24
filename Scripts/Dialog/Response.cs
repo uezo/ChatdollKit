@@ -72,9 +72,9 @@ namespace ChatdollKit.Dialog
             AnimatedVoiceRequest.AddVoiceTTS(text, preGap, postGap, name, ttsConfig, description, asNewFrame);
         }
 
-        public void AddAnimation(string name, string layerName = null, float duration = 0.0f, float fadeLength = -1.0f, float weight = 1.0f, float preGap = 0.0f, string description = null, bool asNewFrame = false)
+        public void AddAnimation(string paramKey, int paramValue, float duration = 0.0f, string layeredAnimation = null, string layeredAnimationLayer = null, bool asNewFrame = false)
         {
-            AnimatedVoiceRequest.AddAnimation(name, layerName ?? string.Empty, duration, fadeLength, weight, preGap, description, asNewFrame);
+            AnimatedVoiceRequest.AddAnimation(paramKey, paramValue, duration, layeredAnimation, layeredAnimationLayer, asNewFrame);
         }
 
         public void AddFace(string name, float duration = 0.0f, string description = null, bool asNewFrame = false)

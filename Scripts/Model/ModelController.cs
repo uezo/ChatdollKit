@@ -24,15 +24,24 @@ namespace ChatdollKit.Model
         private ILipSyncHelper lipSyncHelper;
 
         // Animation
-        private Animator animator;
         [Header("Animation")]
-        public float AnimationFadeLength = 0.5f;
-        public float IdleAnimationDefaultDuration = 10.0f;
-        private List<AnimatedVoiceRequest> idleAnimatedVoiceRequests = new List<AnimatedVoiceRequest>();
-        private List<int> idleWeightedIndexes = new List<int>();
+        [SerializeField]
+        private float IdleAnimationDefaultDuration = 10.0f;
+        [SerializeField]
+        private string IdleAnimationKey = "BaseParam";
+        [SerializeField]
+        private int IdleAnimationValue;
         public Func<CancellationToken, UniTask> IdleFunc;
-        private CancellationTokenSource idleTokenSource;
-        public string AnimatorDefaultState = "Default";
+        [SerializeField]
+        private string layeredAnimationDefaultState = "Default";
+        public float AnimationFadeLength = 0.5f;
+        private Animator animator;
+        private List<Animation> animationQueue = new List<Animation>();
+        private float animationStartAt { get; set; }
+        private Animation currentAnimation { get; set; }
+        private List<Animation> idleAnimations = new List<Animation>();
+        private List<int> idleWeightedIndexes = new List<int>();
+        private Func<Animation> GetAnimation;
 
         // Face Expression
         [Header("Face")]
@@ -74,13 +83,20 @@ namespace ChatdollKit.Model
         private void Start()
         {
             // Start default animation
-            if (idleAnimatedVoiceRequests.Count == 0)
+            if (idleAnimations.Count == 0)
             {
                 // Set idle animation if not registered
                 Debug.LogWarning("Idle animations are not registered. Temprarily use dafault state as idle animation.");
-                AddIdleAnimation(AnimatorDefaultState);
+                AddIdleAnimation(new Animation(
+                    IdleAnimationKey, IdleAnimationValue, IdleAnimationDefaultDuration
+                ));
             }
-            _ = StartIdlingAsync();
+            StartIdling();
+        }
+
+        private void Update()
+        {
+            UpdateAnimation();
         }
 
         private void LateUpdate()
@@ -89,92 +105,36 @@ namespace ChatdollKit.Model
             gameObject.transform.position = AvatarModel.transform.position;
         }
 
-        private void OnDestroy()
-        {
-            idleTokenSource?.Cancel();
-        }
-
 #region Idling
         // Start idling
-        public async UniTask StartIdlingAsync()
+        public void StartIdling()
         {
-            // Stop running idle loop
-            StopIdling();
-
-            // Create new default animation token
-            idleTokenSource = new CancellationTokenSource();
-            var token = idleTokenSource.Token;
-
-            History?.Add("Start idling");
-            if (IdleFunc == null)
-            {
-                while (!token.IsCancellationRequested)
-                {
-                    var i = UnityEngine.Random.Range(0, idleWeightedIndexes.Count);
-                    await AnimatedSay(idleAnimatedVoiceRequests[idleWeightedIndexes[i]], token);
-                }
-            }
-            else
-            {
-                await IdleFunc(token);
-            }
+            GetAnimation = GetIdleAnimation;
         }
 
         // Stop idling
         public void StopIdling()
         {
-            History?.Add("Stop idling");
-            // Stop running default animation loop
-            if (idleTokenSource != null)
-            {
-                idleTokenSource.Cancel();
-                idleTokenSource.Dispose();
-                idleTokenSource = null;
-            }
-        }
-
-        // Shortcut to register idling animation
-        public void AddIdleAnimation(string animationName, string faceName = null, float duration = 0.0f, float fadeLength = -1.0f, float blendWeight = 1.0f, float preGap = 0.0f, int weight = 1)
-        {
-            var animatedVoiceRequest = new AnimatedVoiceRequest();
-            animatedVoiceRequest.AddAnimation(
-                animationName,
-                duration == 0.0f ? IdleAnimationDefaultDuration : duration,
-                fadeLength, blendWeight, preGap, "idle", true);
-            if (faceName != null)
-            {
-                animatedVoiceRequest.AddFace(faceName, description: "idle");
-            }
-            AddIdleAnimation(animatedVoiceRequest, weight);
+            GetAnimation = GetQueuedAnimation;
         }
 
         // Register idling animation
-        public void AddIdleAnimation(AnimatedVoiceRequest animatedVoiceRequest, int weight = 1)
+        public void AddIdleAnimation(Animation animation, int weight = 1)
         {
-            // Add animated voice request
-            animatedVoiceRequest.StartIdlingOnEnd = false;
-            animatedVoiceRequest.StopIdlingOnStart = false;
-            animatedVoiceRequest.StopLayeredAnimations = true;
-            idleAnimatedVoiceRequests.Add(animatedVoiceRequest);
+            idleAnimations.Add(animation);
 
             // Set weight
-            var index = idleAnimatedVoiceRequests.Count - 1;
+            var index = idleAnimations.Count - 1;
             for (var i = 0; i < weight; i++)
             {
                 idleWeightedIndexes.Add(index);
             }
         }
-#endregion
+        #endregion
 
         // Speak with animation and face expression
         public async UniTask AnimatedSay(AnimatedVoiceRequest request, CancellationToken token)
         {
-            // Stop default animation loop
-            if (request.StopIdlingOnStart && !token.IsCancellationRequested)
-            {
-                StopIdling();
-            }
-
             // Speak, animate and express face sequentially
             foreach (var animatedVoice in request.AnimatedVoices)
             {
@@ -183,37 +143,31 @@ namespace ChatdollKit.Model
                     break;
                 }
 
-                UniTask animationTask;
-                if (animatedVoice.Animations != null && animatedVoice.Animations.Count > 0)
+                // Animation
+                if (animatedVoice.Animations.Count > 0)
                 {
-                    animationTask = Animate(new AnimationRequest(animatedVoice.Animations, false, false, request.StopLayeredAnimations), token);
+                    Animate(animatedVoice.Animations);
                 }
-                else
-                {
-                    animationTask = UniTask.Delay(1);   // Set empty task
-                }
-                
+
+                // Face
                 if (animatedVoice.Faces != null && animatedVoice.Faces.Count > 0)
                 {
                     _ = SetFace(new FaceRequest(animatedVoice.Faces), token);
                 }
 
+                // Speech
                 if (animatedVoice.Voices.Count > 0)
                 {
                     // Wait for the requested voices end
                     await Say(new VoiceRequest(animatedVoice.Voices), token);
                 }
-                else
-                {
-                    // Wait for the requested animations end
-                    await animationTask;
-                }
             }
 
-            // Restart idling and reset face
             if (request.StartIdlingOnEnd && !token.IsCancellationRequested)
             {
-                _ = StartIdlingAsync();
+                // Stop running animation not to keep the current state to the next turn (prompting)
+                // Do not start idling when cancel requested because the next animated voice request may include animations
+                StartIdling();
             }
         }
 
@@ -418,95 +372,79 @@ namespace ChatdollKit.Model
 
             return ret;
         }
-#endregion
+        #endregion
 
 
 #region Animation
-        // Do animations
-        public async UniTask Animate(AnimationRequest request, CancellationToken token)
+        // Set animations to queue
+        public void Animate(List<Animation> animations)
         {
-            // Stop default animation loop
-            if (request.StopIdlingOnStart && !token.IsCancellationRequested)
-            {
-                StopIdling();
-            }
+            ResetLayers();
+            animationQueue.Clear();
+            animationQueue = new List<Animation>(animations);
+            animationStartAt = 0;
+            GetAnimation = GetQueuedAnimation;
+        }
 
-            // Animate sequentially
-            var baseTask = PlayAnimations(request.BaseLayerAnimations, request.BaseLayerName, token);
-            foreach (var anims in request.Animations)
+        private void ResetLayers()
+        {
+            for (var i = 1; i < animator.layerCount; i++)
             {
-                if (anims.Key != request.BaseLayerName)
-                {
-                    _ = PlayAnimations(anims.Value, anims.Key, token);
-                }
-            }
-            // Stop layered animations
-            if (request.StopLayeredAnimations)
-            {
-                ResetLayers(request.Animations.Keys.ToList());
-            }
-
-            await baseTask;
-
-            // Restart default animation
-            if (request.StartIdlingOnEnd && request.BaseLayerAnimations.Count > 0 && request.BaseLayerAnimations.Last().Duration > 0)
-            {
-                _ = StartIdlingAsync();
+                animator.CrossFadeInFixedTime(layeredAnimationDefaultState, AnimationFadeLength, i);
             }
         }
 
-        private async UniTask PlayAnimations(List<Animation> animations, string layerName, CancellationToken token)
+        private void UpdateAnimation()
         {
-            var layerIndex = layerName == string.Empty ? 0 : animator.GetLayerIndex(layerName);
-            foreach (var a in animations)
+            // This method will be called every frames in `Update()`
+            var animationToRun = GetAnimation();
+            if (animationToRun == null)
             {
-                var histroyId = string.Empty;
-                try
+                // Start idling instead when animationToRun is null
+                StartIdling();
+                return;
+            }
+
+            if (currentAnimation == null || animationToRun.Id != currentAnimation.Id)
+            {
+                // Start new animation
+                ResetLayers();
+                animator.SetInteger(animationToRun.ParameterKey, animationToRun.ParameterValue);
+                if (!string.IsNullOrEmpty(animationToRun.LayeredAnimationName))
                 {
-                    if (a.PreGap > 0)
-                    {
-                        await UniTask.Delay((int)(a.PreGap * 1000), cancellationToken: token);
-                    }
-                    animator.SetLayerWeight(layerIndex, a.Weight);
-                    histroyId = History?.Add(a);
-                    animator.CrossFadeInFixedTime(a.Name, a.FadeLength < 0 ? AnimationFadeLength : a.FadeLength, layerIndex);
-                    await UniTask.Delay((int)(a.Duration * 1000), cancellationToken: token);
+                    var layerIndex = animator.GetLayerIndex(animationToRun.LayeredAnimationLayerName);
+                    animator.CrossFadeInFixedTime(animationToRun.LayeredAnimationName, AnimationFadeLength, layerIndex);
                 }
-                catch (OperationCanceledException tcex)
-                {
-                    History?.Add(histroyId, "canceled");
-                    Debug.Log($"Animation {a.Name} on {a.LayerName} canceled: {tcex.Message}");
-                }
-                catch (Exception ex)
-                {
-                    History?.Add(histroyId, "error");
-                    Debug.LogError($"Error occured in playing animation: {ex.Message}\n{ex.StackTrace}");
-                }
-                finally
-                {
-                    animator.SetLayerWeight(layerIndex, 1.0f);
-                }
+                currentAnimation = animationToRun;
+                animationStartAt = Time.realtimeSinceStartup;
             }
         }
 
-        private void ResetLayers(List<string> excludeLayerNames)
+        private Animation GetQueuedAnimation()
         {
-            for (var i = 0; i < animator.layerCount; i++)
+            if (animationQueue.Count == 0) return default;
+
+            if (animationStartAt > 0 && Time.realtimeSinceStartup - animationStartAt > currentAnimation.Duration)
             {
-                if (i == 0 || excludeLayerNames.Contains(animator.GetLayerName(i)))
-                {
-                    continue;
-                }
-                else
-                {
-                    animator.CrossFadeInFixedTime(AnimatorDefaultState, AnimationFadeLength, i);
-                }
+                // Remove the first animation after the duration passed
+                animationQueue.RemoveAt(0);
+                animationStartAt = 0;
             }
+
+            if (animationQueue.Count == 0) return default;
+
+            return animationQueue.First();
+        }
+
+        private Animation GetIdleAnimation()
+        {
+            var i = UnityEngine.Random.Range(0, idleWeightedIndexes.Count);
+            return idleAnimations[idleWeightedIndexes[i]];            
         }
 #endregion
 
 
-#region Face Expression
+        #region Face Expression
         // Set face expressions
         public async UniTask SetFace(FaceRequest request, CancellationToken token)
         {
@@ -514,6 +452,8 @@ namespace ChatdollKit.Model
             {
                 faceExpressionProxy.SetExpressionSmoothly(face.Name, 1.0f);
                 await UniTask.Delay((int)(face.Duration * 1000), cancellationToken: token);
+
+                if (token.IsCancellationRequested) break;
             }
         }
 #endregion

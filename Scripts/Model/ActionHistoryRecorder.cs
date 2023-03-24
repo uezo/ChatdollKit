@@ -94,7 +94,7 @@ namespace ChatdollKit.Model
             else if (action is Animation)
             {
                 ActionType = "animation";
-                Description = ((Animation)action).Description;
+                Description = $"{((Animation)action).ParameterKey}={((Animation)action).ParameterValue}";
             }
             else if (action is FaceExpression)
             {

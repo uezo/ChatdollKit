@@ -19,13 +19,15 @@ namespace ChatdollKit.Dialog
         [SerializeField] protected string PromptVoice;
         [SerializeField] protected VoiceSource PromptVoiceType = VoiceSource.TTS;
         [SerializeField] protected string PromptFace;
-        [SerializeField] protected string PromptAnimation;
+        [SerializeField] protected string PromptAnimationParamKey;
+        [SerializeField] protected int PromptAnimationParamValue;
 
         [Header("Error")]
         [SerializeField] protected string ErrorVoice;
         [SerializeField] protected VoiceSource ErrorVoiceType = VoiceSource.TTS;
         [SerializeField] protected string ErrorFace;
-        [SerializeField] protected string ErrorAnimation;
+        [SerializeField] protected string ErrorAnimationParamKey;
+        [SerializeField] protected int ErrorAnimationParamValue;
 
         [Header("Request Processing")]
         public bool UseRemoteServer = false;
@@ -287,9 +289,9 @@ namespace ChatdollKit.Dialog
             {
                 PromptAnimatedVoiceRequest.AddFace(PromptFace);
             }
-            if (!string.IsNullOrEmpty(PromptAnimation))
+            if (!string.IsNullOrEmpty(PromptAnimationParamKey))
             {
-                PromptAnimatedVoiceRequest.AddAnimation(PromptAnimation);
+                PromptAnimatedVoiceRequest.AddAnimation(PromptAnimationParamKey, PromptAnimationParamValue, 5.0f);
             }
 
             await modelController.AnimatedSay(PromptAnimatedVoiceRequest, token);
@@ -319,9 +321,9 @@ namespace ChatdollKit.Dialog
             {
                 ErrorAnimatedVoiceRequest.AddFace(ErrorFace);
             }
-            if (!string.IsNullOrEmpty(ErrorAnimation))
+            if (!string.IsNullOrEmpty(ErrorAnimationParamKey))
             {
-                ErrorAnimatedVoiceRequest.AddAnimation(ErrorAnimation);
+                ErrorAnimatedVoiceRequest.AddAnimation(ErrorAnimationParamKey, ErrorAnimationParamValue, 5.0f);
             }
 
             await modelController.AnimatedSay(ErrorAnimatedVoiceRequest, token);
@@ -442,7 +444,7 @@ namespace ChatdollKit.Dialog
                 {
                     // NOTE: Cancel is triggered not only when just canceled but when invoked another chat session
                     // Restart idling animation and reset face expression
-                    _ = modelController?.StartIdlingAsync();
+                    modelController?.StartIdling();
                 }
             }
         }
@@ -467,7 +469,7 @@ namespace ChatdollKit.Dialog
             if (startIdling)
             {
                 // Start idling. `startIdling` is true when no successive animated voice
-                _ = modelController?.StartIdlingAsync();
+                modelController?.StartIdling();
             }
         }
 

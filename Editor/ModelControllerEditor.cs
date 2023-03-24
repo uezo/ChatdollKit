@@ -5,21 +5,12 @@ using System.Linq;
 using UnityEngine;
 using UnityEditor.Animations;
 using UnityEditor;
-using Newtonsoft.Json;
 using uLipSync;
 using ChatdollKit.Model;
 
 [CustomEditor(typeof(ModelController))]
 public class FaceClipEditor : Editor
 {
-    // For face configuration
-    private string previousConfigName;
-    private string currentConfigName;
-    private List<FaceClip> faceClips;
-    private int previousSelectedFaceIndex;
-    private int selectedFaceIndex;
-    private string currentFaceName;
-
     // Setup ModelController
     [MenuItem("CONTEXT/ModelController/Setup ModelController")]
     private static void Setup(MenuCommand menuCommand)
@@ -54,6 +45,12 @@ public class FaceClipEditor : Editor
             }
         }
 
+        // Set skinned mesh renderer before configure facial expression and lipsync
+        var skinnedMeshRenderers = modelController.AvatarModel.gameObject.GetComponentsInChildren<SkinnedMeshRenderer>();
+        var facialSkinnedMeshRenderer = GetFacialSkinnedMeshRenderer(skinnedMeshRenderers);
+        modelController.SkinnedMeshRenderer = facialSkinnedMeshRenderer;
+        EditorUtility.SetDirty(modelController);
+
         // Configure uLipSyncHelper
         var lipSyncHelper = modelController.gameObject.GetComponent<uLipSyncHelper>();
         lipSyncHelper.ConfigureViseme();
@@ -69,12 +66,8 @@ public class FaceClipEditor : Editor
             return;
         }
 
-        var skinnedMeshRenderers = modelController.AvatarModel.gameObject.GetComponentsInChildren<SkinnedMeshRenderer>();
-        var facialSkinnedMeshRenderer = GetFacialSkinnedMeshRenderer(skinnedMeshRenderers);
         if (facialSkinnedMeshRenderer != null)
         {
-            modelController.SkinnedMeshRenderer = facialSkinnedMeshRenderer;
-
             // Set blink target
             if (blinker != null)
             {
@@ -127,36 +120,66 @@ public class FaceClipEditor : Editor
                 }
             }
 
-            // Create new animator controller
+            // Create new animator controller and layer
             var animatorController = AnimatorController.CreateAnimatorControllerAtPath(animatorControllerPath);
+            var baseLayer = animatorController.layers[0];
+            animatorController.AddLayer("Additive Layer");
+            var additiveLayer = animatorController.layers.Last();
 
+            // TODO: Apply and persist these values. I don't know why they are not applied :(
+            additiveLayer.blendingMode = AnimatorLayerBlendingMode.Additive;
+            additiveLayer.defaultWeight = 1.0f;
+
+            animatorController.AddParameter("BaseParam", AnimatorControllerParameterType.Int);
+            animatorController.AddParameter("AdditiveParam", AnimatorControllerParameterType.Int);
+            var paramCounter = new Dictionary<string, int>()
+            {
+                { "BaseParam", 0 },
+                { "AdditiveParam", 0 },
+            };
+
+            // Put animation clips on layers
             foreach (var kv in animationClips)
             {
                 // Select layer
                 var layerName = kv.Key;
-                var putOnBaseLayer = layerName == "Base layer" || EditorUtility.DisplayDialog("Select Layer", $"{kv.Value.Count} clips found in {layerName}. Put these clips on ...", "Base Layer", $"{layerName}");
-                if (!putOnBaseLayer)
-                {
-                    animatorController.AddLayer(layerName);
-                }
-                var layer = putOnBaseLayer ? animatorController.layers[0] : animatorController.layers.Last();
+                var putOnBaseLayer = layerName == "Base layer" || EditorUtility.DisplayDialog("Select Layer", $"{kv.Value.Count} clips found in {layerName}. Put these clips on ...", "Base Layer", "Additive Layer");
+                var layer = putOnBaseLayer ? baseLayer : additiveLayer;
 
                 // Create default state
-                if (!layer.stateMachine.states.Select(st => st.state.name).Contains("Default"))
+                AnimatorState defaultState = default;
+                if (layer.stateMachine.states.Select(st => st.state.name).Contains("Default"))
                 {
-                    var defaultState = layer.stateMachine.AddState("Default");
-                    if (putOnBaseLayer && kv.Value.Count > 0)
-                    {
-                        defaultState.motion = kv.Value[0];
-                    }
-
+                    defaultState = layer.stateMachine.states.Where(st => st.state.name == "Default").First().state;
+                }
+                else
+                {
+                    defaultState = layer.stateMachine.AddState("Default");
                 }
 
-                // Put animation clips on layer
+                // Put animation clips on layer with transition
                 foreach (var clip in kv.Value)
                 {
+                    // Create state
                     var state = layer.stateMachine.AddState(clip.name);
                     state.motion = clip;
+
+                    // Make transitions
+                    if (putOnBaseLayer)
+                    {
+                        var anyToState = layer.stateMachine.AddAnyStateTransition(state);
+                        anyToState.duration = modelController.AnimationFadeLength;
+                        anyToState.exitTime = 0;
+                        anyToState.canTransitionToSelf = false;
+                        anyToState.AddCondition(AnimatorConditionMode.Equals, paramCounter["BaseParam"], "BaseParam");
+
+                        var stateToDefault = state.AddTransition(defaultState);
+                        stateToDefault.duration = modelController.AnimationFadeLength;
+                        stateToDefault.exitTime = 0;
+                        stateToDefault.AddCondition(AnimatorConditionMode.NotEqual, paramCounter["BaseParam"], "BaseParam");
+                    }
+
+                    paramCounter[putOnBaseLayer ? "BaseParam" : "AdditiveParam"] += 1;
                 }
             }
 
