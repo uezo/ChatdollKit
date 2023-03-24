@@ -1,32 +1,24 @@
-﻿namespace ChatdollKit.Model
+﻿using System;
+
+namespace ChatdollKit.Model
 {
     public class Animation
     {
-        public string Name { get; set; }
-        public string LayerName { get; set; }
+        public string Id { get; private set; }
+        public string ParameterKey { get; set; }
+        public int ParameterValue { get; set; }
         public float Duration { get; set; }
-        public float FadeLength { get; set; }
-        public float Weight { get; set; }
-        public float PreGap { get; set; }
-        public string Description { get; set; }
+        public string LayeredAnimationName { get; set; }
+        public string LayeredAnimationLayerName { get; set; }
 
-        public Animation(string name, string layerName, float duration, float fadeLength, float weight, float preGap, string description)
+        public Animation(string parameterKey, int parameterValue, float duration, string layeredAnimationName = null, string layeredAnimationLayerName = null)
         {
-            Name = name;
-            LayerName = layerName;
+            Id = Guid.NewGuid().ToString();
+            ParameterKey = parameterKey;
+            ParameterValue = parameterValue;
             Duration = duration;
-            FadeLength = fadeLength;
-            Weight = weight;
-            PreGap = preGap;
-            Description = description;
-        }
-
-        public float Length
-        {
-            get
-            {
-                return (Duration + PreGap);
-            }
+            LayeredAnimationName = layeredAnimationName;
+            LayeredAnimationLayerName = layeredAnimationLayerName;
         }
     }
 }

@@ -38,12 +38,12 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 1}
+  m_IndirectSpecularColor: {r: 0.18028341, g: 0.22571327, b: 0.3069219, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 11
+  serializedVersion: 12
   m_GIWorkflowMode: 1
   m_GISettings:
     serializedVersion: 2
@@ -98,7 +98,7 @@ LightmapSettings:
     m_TrainingDataDestination: TrainingData
     m_LightProbeSampleCountMultiplier: 4
   m_LightingDataAsset: {fileID: 0}
-  m_UseShadowmask: 1
+  m_LightingSettings: {fileID: 0}
 --- !u!196 &4
 NavMeshSettings:
   serializedVersion: 2
@@ -118,6 +118,8 @@ NavMeshSettings:
     manualTileSize: 0
     tileSize: 256
     accuratePlacement: 0
+    maxJobWorkers: 0
+    preserveTilesOutsideBounds: 0
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
@@ -138,7 +140,7 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Controller
       value: 
-      objectReference: {fileID: 9100000, guid: cb70360b55e814eec88ad902c3d42e05, type: 2}
+      objectReference: {fileID: 9100000, guid: 7dacdb2edbced49529c410c0ed2733f3, type: 2}
     - target: {fileID: 2202594932717684837, guid: 0c9ca5c14ded346c680f1982172421aa,
         type: 3}
       propertyPath: m_Name
@@ -267,6 +269,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f231c4fb786f3946a6b90b886c48677, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_SendPointerHoverToParent: 1
   m_HorizontalAxis: Horizontal
   m_VerticalAxis: Vertical
   m_SubmitButton: Submit
@@ -299,6 +302,7 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 4
@@ -379,6 +383,7 @@ Light:
   m_UseColorTemperature: 0
   m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
   m_UseBoundingSphereOverride: 0
+  m_UseViewFrustumForShadowCasterCull: 1
   m_ShadowRadius: 0
   m_ShadowAngle: 0
 --- !u!4 &1696877357
@@ -391,6 +396,7 @@ Transform:
   m_LocalRotation: {x: 0.10938167, y: -0.8754261, z: 0.40821788, w: 0.23456976}
   m_LocalPosition: {x: 0, y: 3, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 1
@@ -474,6 +480,7 @@ Transform:
   m_LocalRotation: {x: 0.0004217014, y: 0.99799204, z: -0.006681811, w: 0.062985085}
   m_LocalPosition: {x: -0.239, y: 0.786, z: 1.991}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
@@ -604,8 +611,28 @@ PrefabInstance:
       objectReference: {fileID: 166802147}
     - target: {fileID: 7494064416744276981, guid: 9923f5ee8d02c4f658216c52051a0d17,
         type: 3}
+      propertyPath: IdleAnimationKey
+      value: BaseParam
+      objectReference: {fileID: 0}
+    - target: {fileID: 7494064416744276981, guid: 9923f5ee8d02c4f658216c52051a0d17,
+        type: 3}
+      propertyPath: IdleAnimationValue
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 7494064416744276981, guid: 9923f5ee8d02c4f658216c52051a0d17,
+        type: 3}
       propertyPath: SkinnedMeshRenderer
       value: 
+      objectReference: {fileID: 317768613}
+    - target: {fileID: 7494064416744276981, guid: 9923f5ee8d02c4f658216c52051a0d17,
+        type: 3}
+      propertyPath: LayeredAnimationDefaultState
+      value: Layer_start
+      objectReference: {fileID: 0}
+    - target: {fileID: 7494064416744276981, guid: 9923f5ee8d02c4f658216c52051a0d17,
+        type: 3}
+      propertyPath: layeredAnimationDefaultState
+      value: Default
       objectReference: {fileID: 0}
     - target: {fileID: 7912615329650566023, guid: 9923f5ee8d02c4f658216c52051a0d17,
         type: 3}

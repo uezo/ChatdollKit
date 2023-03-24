@@ -34,10 +34,13 @@ namespace ChatdollKit.Examples.ChatGPT
         {
             // This is an example of the animation and face expression while processing request.
             // If you want make multi-skill virtual agent move this code to where common logic should be implemented like main app.
-            var processingAnimation = new AnimatedVoiceRequest();
-            processingAnimation.AddAnimation("AGIA_Idle_concern_01_right_hand_front", duration: 20.0f);
-            processingAnimation.AddFace("Blink", duration: 10.0f);
-            processingAnimation.AddFace("Neutral");
+            var processingAnimation = new List<Model.Animation>();
+            processingAnimation.Add(new Model.Animation("BaseParam", 3, 0.3f));
+            processingAnimation.Add(new Model.Animation("BaseParam", 3, 20.0f, "AGIA_Layer_nodding_once_01", "Additive Layer"));
+            //var processingFace = new FaceRequest();
+            //processingFace.AddFace("Blink", 3.0f);
+            //processingFace.AddFace("Neutral");
+
             var neutralFaceRequest = new FaceRequest();
             neutralFaceRequest.AddFace("Neutral");
 
@@ -45,14 +48,21 @@ namespace ChatdollKit.Examples.ChatGPT
 #pragma warning disable CS1998, CS4014
             dialogController.OnRequestAsync = async (request, token) =>
             {
-                modelController.AnimatedSay(processingAnimation, token);
+                modelController.StopIdling();
+                modelController.Animate(processingAnimation);
+                //modelController.SetFace(processingFace, token);
             };
             dialogController.OnStartShowingResponseAsync = async (response, token) =>
             {
                 modelController.SetFace(neutralFaceRequest, token);
-                modelController.StartIdlingAsync();
+                //modelController.StartIdlingAsync();
             };
 #pragma warning restore CS1998, CS4014
+
+            var animationOnStart = new List<Model.Animation>();
+            animationOnStart.Add(new Model.Animation("BaseParam", 6, 0.5f));
+            animationOnStart.Add(new Model.Animation("BaseParam", 10, 3.0f));
+            modelController.Animate(animationOnStart);
         }
 
         public override async UniTask<Response> ProcessAsync(Request request, State state, User user, CancellationToken token)
@@ -141,6 +151,7 @@ namespace ChatdollKit.Examples.ChatGPT
                     Debug.Log($"Assistant: {text}");
                 }
             }
+            response.AddAnimation("BaseParam", 6);
 
             return response;
         }

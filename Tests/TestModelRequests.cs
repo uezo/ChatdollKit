@@ -137,41 +137,45 @@ namespace ChatdollKit.Tests
         [Test]
         public void TestFaceClip()
         {
-            var model = GameObject.Find(Constants.ChatdollModelName)?.GetComponent<ModelController>();
+            var cdk = GameObject.Find(Constants.ChatdollModelName);
+            if (cdk == null)
+            {
+                Debug.LogError($"{Constants.ChatdollModelName} not found");
+                return;
+            }
+
+            var model = cdk.GetComponent<ModelController>();
             if (model == null)
             {
-                Debug.LogError("Chatdoll model not found");
+                Debug.LogError("ModelController not found");
                 return;
             }
             var skinnedMeshRenderer = model.SkinnedMeshRenderer;
 
             var weights = new Dictionary<string, float>();
-            weights.Add("mouth_a", 0.5f);
-            weights.Add("mouth_smile", 0.3f);
-            weights.Add("eye_smile_L", 1.0f);
+            weights.Add("mouth_aa", 0.5f);
+            weights.Add("mouth_:D", 0.3f);
+            weights.Add("eyes_close_1", 1.0f);
 
             var face = new FaceClip("Smile", skinnedMeshRenderer, weights);
 
             Assert.AreEqual("Smile", face.Name);
-            Assert.AreEqual(60, face.Values.Count);
+            Assert.Greater(face.Values.Count, 30);
             var configuredWeightCount = 0;
             foreach (var w in face.Values)
             {
-                if (w.Name == "mouth_a")
+                if (w.Name == "mouth_aa")
                 {
-                    Assert.AreEqual(53, w.Index);
                     Assert.AreEqual(0.5f, w.Weight);
                     configuredWeightCount++;
                 }
-                else if (w.Name == "mouth_smile")
+                else if (w.Name == "mouth_:D")
                 {
-                    Assert.AreEqual(40, w.Index);
                     Assert.AreEqual(0.3f, w.Weight);
                     configuredWeightCount++;
                 }
-                else if (w.Name == "eye_smile_L")
+                else if (w.Name == "eyes_close_1")
                 {
-                    Assert.AreEqual(30, w.Index);
                     Assert.AreEqual(1.0f, w.Weight);
                     configuredWeightCount++;
                 }
@@ -218,101 +222,12 @@ namespace ChatdollKit.Tests
         [Test]
         public void TestAnimation()
         {
-            var animation = new Model.Animation("IdleGeneric", "Base Layer", 3.0f, 0.5f, 1.0f, 0.1f, "idle animation");
-            Assert.AreEqual("IdleGeneric", animation.Name);
-            Assert.AreEqual("Base Layer", animation.LayerName);
+            var animation = new Model.Animation("BaseParam", 6, 3.0f, "additiveAnim", "Additive Layer");
+            Assert.AreEqual("BaseParam", animation.ParameterKey);
+            Assert.AreEqual(6, animation.ParameterValue);
             Assert.AreEqual(3.0f, animation.Duration);
-            Assert.AreEqual(0.5f, animation.FadeLength);
-            Assert.AreEqual(1.0f, animation.Weight);
-            Assert.AreEqual(0.1f, animation.PreGap);
-            Assert.AreEqual("idle animation", animation.Description);
-            Assert.AreEqual(3.1f, animation.Length);
-        }
-
-        [Test]
-        public void TestAnimationRequest()
-        {
-            var animationRequest = new AnimationRequest();
-            Assert.AreEqual(new Dictionary<string, List<Model.Animation>>(), animationRequest.Animations);
-            Assert.IsTrue(animationRequest.StartIdlingOnEnd);
-            Assert.IsTrue(animationRequest.StopIdlingOnStart);
-            Assert.IsTrue(animationRequest.StopLayeredAnimations);
-            Assert.AreEqual(string.Empty, animationRequest.BaseLayerName);
-
-            animationRequest.AddAnimation("Smile");
-            animationRequest.AddAnimation("Angry", 2.0f, 1.0f, 0.5f, 0.1f);
-            animationRequest.AddAnimation("WaveHands", "UpperBody", 3.0f, 2.0f, 0.8f, 0.2f, "upper animation");
-
-            var animation01 = animationRequest.Animations[string.Empty][0];
-            Assert.AreEqual("Smile", animation01.Name);
-            Assert.AreEqual(string.Empty, animation01.LayerName);
-            Assert.AreEqual(0.0f, animation01.Duration);
-            Assert.AreEqual(-1.0f, animation01.FadeLength);
-            Assert.AreEqual(1.0f, animation01.Weight);
-            Assert.AreEqual(0.0f, animation01.PreGap);
-            Assert.IsNull(animation01.Description);
-            Assert.AreEqual(0.0f, animation01.Length);
-
-            var animation02 = animationRequest.Animations[string.Empty][1];
-            Assert.AreEqual("Angry", animation02.Name);
-            Assert.AreEqual(string.Empty, animation02.LayerName);
-            Assert.AreEqual(2.0f, animation02.Duration);
-            Assert.AreEqual(1.0f, animation02.FadeLength);
-            Assert.AreEqual(0.5f, animation02.Weight);
-            Assert.AreEqual(0.1f, animation02.PreGap);
-            Assert.IsNull(animation02.Description);
-            Assert.AreEqual(2.1f, animation02.Length);
-
-            var animation03 = animationRequest.Animations["UpperBody"][0];
-            Assert.AreEqual("WaveHands", animation03.Name);
-            Assert.AreEqual("UpperBody", animation03.LayerName);
-            Assert.AreEqual(3.0f, animation03.Duration);
-            Assert.AreEqual(2.0f, animation03.FadeLength);
-            Assert.AreEqual(0.8f, animation03.Weight);
-            Assert.AreEqual(0.2f, animation03.PreGap);
-            Assert.AreEqual("upper animation", animation03.Description);
-            Assert.AreEqual(3.2f, animation03.Length);
-
-            Assert.AreEqual(2, animationRequest.BaseLayerAnimations.Count);
-            Assert.AreEqual("Smile", animationRequest.BaseLayerAnimations[0].Name);
-            Assert.AreEqual("Angry", animationRequest.BaseLayerAnimations[1].Name);
-
-            // With params
-            var animations = new Dictionary<string, List<Model.Animation>>()
-            {
-                {
-                    string.Empty, new List<Model.Animation>()
-                    {
-                        new Model.Animation("Smile", null, 0.1f, 0.2f, 0.3f, 0.4f, "smile animation"),
-                        new Model.Animation("Angry", null, 0.1f, 0.2f, 0.3f, 0.4f, "angry animation")
-                    }
-                },
-                {
-                    "UpperBody", new List<Model.Animation>()
-                    {
-                        new Model.Animation("WaveHands", "UpperBody", 0.1f, 0.2f, 0.3f, 0.4f, "wave animation")
-                    }
-                }
-            };
-            var animationRequestP = new AnimationRequest(animations, false, false, false, "Base Layer");
-            Assert.AreEqual(2, animationRequestP.Animations.Count);
-            Assert.AreEqual(2, animationRequestP.Animations[string.Empty].Count);   // not "Base Layer"
-            Assert.AreEqual(1, animationRequestP.Animations["UpperBody"].Count);
-            Assert.AreEqual(2, animationRequestP.BaseLayerAnimations.Count);
-            Assert.IsFalse(animationRequestP.StartIdlingOnEnd);
-            Assert.IsFalse(animationRequestP.StopIdlingOnStart);
-            Assert.IsFalse(animationRequestP.StopLayeredAnimations);
-            Assert.AreEqual("Base Layer", animationRequestP.BaseLayerName);
-
-            // Others
-            var animationRequestO1 = new AnimationRequest(baseLayerName: "Base Layer");
-            animationRequestO1.AddAnimation("Smile");
-            Assert.AreEqual(1, animationRequestO1.Animations["Base Layer"].Count);  // "Base Layer" when added after instancing
-
-            var animationRequestO2 = new AnimationRequest();
-            Assert.AreEqual(string.Empty, animationRequestO2.BaseLayerName);
-            animationRequestO2.AddAnimation("Smile", "Dummy Layer");
-            Assert.AreEqual("Dummy Layer", animationRequestO2.BaseLayerName);
+            Assert.AreEqual("additiveAnim", animation.LayeredAnimationName);
+            Assert.AreEqual("Additive Layer", animation.LayeredAnimationLayerName);
         }
 
         [Test]
@@ -322,20 +237,18 @@ namespace ChatdollKit.Tests
             Assert.AreEqual(new Dictionary<string, List<AnimatedVoice>>(), animatedVoiceRequest.AnimatedVoices);
             Assert.IsTrue(animatedVoiceRequest.StartIdlingOnEnd);
             Assert.IsTrue(animatedVoiceRequest.StopIdlingOnStart);
-            Assert.IsTrue(animatedVoiceRequest.StopLayeredAnimations);
-            Assert.AreEqual(string.Empty, animatedVoiceRequest.BaseLayerName);
 
             // 1st frame
-            animatedVoiceRequest.AddAnimation("Walk");
-            animatedVoiceRequest.AddAnimation("Run", 2.0f, 1.0f, 0.5f, 0.1f);
-            animatedVoiceRequest.AddAnimation("WaveHands", "UpperBody", 3.0f, 2.0f, 0.8f, 0.2f, "upper animation");
+            animatedVoiceRequest.AddAnimation("BaseParam", 1);
+            animatedVoiceRequest.AddAnimation("BaseParam", 2, 2.0f);
+            animatedVoiceRequest.AddAnimation("BaseParam", 3, 3.0f, "WaveHands", "Additive Layer");
             animatedVoiceRequest.AddVoice("Hello");
             animatedVoiceRequest.AddVoice("Goodby", 0.1f, 0.2f);
             animatedVoiceRequest.AddFace("Neutral");
-            animatedVoiceRequest.AddFace("Default", 0.1f, "default face");
+            animatedVoiceRequest.AddFace("Smile", 0.1f, "smile face");
 
             // 2nd frame
-            animatedVoiceRequest.AddAnimation("Jump", asNewFrame: true);
+            animatedVoiceRequest.AddAnimation("BaseParam", 4, asNewFrame: true);
             animatedVoiceRequest.AddVoiceWeb("https://voice.local/goodmorning");
             animatedVoiceRequest.AddVoiceWeb("https://voice.local/goodafternoon", 0.1f, 0.2f);
             animatedVoiceRequest.AddFace("Cry");
@@ -346,44 +259,35 @@ namespace ChatdollKit.Tests
             ttsConfig.Params.Add("key2", 2.0f);
             animatedVoiceRequest.AddVoiceTTS("Good afternoon.", asNewFrame: true);
             animatedVoiceRequest.AddVoiceTTS("Good evening.", 0.1f, 0.2f, ttsConfig: ttsConfig);
-            animatedVoiceRequest.AddAnimation("HandsFront");
+            animatedVoiceRequest.AddAnimation("BaseParam", 5);
             animatedVoiceRequest.AddFace("Jito");
 
             // 4th frame
             animatedVoiceRequest.AddFace("Surprise", asNewFrame: true);
             animatedVoiceRequest.AddVoice("GoodNight");
-            animatedVoiceRequest.AddAnimation("HandsBack");
+            animatedVoiceRequest.AddAnimation("BaseParam", 6);
 
             // 1st frame
-            var animation0101 = animatedVoiceRequest.AnimatedVoices[0].Animations[string.Empty][0];
-            Assert.AreEqual("Walk", animation0101.Name);
-            Assert.AreEqual(string.Empty, animation0101.LayerName);
+            var animation0101 = animatedVoiceRequest.AnimatedVoices[0].Animations[0];
+            Assert.AreEqual("BaseParam", animation0101.ParameterKey);
+            Assert.AreEqual(1, animation0101.ParameterValue);
             Assert.AreEqual(0.0f, animation0101.Duration);
-            Assert.AreEqual(-1.0f, animation0101.FadeLength);
-            Assert.AreEqual(1.0f, animation0101.Weight);
-            Assert.AreEqual(0.0f, animation0101.PreGap);
-            Assert.IsNull(animation0101.Description);
-            Assert.AreEqual(0.0f, animation0101.Length);
+            Assert.IsNull(animation0101.LayeredAnimationName);
+            Assert.IsNull(animation0101.LayeredAnimationLayerName);
 
-            var animation0102 = animatedVoiceRequest.AnimatedVoices[0].Animations[string.Empty][1];
-            Assert.AreEqual("Run", animation0102.Name);
-            Assert.AreEqual(string.Empty, animation0102.LayerName);
+            var animation0102 = animatedVoiceRequest.AnimatedVoices[0].Animations[1];
+            Assert.AreEqual("BaseParam", animation0102.ParameterKey);
+            Assert.AreEqual(2, animation0102.ParameterValue);
             Assert.AreEqual(2.0f, animation0102.Duration);
-            Assert.AreEqual(1.0f, animation0102.FadeLength);
-            Assert.AreEqual(0.5f, animation0102.Weight);
-            Assert.AreEqual(0.1f, animation0102.PreGap);
-            Assert.IsNull(animation0102.Description);
-            Assert.AreEqual(2.1f, animation0102.Length);
+            Assert.IsNull(animation0102.LayeredAnimationName);
+            Assert.IsNull(animation0102.LayeredAnimationLayerName);
 
-            var animation0103 = animatedVoiceRequest.AnimatedVoices[0].Animations["UpperBody"][0];
-            Assert.AreEqual("WaveHands", animation0103.Name);
-            Assert.AreEqual("UpperBody", animation0103.LayerName);
+            var animation0103 = animatedVoiceRequest.AnimatedVoices[0].Animations[2];
+            Assert.AreEqual("BaseParam", animation0103.ParameterKey);
+            Assert.AreEqual(3, animation0103.ParameterValue);
             Assert.AreEqual(3.0f, animation0103.Duration);
-            Assert.AreEqual(2.0f, animation0103.FadeLength);
-            Assert.AreEqual(0.8f, animation0103.Weight);
-            Assert.AreEqual(0.2f, animation0103.PreGap);
-            Assert.AreEqual("upper animation", animation0103.Description);
-            Assert.AreEqual(3.2f, animation0103.Length);
+            Assert.AreEqual("WaveHands", animation0103.LayeredAnimationName);
+            Assert.AreEqual("Additive Layer", animation0103.LayeredAnimationLayerName);
 
             var voice0101 = animatedVoiceRequest.AnimatedVoices[0].Voices[0];
             Assert.AreEqual("Hello", voice0101.Name);
@@ -415,13 +319,13 @@ namespace ChatdollKit.Tests
             Assert.IsNull(face0101.Description);
 
             var face0102 = animatedVoiceRequest.AnimatedVoices[0].Faces[1];
-            Assert.AreEqual("Default", face0102.Name);
+            Assert.AreEqual("Smile", face0102.Name);
             Assert.AreEqual(0.1f, face0102.Duration);
-            Assert.AreEqual("default face", face0102.Description);
+            Assert.AreEqual("smile face", face0102.Description);
 
             // 2nd frame
-            var animation0201 = animatedVoiceRequest.AnimatedVoices[1].Animations[string.Empty][0];
-            Assert.AreEqual("Jump", animation0201.Name);
+            var animation0201 = animatedVoiceRequest.AnimatedVoices[1].Animations[0];
+            Assert.AreEqual(4, animation0201.ParameterValue);
 
             var voice0201 = animatedVoiceRequest.AnimatedVoices[1].Voices[0];
             Assert.AreEqual(string.Empty, voice0201.Name);
@@ -475,8 +379,8 @@ namespace ChatdollKit.Tests
             Assert.AreEqual(VoiceSource.TTS, voice0302.Source);
             Assert.IsTrue(voice0302.UseCache);
 
-            var animation0301 = animatedVoiceRequest.AnimatedVoices[2].Animations[string.Empty][0];
-            Assert.AreEqual("HandsFront", animation0301.Name);
+            var animation0301 = animatedVoiceRequest.AnimatedVoices[2].Animations[0];
+            Assert.AreEqual(5, animation0301.ParameterValue);
 
             var face0301 = animatedVoiceRequest.AnimatedVoices[2].Faces[0];
             Assert.AreEqual("Jito", face0301.Name);
@@ -488,8 +392,8 @@ namespace ChatdollKit.Tests
             var voice0401 = animatedVoiceRequest.AnimatedVoices[3].Voices[0];
             Assert.AreEqual("GoodNight", voice0401.Name);
 
-            var animation0401 = animatedVoiceRequest.AnimatedVoices[3].Animations[string.Empty][0];
-            Assert.AreEqual("HandsBack", animation0401.Name);
+            var animation0401 = animatedVoiceRequest.AnimatedVoices[3].Animations[0];
+            Assert.AreEqual(6, animation0401.ParameterValue);
         }
     }
 }

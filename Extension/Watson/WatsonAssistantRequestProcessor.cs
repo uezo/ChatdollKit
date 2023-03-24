@@ -94,7 +94,7 @@ namespace ChatdollKit.Extension.Watson
                     var animAndFace = JsonConvert.DeserializeObject<Dictionary<string, string>>(watsonResponse.output.generic[1].source);
                     if (animAndFace.ContainsKey("animation"))
                     {
-                        skillResponse.AddAnimation(animAndFace["animation"]);
+                        skillResponse.AddAnimation("BaseParam", int.Parse(animAndFace["animation"]));
                     }
                     if (animAndFace.ContainsKey("face"))
                     {

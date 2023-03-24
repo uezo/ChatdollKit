@@ -2,7 +2,6 @@
 using System.Linq;
 using Newtonsoft.Json;
 
-
 namespace ChatdollKit.Model
 {
     // Request for amination with voice and face expression
@@ -11,31 +10,13 @@ namespace ChatdollKit.Model
         public List<AnimatedVoice> AnimatedVoices { get; set; }
         public bool StopIdlingOnStart { get; set; }
         public bool StartIdlingOnEnd { get; set; }
-        public bool StopLayeredAnimations { get; set; }
-        public string BaseLayerName { get; set; }
 
         [JsonConstructor]
-        public AnimatedVoiceRequest(List<AnimatedVoice> animatedVoice = null, bool startIdlingOnEnd = true, bool stopIdlingOnStart = true, bool stopLayeredAnimations = true, string baseLayerName = null)
+        public AnimatedVoiceRequest(List<AnimatedVoice> animatedVoice = null, bool startIdlingOnEnd = true, bool stopIdlingOnStart = true)
         {
             AnimatedVoices = animatedVoice ?? new List<AnimatedVoice>();
             StartIdlingOnEnd = startIdlingOnEnd;
             StopIdlingOnStart = stopIdlingOnStart;
-            StopLayeredAnimations = stopLayeredAnimations;
-            BaseLayerName = baseLayerName ?? string.Empty;
-        }
-
-        public void AddAnimatedVoice(string voiceName, string animationName, string faceName = null, float voicePreGap = 0.0f, float voicePostGap = 0.0f, float animationDuration = 0.0f, float animationFadeLength = -1.0f, float animationWeight = 1.0f, float animationPreGap = 0.0f, float faceDuration = 0.0f, string description = null, bool asNewFrame = false)
-        {
-            if (asNewFrame || AnimatedVoices.Count == 0)
-            {
-                CreateNewFrame();
-            }
-            AddVoice(voiceName, voicePreGap, voicePostGap);
-            AddAnimation(animationName, animationDuration, animationFadeLength, animationWeight, animationPreGap, description);
-            if (faceName != null)
-            {
-                AddFace(faceName, faceDuration, description);
-            }
         }
 
         public void AddVoice(string name, float preGap = 0.0f, float postGap = 0.0f, string description = null, bool asNewFrame = false)
@@ -65,18 +46,13 @@ namespace ChatdollKit.Model
             AnimatedVoices.Last().AddVoiceTTS(text, preGap, postGap, name, ttsConfig, description: description);
         }
 
-        public void AddAnimation(string name, float duration = 0.0f, float fadeLength = -1.0f, float weight = 1.0f, float preGap = 0.0f, string description = null, bool asNewFrame = false)
-        {
-            AddAnimation(name, BaseLayerName, duration, fadeLength, weight, preGap, description, asNewFrame);
-        }
-
-        public void AddAnimation(string name, string layerName, float duration = 0.0f, float fadeLength = -1.0f, float weight = 1.0f, float preGap = 0.0f, string description = null, bool asNewFrame = false)
+        public void AddAnimation(string paramKey, int paramValue, float duration = 0.0f, string layeredAnimation = null, string layeredAnimationLayer = null, bool asNewFrame = false)
         {
             if (asNewFrame || AnimatedVoices.Count == 0)
             {
                 CreateNewFrame();
             }
-            AnimatedVoices.Last().AddAnimation(name, layerName, duration, fadeLength, weight, preGap, description);
+            AnimatedVoices.Last().AddAnimation(paramKey, paramValue, duration, layeredAnimation, layeredAnimationLayer);
         }
 
         public void AddFace(string name, float duration = 0.0f, string description = null, bool asNewFrame = false)

@@ -36,13 +36,11 @@ namespace ChatdollKit.Examples.MultiSkills
             if (!IsAvailable)
             {
                 response.AddVoiceTTS("翻訳は利用できません");
-                response.AddAnimation("Default");
             }
 
             if (state.Topic.IsFirstTurn)
             {
                 response.AddVoiceTTS("何を翻訳しますか？");
-                response.AddAnimation("Default");
             }
             else
             {
@@ -62,7 +60,6 @@ namespace ChatdollKit.Examples.MultiSkills
                 }
 
                 response.AddVoiceTTS($"{request.Text}を英語で言うと、{translatedText}、です。");
-                response.AddAnimation("Default");
             }
 
             // Continue until stop
