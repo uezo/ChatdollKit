@@ -154,6 +154,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   VRMFilePath: 
   modelController: {fileID: 2893757555470248029}
+  animatorController: {fileID: 9100000, guid: 7dacdb2edbced49529c410c0ed2733f3, type: 2}
 --- !u!4 &409679213
 Transform:
   m_ObjectHideFlags: 0
@@ -438,7 +439,7 @@ MonoBehaviour:
   Model: gpt-3.5-turbo
   MaxTokens: 2000
   Temperature: 0.5
-  ChatCondition: 
+  ChatCondition: You are my sister. We are very close and we speak in a casual manner.
   User1stShot: 
   Assistant1stShot: 
   HistoryTurns: 10

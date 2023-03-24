@@ -14,6 +14,8 @@ namespace ChatdollKit.Extension.VRM
         public string VRMFilePath;
         [SerializeField]
         private ModelController modelController;
+        [SerializeField]
+        private RuntimeAnimatorController animatorController;
 
         public bool IsCharacterReady { get; private set; } = false;
         private RuntimeGltfInstance vrmInstance;
@@ -64,7 +66,7 @@ namespace ChatdollKit.Extension.VRM
                 characterObject.name = "CharacterVRM";
                 modelController.AvatarModel = characterObject;
                 var animator = characterObject.GetComponent<Animator>();
-                animator.runtimeAnimatorController = Resources.Load<RuntimeAnimatorController>("AnimatorController/DemoAnimatorController");
+                animator.runtimeAnimatorController = animatorController;
                 var lipSyncHelper = modelController.gameObject.GetComponent<VRMuLipSyncHelper>();
                 lipSyncHelper.ConfigureVisemeRuntime(modelController);
 
