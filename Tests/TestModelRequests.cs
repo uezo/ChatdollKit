@@ -68,73 +68,6 @@ namespace ChatdollKit.Tests
         }
 
         [Test]
-        public void TestVoiceRequest()
-        {
-            // Without params
-            var voiceRequest = new VoiceRequest();
-
-            voiceRequest.AddVoice("LocalVoice");
-            voiceRequest.AddVoiceWeb("https://voice.url");
-            voiceRequest.AddVoiceTTS("This text will be read by chatdoll.");
-
-            var localVoice = voiceRequest.Voices[0];
-            Assert.AreEqual("LocalVoice", localVoice.Name);
-            Assert.AreEqual(0.0f, localVoice.PreGap);
-            Assert.AreEqual(0.0f, localVoice.PostGap);
-            Assert.AreEqual(string.Empty, localVoice.Text);
-            Assert.AreEqual(string.Empty, localVoice.Url);
-            Assert.IsNull(localVoice.TTSConfig);
-            Assert.AreEqual(VoiceSource.Local, localVoice.Source);
-
-            var webVoice = voiceRequest.Voices[1];
-            Assert.AreEqual(string.Empty, webVoice.Name);
-            Assert.AreEqual(0.0f, webVoice.PreGap);
-            Assert.AreEqual(0.0f, webVoice.PostGap);
-            Assert.AreEqual(string.Empty, webVoice.Text);
-            Assert.AreEqual("https://voice.url", webVoice.Url);
-            Assert.IsNull(webVoice.TTSConfig);
-            Assert.AreEqual(VoiceSource.Web, webVoice.Source);
-            Assert.IsTrue(webVoice.UseCache);
-
-            var ttsVoice = voiceRequest.Voices[2];
-            Assert.AreEqual(string.Empty, ttsVoice.Name);
-            Assert.AreEqual(0.0f, ttsVoice.PreGap);
-            Assert.AreEqual(0.0f, ttsVoice.PostGap);
-            Assert.AreEqual("This text will be read by chatdoll.", ttsVoice.Text);
-            Assert.AreEqual(string.Empty, ttsVoice.Url);
-            Assert.IsNull(ttsVoice.TTSConfig);
-            Assert.AreEqual(VoiceSource.TTS, ttsVoice.Source);
-            Assert.IsTrue(ttsVoice.UseCache);
-
-            // With params
-            var voiceRequestP = new VoiceRequest();
-
-            voiceRequestP.AddVoice("LocalVoice", 0.1f, 0.2f);
-            voiceRequestP.AddVoiceWeb("https://voice.url", 0.1f, 0.2f, useCache: false);
-            var ttsConfig = new TTSConfiguration("TestTTSFuncName");
-            ttsConfig.Params.Add("key1", "val1");
-            ttsConfig.Params.Add("key2", 2.0f);
-            voiceRequestP.AddVoiceTTS("This text will be read by chatdoll.", 0.1f, 0.2f, ttsConfig: ttsConfig, useCache: false);
-
-            var localVoiceP = voiceRequestP.Voices[0];
-            Assert.AreEqual(0.1f, localVoiceP.PreGap);
-            Assert.AreEqual(0.2f, localVoiceP.PostGap);
-
-            var webVoiceP = voiceRequestP.Voices[1];
-            Assert.AreEqual(0.1f, webVoiceP.PreGap);
-            Assert.AreEqual(0.2f, webVoiceP.PostGap);
-            Assert.IsFalse(webVoiceP.UseCache);
-
-            var ttsVoiceP = voiceRequestP.Voices[2];
-            Assert.AreEqual(0.1f, ttsVoiceP.PreGap);
-            Assert.AreEqual(0.2f, ttsVoiceP.PostGap);
-            Assert.AreEqual("TestTTSFuncName", ttsVoiceP.GetTTSFunctionName());
-            Assert.AreEqual("val1", ttsVoiceP.GetTTSParam("key1"));
-            Assert.AreEqual(2.0f, ttsVoiceP.GetTTSParam("key2"));
-            Assert.IsFalse(ttsVoiceP.UseCache);
-        }
-
-        [Test]
         public void TestFaceClip()
         {
             var cdk = GameObject.Find(Constants.ChatdollModelName);
@@ -201,22 +134,6 @@ namespace ChatdollKit.Tests
             Assert.AreEqual("Smile", faceExpression.Name);
             Assert.AreEqual(0.1f, faceExpression.Duration);
             Assert.AreEqual("face test", faceExpression.Description);
-        }
-
-        [Test]
-        public void TestFaceRequest()
-        {
-            var faceRequest = new FaceRequest();
-            faceRequest.AddFace("Smile");
-            faceRequest.AddFace("Angry", 1.1f, "angry face");
-
-            Assert.AreEqual("Smile", faceRequest.Faces[0].Name);
-            Assert.AreEqual(0.0f, faceRequest.Faces[0].Duration);
-            Assert.AreEqual(null, faceRequest.Faces[0].Description);
-
-            Assert.AreEqual("Angry", faceRequest.Faces[1].Name);
-            Assert.AreEqual(1.1f, faceRequest.Faces[1].Duration);
-            Assert.AreEqual("angry face", faceRequest.Faces[1].Description);
         }
 
         [Test]

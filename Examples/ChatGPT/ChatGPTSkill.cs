@@ -37,11 +37,11 @@ namespace ChatdollKit.Examples.ChatGPT
             var processingAnimation = new List<Model.Animation>();
             processingAnimation.Add(new Model.Animation("BaseParam", 3, 0.3f));
             processingAnimation.Add(new Model.Animation("BaseParam", 3, 20.0f, "AGIA_Layer_nodding_once_01", "Additive Layer"));
-            var processingFace = new FaceRequest();
-            processingFace.AddFace("Blink", 3.0f);
+            var processingFace = new List<FaceExpression>();
+            processingFace.Add(new FaceExpression("Blink", 3.0f));
 
-            var neutralFaceRequest = new FaceRequest();
-            neutralFaceRequest.AddFace("Neutral");
+            var neutralFaceRequest = new List<FaceExpression>();
+            neutralFaceRequest.Add(new FaceExpression("Neutral"));
 
             var dialogController = gameObject.GetComponent<DialogController>();
             dialogController.OnRequestAsync = async (request, token) =>
@@ -60,8 +60,8 @@ namespace ChatdollKit.Examples.ChatGPT
             animationOnStart.Add(new Model.Animation("BaseParam", 10, 3.0f));
             modelController.Animate(animationOnStart);
 
-            var faceOnStart = new FaceRequest();
-            faceOnStart.AddFace("Joy", 3.0f);
+            var faceOnStart = new List<FaceExpression>();
+            faceOnStart.Add(new FaceExpression("Joy", 3.0f));
             modelController.SetFace(faceOnStart);
         }
 
