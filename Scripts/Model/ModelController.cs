@@ -47,6 +47,9 @@ namespace ChatdollKit.Model
         [Header("Face")]
         public SkinnedMeshRenderer SkinnedMeshRenderer;
         private IFaceExpressionProxy faceExpressionProxy;
+        private List<FaceExpression> faceQueue = new List<FaceExpression>();
+        private float faceStartAt { get; set; }
+        private FaceExpression currentFace { get; set; }
 
         // History recorder for debug and test
         public ActionHistoryRecorder History;
@@ -97,6 +100,7 @@ namespace ChatdollKit.Model
         private void Update()
         {
             UpdateAnimation();
+            UpdateFace();
         }
 
         private void LateUpdate()
@@ -152,7 +156,7 @@ namespace ChatdollKit.Model
                 // Face
                 if (animatedVoice.Faces != null && animatedVoice.Faces.Count > 0)
                 {
-                    _ = SetFace(new FaceRequest(animatedVoice.Faces), token);
+                    SetFace(new FaceRequest(animatedVoice.Faces));
                 }
 
                 // Speech
@@ -444,17 +448,49 @@ namespace ChatdollKit.Model
 #endregion
 
 
-        #region Face Expression
+#region Face Expression
         // Set face expressions
-        public async UniTask SetFace(FaceRequest request, CancellationToken token)
+        public void SetFace(FaceRequest request)
         {
-            foreach (var face in request.Faces)
-            {
-                faceExpressionProxy.SetExpressionSmoothly(face.Name, 1.0f);
-                await UniTask.Delay((int)(face.Duration * 1000), cancellationToken: token);
+            faceQueue.Clear();
+            faceQueue = new List<FaceExpression>(request.Faces);
+            faceStartAt = 0;
+        }
 
-                if (token.IsCancellationRequested) break;
+        private void UpdateFace()
+        {
+            // This method will be called every frames in `Update()`
+            var faceToSet = GetFaceExpression();
+            if (faceToSet == null)
+            {
+                // Set neutral instead when faceToSet is null
+                SetFace(new FaceRequest(new List<FaceExpression>() { new FaceExpression("Neutral", 0.0f, string.Empty) }));
+                return;
             }
+
+            if (currentFace == null || faceToSet.Name != currentFace.Name || faceToSet.Duration != currentFace.Duration)
+            {
+                // Set new face
+                faceExpressionProxy.SetExpressionSmoothly(faceToSet.Name, 1.0f);
+                currentFace = faceToSet;
+                faceStartAt = Time.realtimeSinceStartup;
+            }
+        }
+
+        public FaceExpression GetFaceExpression()
+        {
+            if (faceQueue.Count == 0) return default;
+
+            if (faceStartAt > 0 && Time.realtimeSinceStartup - faceStartAt > currentFace.Duration)
+            {
+                // Remove the first face after the duration passed
+                faceQueue.RemoveAt(0);
+                faceStartAt = 0;
+            }
+
+            if (faceQueue.Count == 0) return default;
+
+            return faceQueue.First();
         }
 #endregion
     }

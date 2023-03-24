@@ -37,32 +37,32 @@ namespace ChatdollKit.Examples.ChatGPT
             var processingAnimation = new List<Model.Animation>();
             processingAnimation.Add(new Model.Animation("BaseParam", 3, 0.3f));
             processingAnimation.Add(new Model.Animation("BaseParam", 3, 20.0f, "AGIA_Layer_nodding_once_01", "Additive Layer"));
-            //var processingFace = new FaceRequest();
-            //processingFace.AddFace("Blink", 3.0f);
-            //processingFace.AddFace("Neutral");
+            var processingFace = new FaceRequest();
+            processingFace.AddFace("Blink", 3.0f);
 
             var neutralFaceRequest = new FaceRequest();
             neutralFaceRequest.AddFace("Neutral");
 
             var dialogController = gameObject.GetComponent<DialogController>();
-#pragma warning disable CS1998, CS4014
             dialogController.OnRequestAsync = async (request, token) =>
             {
                 modelController.StopIdling();
                 modelController.Animate(processingAnimation);
-                //modelController.SetFace(processingFace, token);
+                modelController.SetFace(processingFace);
             };
             dialogController.OnStartShowingResponseAsync = async (response, token) =>
             {
-                modelController.SetFace(neutralFaceRequest, token);
-                //modelController.StartIdlingAsync();
+                modelController.SetFace(neutralFaceRequest);
             };
-#pragma warning restore CS1998, CS4014
 
             var animationOnStart = new List<Model.Animation>();
             animationOnStart.Add(new Model.Animation("BaseParam", 6, 0.5f));
             animationOnStart.Add(new Model.Animation("BaseParam", 10, 3.0f));
             modelController.Animate(animationOnStart);
+
+            var faceOnStart = new FaceRequest();
+            faceOnStart.AddFace("Joy", 3.0f);
+            modelController.SetFace(faceOnStart);
         }
 
         public override async UniTask<Response> ProcessAsync(Request request, State state, User user, CancellationToken token)
