@@ -7,6 +7,8 @@ namespace ChatdollKit.Dialog
     // Unity2018 support (inspector does not support interface)
     public class MessageWindowBase : MonoBehaviour, IMessageWindow
     {
+        public bool IsInstance = true;
+
         public virtual void Show(string prompt = null)
         {
             throw new System.NotImplementedException();

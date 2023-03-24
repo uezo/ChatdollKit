@@ -28,7 +28,8 @@ namespace ChatdollKit.Dialog
 
         [Header("UI")]
         public MessageWindowBase MessageWindow;
-
+        [SerializeField]
+        private string listeningMessage = "[ Listening ... ]";
         public Action OnListeningStart;
         public Action OnListeningStop;
         public Action OnRecordingStart = () => { Debug.Log("Recording voice request started"); };
@@ -54,7 +55,7 @@ namespace ChatdollKit.Dialog
         {
             if (MessageWindow != null)
             {
-                MessageWindow.Show("(Listening...)");
+                MessageWindow.Show(listeningMessage);
             }
             else
             {

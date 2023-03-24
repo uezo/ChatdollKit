@@ -106,8 +106,13 @@ namespace ChatdollKit.Dialog
             var skillRouter = GetComponent<ISkillRouter>();
             var skills = GetComponents<ISkill>();
 
-            // Make instances if not set
-            MessageWindow = Instantiate(MessageWindow);
+            if (!MessageWindow.IsInstance)
+            {
+                // Create MessageWindow instance
+                MessageWindow = Instantiate(MessageWindow);
+            }
+
+            // Create ChatdollCamera instance
             ChatdollCamera = Instantiate(ChatdollCamera);
 
             // Request providers
@@ -119,7 +124,7 @@ namespace ChatdollKit.Dialog
             qrCodeRequestProvider.ChatdollCamera = ChatdollCamera;
             RequestProviders.Add(RequestType.QRCode, qrCodeRequestProvider);
 
-            foreach(var rp in GetComponents<VoiceRequestProviderBase>())
+            foreach (var rp in GetComponents<VoiceRequestProviderBase>())
             {
                 if (rp.enabled)
                 {
