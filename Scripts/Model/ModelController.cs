@@ -16,7 +16,7 @@ namespace ChatdollKit.Model
         // Audio
         [Header("Voice")]
         public AudioSource AudioSource;
-        private Dictionary<string, AudioClip> voices = new Dictionary<string, AudioClip>();
+        private Dictionary<string, AudioClip> voiceAudioClips = new Dictionary<string, AudioClip>();
         public Func<Voice, CancellationToken, UniTask<AudioClip>> VoiceDownloadFunc;
         public Func<Voice, CancellationToken, UniTask<AudioClip>> TextToSpeechFunc;
         public Dictionary<string, Func<Voice, CancellationToken, UniTask<AudioClip>>> TextToSpeechFunctions = new Dictionary<string, Func<Voice, CancellationToken, UniTask<AudioClip>>>();
@@ -134,7 +134,7 @@ namespace ChatdollKit.Model
                 idleWeightedIndexes.Add(index);
             }
         }
-        #endregion
+#endregion
 
         // Speak with animation and face expression
         public async UniTask AnimatedSay(AnimatedVoiceRequest request, CancellationToken token)
@@ -156,14 +156,14 @@ namespace ChatdollKit.Model
                 // Face
                 if (animatedVoice.Faces != null && animatedVoice.Faces.Count > 0)
                 {
-                    SetFace(new FaceRequest(animatedVoice.Faces));
+                    SetFace(animatedVoice.Faces);
                 }
 
                 // Speech
                 if (animatedVoice.Voices.Count > 0)
                 {
                     // Wait for the requested voices end
-                    await Say(new VoiceRequest(animatedVoice.Voices), token);
+                    await Say(animatedVoice.Voices, token);
                 }
             }
 
@@ -176,17 +176,8 @@ namespace ChatdollKit.Model
         }
 
 #region Speech
-        // Speak one phrase
-        public async UniTask Say(string voiceName, float preGap = 0f, float postGap = 0f)
-        {
-            var request = new VoiceRequest(voiceName);
-            request.Voices[0].PreGap = preGap;
-            request.Voices[0].PostGap = postGap;
-            await Say(request, new CancellationTokenSource().Token); // ノンキャンセラブル
-        }
-
         // Speak
-        public async UniTask Say(VoiceRequest request, CancellationToken token)
+        public async UniTask Say(List<Voice> voices, CancellationToken token)
         {
             // Stop speech
             StopSpeech();
@@ -194,11 +185,11 @@ namespace ChatdollKit.Model
             // Prefetch Web/TTS voice
             if (UsePrefetch)
             {
-                PrefetchVoices(request.Voices, token);
+                PrefetchVoices(voices, token);
             }
 
             // Speak sequentially
-            foreach (var v in request.Voices)
+            foreach (var v in voices)
             {
                 if (token.IsCancellationRequested)
                 {
@@ -207,13 +198,13 @@ namespace ChatdollKit.Model
 
                 if (v.Source == VoiceSource.Local)
                 {
-                    if (voices.ContainsKey(v.Name))
+                    if (voiceAudioClips.ContainsKey(v.Name))
                     {
                         // Wait for PreGap
                         await UniTask.Delay((int)(v.PreGap * 1000), cancellationToken: token);
                         // Play audio
                         History?.Add(v);
-                        AudioSource.PlayOneShot(voices[v.Name]);
+                        AudioSource.PlayOneShot(voiceAudioClips[v.Name]);
                     }
                     else
                     {
@@ -325,7 +316,7 @@ namespace ChatdollKit.Model
         // Register voice with its name
         public void AddVoice(string name, AudioClip audioClip)
         {
-            voices[ReplaceDakuten(name)] = audioClip;
+            voiceAudioClips[ReplaceDakuten(name)] = audioClip;
         }
 
         // Get registered TTS Function by name
@@ -376,7 +367,7 @@ namespace ChatdollKit.Model
 
             return ret;
         }
-        #endregion
+#endregion
 
 
 #region Animation
@@ -450,10 +441,10 @@ namespace ChatdollKit.Model
 
 #region Face Expression
         // Set face expressions
-        public void SetFace(FaceRequest request)
+        public void SetFace(List<FaceExpression> faces)
         {
             faceQueue.Clear();
-            faceQueue = new List<FaceExpression>(request.Faces);
+            faceQueue = new List<FaceExpression>(faces);    // Copy faces not to change original list
             faceStartAt = 0;
         }
 
@@ -464,7 +455,7 @@ namespace ChatdollKit.Model
             if (faceToSet == null)
             {
                 // Set neutral instead when faceToSet is null
-                SetFace(new FaceRequest(new List<FaceExpression>() { new FaceExpression("Neutral", 0.0f, string.Empty) }));
+                SetFace(new List<FaceExpression>() { new FaceExpression("Neutral", 0.0f, string.Empty) });
                 return;
             }
 

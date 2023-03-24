@@ -7,11 +7,11 @@
         public float Duration { get; set; }
         public string Description { get; set; }
 
-        public FaceExpression(string name, float duration, string description)
+        public FaceExpression(string name, float duration = 0.0f, string description = null)
         {
             Name = name;
             Duration = duration;
-            Description = description;
+            Description = description ?? string.Empty;
         }
     }
 }
