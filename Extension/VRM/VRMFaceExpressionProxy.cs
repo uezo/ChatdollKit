@@ -74,7 +74,7 @@ namespace ChatdollKit.Extension.VRM
 
         private KeyValuePair<BlendShapeKey, float> GetKeyValue(string name)
         {
-            KeyValuePair<BlendShapeKey, float> neutral;
+            KeyValuePair<BlendShapeKey, float> neutral = default;
             foreach (var kv in blendShapeProxy.GetValues())
             {
                 if (kv.Key.ToString() == name)
