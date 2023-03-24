@@ -60,6 +60,7 @@ namespace ChatdollKit.Model
                 uLipSyncMain.profile = UnityEditor.AssetDatabase.LoadAssetAtPath<Profile>(UnityEditor.AssetDatabase.GUIDToAssetPath(profiles.First()));
             }
         }
+#endif
 
         protected virtual Dictionary<string, int> GetBlendShapeMap(ModelController modelController)
         {
@@ -95,6 +96,5 @@ namespace ChatdollKit.Model
 
             return blendShapeMap;
         }
-#endif
     }
 }
