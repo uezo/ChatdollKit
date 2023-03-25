@@ -152,9 +152,22 @@ public class VRCFaceExpressionProxyEditor : Editor
 
         if (proxy.FaceClipConfiguration == null)
         {
-            // Create new FaceClipConfiguration and add Neutral face
+            // Get blink blend shape key
+            var blinkBlendShapeWeights = new Dictionary<string, float>();
+            var blink = proxy.gameObject.GetComponent<Blink>();
+            if (blink != null)
+            {
+                blinkBlendShapeWeights.Add(blink.GetBlinkShapeName(), 100.0f);
+            }
+
+            // Create new FaceClipConfiguration and add faces with empty values
             var faceClipConfiguration = CreateInstance<FaceClipConfiguration>();
             faceClipConfiguration.FaceClips.Add(new FaceClip("Neutral", proxy.SkinnedMeshRenderer, new Dictionary<string, float>()));
+            faceClipConfiguration.FaceClips.Add(new FaceClip("Blink", proxy.SkinnedMeshRenderer, blinkBlendShapeWeights));
+            faceClipConfiguration.FaceClips.Add(new FaceClip("Joy", proxy.SkinnedMeshRenderer, new Dictionary<string, float>()));
+            faceClipConfiguration.FaceClips.Add(new FaceClip("Angry", proxy.SkinnedMeshRenderer, new Dictionary<string, float>()));
+            faceClipConfiguration.FaceClips.Add(new FaceClip("Sorrow", proxy.SkinnedMeshRenderer, new Dictionary<string, float>()));
+            faceClipConfiguration.FaceClips.Add(new FaceClip("Fun", proxy.SkinnedMeshRenderer, new Dictionary<string, float>()));
 
             if (!AssetDatabase.IsValidFolder("Assets/Resources"))
             {
