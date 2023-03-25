@@ -64,6 +64,11 @@ namespace ChatdollKit.Model
             }
         }
 
+        public string GetBlinkShapeName()
+        {
+            return blinkBlendShapeName;
+        }
+
         private static string GetBlinkTargetName(SkinnedMeshRenderer skinnedMeshRenderer)
         {
             var mesh = skinnedMeshRenderer.sharedMesh;
