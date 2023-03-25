@@ -14,14 +14,18 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
     - まばたきと口パク
 
 - 対話制御
-    - 音声認識（Speech-to-Text。Azure、Google、Watson等）
-    - テキスト読み上げ（Text-to-Speech。Azure、Google、Watson、VOICEROID、VOICEVOX等）
+    - 音声認識・テキスト読み上げ（Text-to-Speech。Azure、Google、Watson、VOICEROID、VOICEVOX等）
     - 対話の文脈・ステート管理
     - 発話意図の抽出と対話トピックのルーティング
+    - ChatGPT対応とその感情シミュレーションサンプル
 
 - 入出力
     - ウェイクワードによる起動
     - カメラとQRコードリーダー
+
+- プラットフォーム
+    - Windows / Mac / Linux / iOS / Android and anywhere Unity supports
+    - VR / AR / WebGL / Gatebox
 
 ... などなど！
 本READMEのほか、[ChatdollKit マニュアル](Documents/manual.ja.md)に各機能の網羅的な説明がありますので参照ください。
@@ -34,59 +38,81 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 
 最新版の [ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases) をダウンロードして、任意のUnityプロジェクトにインポートしてください。また、以下の依存ライブラリもインポートが必要です。
 
+- `Burst` from Unity Package Manager (Window > Package Manager)
 - [UniTask](https://github.com/Cysharp/UniTask)(Ver.2.3.1)
-- [Oculus LipSync Unity](https://developer.oculus.com/downloads/package/oculus-lipsync-unity/)(v29)
-- Unity 2019以前の場合のみ [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347)
-- [Gatebox](https://www.gatebox.ai/)アプリを作る場合、ChatdollKitのリリースパッケージと一緒に公開されている[ChatdollKit Gatebox Extension](https://github.com/uezo/ChatdollKit/releases)もインポートしてください。
+- [uLipSync](https://github.com/hecomi/uLipSync)(v2.6.1)
+- For VRM model: [UniVRM](https://github.com/vrm-c/UniVRM/releases/tag/v0.89.0)(v0.89.0) and [VRM Extension](https://github.com/uezo/ChatdollKit/releases)
+- For Unity 2019 or ealier: [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347)
+
+<img src="Documents/Images/burst.png" width="640">
+
 
 ## 🐟 リソースの準備
 
 お好みの3Dモデルをシーンに配置してください。シェーダーやダイナミックボーンなど必要に応じてセットアップしておいてください。なおこの手順で使っているモデルはシグネットちゃんです。とてもかわいいですね。 https://booth.pm/ja/items/1870320
 
-<img src="Documents/Images/01_resource_preparation.png" width="640">
-
-また、`/Animations`ディレクトリを作成し、アニメーションクリップを配置してください。
-なおこの手順では[Anime Girls Idle Animations Free](https://assetstore.unity.com/packages/3d/animations/anime-girl-idle-animations-free-150406)というモーション集を利用しています。大変使い勝手が良いので気に入ったら有償版の購入をオススメします。
+ここでアニメーションクリップを配置しておきましょう。この手順では[Anime Girls Idle Animations Free](https://assetstore.unity.com/packages/3d/animations/anime-girl-idle-animations-free-150406)というモーション集を利用しています。大変使い勝手が良いので気に入ったら有償版の購入をオススメします。
 
 
-## 🍣 ChatdollKitの設定
+## 🎁 ChatdollKitプレファブの配置
 
-`ChatdollKit/Prefabs/ChatdollKit` をシーンに追加してください。アニメーション、音声、表情をコントロールする`ModelController`やその他必要なコンポーネントがセットアップされています。
-また、`ChatdollKit`のインスペクター上で音声認識・読み上げサービス（Azure/Google/Watson）を選択し、APIキーなど必要な情報を入力してください。
+ChatdollKit/Prefabs/ChatdollKit` または `ChatdollKit/Prefabs/ChatdollKitVRM` をシーンに配置します。また、UI操作のための EventSystem もあわせて追加してください。
 
-<img src="Documents/Images/02_01_chatdollkit.png" width="640">
+<img src="Documents/Images/chatdollkit_to_scene.png" width="640">
 
-### DialogControllerの設定
 
-`DialogController`のインスペクターで、会話を開始する合図となる `Wake Word`、会話を終了する合図となる `Cancel Word`、ユーザーからのリクエストを受け付けるための `Prompt Voice` を設定します。
+## 🐈 ModelController
 
-<img src="Documents/Images/02_02_dialogcontroller_ja.png" width="640">
+ModelControllerのコンテキストメニューから `Setup ModelController` を選択してください。VRM*以外の*モデルを使用している場合、選択後にまばたき用のシェイプキーが `Blink Blend Shape Name` に設定されているか確認しましょう。誤っていたり設定されていない場合は手動で設定してください。
 
-### ModelControllerの設定
+<img src="Documents/Images/modelcontroller.png" width="640">
 
-インスペクターのコンテキストメニューから`Setup ModelController`を選択すると、LipSync等が自動的に設定されます。セットアップ後、`Blink Blend Shape Name`に値が設定されていない場合は、目を閉じるためのシェイプキーの名前を入力してください。これらの手順をすべて手動で行うには [Appendix1. ModelControllerの手動設定](Documents/appendix.ja.md#appendix-1-modelcontrollerの手動設定) を参照してください。
 
-<img src="Documents/Images/02_03_modelcontroller.png" width="640">
+## 💃 Animator
 
-### Animatorの設定
+ModelControllerのコンテキストメニューから `Setup Animator` を選択してください。ダイアログが表示されたら、アニメーションクリップの保存先またはその親フォルダを選択します。この動画の例では、`01_Idles` と `03_Others` をメインの `Base Layer` に、 `02_Layers` を合成用の `Additive Layer` に配置しています。
 
-インスペクターのコンテキストメニューから`Setup Animator`を選択するとフォルダ選択ダイアログが表示されるので、アニメーションクリップが配置されたフォルダを選択してください。サブフォルダが含まれる場合、それらと同名のレイヤーが`AnimatorController`に作成され、サブフォルダ内のアニメーションクリップはそのレイヤーに配置されます。
+<img src="Documents/Images/animator.gif" width="640">
 
-<img src="Documents/Images/03_01_add_animations.png" width="640">
+続いて、新たに作成されたAnimatorControllerを開いて `Base Layer` の中からアイドル時の動作に使用したいアニメーションを選びます。また、AnyStateからそのアニメーションに遷移する条件となるパラメーターの値を調べます。
 
-このケースでは、フォルダを選択したのちにベースレイヤー（`Base Layer`）またはそれぞれのレイヤー（`01_Idles`、`02_Layers`、`03_Others`）に配置するか確認ダイアログが表示され、配置先を選択することができます。
+<img src="Documents/Images/idleanimation01.png" width="640">
 
-`AnimatorController`の自動生成が終わったら、デフォルトのアイドルアニメーションを変更したい場合はアニメーターコントローラーの`Default`ステートに紐づけられたアニメーションクリップを変更しましょう。
+最後に、控えた値をModelControllerのインスペクターにある `Idle Animation Value` に設定します。
 
-これらの手順を手動で行うには、[Appendix2. Animatorの手動設定](Documents/appendix.ja.md#appendix-2-animatorの手動設定) を参照してください。
+<img src="Documents/Images/idleanimation02.png" width="640">
 
-<img src="Documents/Images/03_02_animator.png" width="640">
 
-### スキルの追加
+## 🦜 DialogController
 
-動作確認用に `Examples/Echo/Skills/EchoSkill` を`ChatdollKit`にアタッチします。これはおうむ返しのスキルです。
+`DialogController`のインスペクターで、会話を開始する合図となる `Wake Word` (e.g. こんにちは)、会話を終了する合図となる `Cancel Word` (e.g. おしまい)、ユーザーからのリクエストを受け付けるための `Prompt Voice` (e.g. どうしたの？) を設定します。
 
-<img src="Documents/Images/04_add_echo_skill.png" width="640">
+<img src="Documents/Images/dialogcontroller.png" width="640">
+
+
+## 🍣 ChatdollKit
+
+`ChatdollKit`のインスペクター上で音声認識・読み上げサービス（Azure/Google/Watson）を選択し、APIキーなど必要な情報を入力してください。
+
+<img src="Documents/Images/chatdollkit.png" width="640">
+
+
+## 🍳 Skill
+
+`ChatdollKit` におうむ返しスキルの `Examples/Echo/Skills/EchoSkill` を追加します。または、もしAIとの会話を今すぐ楽しみたいときは、ChatGPT対話スキルの `Examples/ChatGPT/Skills/ChatGPTSkill` を追加しましょう。
+
+<img src="Documents/Images/skill.png" width="640">
+
+
+## 🤗 Face Expression (VRM*以外*の場合のみ)
+
+VRC FaceExpression Proxyのコンテキストメニューから `Setup VRC FaceExpression Proxy` を選択します。表情シェイプキーのすべての値がゼロのNeutral, Joy, Angry, Sorrow, Funと、まばたき用のシェイプキーの値のみ100が設定されたBlinkが表情として登録されます。
+
+<img src="Documents/Images/faceexpression.png" width="640">
+
+表情はFace Clip Configurationを直接編集することもできますし、VRCFaceExpressionProxyのインスペクターで現在の表情（シェイプキーを操作して作り込んだもの）をキャプチャーすることもできます。
+
+<img src="Documents/Images/faceexpressionedit.png" width="640">
 
 
 ## 🥳 動作確認
@@ -98,7 +124,7 @@ UnityのPlayボタンを押します。3Dモデルがまばたきをしながら
 - 話しかけたい言葉をしゃべる（例：これはテストです）
 - 話しかけた言葉と同じ内容を応答
 
-<img src="Documents/Images/05_run_voicelistening.png" width="640">
+<img src="Documents/Images/run.png" width="640">
 
 
 # 👷‍♀️ カスタムアプリケーションの作り方
@@ -129,8 +155,4 @@ ChatdollKitを利用した複雑で実用的なバーチャルアシスタント
 
 ChatdollKitでは以下のすばらしい素材・ツールを利用させていただいており、心から感謝申し上げます。
 
-- [つくよみちゃん 3Dモデル](https://tyc.rei-yumesaki.net/) (3D model for demo) (c)[Rei Yumesaki](https://twitter.com/TYC_Project)
-- [VOICEVOX](https://voicevox.hiroshiba.jp) (Text-to-Speech service for demo) (c)[Hiroshiba](https://twitter.com/hiho_karuta)
-- [四国めたん ＆ ずんだもん](https://zunko.jp/con_voice.html) (Voice for demo, used in VOICEVOX TTS loader)
-
-ご利用にあたっては[ずんだもん、四国めたん音源利用規約](https://zunko.jp/con_ongen_kiyaku.html)を遵守ください。また、もし生成された音声を配布する場合、配布先にも利用規約を遵守させるよう徹底ください。
+- [uLipSync](https://github.com/hecomi/uLipSync) (LipSync) (c)[hecomi](https://twitter.com/hecomi)
