@@ -42,7 +42,7 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 - [UniTask](https://github.com/Cysharp/UniTask)(Ver.2.3.1)
 - [uLipSync](https://github.com/hecomi/uLipSync)(v2.6.1)
 - For VRM model: [UniVRM](https://github.com/vrm-c/UniVRM/releases/tag/v0.89.0)(v0.89.0) and [VRM Extension](https://github.com/uezo/ChatdollKit/releases)
-- For Unity 2019 or ealier: [JSON .NET For Unity](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347)
+- For Unity 2019 or ealier: [JSON.NET For Unity](https://github.com/jilleJr/Newtonsoft.Json-for-Unity) from Package Manager (com.unity.nuget.newtonsoft-json@3.0)
 
 <img src="Documents/Images/burst.png" width="640">
 
