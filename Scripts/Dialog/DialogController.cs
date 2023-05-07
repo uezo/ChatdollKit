@@ -479,7 +479,7 @@ namespace ChatdollKit.Dialog
         }
 
         // Get cancellation token for tasks invoked in chat
-        private CancellationToken GetDialogToken()
+        public CancellationToken GetDialogToken()
         {
             // Create new TokenSource and return its token
             dialogTokenSource = new CancellationTokenSource();
