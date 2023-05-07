@@ -116,9 +116,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   IsInstance: 0
+  messageText: {fileID: 5272824455329596087}
   MessageSpeed: 0.03
   PreGap: 0.1
   PostGap: 0.7
+  autoHide: 1
 --- !u!1 &5272824455329596081
 GameObject:
   m_ObjectHideFlags: 0

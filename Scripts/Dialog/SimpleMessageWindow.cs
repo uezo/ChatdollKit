@@ -8,7 +8,8 @@ namespace ChatdollKit.Dialog
 {
     public class SimpleMessageWindow : MessageWindowBase
     {
-        private Text MessageText;
+        [SerializeField]
+        private Text messageText;
         public float MessageSpeed = 0.03f;
         public float PreGap = 0.1f;
         public float PostGap = 0.7f;
@@ -19,14 +20,14 @@ namespace ChatdollKit.Dialog
             SetActive(true);
             if (prompt != null)
             {
-                MessageText.text = prompt;
+                messageText.text = prompt;
             }
         }
 
         public override void Hide()
         {
             SetActive(false);
-            MessageText.text = string.Empty;
+            messageText.text = string.Empty;
         }
 
         public override async UniTask ShowMessageAsync(string message, CancellationToken token)
@@ -54,10 +55,10 @@ namespace ChatdollKit.Dialog
                     {
                         return;
                     }
-                    MessageText.text = message.Substring(0, i + 1);
+                    messageText.text = message.Substring(0, i + 1);
                     await UniTask.Delay((int)(MessageSpeed * 1000), cancellationToken: token);
                 }
-                MessageText.text = message;
+                messageText.text = message;
                 await UniTask.Delay((int)(PostGap * 1000), cancellationToken: token);
             }
             catch (Exception ex)
@@ -70,17 +71,13 @@ namespace ChatdollKit.Dialog
                 if (CurrentMessageId == messageId)
                 {
                     Hide();
-                    MessageText.text = string.Empty;
+                    messageText.text = string.Empty;
                 }
             }
         }
 
         private void SetActive(bool value)
         {
-            if (value == true)
-            {
-                MessageText = gameObject.GetComponentInChildren<Text>();
-            }
             gameObject.SetActive(value);
         }
     }
