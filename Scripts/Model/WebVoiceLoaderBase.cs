@@ -18,6 +18,9 @@ namespace ChatdollKit.Model
         protected Dictionary<string, AudioClip> audioCache { get; set; } = new Dictionary<string, AudioClip>();
         protected Dictionary<string, UniTask<AudioClip>> audioDownloadTasks { get; set; } = new Dictionary<string, UniTask<AudioClip>>();
 
+        [SerializeField]
+        protected bool isDebug;
+
         protected virtual void Start()
         {
             // Instantiate at Start() to allow user to update Timeout at Awake()
@@ -28,9 +31,11 @@ namespace ChatdollKit.Model
         {
             if (IsLoading(voice))
             {
-                // Wait complete download task if download is now in progress.
-                // Cache is controlled by another task that originally invoked the download task
-                await WaitDownloadCancellable(audioDownloadTasks[voice.CacheKey], cancellationToken);
+                // Wait for cache is ready or task is canceled
+                while (!audioCache.ContainsKey(voice.CacheKey) || cancellationToken.IsCancellationRequested)
+                {
+                    await UniTask.Delay(50, cancellationToken: cancellationToken);
+                }
             }
 
             if (HasCache(voice))
@@ -41,10 +46,18 @@ namespace ChatdollKit.Model
                 {
                     audioCache.Remove(voice.CacheKey);
                 }
+                if (isDebug)
+                {
+                    Debug.Log($"Return cached audio clip: {voice.CacheKey}");
+                }
                 return cachedClip;
             }
 
             // Start download when download in not in progress and cache doesn't exist
+            if (isDebug)
+            {
+                Debug.Log($"Start downloading: {voice.CacheKey}");
+            }
             audioDownloadTasks[voice.CacheKey] = DownloadAudioClipAsync(voice, cancellationToken).Preserve();
             await WaitDownloadCancellable(audioDownloadTasks[voice.CacheKey], cancellationToken);
 
@@ -56,6 +69,10 @@ namespace ChatdollKit.Model
                     // Cache once regardless of UseCache to enable PreFetch
                     audioCache[voice.CacheKey] = clip;
                     audioDownloadTasks.Remove(voice.CacheKey);
+                    if (isDebug)
+                    {
+                        Debug.Log($"Return downloaded audio clip: {voice.CacheKey}");
+                    }
                     return clip;
                 }
                 else
@@ -92,12 +109,17 @@ namespace ChatdollKit.Model
             return audioCache.ContainsKey(voice.CacheKey);
         }
 
+        public void ClearCache()
+        {
+            audioCache.Clear();
+        }
+
         public bool IsLoading(Voice voice)
         {
             if (audioDownloadTasks.ContainsKey(voice.CacheKey))
             {
                 var task = audioDownloadTasks[voice.CacheKey];
-                if (task.GetAwaiter().IsCompleted)
+                if (!task.GetAwaiter().IsCompleted)
                 {
                     return true;
                 }
