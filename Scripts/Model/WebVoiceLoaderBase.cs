@@ -109,6 +109,11 @@ namespace ChatdollKit.Model
             return audioCache.ContainsKey(voice.CacheKey);
         }
 
+        public void ClearCache()
+        {
+            audioCache.Clear();
+        }
+
         public bool IsLoading(Voice voice)
         {
             if (audioDownloadTasks.ContainsKey(voice.CacheKey))
