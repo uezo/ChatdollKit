@@ -7,6 +7,7 @@ namespace ChatdollKit.IO
 {
     public class WebGLMicrophone : MonoBehaviour
     {
+#if UNITY_WEBGL
         [DllImport("__Internal")]
         private static extern void InitWebGLMicrophone(string targetObjectName);
         [DllImport("__Internal")]
@@ -44,7 +45,7 @@ namespace ChatdollKit.IO
 
         private void Awake()
         {
-#if UNITY_WEBGL && !UNITY_EDITOR
+#if !UNITY_EDITOR
             InitWebGLMicrophone(gameObject.name);
 #endif
         }
@@ -121,5 +122,6 @@ namespace ChatdollKit.IO
                 microphoneClip.SetData(capturedData, 0);
             }
         }
+#endif
     }
 }
