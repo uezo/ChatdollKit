@@ -13,6 +13,8 @@ namespace ChatdollKit.Dialog
         public float MessageSpeed = 0.03f;
         public float PreGap = 0.1f;
         public float PostGap = 0.7f;
+        [SerializeField]
+        private bool autoHide = true;
         private string CurrentMessageId;
 
         public override void Show(string prompt = null)
@@ -70,8 +72,11 @@ namespace ChatdollKit.Dialog
                 // Do not hide when another message is begun to be shown
                 if (CurrentMessageId == messageId)
                 {
-                    Hide();
-                    messageText.text = string.Empty;
+                    if (autoHide)
+                    {
+                        Hide();
+                        messageText.text = string.Empty;
+                    }
                 }
             }
         }
