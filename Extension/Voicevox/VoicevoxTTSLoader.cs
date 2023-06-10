@@ -11,27 +11,6 @@ namespace ChatdollKit.Extension.Voicevox
 {
     public class VoicevoxTTSLoader : WebVoiceLoaderBase
     {
-        public enum SpeakerName
-        {
-            四国めたん_あまあま = 0,
-            四国めたん_ノーマル = 2,
-            四国めたん_ツンツン = 6,
-            四国めたん_セクシー = 4,
-
-            ずんだもん_あまあま = 1,
-            ずんだもん_ノーマル = 3,
-            ずんだもん_ツンツン = 7,
-            ずんだもん_セクシー = 5,
-
-            春日部つむぎ_ノーマル = 8,
-            雨晴はう_ノーマル = 10,
-            波音リツ_ノーマル = 9,
-            玄野武宏_ノーマル = 11,
-            白上虎太郎_ノーマル = 12,
-            青山龍星_ノーマル = 13,
-            冥鳴ひまり_ノーマル = 14,
-        }
-
         public override VoiceLoaderType Type { get; } = VoiceLoaderType.TTS;
         public string _Name = "Voicevox";
         public override string Name
@@ -56,7 +35,18 @@ namespace ChatdollKit.Extension.Voicevox
         public string EndpointUrl;
 
         [Header("Voice Settings")]
-        public SpeakerName Speaker = SpeakerName.雨晴はう_ノーマル;
+        public int Speaker = 2;
+        [SerializeField]
+        protected bool printSupportedSpeakers;
+
+        protected override void Start()
+        {
+            base.Start();
+            if (printSupportedSpeakers)
+            {
+                _ = ListSpeakersAsync(CancellationToken.None);
+            }
+        }
 
         public void Configure(string endpointUrl, bool overwrite = false)
         {
@@ -128,6 +118,48 @@ namespace ChatdollKit.Extension.Voicevox
         {
             var audioResp = await client.PostBytesAsync(url, data, headers, cancellationToken: token);
             return AudioConverter.PCMToAudioClip(audioResp.Data);
+        }
+
+        public async UniTask ListSpeakersAsync(CancellationToken token)
+        {
+            Debug.Log("==== Supported speakers ====");
+
+            foreach (var s in await GetSpearkersAsync(token))
+            {
+                Debug.Log($"{s.Key}: {s.Value}");
+            }
+        }
+
+        public async UniTask<Dictionary<string, int>> GetSpearkersAsync(CancellationToken token)
+        {
+            var speakers = new Dictionary<string, int>();
+
+            var speakerResponses = await client.GetJsonAsync<List<SpeakersResponse>>(
+                EndpointUrl + $"/speakers",
+                cancellationToken: token);
+
+            foreach (var sr in speakerResponses)
+            {
+                var name = sr.name;
+                foreach (var style in sr.styles)
+                {
+                    speakers.Add($"{name}_{style.name}", style.id);
+                }
+            }
+
+            return speakers;
+        }
+
+        protected class SpeakersResponse
+        {
+            public string name;
+            public List<SpeakerStyle> styles;
+        }
+
+        protected class SpeakerStyle
+        {
+            public string name;
+            public int id;
         }
     }
 }
