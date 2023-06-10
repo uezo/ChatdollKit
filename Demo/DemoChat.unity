@@ -500,7 +500,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 2893757555470248016}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c272f4a00ee954d90be7053bd01902f2, type: 3}
+  m_Script: {fileID: 11500000, guid: dd1dae03082694a07957434fb39d2a74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   Name: 
@@ -508,7 +508,20 @@ MonoBehaviour:
   Model: gpt-3.5-turbo
   MaxTokens: 2000
   Temperature: 0.5
-  ChatCondition: You are my sister. We are very close and we speak in a casual manner.
+  ChatCondition: '* You are my sister. We are very close and we speak in a casual
+    manner.
+
+    * You have four expressions: ''Joy'', ''Angry'', ''Sorrow'', ''Fun''.
+
+    *
+    If you want to express a particular emotion, please insert it at the beginning
+    of the sentence like [face:Joy].
+
+
+    Example
+
+    [face:Joy]Hey, you can see
+    the ocean! [face:Fun]Let''s go swimming.'
   User1stShot: 
   Assistant1stShot: 
   HistoryTurns: 10
