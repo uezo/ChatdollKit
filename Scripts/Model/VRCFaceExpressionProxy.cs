@@ -67,6 +67,12 @@ namespace ChatdollKit.Model
 
         public void SetExpression(string name = "Neutral", float value = 1.0f)
         {
+            if (!faceClips.ContainsKey(name))
+            {
+                Debug.LogWarning($"Face '{name}' is not registered");
+                return;
+            }
+
             foreach (var blendShapeValue in faceClips[name].Values)
             {
                 if (blendShapeValue.Weight > 0)
@@ -79,6 +85,12 @@ namespace ChatdollKit.Model
 
         public void SetExpressionSmoothly(string name = "Neutral", float value = 1.0f)
         {
+            if (!faceClips.ContainsKey(name))
+            {
+                Debug.LogWarning($"Face '{name}' is not registered");
+                return;
+            }
+
             changeStartAt = Time.realtimeSinceStartup;
             currentFaceName = name;
             valueToApply = value;
