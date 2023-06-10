@@ -57,6 +57,17 @@ namespace ChatdollKit.Extension.Voicevox
 
         [Header("Voice Settings")]
         public SpeakerName Speaker = SpeakerName.雨晴はう_ノーマル;
+        [SerializeField]
+        protected bool printSupportedSpeakers;
+
+        protected override void Start()
+        {
+            base.Start();
+            if (printSupportedSpeakers)
+            {
+                _ = ListSpeakersAsync(CancellationToken.None);
+            }
+        }
 
         public void Configure(string endpointUrl, bool overwrite = false)
         {
@@ -128,6 +139,48 @@ namespace ChatdollKit.Extension.Voicevox
         {
             var audioResp = await client.PostBytesAsync(url, data, headers, cancellationToken: token);
             return AudioConverter.PCMToAudioClip(audioResp.Data);
+        }
+
+        public async UniTask ListSpeakersAsync(CancellationToken token)
+        {
+            Debug.Log("==== Supported speakers ====");
+
+            foreach (var s in await GetSpearkersAsync(token))
+            {
+                Debug.Log($"{s.Key}: {s.Value}");
+            }
+        }
+
+        public async UniTask<Dictionary<string, int>> GetSpearkersAsync(CancellationToken token)
+        {
+            var speakers = new Dictionary<string, int>();
+
+            var speakerResponses = await client.GetJsonAsync<List<SpeakersResponse>>(
+                EndpointUrl + $"/speakers",
+                cancellationToken: token);
+
+            foreach (var sr in speakerResponses)
+            {
+                var name = sr.name;
+                foreach (var style in sr.styles)
+                {
+                    speakers.Add($"{name}_{style.name}", style.id);
+                }
+            }
+
+            return speakers;
+        }
+
+        protected class SpeakersResponse
+        {
+            public string name;
+            public List<SpeakerStyle> styles;
+        }
+
+        protected class SpeakerStyle
+        {
+            public string name;
+            public int id;
         }
     }
 }
