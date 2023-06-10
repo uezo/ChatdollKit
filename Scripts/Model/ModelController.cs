@@ -57,6 +57,7 @@ namespace ChatdollKit.Model
         private void Awake()
         {
             animator = AvatarModel.gameObject.GetComponent<Animator>();
+            GetAnimation = GetIdleAnimation;
 
             // Web and TTS voice loaders
             foreach (var loader in gameObject.GetComponents<WebVoiceLoaderBase>())
