@@ -199,7 +199,7 @@ namespace ChatdollKit.Examples.ChatGPT
             while (!token.IsCancellationRequested)
             {
                 // Split current buffer with the marks that represents the end of a sentence
-                var splittedBuffer = streamBuffer.Replace("。", "。|").Replace("！", "！|").Replace("？", "？|").Replace("\n", "").Split('|');
+                var splittedBuffer = streamBuffer.Replace("。", "。|").Replace("、", "、|").Replace("！", "！|").Replace("？", "？|").Replace(". ", ". |").Replace(", ", ", |").Replace("\n", "").Split('|');
 
                 if (isResponseDone && splitIndex == splittedBuffer.Length)
                 {
