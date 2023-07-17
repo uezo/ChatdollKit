@@ -10,7 +10,7 @@ namespace ChatdollKit.Dialog.Processor
     {
         protected Dictionary<string, ISkill> topicResolver = new Dictionary<string, ISkill>();
 
-        public void RegisterSkill(ISkill skill)
+        public virtual void RegisterSkill(ISkill skill)
         {
             topicResolver.Add(skill.TopicName, skill);
         }
