@@ -20,7 +20,7 @@ namespace ChatdollKit.Dialog.Processor
             if (skill is ChatGPTFunctionSkillBase)
             {
                 var func = ((ChatGPTFunctionSkillBase)skill).GetFunctionSpec();
-                chatGPT.AddFunction(func);
+                GetComponent<ChatGPTService>().AddFunction(func);
                 functionResolver.Add(func.name, skill.TopicName);
             }
         }
