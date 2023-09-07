@@ -155,6 +155,7 @@ namespace ChatdollKit.Dialog
         public int InlineRequestMinimumLength = 0;
         public string RecognizedText { get; private set; }
         public string InlineRequestText { get; private set; }
+        public bool SkipPrompt = false;
 
         public WakeWord CloneWithRecognizedText(string recognizedText)
         {
@@ -168,16 +169,13 @@ namespace ChatdollKit.Dialog
                 RequestType = RequestType,
                 InlineRequestMinimumLength = InlineRequestMinimumLength,
                 RecognizedText = recognizedText,
-                InlineRequestText = string.Empty
+                InlineRequestText = string.Empty,
+                SkipPrompt = SkipPrompt
             };
 
-            if (InlineRequestMinimumLength > 0 && RecognizedText != null)
+            if (SkipPrompt)
             {
-                var requestText = RecognizedText.Substring(RecognizedText.IndexOf(Text) + Text.Length);
-                if (requestText.Length >= InlineRequestMinimumLength)
-                {
-                    InlineRequestText = requestText;
-                }
+                ww.InlineRequestText = ww.RecognizedText;
             }
 
             return ww;
