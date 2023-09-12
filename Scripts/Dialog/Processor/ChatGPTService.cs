@@ -25,8 +25,8 @@ namespace ChatdollKit.Dialog.Processor
 
         protected ChatdollHttp client = new ChatdollHttp(timeout: 20000);
 
-        public bool IsResponseDone { get; private set; } = false;
-        public string StreamBuffer { get; private set; }
+        public bool IsResponseDone { get; protected set; } = false;
+        public string StreamBuffer { get; protected set; }
 
         public enum ResponseType
         {
@@ -37,7 +37,7 @@ namespace ChatdollKit.Dialog.Processor
 
         protected List<ChatGPTFunction> chatGPTFunctions = new List<ChatGPTFunction>();
 
-        public async UniTask ChatCompletionAsync(List<ChatGPTMessage> messages, bool useFunctions = true)
+        public virtual async UniTask ChatCompletionAsync(List<ChatGPTMessage> messages, bool useFunctions = true)
         {
             // Make request data
             var data = new Dictionary<string, object>()

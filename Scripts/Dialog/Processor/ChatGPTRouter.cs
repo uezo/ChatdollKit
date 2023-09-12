@@ -11,7 +11,23 @@ namespace ChatdollKit.Dialog.Processor
 
         private void Awake()
         {
-            chatGPT = GetComponent<ChatGPTService>();
+#if UNITY_WEBGL && !UNITY_EDITOR
+            chatGPT = GetComponent<ChatGPTServiceWebGL>();
+            if (chatGPT == null)
+            {
+                UnityEngine.Debug.LogWarning("ChatGPTService doesn't support stream. Use ChatGPTServiceWebGL instead.");
+                chatGPT = GetComponent<ChatGPTService>();
+            }
+#else
+            foreach (var gpt in GetComponents<ChatGPTService>())
+            {
+                if (gpt is not ChatGPTServiceWebGL)
+                {
+                    chatGPT = gpt;
+                    break;
+                }
+            }
+#endif
         }
 
         public override void RegisterSkill(ISkill skill)

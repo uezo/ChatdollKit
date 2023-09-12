@@ -16,7 +16,24 @@ namespace ChatdollKit.Dialog.Processor
         protected override void Awake()
         {
             base.Awake();
-            chatGPT = GetComponent<ChatGPTService>();
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+            chatGPT = GetComponent<ChatGPTServiceWebGL>();
+            if (chatGPT == null)
+            {
+                Debug.LogWarning("ChatGPTService doesn't support stream. Use ChatGPTServiceWebGL instead.");
+                chatGPT = GetComponent<ChatGPTService>();
+            }
+#else
+            foreach (var gpt in GetComponents<ChatGPTService>())
+            {
+                if (gpt is not ChatGPTServiceWebGL)
+                {
+                    chatGPT = gpt;
+                    break;
+                }
+            }
+#endif
         }
 
 #pragma warning disable CS1998
