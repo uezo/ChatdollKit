@@ -135,9 +135,6 @@ namespace ChatdollKit.Dialog.Processor
                                     Debug.Log($"Assistant: {textToSay}");
                                 }
 
-                                // ここに挟むと初手でなにもしゃべらなくなる
-                                await UniTask.Delay(2000);
-
                                 // Set AnimatedVoiceRequest to queue
                                 responseAnimations.Add(avreq);
 
