@@ -43,6 +43,9 @@ namespace ChatdollKit.Dialog.Processor
         {
             var apiStreamTask = (UniTask)request.Payloads[0];
 
+            // Clear responseAnimations before parsing and performing
+            responseAnimations.Clear();
+
             // Start parsing voices, faces and animations and performing them concurrently
             var parseTask = ParseAnimatedVoiceAsync(token);
             var performTask = PerformAnimatedVoiceAsync(token);
