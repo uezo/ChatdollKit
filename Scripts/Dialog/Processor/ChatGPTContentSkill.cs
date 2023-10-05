@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -12,6 +13,7 @@ namespace ChatdollKit.Dialog.Processor
     {
         protected ChatGPTService chatGPT;
         protected List<AnimatedVoiceRequest> responseAnimations = new List<AnimatedVoiceRequest>();
+        public bool IsParsing { get; protected set; } = false;
 
         protected override void Awake()
         {
@@ -82,61 +84,77 @@ namespace ChatdollKit.Dialog.Processor
 
         protected async UniTask ParseAnimatedVoiceAsync(CancellationToken token)
         {
-            var pattern = @"\[face:(.+?)\]";
-            var splitIndex = 0;
+            IsParsing = true;
 
-            while (!token.IsCancellationRequested)
+            try
             {
-                // Split current buffer with the marks that represents the end of a sentence
-                var splittedBuffer = chatGPT.StreamBuffer.Replace("。", "。|").Replace("、", "、|").Replace("！", "！|").Replace("？", "？|").Replace(". ", ". |").Replace(", ", ", |").Replace("\n", "").Split('|');
+                var pattern = @"\[face:(.+?)\]";
+                var splitIndex = 0;
 
-                if (chatGPT.IsResponseDone && splitIndex == splittedBuffer.Length)
+                while (!token.IsCancellationRequested)
                 {
-                    // Exit while loop when stream response ends and all sentences has been processed
-                    break;
-                }
+                    // Split current buffer with the marks that represents the end of a sentence
+                    var splittedBuffer = chatGPT.StreamBuffer.Replace("。", "。|").Replace("、", "、|").Replace("！", "！|").Replace("？", "？|").Replace(". ", ". |").Replace(", ", ", |").Replace("\n", "").Split('|');
 
-                if (splittedBuffer.Count() > splitIndex + 1 || chatGPT.IsResponseDone)
-                {
-                    // Process each splitted unprocessed sentence
-                    foreach (var text in splittedBuffer.Skip(splitIndex).Take(chatGPT.IsResponseDone ? splittedBuffer.Length - splitIndex : 1))
+                    if (chatGPT.IsResponseDone && splitIndex == splittedBuffer.Length)
                     {
-                        splitIndex += 1;
-                        if (!string.IsNullOrEmpty(text.Trim()))
+                        // Exit while loop when stream response ends and all sentences has been processed
+                        break;
+                    }
+
+                    if (splittedBuffer.Count() > splitIndex + 1 || chatGPT.IsResponseDone)
+                    {
+                        // Process each splitted unprocessed sentence
+                        foreach (var text in splittedBuffer.Skip(splitIndex).Take(chatGPT.IsResponseDone ? splittedBuffer.Length - splitIndex : 1))
                         {
-                            var avreq = new AnimatedVoiceRequest();
-                            var textToSay = text;
-
-                            // Parse face tags and remove it from text to say
-                            var matches = Regex.Matches(textToSay, pattern);
-                            textToSay = Regex.Replace(textToSay, pattern, "");
-
-                            // Add voice
-                            avreq.AddVoiceTTS(textToSay, postGap: textToSay.EndsWith("。") ? 0 : 0.3f);
-
-                            if (matches.Count > 0)
+                            splitIndex += 1;
+                            if (!string.IsNullOrEmpty(text.Trim()))
                             {
-                                // Add face if face tag included
-                                var face = matches[0].Groups[1].Value;
-                                avreq.AddFace(face, duration: 7.0f);
-                                Debug.Log($"Assistant: [{face}] {textToSay}");
-                            }
-                            else
-                            {
-                                Debug.Log($"Assistant: {textToSay}");
-                            }
+                                var avreq = new AnimatedVoiceRequest();
+                                var textToSay = text;
 
-                            // Set AnimatedVoiceRequest to queue
-                            responseAnimations.Add(avreq);
+                                // Parse face tags and remove it from text to say
+                                var matches = Regex.Matches(textToSay, pattern);
+                                textToSay = Regex.Replace(textToSay, pattern, "");
 
-                            // Prefetch the voice from TTS service
-                            _ = modelController.TextToSpeechFunc.Invoke(new Voice(string.Empty, 0.0f, 0.0f, textToSay, string.Empty, null, VoiceSource.TTS, true, string.Empty), token);
+                                // Add voice
+                                avreq.AddVoiceTTS(textToSay, postGap: textToSay.EndsWith("。") ? 0 : 0.3f);
+
+                                if (matches.Count > 0)
+                                {
+                                    // Add face if face tag included
+                                    var face = matches[0].Groups[1].Value;
+                                    avreq.AddFace(face, duration: 7.0f);
+                                    Debug.Log($"Assistant: [{face}] {textToSay}");
+                                }
+                                else
+                                {
+                                    Debug.Log($"Assistant: {textToSay}");
+                                }
+
+                                // ここに挟むと初手でなにもしゃべらなくなる
+                                await UniTask.Delay(2000);
+
+                                // Set AnimatedVoiceRequest to queue
+                                responseAnimations.Add(avreq);
+
+                                // Prefetch the voice from TTS service
+                                _ = modelController.TextToSpeechFunc.Invoke(new Voice(string.Empty, 0.0f, 0.0f, textToSay, string.Empty, null, VoiceSource.TTS, true, string.Empty), token);
+                            }
                         }
                     }
-                }
 
-                // Wait for a bit before processing buffer next time
-                await UniTask.Delay(100, cancellationToken: token);
+                    // Wait for a bit before processing buffer next time
+                    await UniTask.Delay(100, cancellationToken: token);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Error at ParseAnimatedVoiceAsync: {ex.Message}\n{ex.StackTrace}");
+            }
+            finally
+            {
+                IsParsing = false;
             }
         }
 
@@ -145,8 +163,8 @@ namespace ChatdollKit.Dialog.Processor
             var isFirstVoice = true;
             while (!token.IsCancellationRequested)
             {
-                // Performance ends when streaming response ends and all response animated voices are done
-                if (chatGPT.IsResponseDone && responseAnimations.Count == 0) break;
+                // Performance ends when streaming response and parsing ends and all response animated voices are done
+                if (chatGPT.IsResponseDone && !IsParsing && responseAnimations.Count == 0) break;
 
                 if (responseAnimations.Count > 0)
                 {
