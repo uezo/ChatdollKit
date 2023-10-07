@@ -20,7 +20,7 @@ namespace ChatdollKit.Examples.ChatGPT
             return func;
         }
 
-        protected override async UniTask<string> ExecuteFunction(string argumentsJsonString, CancellationToken token)
+        protected override async UniTask<FunctionResponse> ExecuteFunction(string argumentsJsonString, CancellationToken token)
         {
             // Parse arguments
             var arguments = JsonConvert.DeserializeObject<Dictionary<string, string>>(argumentsJsonString);
@@ -35,7 +35,7 @@ namespace ChatdollKit.Examples.ChatGPT
             };
 
             // Return response as serialized JSON
-            return JsonConvert.SerializeObject(resp);
+            return new FunctionResponse(JsonConvert.SerializeObject(resp));
         }
     }
 }
