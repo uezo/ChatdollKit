@@ -35,7 +35,7 @@ namespace ChatdollKit.Dialog.Processor
 
             // Add messages
             var messages = chatGPT.GetHistories(state);
-            messages.Add(new ChatGPTMessage("function", responseForRequest, name: functionName));
+            messages.Add(new ChatGPTMessage(responseForRequest.Role, responseForRequest.Body, name: functionName));
 
             // Call ChatCompletion to get human-friendly response
             apiStreamTask = chatGPT.ChatCompletionAsync(messages, false);
@@ -58,10 +58,22 @@ namespace ChatdollKit.Dialog.Processor
         }
 
 #pragma warning disable CS1998
-        protected virtual async UniTask<string> ExecuteFunction(string argumentsJsonString, CancellationToken token)
+        protected virtual async UniTask<FunctionResponse> ExecuteFunction(string argumentsJsonString, CancellationToken token)
         {
             throw new NotImplementedException("ChatGPTFunctionSkillBase.ExecuteFunction must be implemented");
         }
 #pragma warning restore CS1998
+
+        protected class FunctionResponse
+        {
+            public string Body { get; protected set; }
+            public string Role { get; protected set; }
+
+            public FunctionResponse(string body, string role = "function")
+            {
+                Body = body;
+                Role = role;
+            }
+        }
     }
 }
