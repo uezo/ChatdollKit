@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading;
 using Newtonsoft.Json;
 using Cysharp.Threading.Tasks;
+using UnityEngine;
 using UnityEngine.Networking;
 
 namespace ChatdollKit.Network
@@ -206,7 +207,16 @@ namespace ChatdollKit.Network
 
                 request.downloadHandler = new DownloadHandlerBuffer();
 
-                await request.SendWebRequest();
+                try
+                {
+                    await request.SendWebRequest();
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"Error at SendWebRequest() to {method} {url}: {ex.Message}\n{ex.StackTrace}");
+                    DebugFunc?.Invoke($"Error at SendWebRequest() to {method} {url}: {ex.Message}\n{ex.StackTrace}");
+                    throw ex;
+                }
 
                 DebugFunc?.Invoke($"Status code: {request.responseCode}");
 
@@ -217,7 +227,7 @@ namespace ChatdollKit.Network
                 }
 
                 // Throw exception if the status code is not success
-                if (request.isNetworkError || request.isHttpError)
+                if (request.result != UnityWebRequest.Result.Success)
                 {
                     DebugFunc?.Invoke($"Error: {request.error} \n {request.downloadHandler.text}");
 
