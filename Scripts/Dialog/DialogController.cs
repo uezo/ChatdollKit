@@ -33,8 +33,9 @@ namespace ChatdollKit.Dialog
         public bool UseRemoteServer = false;
         public string BaseUrl = string.Empty;
 
-        [Header("Message Window")]
-        public MessageWindowBase MessageWindow;
+        [Header("Message Windows")]
+        public MessageWindowBase UserMessageWindow;
+        public MessageWindowBase CharacterMessageWindow;
 
         [Header("Camera")]
         public ChatdollCamera ChatdollCamera;
@@ -106,11 +107,24 @@ namespace ChatdollKit.Dialog
             var skillRouter = GetComponent<ISkillRouter>();
             var skills = GetComponents<ISkill>();
 
-            if (!MessageWindow.IsInstance)
+            if (!UserMessageWindow.IsInstance)
             {
                 // Create MessageWindow instance
-                MessageWindow = Instantiate(MessageWindow);
+                UserMessageWindow = Instantiate(UserMessageWindow);
             }
+
+            // Synchronize speech and character message window
+            modelController.OnSayStart = (text, token) =>
+            {
+                if (!string.IsNullOrEmpty(text))
+                {
+                    _ = CharacterMessageWindow?.ShowMessageAsync(text, token);
+                }
+            };
+            modelController.OnSayEnd = () =>
+            {
+                CharacterMessageWindow?.Hide();
+            };
 
             // Create ChatdollCamera instance
             ChatdollCamera = Instantiate(ChatdollCamera);
@@ -128,7 +142,7 @@ namespace ChatdollKit.Dialog
             {
                 if (rp.enabled)
                 {
-                    rp.MessageWindow = MessageWindow;
+                    rp.MessageWindow = UserMessageWindow;
                     if (!string.IsNullOrEmpty(CancelWord))
                     {
                         // Register cancel word to VoiceRequestProvider

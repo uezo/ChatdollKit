@@ -19,6 +19,8 @@ namespace ChatdollKit.Model
         private Dictionary<string, AudioClip> voiceAudioClips = new Dictionary<string, AudioClip>();
         public Func<Voice, CancellationToken, UniTask<AudioClip>> VoiceDownloadFunc;
         public Func<Voice, CancellationToken, UniTask<AudioClip>> TextToSpeechFunc;
+        public Action<string, CancellationToken> OnSayStart;
+        public Action OnSayEnd;
         public Dictionary<string, Func<Voice, CancellationToken, UniTask<AudioClip>>> TextToSpeechFunctions = new Dictionary<string, Func<Voice, CancellationToken, UniTask<AudioClip>>>();
         public bool UsePrefetch = true;
         private ILipSyncHelper lipSyncHelper;
@@ -202,92 +204,107 @@ namespace ChatdollKit.Model
                     return;
                 }
 
-                if (v.Source == VoiceSource.Local)
+                OnSayStart?.Invoke(v.Text, token);
+
+                try
                 {
-                    if (voiceAudioClips.ContainsKey(v.Name))
+                    if (v.Source == VoiceSource.Local)
                     {
-                        // Wait for PreGap
-                        await UniTask.Delay((int)(v.PreGap * 1000), cancellationToken: token);
-                        // Play audio
-                        History?.Add(v);
-                        AudioSource.PlayOneShot(voiceAudioClips[v.Name]);
+                        if (voiceAudioClips.ContainsKey(v.Name))
+                        {
+                            // Wait for PreGap
+                            await UniTask.Delay((int)(v.PreGap * 1000), cancellationToken: token);
+                            // Play audio
+                            History?.Add(v);
+                            AudioSource.PlayOneShot(voiceAudioClips[v.Name]);
+                        }
+                        else
+                        {
+                            Debug.LogWarning($"Voice not found: {v.Name}");
+                        }
                     }
                     else
                     {
-                        Debug.LogWarning($"Voice not found: {v.Name}");
-                    }
-                }
-                else
-                {
-                    // Download voice from web or TTS service
-                    var downloadStartTime = Time.time;
-                    AudioClip clip = null;
-                    if (v.Source == VoiceSource.Web)
-                    {
-                        if (VoiceDownloadFunc != null)
+                        // Download voice from web or TTS service
+                        var downloadStartTime = Time.time;
+                        AudioClip clip = null;
+                        if (v.Source == VoiceSource.Web)
                         {
-                            clip = await VoiceDownloadFunc(v, token);
-                        }
-                        else
-                        {
-                            Debug.LogError("Voice download function not found");
-                        }
-                    }
-                    else if (v.Source == VoiceSource.TTS)
-                    {
-                        var ttsFunc = GetTTSFunction(v.GetTTSFunctionName());
-                        if (ttsFunc != null)
-                        {
-                            clip = await ttsFunc(v, token);
-                        }
-                        else
-                        {
-                            Debug.LogError($"TTS function not found: {v.GetTTSFunctionName()}");
-                        }
-                    }
-
-                    if (clip != null)
-                    {
-                        // Wait for PreGap remains after download
-                        var preGap = v.PreGap - (Time.time - downloadStartTime);
-                        if (preGap > 0)
-                        {
-                            if (!token.IsCancellationRequested)
+                            if (VoiceDownloadFunc != null)
                             {
-                                try
-                                {
-                                    await UniTask.Delay((int)(preGap * 1000), cancellationToken: token);
-                                }
-                                catch (OperationCanceledException)
-                                {
-                                    // OperationCanceledException raises
-                                    Debug.Log("Task canceled in waiting PreGap");
-                                }
+                                clip = await VoiceDownloadFunc(v, token);
+                            }
+                            else
+                            {
+                                Debug.LogError("Voice download function not found");
                             }
                         }
-                        // Play audio
-                        History?.Add(v);
-                        AudioSource.PlayOneShot(clip);
+                        else if (v.Source == VoiceSource.TTS)
+                        {
+                            var ttsFunc = GetTTSFunction(v.GetTTSFunctionName());
+                            if (ttsFunc != null)
+                            {
+                                clip = await ttsFunc(v, token);
+                            }
+                            else
+                            {
+                                Debug.LogError($"TTS function not found: {v.GetTTSFunctionName()}");
+                            }
+                        }
+
+                        if (clip != null)
+                        {
+                            // Wait for PreGap remains after download
+                            var preGap = v.PreGap - (Time.time - downloadStartTime);
+                            if (preGap > 0)
+                            {
+                                if (!token.IsCancellationRequested)
+                                {
+                                    try
+                                    {
+                                        await UniTask.Delay((int)(preGap * 1000), cancellationToken: token);
+                                    }
+                                    catch (OperationCanceledException)
+                                    {
+                                        // OperationCanceledException raises
+                                        Debug.Log("Task canceled in waiting PreGap");
+                                    }
+                                }
+                            }
+                            // Play audio
+                            History?.Add(v);
+                            AudioSource.PlayOneShot(clip);
+                        }
+                    }
+
+                    // Wait while voice playing
+                    while (AudioSource.isPlaying && !token.IsCancellationRequested)
+                    {
+                        await UniTask.Delay(1);
+                    }
+
+                    if (!token.IsCancellationRequested)
+                    {
+                        try
+                        {
+                            // Wait for PostGap
+                            await UniTask.Delay((int)(v.PostGap * 1000), cancellationToken: token);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            Debug.Log("Task canceled in waiting PostGap");
+                        }
                     }
                 }
 
-                // Wait while voice playing
-                while (AudioSource.isPlaying && !token.IsCancellationRequested)
+                catch (Exception ex)
                 {
-                    await UniTask.Delay(1);
+                    Debug.LogError($"Error at Say: {ex.Message}\n{ex.StackTrace}");
                 }
 
-                if (!token.IsCancellationRequested)
+                finally
                 {
-                    try
-                    {
-                        // Wait for PostGap
-                        await UniTask.Delay((int)(v.PostGap * 1000), cancellationToken: token);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        Debug.Log("Task canceled in waiting PostGap");
-                    }
+                    OnSayEnd?.Invoke();
                 }
             }
 
