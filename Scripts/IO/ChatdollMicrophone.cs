@@ -25,7 +25,6 @@ namespace ChatdollKit.IO
         // Status and timestamp
         public bool IsListening { get; private set; }
         public bool IsEnabled = true;
-        public bool IsUpdatedOnThisFrame { get; private set; }
 
         // Microphone device
         public string DeviceName;
@@ -33,6 +32,12 @@ namespace ChatdollKit.IO
 
         // Runtime configurations
         public int SamplingFrequency = 16000;
+
+        // Mute
+        public bool IsMuted { get; private set; } = false;
+
+        // Debug
+        public bool DebugMicrophone = false;
 
         private void Awake()
         {
@@ -62,7 +67,7 @@ namespace ChatdollKit.IO
 
         private void Update()
         {
-            IsUpdatedOnThisFrame = false;
+            CapturedData = new MicrophoneCapturedData(microphoneInput.channels, microphoneInput.frequency);
 
             if (!IsMicrophoneEnabled)
             {
@@ -85,6 +90,10 @@ namespace ChatdollKit.IO
             // Return if disabled or not listening
             if (!IsEnabled || !IsListening)
             {
+                if (DebugMicrophone)
+                {
+                    Debug.Log($"Microphone is not listening: {IsListening} (IsEnabled: {IsEnabled})");
+                }
                 return;
             }
 
@@ -94,6 +103,10 @@ namespace ChatdollKit.IO
                 var currentPosition = Microphone.GetPosition(listeningDeviceName);
                 if (currentPosition < 0 || previousPosition == currentPosition)
                 {
+                    if (DebugMicrophone)
+                    {
+                        Debug.Log($"Microphone position is negative or not changed: {currentPosition} / {previousPosition == currentPosition})");
+                    }
                     return;
                 }
 
@@ -118,9 +131,7 @@ namespace ChatdollKit.IO
                 // Update previous position for next Update
                 previousPosition = currentPosition;
 
-                CapturedData = new MicrophoneCapturedData(microphoneInput.channels, microphoneInput.frequency, capturedData);
-
-                IsUpdatedOnThisFrame = true;
+                CapturedData.SetData(capturedData);
             }
             catch (Exception ex)
             {
@@ -131,7 +142,32 @@ namespace ChatdollKit.IO
 
         private void OnDestroy()
         {
+            Debug.LogWarning("Microphone destroyed. Stop listening.");
             StopListening();
+        }
+
+        public void SetMute(bool mute)
+        {
+            if (mute)
+            {
+                Debug.Log("Microphone muted. Stop listening.");
+                StopListening();
+            }
+            else
+            {
+                Debug.Log("Microphone unmuted. Start listening.");
+                if (SamplingFrequency > 0)
+                {
+                    StartListening();
+                }
+            }
+
+            IsMuted = mute;
+        }
+
+        public void ToggleMute()
+        {
+            SetMute(!IsMuted);
         }
 
         public void ChangeInputDevice(string deviceName)
@@ -174,14 +210,20 @@ namespace ChatdollKit.IO
     {
         public int ChannelCount { get; }
         public int Frequency { get; }
-        public float MaxVolume { get; }
-        public float[] Data { get; }
+        public float MaxVolume { get; private set; }
+        public float[] Data { get; private set; }
 
-        public MicrophoneCapturedData(int channelCount, int frequency, float[] capturedData)
+        public MicrophoneCapturedData(int channelCount, int frequency)
         {
             ChannelCount = channelCount;
             Frequency = frequency;
-            MaxVolume = capturedData.Max(d => Math.Abs(d));
+            MaxVolume = 0;
+            Data = new float[] { };
+        }
+
+        public void SetData(float[] capturedData)
+        {
+            MaxVolume = capturedData.Length > 0 ? capturedData.Max(d => Math.Abs(d)) : 0;
             Data = capturedData;
         }
     }

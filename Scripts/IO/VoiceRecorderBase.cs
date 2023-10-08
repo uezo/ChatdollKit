@@ -46,11 +46,6 @@ namespace ChatdollKit.IO
 
             try
             {
-                if (!microphone.IsUpdatedOnThisFrame)
-                {
-                    return;
-                }
-
                 // Get captured data from microphone
                 var capturedData = microphone.CapturedData;
 
