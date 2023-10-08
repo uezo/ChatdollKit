@@ -79,7 +79,7 @@ namespace ChatdollKit.Dialog.Processor
             StreamBuffer = string.Empty;
             responseType = ResponseType.None;
             firstDelta = null;
-            await streamRequest.SendWebRequest();
+            await streamRequest.SendWebRequest().ToUniTask();
             IsResponseDone = true;
         }
 

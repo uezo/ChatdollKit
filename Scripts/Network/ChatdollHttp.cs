@@ -209,7 +209,7 @@ namespace ChatdollKit.Network
 
                 try
                 {
-                    await request.SendWebRequest();
+                    await request.SendWebRequest().ToUniTask();
                 }
                 catch (Exception ex)
                 {
