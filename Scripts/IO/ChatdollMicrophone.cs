@@ -188,6 +188,8 @@ namespace ChatdollKit.IO
             // Initialize data and status
             samplingData = new float[microphoneInput.samples * microphoneInput.channels];
             previousPosition = 0;
+            // Assure CapturedData.data is set when IsListening is true
+            CapturedData = new MicrophoneCapturedData(microphoneInput.channels, microphoneInput.frequency);
             IsListening = true;
         }
 
