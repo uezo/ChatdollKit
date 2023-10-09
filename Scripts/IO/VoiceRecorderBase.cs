@@ -39,7 +39,7 @@ namespace ChatdollKit.IO
         private void LateUpdate()
         {
             // Return if disabled or not listening
-            if (!IsEnabled || !IsListening)
+            if (!IsEnabled || !IsListening || !microphone.IsListening)
             {
                 return;
             }
