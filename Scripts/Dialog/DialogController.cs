@@ -173,6 +173,10 @@ namespace ChatdollKit.Dialog
                 {
                     // Create local request processor with components
                     Debug.Log("Use LocalRequestProcessor");
+                    if (skillRouter == null)
+                    {
+                        skillRouter = gameObject.AddComponent<StaticSkillRouter>();
+                    }
                     requestProcessor = new LocalRequestProcessor(
                         userStore, stateStore, skillRouter, skills
                     );
