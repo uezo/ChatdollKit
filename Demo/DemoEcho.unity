@@ -364,15 +364,9 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2a59a7556b89b4df8bfdb1457b4650aa, type: 3}
---- !u!137 &1252396166 stripped
-SkinnedMeshRenderer:
-  m_CorrespondingSourceObject: {fileID: 5769812141464945229, guid: 2a59a7556b89b4df8bfdb1457b4650aa,
-    type: 3}
-  m_PrefabInstance: {fileID: 1252396165}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &1252396167 stripped
+--- !u!1 &1252396166 stripped
 GameObject:
-  m_CorrespondingSourceObject: {fileID: 7086095933583111378, guid: 2a59a7556b89b4df8bfdb1457b4650aa,
+  m_CorrespondingSourceObject: {fileID: 9146934488382850401, guid: 2a59a7556b89b4df8bfdb1457b4650aa,
     type: 3}
   m_PrefabInstance: {fileID: 1252396165}
   m_PrefabAsset: {fileID: 0}
@@ -392,7 +386,7 @@ PrefabInstance:
         type: 3}
       propertyPath: skinnedMeshRenderer
       value: 
-      objectReference: {fileID: 1252396166}
+      objectReference: {fileID: 0}
     - target: {fileID: 7494064416744276931, guid: 9923f5ee8d02c4f658216c52051a0d17,
         type: 3}
       propertyPath: m_Name
@@ -467,7 +461,7 @@ PrefabInstance:
         type: 3}
       propertyPath: AvatarModel
       value: 
-      objectReference: {fileID: 1252396167}
+      objectReference: {fileID: 1252396166}
     - target: {fileID: 7494064416744276981, guid: 9923f5ee8d02c4f658216c52051a0d17,
         type: 3}
       propertyPath: IdleAnimationValue
@@ -477,7 +471,7 @@ PrefabInstance:
         type: 3}
       propertyPath: SkinnedMeshRenderer
       value: 
-      objectReference: {fileID: 1252396166}
+      objectReference: {fileID: 0}
     - target: {fileID: 7912615329650566023, guid: 9923f5ee8d02c4f658216c52051a0d17,
         type: 3}
       propertyPath: m_AnchorMax.y
@@ -620,7 +614,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 1
+  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 50, y: -150, z: 0}
 --- !u!1 &1934380956
 GameObject:
@@ -704,5 +698,5 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 0
+  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0.767, y: 172.77802, z: 0}
