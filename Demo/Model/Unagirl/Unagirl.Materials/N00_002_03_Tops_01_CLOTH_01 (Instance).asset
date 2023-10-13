@@ -100,5 +100,5 @@ Material:
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _OutlineColor: {r: 0.2745098, g: 0.090196066, b: 0.12549016, a: 1}
     - _RimColor: {r: 0, g: 0, b: 0, a: 1}
-    - _ShadeColor: {r: 0.972549, g: 0.9647059, b: 0.9921568, a: 1}
+    - _ShadeColor: {r: 0.93333334, g: 0.92941177, b: 0.9411765, a: 1}
   m_BuildTextureStacks: []

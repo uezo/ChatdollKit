@@ -34,7 +34,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: f376ea97b873a48c4acad52526fcb13b, type: 3}
+        m_Texture: {fileID: 2800000, guid: 4516a87d7ff404e9bb68ab5168c0333a, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _OutlineWidthTexture:
@@ -50,7 +50,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _ShadeTexture:
-        m_Texture: {fileID: 2800000, guid: f376ea97b873a48c4acad52526fcb13b, type: 3}
+        m_Texture: {fileID: 2800000, guid: 4516a87d7ff404e9bb68ab5168c0333a, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _ShadingGradeTexture:
@@ -100,5 +100,5 @@ Material:
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _OutlineColor: {r: 0.2745098, g: 0.090196066, b: 0.12549016, a: 1}
     - _RimColor: {r: 0, g: 0, b: 0, a: 1}
-    - _ShadeColor: {r: 0.93333334, g: 0.92941177, b: 0.9411765, a: 1}
+    - _ShadeColor: {r: 0.972549, g: 0.9647059, b: 0.9921568, a: 1}
   m_BuildTextureStacks: []

@@ -87,8 +87,8 @@ Material:
     - _RimFresnelPower: 100
     - _RimLift: 0.1
     - _RimLightingMix: 0
-    - _ShadeShift: -0.91583353
-    - _ShadeToony: 0.7291666
+    - _ShadeShift: -0.8200002
+    - _ShadeToony: 0.9
     - _ShadingGradeRate: 1
     - _SrcBlend: 1
     - _UvAnimRotation: 0
