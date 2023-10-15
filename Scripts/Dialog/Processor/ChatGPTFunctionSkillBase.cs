@@ -21,7 +21,7 @@ namespace ChatdollKit.Dialog.Processor
 
             await apiStreamTask;
 
-            var responseForRequest = await ExecuteFunction(chatGPT.StreamBuffer, token);
+            var responseForRequest = await ExecuteFunction(chatGPT.StreamBuffer, request, state, user, token);
 
             var functionName = GetFunctionSpec().name;
             var functionCallMessage = new ChatGPTMessage("assistant", function_call: new Dictionary<string, object>() {
@@ -58,7 +58,7 @@ namespace ChatdollKit.Dialog.Processor
         }
 
 #pragma warning disable CS1998
-        protected virtual async UniTask<FunctionResponse> ExecuteFunction(string argumentsJsonString, CancellationToken token)
+        protected virtual async UniTask<FunctionResponse> ExecuteFunction(string argumentsJsonString, Request request, State state, User user, CancellationToken token)
         {
             throw new NotImplementedException("ChatGPTFunctionSkillBase.ExecuteFunction must be implemented");
         }
