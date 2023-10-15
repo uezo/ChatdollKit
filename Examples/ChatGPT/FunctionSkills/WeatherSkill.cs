@@ -3,6 +3,7 @@ using System.Threading;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
+using ChatdollKit.Dialog;
 using ChatdollKit.Dialog.Processor;
 
 namespace ChatdollKit.Examples.ChatGPT
@@ -20,7 +21,7 @@ namespace ChatdollKit.Examples.ChatGPT
             return func;
         }
 
-        protected override async UniTask<FunctionResponse> ExecuteFunction(string argumentsJsonString, CancellationToken token)
+        protected override async UniTask<FunctionResponse> ExecuteFunction(string argumentsJsonString, Request request, State state, User user, CancellationToken token)
         {
             // Parse arguments
             var arguments = JsonConvert.DeserializeObject<Dictionary<string, string>>(argumentsJsonString);
