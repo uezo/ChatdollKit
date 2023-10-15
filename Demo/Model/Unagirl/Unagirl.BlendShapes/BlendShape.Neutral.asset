@@ -12,12 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 37562b39ff933b245ac2f35d87edbcd6, type: 3}
   m_Name: BlendShape.Neutral
   m_EditorClassIdentifier: 
-  m_prefab: {fileID: 0}
+  m_prefab: {fileID: 9146934488382850401, guid: 2a59a7556b89b4df8bfdb1457b4650aa,
+    type: 3}
   BlendShapeName: Neutral
   Preset: 1
   Values:
   - RelativePath: Face
     Index: 0
-    Weight: 100
+    Weight: 63.1
   MaterialValues: []
   IsBinary: 0
