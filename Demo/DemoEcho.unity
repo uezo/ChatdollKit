@@ -222,6 +222,46 @@ PrefabInstance:
       propertyPath: m_AABB.m_Extent.z
       value: 0.21873382
       objectReference: {fileID: 0}
+    - target: {fileID: 1234128262992886893, guid: 2a59a7556b89b4df8bfdb1457b4650aa,
+        type: 3}
+      propertyPath: m_DirtyAABB
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1234128262992886893, guid: 2a59a7556b89b4df8bfdb1457b4650aa,
+        type: 3}
+      propertyPath: m_AABB.m_Center.x
+      value: 0.000000014901161
+      objectReference: {fileID: 0}
+    - target: {fileID: 1234128262992886893, guid: 2a59a7556b89b4df8bfdb1457b4650aa,
+        type: 3}
+      propertyPath: m_AABB.m_Center.y
+      value: 1.2567378
+      objectReference: {fileID: 0}
+    - target: {fileID: 1234128262992886893, guid: 2a59a7556b89b4df8bfdb1457b4650aa,
+        type: 3}
+      propertyPath: m_AABB.m_Center.z
+      value: 0.019584112
+      objectReference: {fileID: 0}
+    - target: {fileID: 1234128262992886893, guid: 2a59a7556b89b4df8bfdb1457b4650aa,
+        type: 3}
+      propertyPath: m_AABB.m_Extent.x
+      value: 0.09339784
+      objectReference: {fileID: 0}
+    - target: {fileID: 1234128262992886893, guid: 2a59a7556b89b4df8bfdb1457b4650aa,
+        type: 3}
+      propertyPath: m_AABB.m_Extent.y
+      value: 0.105041504
+      objectReference: {fileID: 0}
+    - target: {fileID: 1234128262992886893, guid: 2a59a7556b89b4df8bfdb1457b4650aa,
+        type: 3}
+      propertyPath: m_AABB.m_Extent.z
+      value: 0.06426627
+      objectReference: {fileID: 0}
+    - target: {fileID: 1234128262992886893, guid: 2a59a7556b89b4df8bfdb1457b4650aa,
+        type: 3}
+      propertyPath: m_BlendShapeWeights.Array.size
+      value: 57
+      objectReference: {fileID: 0}
     - target: {fileID: 3937947176088663454, guid: 2a59a7556b89b4df8bfdb1457b4650aa,
         type: 3}
       propertyPath: m_RootOrder
@@ -317,6 +357,11 @@ PrefabInstance:
       propertyPath: m_BlendShapeWeights.Array.size
       value: 57
       objectReference: {fileID: 0}
+    - target: {fileID: 6615837998379529211, guid: 2a59a7556b89b4df8bfdb1457b4650aa,
+        type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 7dacdb2edbced49529c410c0ed2733f3, type: 2}
     - target: {fileID: 6637680166259681608, guid: 2a59a7556b89b4df8bfdb1457b4650aa,
         type: 3}
       propertyPath: m_Controller
@@ -370,6 +415,12 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 1252396165}
   m_PrefabAsset: {fileID: 0}
+--- !u!137 &1252396167 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 1234128262992886893, guid: 2a59a7556b89b4df8bfdb1457b4650aa,
+    type: 3}
+  m_PrefabInstance: {fileID: 1252396165}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1612622430
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -377,6 +428,16 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1337861223029298097, guid: 9923f5ee8d02c4f658216c52051a0d17,
+        type: 3}
+      propertyPath: onLipSyncUpdate.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: uLipSync.uLipSyncBlendShape, uLipSync.Runtime
+      objectReference: {fileID: 0}
+    - target: {fileID: 1337861223029298097, guid: 9923f5ee8d02c4f658216c52051a0d17,
+        type: 3}
+      propertyPath: onLipSyncUpdate.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: 
+      objectReference: {fileID: 0}
     - target: {fileID: 2216505512444179250, guid: 9923f5ee8d02c4f658216c52051a0d17,
         type: 3}
       propertyPath: m_AnchorMax.y
@@ -386,7 +447,7 @@ PrefabInstance:
         type: 3}
       propertyPath: skinnedMeshRenderer
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 1252396167}
     - target: {fileID: 7494064416744276931, guid: 9923f5ee8d02c4f658216c52051a0d17,
         type: 3}
       propertyPath: m_Name
@@ -471,7 +532,7 @@ PrefabInstance:
         type: 3}
       propertyPath: SkinnedMeshRenderer
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 1252396167}
     - target: {fileID: 7912615329650566023, guid: 9923f5ee8d02c4f658216c52051a0d17,
         type: 3}
       propertyPath: m_AnchorMax.y
