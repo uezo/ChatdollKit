@@ -162,7 +162,17 @@ namespace ChatdollKit.Dialog.Processor
                     if (!string.IsNullOrEmpty(d) && d.Trim() != "[DONE]")
                     {
                         // Parse JSON and add content data to resp
-                        var j = JsonConvert.DeserializeObject<ChatGPTStreamResponse>(d);
+                        ChatGPTStreamResponse j = null;
+                        try
+                        {
+                            j = JsonConvert.DeserializeObject<ChatGPTStreamResponse>(d);
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.LogError($"Deserialize error: {d}");
+                            throw ex;
+                        }
+
                         var delta = j.choices[0].delta;
                         if (!isDeltaSet)
                         {

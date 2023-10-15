@@ -18,7 +18,7 @@ namespace ChatdollKit.Model
                 www.timeout = Timeout;
                 await www.SendWebRequest().ToUniTask();
 
-                if (www.isNetworkError || www.isHttpError)
+                if (www.result != UnityWebRequest.Result.Success)
                 {
                     Debug.LogError($"Error occured while downloading voice: {www.error}");
                 }
