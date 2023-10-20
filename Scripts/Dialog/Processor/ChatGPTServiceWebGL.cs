@@ -9,7 +9,7 @@ namespace ChatdollKit.Dialog.Processor
     public class ChatGPTServiceWebGL : ChatGPTService
     {
         [DllImport("__Internal")]
-        private static extern void ChatCompletionJS(string targetObjectName, string apiKey, string chatCompletionRequest);
+        private static extern void ChatCompletionJS(string targetObjectName, string url, string apiKey, string chatCompletionRequest);
 
         public int TimeoutMilliseconds = 60000;
 
@@ -37,7 +37,7 @@ namespace ChatdollKit.Dialog.Processor
             StreamBuffer = string.Empty;
             responseType = ResponseType.None;
             firstDelta = null;
-            ChatCompletionJS(gameObject.name, ApiKey, JsonConvert.SerializeObject(data));
+            ChatCompletionJS(gameObject.name, ChatCompletionUrl, ApiKey, JsonConvert.SerializeObject(data));
 
             var startAt = System.DateTime.UtcNow.Ticks;
             while (!IsResponseDone)
