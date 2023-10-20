@@ -1,14 +1,16 @@
 mergeInto(LibraryManager.library, {
-    ChatCompletionJS: function(targetObjectNamePtr, apiKeyPtr, chatCompletionRequestPtr) {
+    ChatCompletionJS: function(targetObjectNamePtr, urlPtr, apiKeyPtr, chatCompletionRequestPtr) {
         let targetObjectName = UTF8ToString(targetObjectNamePtr);
+        let url = UTF8ToString(urlPtr);
         let apiKey = UTF8ToString(apiKeyPtr);
         let chatCompletionRequest = UTF8ToString(chatCompletionRequestPtr);
         let decoder = new TextDecoder("utf-8");
 
-        fetch("https://api.openai.com/v1/chat/completions", {
+        fetch(url, {
             headers: {
                 "Content-Type": "application/json",
-                Authorization: `Bearer ${apiKey}`
+                "Authorization": `Bearer ${apiKey}`,
+                "api-key": `${apiKey}`
             },
             method: "POST",
             body: chatCompletionRequest
