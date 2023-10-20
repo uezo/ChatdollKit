@@ -17,7 +17,7 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
     - 音声認識・テキスト読み上げ（Text-to-Speech。Azure、Google、Watson、VOICEROID、VOICEVOX等）
     - 対話の文脈・ステート管理
     - 発話意図の抽出と対話トピックのルーティング
-    - ChatGPT対応とその感情シミュレーションサンプル
+    - ChatGPT / Azure OpenAI Service対応（表情の自律制御も可能）
 
 - 入出力
     - ウェイクワードによる起動
@@ -125,6 +125,23 @@ UnityのPlayボタンを押します。3Dモデルがまばたきをしながら
 - 話しかけた言葉と同じ内容を応答
 
 <img src="Documents/Images/run.png" width="640">
+
+
+# 🌊 Use Azure OpenAI Service
+
+Azure OpenAI Serviceを利用するには、ChatGPTServiceコンポーネントのインスペクター上で以下の通り設定してください。
+
+1. 設定情報を含むエンドポイントURLを`Chat Completion Url`に設定
+```
+format: https://{your-resource-name}.openai.azure.com/openai/deployments/{deployment-id}/chat/completions?api-version={api-version}
+```
+
+2. API Keyを`Api Key`に設定
+
+3. `Is Azure`にチェックを入れる
+
+NOTE: インスペクターで設定した`Model`は無視され、URLに含まれているモデルが使用されます。
+
 
 
 # 👷‍♀️ カスタムアプリケーションの作り方

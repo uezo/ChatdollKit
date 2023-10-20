@@ -18,7 +18,7 @@
     - Speech-to-Text and Text-to-Speech (Azure, Google, Watson etc)
     - Dialog state management
     - Intent extraction and topic routing
-    - ChatGPT with emotion engine
+    - ChatGPT / Azure OpenAI Service (with autonomous face expression)
 
 - I/O
     - Wakeword
@@ -127,6 +127,22 @@ Press Play button of Unity editor. You can see the model starts with idling anim
 - Your model will reply "Hello world"
 
 <img src="Documents/Images/run.png" width="640">
+
+
+# 🌊 Use Azure OpenAI Service
+
+To use Azure OpenAI Service set following info on inspector of ChatGPTService component:
+
+1. Endpoint url with configurations to `Chat Completion Url`
+```
+format: https://{your-resource-name}.openai.azure.com/openai/deployments/{deployment-id}/chat/completions?api-version={api-version}
+```
+
+2. API Key to `Api Key`
+
+3. Set true to `Is Azure`
+
+NOTE: `Model` on inspector is ignored. Engine in url is used.
 
 
 # 👷‍♀️ Build your own app
