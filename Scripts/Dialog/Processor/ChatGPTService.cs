@@ -15,6 +15,8 @@ namespace ChatdollKit.Dialog.Processor
         [Header("API configuration")]
         public string ApiKey;
         public string Model = "gpt-3.5-turbo-0613";
+        public string ChatCompletionUrl;
+        public bool IsAzure;
         public int MaxTokens = 0;
         public float Temperature = 0.5f;
 
@@ -57,8 +59,18 @@ namespace ChatdollKit.Dialog.Processor
             }
 
             // Prepare API request
-            using var streamRequest = new UnityWebRequest("https://api.openai.com/v1/chat/completions", "POST");
-            streamRequest.SetRequestHeader("Authorization", "Bearer " + ApiKey);
+            using var streamRequest = new UnityWebRequest(
+                string.IsNullOrEmpty(ChatCompletionUrl) ? "https://api.openai.com/v1/chat/completions" : ChatCompletionUrl,
+                "POST"
+            );
+            if (IsAzure)
+            {
+                streamRequest.SetRequestHeader("api-key", ApiKey);
+            }
+            else
+            {
+                streamRequest.SetRequestHeader("Authorization", "Bearer " + ApiKey);
+            }
             streamRequest.SetRequestHeader("Content-Type", "application/json");
             var bodyRaw = System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data));
             streamRequest.uploadHandler = new UploadHandlerRaw(bodyRaw);
@@ -172,6 +184,9 @@ namespace ChatdollKit.Dialog.Processor
                             Debug.LogError($"Deserialize error: {d}");
                             throw ex;
                         }
+
+                        // Azure OpenAI returns empty choices first response. (returns prompt_filter_results)
+                        if (j.choices.Count == 0) continue;
 
                         var delta = j.choices[0].delta;
                         if (!isDeltaSet)
