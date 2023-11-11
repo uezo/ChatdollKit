@@ -14,7 +14,7 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
     - まばたきと口パク
 
 - 対話制御
-    - 音声認識・テキスト読み上げ（Text-to-Speech。Azure、Google、Watson、VOICEROID、VOICEVOX等）
+    - 音声認識・テキスト読み上げ（OpenAI、Azure、Google、Watson、VOICEROID、VOICEVOX等）
     - 対話の文脈・ステート管理
     - 発話意図の抽出と対話トピックのルーティング
     - ChatGPT / Azure OpenAI Service対応（表情の自律制御も可能）
@@ -92,7 +92,7 @@ ModelControllerのコンテキストメニューから `Setup Animator` を選�
 
 ## 🍣 ChatdollKit
 
-`ChatdollKit`のインスペクター上で音声認識・読み上げサービス（Azure/Google/Watson）を選択し、APIキーなど必要な情報を入力してください。
+`ChatdollKit`のインスペクター上で音声認識・読み上げサービス（OpenAI/Azure/Google/Watson）を選択し、APIキーなど必要な情報を入力してください。
 
 <img src="Documents/Images/chatdollkit.png" width="640">
 
