@@ -673,7 +673,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ApiKey: 
-  Model: gpt-3.5-turbo-0613
+  Model: gpt-3.5-turbo-1106
+  ChatCompletionUrl: 
+  IsAzure: 0
   MaxTokens: 0
   Temperature: 0.5
   SystemMessageContent: '* You are my sister. We are very close and we speak in a
@@ -691,6 +693,89 @@ MonoBehaviour:
     [face:Joy]Hey,
     you can see the ocean! [face:Fun]Let''s go swimming.'
   HistoryTurns: 10
+  DebugMode: 0
+--- !u!114 &2893757555470248022
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2893757555470248016}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1436aab79be70429b9891c1481f6841a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  IsEnabled: 0
+  AutoStart: 1
+  PrintResult: 0
+  VoiceDetectionThreshold: 0.1
+  VoiceDetectionRaisedThreshold: 0.5
+  VoiceDetectionMinimumLength: 0.2
+  SilenceDurationToEndRecording: 0.3
+  VoiceRecognitionMaximumLength: 3
+  WakeWords: []
+  CancelWords: []
+  IgnoreWords:
+  - "\u3002"
+  - "\u3001"
+  - "\uFF1F"
+  - "\uFF01"
+  ApiKey: 
+  Model: whisper-1
+  Language: 
+  Prompt: 
+  Temperature: 0
+--- !u!114 &2893757555470248023
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2893757555470248016}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 00c0e9781e80d44ddbc90fa3ec6fb838, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  IsEnabled: 0
+  CancelWords: []
+  IgnoreWords:
+  - "\u3002"
+  - "\u3001"
+  - "\uFF1F"
+  - "\uFF01"
+  PrintResult: 0
+  VoiceDetectionThreshold: 0.1
+  VoiceDetectionMinimumLength: 0.3
+  SilenceDurationToEndRecording: 1
+  ListeningTimeout: 20
+  MessageWindow: {fileID: 0}
+  listeningMessage: '[ Listening ... ]'
+  ApiKey: 
+  Model: whisper-1
+  Language: 
+  Prompt: 
+  Temperature: 0
+--- !u!114 &2893757555470248024
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2893757555470248016}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f9ddc79bad1e48e58ab63dcb3343871, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Timeout: 10
+  isDebug: 0
+  _Name: OpenAI
+  _IsDefault: 1
+  ApiKey: 
+  Voice: nova
+  Speed: 1
 --- !u!1001 &4623211973538491283
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -746,7 +831,7 @@ PrefabInstance:
     - target: {fileID: 7494064416744276939, guid: 9923f5ee8d02c4f658216c52051a0d17,
         type: 3}
       propertyPath: SpeechService
-      value: 0
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 7494064416744276942, guid: 9923f5ee8d02c4f658216c52051a0d17,
         type: 3}
