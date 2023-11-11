@@ -34,6 +34,7 @@ namespace ChatdollKit.Examples.ChatGPT
                 { "weather", "Fine" },
                 { "temperature", 36.7 }
             };
+            await UniTask.Delay(100);
 
             // Return response as serialized JSON
             return new FunctionResponse(JsonConvert.SerializeObject(resp));

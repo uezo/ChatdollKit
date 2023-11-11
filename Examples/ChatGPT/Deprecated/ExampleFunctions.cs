@@ -103,7 +103,9 @@ namespace ChatdollKit.Examples.ChatGPT
             public string celsius;
         }
 
+#pragma warning disable CS1998
         public async UniTask<string> GetBalanceAsync(string jsonString, CancellationToken token)
+#pragma warning restore CS1998
         {
             var funcArgs = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonString);
             var bank_name = funcArgs.GetValueOrDefault("bank_name");

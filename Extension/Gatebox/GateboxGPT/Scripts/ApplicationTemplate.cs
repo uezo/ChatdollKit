@@ -64,7 +64,9 @@ namespace ChatdollKit.Extension.Gatebox
 
             var processingFace = new List<FaceExpression>();
             processingFace.Add(new FaceExpression("Blink", 3.0f));
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
             dialogController.OnRequestAsync = async (request, token) =>
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
             {
                 modelController.StopIdling();
                 modelController.Animate(processingAnimation);
@@ -74,7 +76,9 @@ namespace ChatdollKit.Extension.Gatebox
             // Reset face before showing response
             var neutralFaceRequest = new List<FaceExpression>();
             neutralFaceRequest.Add(new FaceExpression("Neutral"));
+#pragma warning disable CS1998
             dialogController.OnStartShowingResponseAsync = async (response, token) =>
+#pragma warning restore CS1998
             {
                 modelController.SetFace(neutralFaceRequest);
             };
