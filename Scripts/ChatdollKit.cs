@@ -12,7 +12,8 @@ namespace ChatdollKit
         Other,
         Azure,
         Google,
-        Watson
+        Watson,
+        OpenAI
     }
 
     [RequireComponent(typeof(ModelController))]
@@ -37,6 +38,11 @@ namespace ChatdollKit
         [HideInInspector] public string GoogleLanguage = "ja-JP";
         [HideInInspector] public string GoogleGender = "FEMALE";
         [HideInInspector] public string GoogleSpeakerName = "ja-JP-Standard-A";
+
+        // OpenAI
+        [HideInInspector] public string OpenAIApiKey = string.Empty;
+        [HideInInspector] public string OpenAILanguage = string.Empty;
+        [HideInInspector] public string OpenAIVoice = "nova";
 
         // Watson
         [HideInInspector] public string WatsonTTSApiKey = string.Empty;
