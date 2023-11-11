@@ -15,7 +15,7 @@
     - Blink and lipsync
 
 - Dialog
-    - Speech-to-Text and Text-to-Speech (Azure, Google, Watson etc)
+    - Speech-to-Text and Text-to-Speech (OpenAI, Azure, Google, Watson, VOICEVOX, VOICEROID etc)
     - Dialog state management
     - Intent extraction and topic routing
     - ChatGPT / Azure OpenAI Service (with autonomous face expression)
@@ -94,7 +94,7 @@ On the inspector of `DialogController`, set `Wake Word` to start conversation (e
 
 ## 🍣 ChatdollKit
 
-Select the speech service (Azure/Google/Watson) you use and set API key and some properties like Region and BaseUrl on inspector of ChatdollKit.
+Select the speech service (OpenAI/Azure/Google/Watson) you use and set API key and some properties like Region and BaseUrl on inspector of ChatdollKit.
 
 <img src="Documents/Images/chatdollkit.png" width="640">
 

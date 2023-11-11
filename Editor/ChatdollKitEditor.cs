@@ -6,6 +6,7 @@ using ChatdollKit.IO;
 using ChatdollKit.Model;
 using ChatdollKit.Extension.Azure;
 using ChatdollKit.Extension.Google;
+using ChatdollKit.Extension.OpenAI;
 using ChatdollKit.Extension.Watson;
 
 namespace ChatdollKit
@@ -103,6 +104,12 @@ namespace ChatdollKit
                     voiceRequestProvider = app.gameObject.GetComponent<GoogleVoiceRequestProvider>() ?? app.gameObject.AddComponent<GoogleVoiceRequestProvider>();
                     wakeWordListener = app.gameObject.GetComponent<GoogleWakeWordListener>() ?? app.gameObject.AddComponent<GoogleWakeWordListener>();
                 }
+                else if (app.SpeechService == CloudService.OpenAI)
+                {
+                    ttsLoader = app.gameObject.GetComponent<OpenAITTSLoader>() ?? app.gameObject.AddComponent<OpenAITTSLoader>();
+                    voiceRequestProvider = app.gameObject.GetComponent<OpenAIVoiceRequestProvider>() ?? app.gameObject.AddComponent<OpenAIVoiceRequestProvider>();
+                    wakeWordListener = app.gameObject.GetComponent<OpenAIWakeWordListener>() ?? app.gameObject.AddComponent<OpenAIWakeWordListener>();
+                }
                 else if (app.SpeechService == CloudService.Watson)
                 {
                     ttsLoader = app.gameObject.GetComponent<WatsonTTSLoader>() ?? app.gameObject.AddComponent<WatsonTTSLoader>();
@@ -149,6 +156,24 @@ namespace ChatdollKit
                     ttsLoader.Configure(app.GoogleApiKey, app.GoogleLanguage, app.GoogleGender, app.GoogleSpeakerName, true);
                     voiceRequestProvider.Configure(app.GoogleApiKey, app.GoogleLanguage, true);
                     wakeWordListener.Configure(app.GoogleApiKey, app.GoogleLanguage, true);
+
+                    EditorUtility.SetDirty(app);
+                }
+            }
+            else if (app.SpeechService == CloudService.OpenAI)
+            {
+                EditorGUI.BeginChangeCheck();
+                app.OpenAIApiKey = EditorGUILayout.TextField("API Key", app.OpenAIApiKey);
+                app.OpenAILanguage = EditorGUILayout.TextField("Language", app.OpenAILanguage);
+                app.OpenAIVoice = EditorGUILayout.TextField("Voice", app.OpenAIVoice);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    var ttsLoader = app.gameObject.GetComponent<OpenAITTSLoader>() ?? app.gameObject.AddComponent<OpenAITTSLoader>();
+                    var voiceRequestProvider = app.gameObject.GetComponent<OpenAIVoiceRequestProvider>() ?? app.gameObject.AddComponent<OpenAIVoiceRequestProvider>();
+                    var wakeWordListener = app.gameObject.GetComponent<OpenAIWakeWordListener>() ?? app.gameObject.AddComponent<OpenAIWakeWordListener>();
+                    ttsLoader.Configure(app.OpenAIApiKey, app.OpenAIVoice, true);
+                    voiceRequestProvider.Configure(app.OpenAIApiKey, app.OpenAILanguage, true);
+                    wakeWordListener.Configure(app.OpenAIApiKey, app.OpenAILanguage, true);
 
                     EditorUtility.SetDirty(app);
                 }
