@@ -43,6 +43,7 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 - [uLipSync](https://github.com/hecomi/uLipSync)(v2.6.1)
 - For VRM model: [UniVRM](https://github.com/vrm-c/UniVRM/releases/tag/v0.89.0)(v0.89.0) and [VRM Extension](https://github.com/uezo/ChatdollKit/releases)
 - JSON.NET: プロジェクトにない場合は Package Manager > [+] > Add package from git URL... > com.unity.nuget.newtonsoft-json から追加
+- [Azure Speech SDK](https://learn.microsoft.com/ja-jp/azure/ai-services/speech-service/quickstarts/setup-platform?pivots=programming-language-csharp&tabs=macos%2Cubuntu%2Cdotnetcli%2Cunity%2Cjre%2Cmaven%2Cnodejs%2Cmac%2Cpypi#install-the-speech-sdk-for-unity): (Optional) ストリームによるリアルタイム音声認識を行う場合には必要
 
 <img src="Documents/Images/burst.png" width="640">
 
