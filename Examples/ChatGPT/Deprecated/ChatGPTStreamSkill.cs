@@ -78,13 +78,17 @@ namespace ChatdollKit.Examples.ChatGPT
             neutralFaceRequest.Add(new FaceExpression("Neutral"));
 
             var dialogController = gameObject.GetComponent<DialogController>();
+#pragma warning disable CS1998
             dialogController.OnRequestAsync = async (request, token) =>
+#pragma warning restore CS1998
             {
                 modelController.StopIdling();
                 modelController.Animate(processingAnimation);
                 modelController.SetFace(processingFace);
             };
+#pragma warning disable CS1998
             dialogController.OnStartShowingResponseAsync = async (response, token) =>
+#pragma warning restore CS1998
             {
                 modelController.SetFace(neutralFaceRequest);
             };

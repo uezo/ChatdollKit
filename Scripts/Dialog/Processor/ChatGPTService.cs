@@ -14,7 +14,7 @@ namespace ChatdollKit.Dialog.Processor
     {
         [Header("API configuration")]
         public string ApiKey;
-        public string Model = "gpt-3.5-turbo-0613";
+        public string Model = "gpt-3.5-turbo-1106";
         public string ChatCompletionUrl;
         public bool IsAzure;
         public int MaxTokens = 0;
@@ -24,6 +24,9 @@ namespace ChatdollKit.Dialog.Processor
         [TextArea(1, 6)]
         public string SystemMessageContent;
         public int HistoryTurns = 10;
+
+        [Header("Debug")]
+        public bool DebugMode = false;
 
         protected ChatdollHttp client = new ChatdollHttp(timeout: 20000);
 
@@ -72,6 +75,12 @@ namespace ChatdollKit.Dialog.Processor
                 streamRequest.SetRequestHeader("Authorization", "Bearer " + ApiKey);
             }
             streamRequest.SetRequestHeader("Content-Type", "application/json");
+
+            if (DebugMode)
+            {
+                Debug.Log($"Request to ChatGPT: {JsonConvert.SerializeObject(data)}");
+            }
+
             var bodyRaw = System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data));
             streamRequest.uploadHandler = new UploadHandlerRaw(bodyRaw);
             streamRequest.downloadHandler = new ChatGPTStreamDownloadHandler();
@@ -91,8 +100,14 @@ namespace ChatdollKit.Dialog.Processor
             StreamBuffer = string.Empty;
             responseType = ResponseType.None;
             firstDelta = null;
+
             await streamRequest.SendWebRequest().ToUniTask();
             IsResponseDone = true;
+
+            if (DebugMode)
+            {
+                Debug.Log($"Response from ChatGPT: {JsonConvert.SerializeObject(StreamBuffer)}");
+            }
         }
 
         public async UniTask<string> WaitForFunctionName (CancellationToken token)
@@ -104,10 +119,18 @@ namespace ChatdollKit.Dialog.Processor
 
             if (responseType == ResponseType.FunctionCalling)
             {
+                if (DebugMode)
+                {
+                    Debug.Log($"Function Calling response from ChatGPT: {firstDelta.function_call.name}");
+                }
                 return firstDelta.function_call.name;
             }
             else
             {
+                if (DebugMode)
+                {
+                    Debug.Log($"Content response from ChatGPT");
+                }
                 return string.Empty;
             }
         }
@@ -179,14 +202,22 @@ namespace ChatdollKit.Dialog.Processor
                         {
                             j = JsonConvert.DeserializeObject<ChatGPTStreamResponse>(d);
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
                             Debug.LogError($"Deserialize error: {d}");
-                            throw ex;
+                            continue;
                         }
 
                         // Azure OpenAI returns empty choices first response. (returns prompt_filter_results)
-                        if (j.choices.Count == 0) continue;
+                        try
+                        {
+                            if (j.choices.Count == 0) continue;
+                        }
+                        catch (Exception)
+                        {
+                            Debug.LogError($"Empty choices error: {JsonConvert.SerializeObject(j)}");
+                            continue;
+                        }
 
                         var delta = j.choices[0].delta;
                         if (!isDeltaSet)

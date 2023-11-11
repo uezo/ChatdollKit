@@ -91,7 +91,7 @@ namespace ChatdollKit.Extension.Watson
                 // Send request
                 await www.SendWebRequest().ToUniTask();
 
-                if (www.isNetworkError || www.isHttpError)
+                if (www.result == UnityWebRequest.Result.ConnectionError || www.result == UnityWebRequest.Result.ProtocolError)
                 {
                     Debug.LogError($"Error occured while processing text-to-speech voice: {www.error}");
                 }

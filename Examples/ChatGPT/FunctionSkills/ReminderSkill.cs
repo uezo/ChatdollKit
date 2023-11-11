@@ -35,6 +35,7 @@ namespace ChatdollKit.Examples.ChatGPT
                 { "title", arguments["title"] },
                 { "temperature", arguments["remind_at"] }
             };
+            await UniTask.Delay(100);
 
             // Return response as serialized JSON
             return new FunctionResponse(JsonConvert.SerializeObject(resp));

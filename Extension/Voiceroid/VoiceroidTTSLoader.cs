@@ -101,7 +101,7 @@ namespace ChatdollKit.Extension
 
                 await www.SendWebRequest().ToUniTask();
 
-                if (www.isNetworkError || www.isHttpError)
+                if (www.result == UnityWebRequest.Result.ConnectionError || www.result == UnityWebRequest.Result.ProtocolError)
                 {
                     Debug.LogError($"Error occured while processing voiceroid text-to-speech: {www.error}");
                 }

@@ -102,7 +102,7 @@ namespace ChatdollKit.Extension.Voicevox
                 // Send request
                 await www.SendWebRequest();
 
-                if (www.isNetworkError || www.isHttpError)
+                if (www.result == UnityWebRequest.Result.ConnectionError || www.result == UnityWebRequest.Result.ProtocolError)
                 {
                     Debug.LogError($"Error occured while processing voicevox text-to-speech: {www.error}");
                 }

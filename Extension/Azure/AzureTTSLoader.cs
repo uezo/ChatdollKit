@@ -97,7 +97,7 @@ namespace ChatdollKit.Extension.Azure
                 // Send request
                 await www.SendWebRequest();
 
-                if (www.isNetworkError || www.isHttpError)
+                if (www.result == UnityWebRequest.Result.ConnectionError || www.result == UnityWebRequest.Result.ProtocolError)
                 {
                     Debug.LogError($"Error occured while processing text-to-speech voice: {www.error}");
                 }
