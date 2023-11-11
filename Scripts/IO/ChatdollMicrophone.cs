@@ -23,7 +23,7 @@ namespace ChatdollKit.IO
         public MicrophoneCapturedData CapturedData { get; private set; }
 
         // Status and timestamp
-        public bool IsListening { get; private set; }
+        public bool IsListening;
         public bool IsEnabled = true;
 
         // Microphone device
@@ -38,6 +38,7 @@ namespace ChatdollKit.IO
 
         // Debug
         public bool DebugMicrophone = false;
+        public bool DebugSamplingData = false;
 
         private void Awake()
         {
@@ -68,6 +69,12 @@ namespace ChatdollKit.IO
         private void Update()
         {
             CapturedData = new MicrophoneCapturedData(microphoneInput.channels, microphoneInput.frequency);
+
+            if (DebugSamplingData)
+            {
+                microphoneInput.GetData(samplingData, 0);
+                Debug.Log("Samples from device: " + string.Join(",", samplingData));
+            }
 
             if (!IsMicrophoneEnabled)
             {
@@ -112,6 +119,11 @@ namespace ChatdollKit.IO
 
                 // Get sampling data from microphone
                 microphoneInput.GetData(samplingData, 0);
+
+                if (DebugSamplingData)
+                {
+                    Debug.Log("Samples listened: " + string.Join(",", samplingData));
+                }
 
                 // Add captured data
                 float[] capturedData;
