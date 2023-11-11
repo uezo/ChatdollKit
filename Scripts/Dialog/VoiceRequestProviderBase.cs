@@ -29,7 +29,7 @@ namespace ChatdollKit.Dialog
         [Header("UI")]
         public MessageWindowBase MessageWindow;
         [SerializeField]
-        private string listeningMessage = "[ Listening ... ]";
+        protected string listeningMessage = "[ Listening ... ]";
         public Action OnListeningStart;
         public Action OnListeningStop;
         public Action OnRecordingStart = () => { Debug.Log("Recording voice request started"); };
@@ -46,12 +46,12 @@ namespace ChatdollKit.Dialog
             = async (r, t) => { Debug.LogWarning("VoiceRequestProvider.OnErrorAsync is not implemented"); };
 #pragma warning restore CS1998
 
-        // Private and protected members for recording voice and recognize task
-        private string recognitionId = string.Empty;
+        // Protected members for recording voice and recognize task
+        protected string recognitionId = string.Empty;
         protected ChatdollHttp client = new ChatdollHttp();
 
 #pragma warning disable CS1998
-        private async UniTask OnStartListeningDefaultAsync(Request request, CancellationToken token)
+        protected virtual async UniTask OnStartListeningDefaultAsync(Request request, CancellationToken token)
         {
             if (MessageWindow != null)
             {
@@ -63,7 +63,7 @@ namespace ChatdollKit.Dialog
             }
         }
 
-        private async UniTask OnFinishListeningDefaultAsync(Request request, CancellationToken token)
+        protected virtual async UniTask OnFinishListeningDefaultAsync(Request request, CancellationToken token)
         {
             if (MessageWindow != null)
             {
@@ -77,7 +77,7 @@ namespace ChatdollKit.Dialog
 #pragma warning restore CS1998
 
         // Create request using voice recognition
-        public async UniTask<Request> GetRequestAsync(CancellationToken token)
+        public virtual async UniTask<Request> GetRequestAsync(CancellationToken token)
         {
             var request = new Request(RequestType);
 

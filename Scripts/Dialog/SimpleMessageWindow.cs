@@ -28,14 +28,82 @@ namespace ChatdollKit.Dialog
 
         public override void Hide()
         {
-            SetActive(false);
-            messageText.text = string.Empty;
+            try
+            {
+                SetActive(false);
+                messageText.text = string.Empty;
+            }
+            catch (MissingReferenceException)
+            {
+                // Do nothing
+            }
         }
 
         public override async UniTask ShowMessageAsync(string message, CancellationToken token)
         {
             Show();
             await SetMessageAsync(message, token);
+        }
+
+        public async UniTask SetMessageStreamAsync(Func<StreamMessageRequest> messageRequestGetter, CancellationToken token)
+        {
+            var messageId = Guid.NewGuid().ToString();
+            CurrentMessageId = messageId;
+
+            try
+            {
+                var messageStarted = false;
+                while (!token.IsCancellationRequested)
+                {
+                    var messageRequest = messageRequestGetter();
+
+                    if (messageRequest.IsEnd)
+                    {
+                        messageText.text = messageRequest.Text;
+                        break;
+                    }
+
+                    await UniTask.Delay((int)(MessageSpeed * 1000), cancellationToken: token);
+
+                    if (string.IsNullOrEmpty(messageRequest.Text))
+                    {
+                        continue;
+                    }
+
+                    if (!messageStarted)
+                    {
+                        messageText.text = string.Empty;    // Clear [Listening...]
+                        messageStarted = true;
+                        await UniTask.Delay((int)(PreGap * 1000), cancellationToken: token);
+                    }
+
+                    if (messageRequest.Text.Length > messageText.text.Length)
+                    {
+                        messageText.text += messageRequest.Text.Substring(messageText.text.Length, 1);
+                    }
+                }
+
+                if (!token.IsCancellationRequested)
+                {
+                    await UniTask.Delay((int)(PostGap * 1000), cancellationToken: token);
+                    messageText.text = string.Empty;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"Error occured in showing message: {ex.Message}\n{ex.StackTrace}");
+            }
+            finally
+            {
+                // Do not hide when another message is begun to be shown
+                if (CurrentMessageId == messageId)
+                {
+                    if (autoHide)
+                    {
+                        Hide();
+                    }
+                }
+            }
         }
 
         public override async UniTask SetMessageAsync(string message, CancellationToken token)
@@ -75,7 +143,6 @@ namespace ChatdollKit.Dialog
                     if (autoHide)
                     {
                         Hide();
-                        messageText.text = string.Empty;
                     }
                 }
             }
@@ -85,5 +152,11 @@ namespace ChatdollKit.Dialog
         {
             gameObject.SetActive(value);
         }
+    }
+
+    public class StreamMessageRequest
+    {
+        public string Text { get; set; }
+        public bool IsEnd { get; set; }
     }
 }
