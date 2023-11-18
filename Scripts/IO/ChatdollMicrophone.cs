@@ -39,6 +39,7 @@ namespace ChatdollKit.IO
         // Debug
         public bool DebugMicrophone = false;
         public bool DebugSamplingData = false;
+        public bool PrintDevices = false;
 
         private void Awake()
         {
@@ -196,7 +197,33 @@ namespace ChatdollKit.IO
                 Microphone.End(listeningDeviceName);
             }
             listeningDeviceName = DeviceName == string.Empty ? null : DeviceName;
+
+            if (PrintDevices)
+            {
+                // Show available devices
+                var availableDevicesString = "Available microphone devices";
+                for (var i = 0; i < Microphone.devices.Length; i++)
+                {
+                    availableDevicesString += $"{i}: {Microphone.devices[i]}{(Microphone.devices[i] == listeningDeviceName ? " *" : "")}\n";
+                }
+                Debug.Log(availableDevicesString);
+            }
+
             microphoneInput = Microphone.Start(listeningDeviceName, true, 1, SamplingFrequency);
+
+            if (PrintDevices)
+            {
+                // Show device in use
+                for (var i = 0; i < Microphone.devices.Length; i++)
+                {
+                    if (Microphone.IsRecording(Microphone.devices[i]))
+                    {
+                        Debug.Log($"Rec {i}: {Microphone.devices[i]}");
+                        break;
+                    }
+                }
+            }
+
             // Initialize data and status
             samplingData = new float[microphoneInput.samples * microphoneInput.channels];
             previousPosition = 0;
