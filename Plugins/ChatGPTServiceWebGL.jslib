@@ -6,6 +6,10 @@ mergeInto(LibraryManager.library, {
         let chatCompletionRequest = UTF8ToString(chatCompletionRequestPtr);
         let decoder = new TextDecoder("utf-8");
 
+        if (document.chatGPTAbortController == null) {
+            document.chatGPTAbortController = new AbortController();
+        }
+
         fetch(url, {
             headers: {
                 "Content-Type": "application/json",
@@ -13,7 +17,8 @@ mergeInto(LibraryManager.library, {
                 "api-key": `${apiKey}`
             },
             method: "POST",
-            body: chatCompletionRequest
+            body: chatCompletionRequest,
+            signal: document.chatGPTAbortController.signal
         })
         .then((response) => response.body.getReader())
         .then((reader) => {
@@ -26,6 +31,14 @@ mergeInto(LibraryManager.library, {
                 reader.read().then(readChunk);
             }
             reader.read().then(readChunk);
+        })
+        .catch((err) => {
+            console.error(`Error at fetch: ${err.message}`);
         });
+    },
+
+    AbortChatCompletionJS: function() {
+        console.log("Abort ChatGPT at AbortChatCompletionJS");
+        document.chatGPTAbortController.abort();
     }
 });

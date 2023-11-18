@@ -6,7 +6,6 @@ using UnityEngine;
 using UnityEngine.Networking;
 using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
-using ChatdollKit.Network;
 
 namespace ChatdollKit.Dialog.Processor
 {
@@ -25,24 +24,28 @@ namespace ChatdollKit.Dialog.Processor
         public string SystemMessageContent;
         public int HistoryTurns = 10;
 
+        [Header("Network configuration")]
+        [SerializeField]
+        protected int responseTimeoutSec = 30;
+        [SerializeField]
+        protected float noDataResponseTimeoutSec = 5.0f;
+
         [Header("Debug")]
         public bool DebugMode = false;
 
-        protected ChatdollHttp client = new ChatdollHttp(timeout: 20000);
-
+        // Session data and status
         public bool IsResponseDone { get; protected set; } = false;
         public string StreamBuffer { get; protected set; }
-
         public enum ResponseType
         {
-            None, Content, FunctionCalling
+            None, Content, FunctionCalling, Error
         }
         protected ResponseType responseType = ResponseType.None;
         protected Delta firstDelta;
 
         protected List<ChatGPTFunction> chatGPTFunctions = new List<ChatGPTFunction>();
 
-        public virtual async UniTask ChatCompletionAsync(List<ChatGPTMessage> messages, bool useFunctions = true)
+        public virtual async UniTask ChatCompletionAsync(List<ChatGPTMessage> messages, bool useFunctions = true, int retryCounter = 1, CancellationToken token = default)
         {
             // Make request data
             var data = new Dictionary<string, object>()
@@ -66,6 +69,8 @@ namespace ChatdollKit.Dialog.Processor
                 string.IsNullOrEmpty(ChatCompletionUrl) ? "https://api.openai.com/v1/chat/completions" : ChatCompletionUrl,
                 "POST"
             );
+            streamRequest.timeout = responseTimeoutSec;
+
             if (IsAzure)
             {
                 streamRequest.SetRequestHeader("api-key", ApiKey);
@@ -100,8 +105,55 @@ namespace ChatdollKit.Dialog.Processor
             StreamBuffer = string.Empty;
             responseType = ResponseType.None;
             firstDelta = null;
+            _ = streamRequest.SendWebRequest().ToUniTask();
 
-            await streamRequest.SendWebRequest().ToUniTask();
+            // Preprocessing response
+            var noDataResponseTimeoutsAt = DateTime.Now.AddMilliseconds(noDataResponseTimeoutSec * 1000);
+            while (true)
+            {
+                // Success
+                if (streamRequest.result == UnityWebRequest.Result.Success)
+                {
+                    break;
+                }
+
+                // Timeout with no response data
+                else if (streamRequest.downloadedBytes == 0 && DateTime.Now > noDataResponseTimeoutsAt)
+                {
+                    streamRequest.Abort();
+                    if (retryCounter > 0)
+                    {
+                        Debug.LogWarning($"ChatGPT timeouts with no response data. Retrying ...");
+                        await ChatCompletionAsync(messages, useFunctions, retryCounter - 1);
+                        return;
+                    }
+
+                    Debug.LogError($"ChatGPT timeouts with no response data.");
+                    responseType = ResponseType.Error;
+                    StreamBuffer = "[face:Sorrow]エラーだよ";
+                    break;
+                }
+
+                // Other errors
+                else if (streamRequest.isDone)
+                {
+                    Debug.LogError($"ChatGPT ends with error ({streamRequest.result}): {streamRequest.error}");
+                    responseType = ResponseType.Error;
+                    break;
+                }
+
+                // Cancel
+                else if (token.IsCancellationRequested)
+                {
+                    Debug.Log("Preprocessing response from ChatGPT canceled.");
+                    responseType = ResponseType.Error;
+                    streamRequest.Abort();
+                    break;
+                }
+
+                await UniTask.Delay(10);
+            }
+
             IsResponseDone = true;
 
             if (DebugMode)
@@ -112,7 +164,8 @@ namespace ChatdollKit.Dialog.Processor
 
         public async UniTask<string> WaitForFunctionName (CancellationToken token)
         {
-            while (responseType == ResponseType.None)
+            // Wait for response type is set
+            while (responseType == ResponseType.None && !token.IsCancellationRequested)
             {
                 await UniTask.Delay(10, cancellationToken: token);
             }
@@ -124,6 +177,14 @@ namespace ChatdollKit.Dialog.Processor
                     Debug.Log($"Function Calling response from ChatGPT: {firstDelta.function_call.name}");
                 }
                 return firstDelta.function_call.name;
+            }
+            else if (responseType == ResponseType.Error)
+            {
+                if (DebugMode)
+                {
+                    Debug.Log($"Error response");
+                }
+                return string.Empty;
             }
             else
             {
