@@ -13,6 +13,7 @@ namespace ChatdollKit.Dialog.Processor
     {
         protected ChatGPTService chatGPT;
         protected List<AnimatedVoiceRequest> responseAnimations = new List<AnimatedVoiceRequest>();
+        protected Dictionary<string, Model.Animation> animationsToPerform = new Dictionary<string, Model.Animation>();
         public bool IsParsing { get; protected set; } = false;
 
         protected override void Awake()
@@ -36,6 +37,11 @@ namespace ChatdollKit.Dialog.Processor
                 }
             }
 #endif
+        }
+
+        public void RegisterAnimation(string name, Model.Animation animation)
+        {
+            animationsToPerform.Add(name, animation);
         }
 
 #pragma warning disable CS1998
@@ -91,8 +97,10 @@ namespace ChatdollKit.Dialog.Processor
 
             try
             {
-                var pattern = @"\[face:(.+?)\]";
+                var facePattern = @"\[face:(.+?)\]";
+                var animPattern = @"\[anim:(.+?)\]";
                 var splitIndex = 0;
+                var isFirstAnimatedVoice = true;
 
                 while (!token.IsCancellationRequested)
                 {
@@ -113,27 +121,48 @@ namespace ChatdollKit.Dialog.Processor
                             splitIndex += 1;
                             if (!string.IsNullOrEmpty(text.Trim()))
                             {
-                                var avreq = new AnimatedVoiceRequest();
+                                var avreq = new AnimatedVoiceRequest(startIdlingOnEnd: isFirstAnimatedVoice);
+                                isFirstAnimatedVoice = false;
                                 var textToSay = text;
 
                                 // Parse face tags and remove it from text to say
-                                var matches = Regex.Matches(textToSay, pattern);
-                                textToSay = Regex.Replace(textToSay, pattern, "");
+                                var faceMatches = Regex.Matches(textToSay, facePattern);
+                                textToSay = Regex.Replace(textToSay, facePattern, "");
+
+                                // Parse animation tags and remove it from text to say
+                                var animMatches = Regex.Matches(textToSay, animPattern);
+                                textToSay = Regex.Replace(textToSay, animPattern, "");
 
                                 // Add voice
                                 avreq.AddVoiceTTS(textToSay, postGap: textToSay.EndsWith("。") ? 0 : 0.3f);
 
-                                if (matches.Count > 0)
+                                var logMessage = textToSay;
+
+                                if (faceMatches.Count > 0)
                                 {
                                     // Add face if face tag included
-                                    var face = matches[0].Groups[1].Value;
+                                    var face = faceMatches[0].Groups[1].Value;
                                     avreq.AddFace(face, duration: 7.0f);
-                                    Debug.Log($"Assistant: [{face}] {textToSay}");
+                                    logMessage = $"[face:{face}]" + logMessage;
                                 }
-                                else
+
+                                if (animMatches.Count > 0)
                                 {
-                                    Debug.Log($"Assistant: {textToSay}");
+                                    // Add animation if anim tag included
+                                    var anim = animMatches[0].Groups[1].Value;
+                                    if (animationsToPerform.ContainsKey(anim))
+                                    {
+                                        var a = animationsToPerform[anim];
+                                        avreq.AddAnimation(a.ParameterKey, a.ParameterValue, a.Duration, a.LayeredAnimationName, a.LayeredAnimationLayerName);
+                                        logMessage = $"[anim:{anim}]" + logMessage;
+                                    }
+                                    else
+                                    {
+                                        Debug.LogWarning($"Animation {anim} is not registered.");
+                                    }
                                 }
+
+                                Debug.Log($"Assistant: {logMessage}");
 
                                 // Set AnimatedVoiceRequest to queue
                                 responseAnimations.Add(avreq);
