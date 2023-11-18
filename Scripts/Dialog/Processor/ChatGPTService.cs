@@ -23,6 +23,7 @@ namespace ChatdollKit.Dialog.Processor
         [TextArea(1, 6)]
         public string SystemMessageContent;
         public int HistoryTurns = 10;
+        public string ErrorMessageContent;
 
         [Header("Network configuration")]
         [SerializeField]
@@ -130,7 +131,7 @@ namespace ChatdollKit.Dialog.Processor
 
                     Debug.LogError($"ChatGPT timeouts with no response data.");
                     responseType = ResponseType.Error;
-                    StreamBuffer = "[face:Sorrow]エラーだよ";
+                    StreamBuffer = ErrorMessageContent;
                     break;
                 }
 
