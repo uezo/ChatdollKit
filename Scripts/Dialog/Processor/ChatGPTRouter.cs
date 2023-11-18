@@ -58,7 +58,7 @@ namespace ChatdollKit.Dialog.Processor
             // User (current input)
             messages.Add(new ChatGPTMessage("user", request.Text));
 
-            request.Payloads.Add(chatGPT.ChatCompletionAsync(messages));
+            request.Payloads.Add(chatGPT.ChatCompletionAsync(messages, token: token));
 
             var functionName = await chatGPT.WaitForFunctionName(token);
 

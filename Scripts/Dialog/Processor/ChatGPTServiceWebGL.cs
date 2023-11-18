@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Threading;
 using UnityEngine;
 using Newtonsoft.Json;
 using Cysharp.Threading.Tasks;
@@ -9,11 +11,13 @@ namespace ChatdollKit.Dialog.Processor
     public class ChatGPTServiceWebGL : ChatGPTService
     {
         [DllImport("__Internal")]
-        private static extern void ChatCompletionJS(string targetObjectName, string url, string apiKey, string chatCompletionRequest);
+        protected static extern void ChatCompletionJS(string targetObjectName, string url, string apiKey, string chatCompletionRequest);
+        [DllImport("__Internal")]
+        protected static extern void AbortChatCompletionJS();
 
-        public int TimeoutMilliseconds = 60000;
+        protected bool isChatCompletionJSDone = false;
 
-        public override async UniTask ChatCompletionAsync(List<ChatGPTMessage> messages, bool useFunctions = true)
+        public override async UniTask ChatCompletionAsync(List<ChatGPTMessage> messages, bool useFunctions = true, int retryCounter = 1, CancellationToken token = default)
         {
             // Make request data
             var data = new Dictionary<string, object>()
@@ -37,19 +41,66 @@ namespace ChatdollKit.Dialog.Processor
             StreamBuffer = string.Empty;
             responseType = ResponseType.None;
             firstDelta = null;
-            ChatCompletionJS(gameObject.name, ChatCompletionUrl, ApiKey, JsonConvert.SerializeObject(data));
+            isChatCompletionJSDone = false;
+            ChatCompletionJS(
+                gameObject.name,
+                string.IsNullOrEmpty(ChatCompletionUrl) ? "https://api.openai.com/v1/chat/completions" : ChatCompletionUrl,
+                ApiKey,
+                JsonConvert.SerializeObject(data)
+            );
 
-            var startAt = System.DateTime.UtcNow.Ticks;
-            while (!IsResponseDone)
+            // Preprocessing response
+            var noDataResponseTimeoutsAt = DateTime.Now.AddMilliseconds(noDataResponseTimeoutSec * 1000);
+            while (true)
             {
-                await UniTask.Delay(20);
-                if (System.DateTime.UtcNow.Ticks - startAt > TimeoutMilliseconds * 10000)   // 10000tick / ms
+                // Success
+                if (!string.IsNullOrEmpty(StreamBuffer) && isChatCompletionJSDone)
                 {
-                    // Timeout
-                    Debug.LogWarning($"Response timeout: {(System.DateTime.UtcNow.Ticks - startAt) / 10000}ms");
-                    IsResponseDone = true;
                     break;
                 }
+
+                // Timeout with no response data
+                else if (string.IsNullOrEmpty(StreamBuffer) && DateTime.Now > noDataResponseTimeoutsAt)
+                {
+                    AbortChatCompletionJS();
+                    if (retryCounter > 0)
+                    {
+                        Debug.LogWarning($"ChatGPT timeouts with no response data. Retrying ...");
+                        await ChatCompletionAsync(messages, useFunctions, retryCounter - 1);
+                        return;
+                    }
+
+                    Debug.LogError($"ChatGPT timeouts with no response data.");
+                    responseType = ResponseType.Error;
+                    StreamBuffer = "[face:Sorrow]エラーだよ";
+                    break;
+                }
+
+                // Other errors
+                else if (isChatCompletionJSDone)
+                {
+                    Debug.LogError($"ChatGPT ends with error");
+                    responseType = ResponseType.Error;
+                    break;
+                }
+
+                // Cancel
+                else if (token.IsCancellationRequested)
+                {
+                    Debug.Log("Preprocessing response from ChatGPT canceled.");
+                    responseType = ResponseType.Error;
+                    AbortChatCompletionJS();
+                    break;
+                }
+
+                await UniTask.Delay(10);
+            }
+
+            IsResponseDone = true;
+
+            if (DebugMode)
+            {
+                Debug.Log($"Response from ChatGPT: {JsonConvert.SerializeObject(StreamBuffer)}");
             }
         }
 
@@ -57,20 +108,43 @@ namespace ChatdollKit.Dialog.Processor
         {
             if (string.IsNullOrEmpty(chunkString))
             {
-                Debug.Log("Chunk is null or empty. Set true to IsResponseDone.");
-                IsResponseDone = true;
+                Debug.Log("Chunk is null or empty. Set true to isChatCompletionJSDone.");
+                isChatCompletionJSDone = true;
                 return;
             }
 
             var isDeltaSet = false;
             var temp = string.Empty;
+            var isDone = false;
             foreach (var d in chunkString.Split("data:"))
             {
                 if (!string.IsNullOrEmpty(d))
                 {
                     if (d.Trim() != "[DONE]")
                     {
-                        var j = JsonConvert.DeserializeObject<ChatGPTStreamResponse>(d);
+                        // Parse JSON and add content data to resp
+                        ChatGPTStreamResponse j = null;
+                        try
+                        {
+                            j = JsonConvert.DeserializeObject<ChatGPTStreamResponse>(d);
+                        }
+                        catch (Exception)
+                        {
+                            Debug.LogError($"Deserialize error: {d}");
+                            continue;
+                        }
+
+                        // Azure OpenAI returns empty choices first response. (returns prompt_filter_results)
+                        try
+                        {
+                            if (j.choices.Count == 0) continue;
+                        }
+                        catch (Exception)
+                        {
+                            Debug.LogError($"Empty choices error: {JsonConvert.SerializeObject(j)}");
+                            continue;
+                        }
+
                         var delta = j.choices[0].delta;
                         if (!isDeltaSet)
                         {
@@ -89,14 +163,18 @@ namespace ChatdollKit.Dialog.Processor
                     }
                     else
                     {
-                        Debug.Log("Chunk is data:[DONE]. Set true to IsResponseDone.");
-                        IsResponseDone = true;
-                        return;
+                        Debug.Log("Chunk is data:[DONE]. Set true to isChatCompletionJSDone.");
+                        isDone = true;
+                        break;
                     }
                 }
             }
 
             StreamBuffer += temp;
+
+            if (isDone) {
+                isChatCompletionJSDone = true;
+            }
         }
     }
 }
