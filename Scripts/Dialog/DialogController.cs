@@ -67,6 +67,7 @@ namespace ChatdollKit.Dialog
         // Actions for each status
         public Func<string> GetClientId { get; set; }
         public Func<WakeWord, UniTask> OnWakeAsync { get; set; }
+        public Func<UniTask> OnDialogStartAsync { get; set; }
         public Func<DialogRequest, CancellationToken, UniTask> OnPromptAsync { get; set; }
         public Func<Request, CancellationToken, UniTask> OnRequestAsync { get; set; }
         public Func<Request, CancellationToken, UniTask> OnStartShowingWaitingAnimationAsync
@@ -265,6 +266,7 @@ namespace ChatdollKit.Dialog
         }
 
         // OnWake
+#pragma warning disable CS1998
         private async UniTask OnWakeAsyncDefault(WakeWord wakeword)
         {
             var skipPrompt = false;
@@ -279,14 +281,21 @@ namespace ChatdollKit.Dialog
                 }
             }
 
-            // Invoke chat
-            await StartDialogAsync(
+            // Invoke chat (Do not await to prevent blocking wakeword listener)
+            _ = StartDialogAsync(
                 new DialogRequest(
                     GetClientId == null ? GetClientIdDefault() : GetClientId(),
                     wakeword, skipPrompt
                 )
             );
         }
+
+        private async UniTask OnDialogStartAsyncDefault()
+        {
+            // Reset idling mode before conversation
+            await modelController.ChangeIdlingModeAsync();
+        }
+#pragma warning restore CS1998
 
         // OnPrompt
         private async UniTask OnPromptAsyncDefault(DialogRequest dialogRequest, CancellationToken token)
@@ -355,6 +364,8 @@ namespace ChatdollKit.Dialog
         // Start chatting loop
         public async UniTask StartDialogAsync(DialogRequest dialogRequest = null)
         {
+            await (OnDialogStartAsync == null ? OnDialogStartAsyncDefault() : OnDialogStartAsync());
+
             Status = DialogStatus.Initializing;
 
             if (dialogRequest == null)
