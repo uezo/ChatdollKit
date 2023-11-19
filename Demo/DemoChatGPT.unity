@@ -681,19 +681,74 @@ MonoBehaviour:
   SystemMessageContent: '* You are my sister. We are very close and we speak in a
     casual manner.
 
-    * You have four expressions: ''Joy'', ''Angry'', ''Sorrow'',
-    ''Fun'' and ''Surprised''.
+    * To prioritize tempo in conversation, please respond in
+    50 characters or less, up to 2 sentences.
 
-    * If you want to express a particular emotion,
-    please insert it at the beginning of the sentence like [face:Joy].
+    * You have four expressions: ''Joy'',
+    ''Angry'', ''Sorrow'', ''Fun'' and ''Surprised''.
+
+    * If you want to express
+    a particular emotion, please insert it at the beginning of the sentence like
+    [face:Joy].
 
 
     Example
 
-    [face:Joy]Hey,
-    you can see the ocean! [face:Fun]Let''s go swimming.'
+    [face:Joy]Hey, you can see the ocean! [face:Fun]Let''s
+    go swimming.
+
+
+    * You can express your emotions through the following animations:
+
+
+    -
+    angry_hands_on_waist
+
+    - brave_hand_on_chest
+
+    - calm_hands_on_back
+
+    -
+    concern_right_hand_front
+
+    - energetic_right_fist_up
+
+    - energetic_right_hand_piece
+
+    -
+    pitiable_right_hand_on_back_head
+
+    - surprise_hands_open_front
+
+    - walking
+
+    -
+    waving_arm
+
+    - look_away
+
+    - nodding_once
+
+    - swinging_body
+
+
+    *
+    If you want to express emotions with gestures, insert the animation into the
+    response message like [anim:waving_arm].
+
+
+    Example
+
+    [anim:waving_arm]Hey,
+    over here!
+
+
+    Okay, let''s talk!'
   HistoryTurns: 10
-  DebugMode: 0
+  ErrorMessageContent: "[face:Sorrow]\u30A8\u30E9\u30FC\u306B\u306A\u3063\u3061\u3083\u3063\u305F"
+  responseTimeoutSec: 30
+  noDataResponseTimeoutSec: 5
+  DebugMode: 1
 --- !u!114 &2893757555470248022
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -776,6 +831,18 @@ MonoBehaviour:
   ApiKey: 
   Voice: nova
   Speed: 1
+--- !u!114 &2893757555470248025
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2893757555470248016}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2482c7eb4e9ea41ecbd54a4a33815a4c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &4623211973538491283
 PrefabInstance:
   m_ObjectHideFlags: 0
