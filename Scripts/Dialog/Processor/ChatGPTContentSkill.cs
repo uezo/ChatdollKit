@@ -133,6 +133,9 @@ namespace ChatdollKit.Dialog.Processor
                                 var animMatches = Regex.Matches(textToSay, animPattern);
                                 textToSay = Regex.Replace(textToSay, animPattern, "");
 
+                                // Remove other tags (sometimes invalid format like `[smile]` remains)
+                                textToSay = Regex.Replace(textToSay, @"\[(.+?)\]", "");
+
                                 // Add voice
                                 avreq.AddVoiceTTS(textToSay, postGap: textToSay.EndsWith("。") ? 0 : 0.3f);
 

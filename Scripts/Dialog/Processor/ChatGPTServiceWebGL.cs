@@ -72,7 +72,7 @@ namespace ChatdollKit.Dialog.Processor
 
                     Debug.LogError($"ChatGPT timeouts with no response data.");
                     responseType = ResponseType.Error;
-                    StreamBuffer = "[face:Sorrow]エラーだよ";
+                    StreamBuffer = ErrorMessageContent;
                     break;
                 }
 
