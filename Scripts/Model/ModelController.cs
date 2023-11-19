@@ -41,8 +41,11 @@ namespace ChatdollKit.Model
         private List<Animation> animationQueue = new List<Animation>();
         private float animationStartAt { get; set; }
         private Animation currentAnimation { get; set; }
-        private List<Animation> idleAnimations = new List<Animation>();
-        private List<int> idleWeightedIndexes = new List<int>();
+        private Dictionary<string, List<Animation>> idleAnimations = new Dictionary<string, List<Animation>>();
+        private Dictionary<string, List<int>> idleWeightedIndexes = new Dictionary<string, List<int>>();
+        private Dictionary<string, FaceExpression> idleFaces = new Dictionary<string, FaceExpression>();
+        public string IdlingMode { get; private set; } = "normal";
+        public DateTime IdlingModeStartAt { get; private set; } = DateTime.UtcNow;
         private Func<Animation> GetAnimation;
 
         // Face Expression
@@ -131,16 +134,51 @@ namespace ChatdollKit.Model
         }
 
         // Register idling animation
-        public void AddIdleAnimation(Animation animation, int weight = 1)
+        public void AddIdleAnimation(Animation animation, int weight = 1, string mode = "normal")
         {
-            idleAnimations.Add(animation);
+            if (!idleAnimations.ContainsKey(mode))
+            {
+                idleAnimations.Add(mode, new List<Animation>());
+                idleWeightedIndexes.Add(mode, new List<int>());
+            }
+
+            idleAnimations[mode].Add(animation);
 
             // Set weight
-            var index = idleAnimations.Count - 1;
+            var index = idleAnimations[mode].Count - 1;
             for (var i = 0; i < weight; i++)
             {
-                idleWeightedIndexes.Add(index);
+                idleWeightedIndexes[mode].Add(index);
             }
+        }
+
+        // Register idling face expression for mode
+        public void AddIdleFace(string mode, string name)
+        {
+            idleFaces.Add(mode, new FaceExpression(name, float.MaxValue));
+        }
+
+        // Change idling mode
+        public async UniTask ChangeIdlingModeAsync(string mode = "normal", Func<UniTask> onBeforeChange = null)
+        {
+            IdlingMode = mode;
+
+            if (onBeforeChange != null)
+            {
+                await onBeforeChange();
+            }
+
+            if (idleFaces.ContainsKey(mode))
+            {
+                SetFace(new List<FaceExpression>() { idleFaces[mode] });
+            }
+            else if (mode == "normal")
+            {
+                SetFace(new List<FaceExpression>() { new FaceExpression("Neutral", 0.0f, string.Empty) });
+            }
+            IdlingModeStartAt = DateTime.UtcNow;
+
+            StartIdling(true);
         }
 #endregion
 
@@ -468,8 +506,8 @@ namespace ChatdollKit.Model
                 // - Animation is not running currently (currentAnimation == null)
                 // - Right after StartIdling() called (animationStartAt == 0)
                 // - Idle animation is timeout (Time.realtimeSinceStartup - animationStartAt > currentAnimation.Duration)
-                var i = UnityEngine.Random.Range(0, idleWeightedIndexes.Count);
-                return idleAnimations[idleWeightedIndexes[i]];
+                var i = UnityEngine.Random.Range(0, idleWeightedIndexes[IdlingMode].Count);
+                return idleAnimations[IdlingMode][idleWeightedIndexes[IdlingMode][i]];
             }
             else
             {
