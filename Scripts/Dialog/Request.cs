@@ -17,7 +17,6 @@ namespace ChatdollKit.Dialog
         public List<object> Payloads { get; set; }
         public Intent Intent { get; set; }
         public Dictionary<string, object> Entities { get; set; }
-        public List<WordNode> Words { get; set; }
         public bool IsCanceled { get; set; }
         public string ClientId { get; set; }
         public Dictionary<string, string> Tokens { get; set; } = new Dictionary<string, string>();

@@ -79,7 +79,6 @@ namespace ChatdollKit.Dialog.Processor
                     {
                         request.Intent = intentExtractionResult.Intent;
                         request.Entities = intentExtractionResult.Entities;
-                        request.Words = intentExtractionResult.Words;
                     }
                 }
 
