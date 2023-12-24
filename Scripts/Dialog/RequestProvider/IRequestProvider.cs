@@ -8,4 +8,11 @@ namespace ChatdollKit.Dialog
         RequestType RequestType { get; }
         UniTask<Request> GetRequestAsync(CancellationToken token);
     }
+
+    public interface IVoiceRequestProvider: IRequestProvider
+    {
+        void SetMessageWindow(IMessageWindow messageWindow);
+        void SetCancelWord(string cancelWord);
+        string TextInput { get; set; }
+    }
 }

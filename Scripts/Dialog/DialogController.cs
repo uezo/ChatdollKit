@@ -139,15 +139,15 @@ namespace ChatdollKit.Dialog
             qrCodeRequestProvider.ChatdollCamera = ChatdollCamera;
             RequestProviders.Add(RequestType.QRCode, qrCodeRequestProvider);
 
-            foreach (var rp in GetComponents<VoiceRequestProviderBase>())
+            foreach (var rp in GetComponents<IVoiceRequestProvider>())
             {
-                if (rp.enabled)
+                if (((MonoBehaviour)rp).enabled)
                 {
-                    rp.MessageWindow = UserMessageWindow;
+                    rp.SetMessageWindow(UserMessageWindow);
                     if (!string.IsNullOrEmpty(CancelWord))
                     {
                         // Register cancel word to VoiceRequestProvider
-                        rp.CancelWords.Add(CancelWord);
+                        rp.SetCancelWord(CancelWord);
                     }
                     RequestProviders.Add(RequestType.Voice, rp);
                     break;

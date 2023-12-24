@@ -164,7 +164,7 @@ namespace ChatdollKit
         {
             if (DialogController.RequestProviders[RequestType.Voice] != null)
             {
-                ((VoiceRequestProviderBase)DialogController.RequestProviders[RequestType.Voice]).TextInput = text;
+                ((IVoiceRequestProvider)DialogController.RequestProviders[RequestType.Voice]).TextInput = text;
             }
         }
     }
