@@ -58,7 +58,7 @@ namespace ChatdollKit.Dialog
         public bool IsChatting { get; private set; }
         public bool IsError { get; private set; }
 
-        public WakeWordListenerBase WakeWordListener { get; set; }
+        public IWakeWordListener WakeWordListener { get; set; }
         public Dictionary<RequestType, IRequestProvider> RequestProviders { get; private set; } = new Dictionary<RequestType, IRequestProvider>();
         private IRequestProcessor requestProcessor { get; set; }
         private ModelController modelController { get; set; }
@@ -100,7 +100,7 @@ namespace ChatdollKit.Dialog
         private void Awake()
         {
             // Get components
-            var wakeWordListeners = GetComponents<WakeWordListenerBase>();
+            var wakeWordListeners = GetComponents<IWakeWordListener>();
             modelController = GetComponent<ModelController>();
             var attachedRequestProviders = GetComponents<IRequestProvider>();
             var userStore = GetComponent<IUserStore>();
@@ -201,7 +201,7 @@ namespace ChatdollKit.Dialog
             // Wakeword Listener
             foreach (var wwl in wakeWordListeners)
             {
-                if (wwl.enabled)
+                if (((MonoBehaviour)wwl).enabled)
                 {
                     WakeWordListener = wwl;
                     break;
@@ -210,21 +210,15 @@ namespace ChatdollKit.Dialog
             if (WakeWordListener != null)
             {
                 // Register wakeword
-                if (WakeWordListener.WakeWords.Count == 0)
+                if (!string.IsNullOrEmpty(WakeWord))
                 {
-                    if (!string.IsNullOrEmpty(WakeWord))
-                    {
-                        WakeWordListener.WakeWords.Add(new WakeWord() { Text = WakeWord, Intent = string.Empty });
-                    }
+                    WakeWordListener.SetWakeWord(new WakeWord() { Text = WakeWord, Intent = string.Empty });
                 }
 
                 // Register cancel word
-                if (WakeWordListener.CancelWords.Count == 0)
+                if (!string.IsNullOrEmpty(CancelWord))
                 {
-                    if (!string.IsNullOrEmpty(CancelWord))
-                    {
-                        WakeWordListener.CancelWords.Add(CancelWord);
-                    }
+                    WakeWordListener.SetCancelWord(CancelWord);
                 }
 
                 // Awake
