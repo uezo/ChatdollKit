@@ -5,13 +5,10 @@ using ChatdollKit.IO;
 
 namespace ChatdollKit.Dialog
 {
-    public class CameraRequestProvider : MonoBehaviour, IRequestProvider
+    public class QRCodeRequestProvider : MonoBehaviour, IRequestProvider
     {
-        // This provides photo taken by camera
-        public RequestType RequestType { get; } = RequestType.Camera;
-
-        public string CameraCaption;
-        public int SelfTimerSeconds = 3;
+        // This provides decoded QRCode data
+        public RequestType RequestType { get; } = RequestType.QRCode;
 
         public ChatdollCamera ChatdollCamera;
 
@@ -22,11 +19,11 @@ namespace ChatdollKit.Dialog
 
             if (ChatdollCamera != null)
             {
-                request.Payloads.Add(await ChatdollCamera.CaptureTextureWithTimerAsync(CameraCaption, SelfTimerSeconds, token));
+                request.Payloads.Add("qrcode", await ChatdollCamera.ReadCodeAsync(token));
             }
             else
             {
-                Debug.LogError("ChatdollCamera is not set to CameraRequestProvider");
+                Debug.LogWarning("ChatdollCamera is not set to QRCodeRequestProvider");
             }
 
             return request;

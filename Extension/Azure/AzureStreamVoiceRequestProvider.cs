@@ -8,12 +8,16 @@ using ChatdollKit.Dialog;
 
 namespace ChatdollKit.Extension.Azure
 {
-    public class AzureStreamVoiceRequestProvider : VoiceRequestProviderBase
+    public class AzureStreamVoiceRequestProvider : NonRecordingVoiceRequestProviderBase
     {
         [Header("Azure Settings")]
         public string ApiKey;
         public string Region;
         public string Language = "ja-JP";
+
+        [Header("Speech Recognition Settings")]
+        public float SilenceDurationToEndRecording = 1.0f;
+        public float ListeningTimeout = 20.0f;
 
         private AudioConfig audioConfig;
         private SpeechConfig speechConfig;
@@ -122,6 +126,10 @@ namespace ChatdollKit.Extension.Azure
                     if (!string.IsNullOrEmpty(recognizedTextBuffer))
                     {
                         request.Text = recognizedTextBuffer;
+                        if (OnRecognizedAsync != null)
+                        {
+                            await OnRecognizedAsync(request.Text);
+                        }
                         if (PrintResult)
                         {
                             Debug.Log($"Recognized(VoiceRequestProvider): {request.Text}");
@@ -159,7 +167,6 @@ namespace ChatdollKit.Extension.Azure
             }
             finally
             {
-                StopListening();
                 // Invoke action after recognition
                 await (OnFinishListeningAsync ?? OnFinishListeningDefaultAsync).Invoke(request, token);
             }

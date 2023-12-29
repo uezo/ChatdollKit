@@ -1,6 +1,7 @@
 mergeInto(LibraryManager.library, {
-    ChatCompletionJS: function(targetObjectNamePtr, urlPtr, apiKeyPtr, chatCompletionRequestPtr) {
+    ChatCompletionJS: function(targetObjectNamePtr, sessionIdPtr, urlPtr, apiKeyPtr, chatCompletionRequestPtr) {
         let targetObjectName = UTF8ToString(targetObjectNamePtr);
+        let sessionId = UTF8ToString(sessionIdPtr);
         let url = UTF8ToString(urlPtr);
         let apiKey = UTF8ToString(apiKeyPtr);
         let chatCompletionRequest = UTF8ToString(chatCompletionRequestPtr);
@@ -27,7 +28,7 @@ mergeInto(LibraryManager.library, {
                     reader.releaseLock();
                     return;
                 }
-                SendMessage(targetObjectName, "SetChatCompletionStreamChunk", decoder.decode(value));
+                SendMessage(targetObjectName, "SetChatCompletionStreamChunk", sessionId + "::" + decoder.decode(value));
                 reader.read().then(readChunk);
             }
             reader.read().then(readChunk);

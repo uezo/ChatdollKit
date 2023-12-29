@@ -14,10 +14,9 @@ namespace ChatdollKit.Dialog
         public RequestType Type { get; }
         public DateTime CreatedAt { get; }
         public string Text { get; set; }
-        public List<object> Payloads { get; set; }
+        public Dictionary<string, object> Payloads { get; set; }
         public Intent Intent { get; set; }
         public Dictionary<string, object> Entities { get; set; }
-        public List<WordNode> Words { get; set; }
         public bool IsCanceled { get; set; }
         public string ClientId { get; set; }
         public Dictionary<string, string> Tokens { get; set; } = new Dictionary<string, string>();
@@ -28,7 +27,7 @@ namespace ChatdollKit.Dialog
             Type = type;
             CreatedAt = DateTime.UtcNow;
             Text = text ?? string.Empty;
-            Payloads = new List<object>();
+            Payloads = new Dictionary<string, object>();
             Intent = null;
             Entities = new Dictionary<string, object>();
             IsCanceled = isCanceled;

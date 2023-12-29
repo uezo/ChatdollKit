@@ -29,7 +29,7 @@ namespace ChatdollKit.Examples.MultiSkills
                 }
                 else
                 {
-                    response.AddVoiceTTS($"QRコードのデータは、{(string)request.Payloads[0]}");
+                    response.AddVoiceTTS($"QRコードのデータは、{(string)request.Payloads["qrcode"]}");
                 }
             }
 

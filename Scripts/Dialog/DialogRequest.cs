@@ -8,11 +8,11 @@ namespace ChatdollKit.Dialog
         public string Id { get; set; }
         public string ClientId { get; set; }
         public WakeWord WakeWord { get; set; }
-        public List<object> Payloads { get; set; } = new List<object>();
+        public Dictionary<string, object> Payloads { get; set; } = new Dictionary<string, object>();
         public bool SkipPrompt { get; set; }
         public Dictionary<string, string> Tokens { get; } = new Dictionary<string, string>();
 
-        public DialogRequest(string clientId, WakeWord wakeWord = null, bool skipPrompt = false, List<object> payloads = null)
+        public DialogRequest(string clientId, WakeWord wakeWord = null, bool skipPrompt = false, Dictionary<string, object> payloads = null)
         {
             Id = Guid.NewGuid().ToString();
             ClientId = clientId;

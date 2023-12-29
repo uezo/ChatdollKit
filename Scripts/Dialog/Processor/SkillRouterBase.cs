@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
@@ -10,9 +11,32 @@ namespace ChatdollKit.Dialog.Processor
     {
         protected Dictionary<string, ISkill> topicResolver = new Dictionary<string, ISkill>();
 
-        public virtual void RegisterSkill(ISkill skill)
+        public virtual List<ISkill> RegisterSkills()
         {
-            topicResolver.Add(skill.TopicName, skill);
+            var skills = GetComponents<ISkill>();
+
+            // Register skills to router
+            if (skills.Length > 0)
+            {
+                foreach (var skill in skills)
+                {
+                    try
+                    {
+                        topicResolver.Add(skill.TopicName, skill);
+                        Debug.Log($"Skill '{skill.TopicName}' registered successfully");
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogWarning($"Failed to register '{skill.TopicName}': {ex.Message}\n{ex.StackTrace}");
+                    }
+                }
+            }
+            else
+            {
+                Debug.LogError("No skills registered");
+            }
+
+            return topicResolver.Values.ToList();
         }
 
         public bool IsAvailableTopic(string topicName, bool warnInavailable = false)

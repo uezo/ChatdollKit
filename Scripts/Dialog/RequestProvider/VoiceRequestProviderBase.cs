@@ -8,7 +8,7 @@ using ChatdollKit.Network;
 
 namespace ChatdollKit.Dialog
 {
-    public class VoiceRequestProviderBase : VoiceRecorderBase, IRequestProvider
+    public class VoiceRequestProviderBase : VoiceRecorderBase, IVoiceRequestProvider
     {
         // This provides voice request
         public RequestType RequestType { get; } = RequestType.Voice;
@@ -27,7 +27,7 @@ namespace ChatdollKit.Dialog
         public float ListeningTimeout = 20.0f;
 
         [Header("UI")]
-        public MessageWindowBase MessageWindow;
+        public IMessageWindow MessageWindow;
         [SerializeField]
         protected string listeningMessage = "[ Listening ... ]";
         public Action OnListeningStart;
@@ -49,6 +49,24 @@ namespace ChatdollKit.Dialog
         // Protected members for recording voice and recognize task
         protected string recognitionId = string.Empty;
         protected ChatdollHttp client = new ChatdollHttp();
+
+        public void SetMessageWindow(IMessageWindow messageWindow)
+        {
+            MessageWindow = messageWindow;
+        }
+
+        public void SetCancelWord(string cancelWord)
+        {
+            foreach (var cw in CancelWords)
+            {
+                if (cw == cancelWord)
+                {
+                    return;
+                }
+            }
+
+            CancelWords.Add(cancelWord);
+        }
 
 #pragma warning disable CS1998
         protected virtual async UniTask OnStartListeningDefaultAsync(Request request, CancellationToken token)

@@ -11,14 +11,19 @@ namespace ChatdollKit.Dialog.Processor
     public class ChatGPTServiceWebGL : ChatGPTService
     {
         [DllImport("__Internal")]
-        protected static extern void ChatCompletionJS(string targetObjectName, string url, string apiKey, string chatCompletionRequest);
+        protected static extern void ChatCompletionJS(string targetObjectName, string sessionId, string url, string apiKey, string chatCompletionRequest);
         [DllImport("__Internal")]
         protected static extern void AbortChatCompletionJS();
 
         protected bool isChatCompletionJSDone = false;
+        protected Dictionary<string, ChatGPTSession> sessions { get; set; } = new Dictionary<string, ChatGPTSession>();
 
-        public override async UniTask ChatCompletionAsync(List<ChatGPTMessage> messages, bool useFunctions = true, int retryCounter = 1, CancellationToken token = default)
+        public override async UniTask StartStreamingAsync(ChatGPTSession chatGPTSession, List<ChatGPTMessage> messages, bool useFunctions = true, CancellationToken token = default)
         {
+            // Add session for callback
+            var sessionId = Guid.NewGuid().ToString();
+            sessions.Add(sessionId, chatGPTSession);
+
             // Make request data
             var data = new Dictionary<string, object>()
             {
@@ -37,13 +42,10 @@ namespace ChatdollKit.Dialog.Processor
             }
 
             // Start API stream
-            IsResponseDone = false;
-            StreamBuffer = string.Empty;
-            responseType = ResponseType.None;
-            firstDelta = null;
             isChatCompletionJSDone = false;
             ChatCompletionJS(
                 gameObject.name,
+                sessionId,
                 string.IsNullOrEmpty(ChatCompletionUrl) ? "https://api.openai.com/v1/chat/completions" : ChatCompletionUrl,
                 ApiKey,
                 JsonConvert.SerializeObject(data)
@@ -54,25 +56,17 @@ namespace ChatdollKit.Dialog.Processor
             while (true)
             {
                 // Success
-                if (!string.IsNullOrEmpty(StreamBuffer) && isChatCompletionJSDone)
+                if (!string.IsNullOrEmpty(chatGPTSession.StreamBuffer) && isChatCompletionJSDone)
                 {
                     break;
                 }
 
                 // Timeout with no response data
-                else if (string.IsNullOrEmpty(StreamBuffer) && DateTime.Now > noDataResponseTimeoutsAt)
+                else if (string.IsNullOrEmpty(chatGPTSession.StreamBuffer) && DateTime.Now > noDataResponseTimeoutsAt)
                 {
                     AbortChatCompletionJS();
-                    if (retryCounter > 0)
-                    {
-                        Debug.LogWarning($"ChatGPT timeouts with no response data. Retrying ...");
-                        await ChatCompletionAsync(messages, useFunctions, retryCounter - 1);
-                        return;
-                    }
-
-                    Debug.LogError($"ChatGPT timeouts with no response data.");
-                    responseType = ResponseType.Error;
-                    StreamBuffer = ErrorMessageContent;
+                    chatGPTSession.ResponseType = ResponseType.Timeout;
+                    sessions.Remove(sessionId);
                     break;
                 }
 
@@ -80,7 +74,7 @@ namespace ChatdollKit.Dialog.Processor
                 else if (isChatCompletionJSDone)
                 {
                     Debug.LogError($"ChatGPT ends with error");
-                    responseType = ResponseType.Error;
+                    chatGPTSession.ResponseType = ResponseType.Error;
                     break;
                 }
 
@@ -88,7 +82,7 @@ namespace ChatdollKit.Dialog.Processor
                 else if (token.IsCancellationRequested)
                 {
                     Debug.Log("Preprocessing response from ChatGPT canceled.");
-                    responseType = ResponseType.Error;
+                    chatGPTSession.ResponseType = ResponseType.Error;
                     AbortChatCompletionJS();
                     break;
                 }
@@ -96,22 +90,37 @@ namespace ChatdollKit.Dialog.Processor
                 await UniTask.Delay(10);
             }
 
-            IsResponseDone = true;
+            chatGPTSession.IsResponseDone = true;
+
+            sessions.Remove(sessionId);
 
             if (DebugMode)
             {
-                Debug.Log($"Response from ChatGPT: {JsonConvert.SerializeObject(StreamBuffer)}");
+                Debug.Log($"Response from ChatGPT: {JsonConvert.SerializeObject(chatGPTSession.StreamBuffer)}");
             }
         }
 
-        public void SetChatCompletionStreamChunk(string chunkString)
+        public void SetChatCompletionStreamChunk(string chunkStringWithSessionId)
         {
+            var splittedChunk = chunkStringWithSessionId.Split("::");
+            var sessionId = splittedChunk[0];
+            var chunkString = splittedChunk[1];
+
             if (string.IsNullOrEmpty(chunkString))
             {
                 Debug.Log("Chunk is null or empty. Set true to isChatCompletionJSDone.");
                 isChatCompletionJSDone = true;
                 return;
             }
+
+            if (!sessions.ContainsKey(sessionId))
+            {
+                Debug.LogWarning($"Session not found. Set true to isChatCompletionJSDone.: {sessionId}");
+                isChatCompletionJSDone = true;
+                return;
+            }
+
+            var chatGPTSession = sessions[sessionId];
 
             var isDeltaSet = false;
             var temp = string.Empty;
@@ -148,8 +157,8 @@ namespace ChatdollKit.Dialog.Processor
                         var delta = j.choices[0].delta;
                         if (!isDeltaSet)
                         {
-                            firstDelta = delta;
-                            responseType = delta.function_call != null ? ResponseType.FunctionCalling : ResponseType.Content;
+                            chatGPTSession.FirstDelta = delta;
+                            chatGPTSession.ResponseType = delta.function_call != null ? ResponseType.FunctionCalling : ResponseType.Content;
                             isDeltaSet = true;
                         }
                         if (delta.function_call == null)
@@ -170,9 +179,10 @@ namespace ChatdollKit.Dialog.Processor
                 }
             }
 
-            StreamBuffer += temp;
+            chatGPTSession.StreamBuffer += temp;
 
-            if (isDone) {
+            if (isDone)
+            {
                 isChatCompletionJSDone = true;
             }
         }

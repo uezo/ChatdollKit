@@ -58,7 +58,7 @@ namespace ChatdollKit.Dialog
         public bool IsChatting { get; private set; }
         public bool IsError { get; private set; }
 
-        public WakeWordListenerBase WakeWordListener { get; set; }
+        public IWakeWordListener WakeWordListener { get; set; }
         public Dictionary<RequestType, IRequestProvider> RequestProviders { get; private set; } = new Dictionary<RequestType, IRequestProvider>();
         private IRequestProcessor requestProcessor { get; set; }
         private ModelController modelController { get; set; }
@@ -100,13 +100,14 @@ namespace ChatdollKit.Dialog
         private void Awake()
         {
             // Get components
-            var wakeWordListeners = GetComponents<WakeWordListenerBase>();
+            var wakeWordListeners = GetComponents<IWakeWordListener>();
             modelController = GetComponent<ModelController>();
             var attachedRequestProviders = GetComponents<IRequestProvider>();
+
+            // Components for LocalRequestProcessor
             var userStore = GetComponent<IUserStore>();
             var stateStore = GetComponent<IStateStore>();
             var skillRouter = GetComponent<ISkillRouter>();
-            var skills = GetComponents<ISkill>();
 
             if (!UserMessageWindow.IsInstance)
             {
@@ -139,15 +140,15 @@ namespace ChatdollKit.Dialog
             qrCodeRequestProvider.ChatdollCamera = ChatdollCamera;
             RequestProviders.Add(RequestType.QRCode, qrCodeRequestProvider);
 
-            foreach (var rp in GetComponents<VoiceRequestProviderBase>())
+            foreach (var rp in GetComponents<IVoiceRequestProvider>())
             {
-                if (rp.enabled)
+                if (((MonoBehaviour)rp).enabled)
                 {
-                    rp.MessageWindow = UserMessageWindow;
+                    rp.SetMessageWindow(UserMessageWindow);
                     if (!string.IsNullOrEmpty(CancelWord))
                     {
                         // Register cancel word to VoiceRequestProvider
-                        rp.CancelWords.Add(CancelWord);
+                        rp.SetCancelWord(CancelWord);
                     }
                     RequestProviders.Add(RequestType.Voice, rp);
                     break;
@@ -179,7 +180,7 @@ namespace ChatdollKit.Dialog
                         skillRouter = gameObject.AddComponent<StaticSkillRouter>();
                     }
                     requestProcessor = new LocalRequestProcessor(
-                        userStore, stateStore, skillRouter, skills
+                        userStore, stateStore, skillRouter
                     );
                 }
                 else
@@ -201,7 +202,7 @@ namespace ChatdollKit.Dialog
             // Wakeword Listener
             foreach (var wwl in wakeWordListeners)
             {
-                if (wwl.enabled)
+                if (((MonoBehaviour)wwl).enabled)
                 {
                     WakeWordListener = wwl;
                     break;
@@ -210,21 +211,15 @@ namespace ChatdollKit.Dialog
             if (WakeWordListener != null)
             {
                 // Register wakeword
-                if (WakeWordListener.WakeWords.Count == 0)
+                if (!string.IsNullOrEmpty(WakeWord))
                 {
-                    if (!string.IsNullOrEmpty(WakeWord))
-                    {
-                        WakeWordListener.WakeWords.Add(new WakeWord() { Text = WakeWord, Intent = string.Empty });
-                    }
+                    WakeWordListener.SetWakeWord(new WakeWord() { Text = WakeWord, Intent = string.Empty });
                 }
 
                 // Register cancel word
-                if (WakeWordListener.CancelWords.Count == 0)
+                if (!string.IsNullOrEmpty(CancelWord))
                 {
-                    if (!string.IsNullOrEmpty(CancelWord))
-                    {
-                        WakeWordListener.CancelWords.Add(CancelWord);
-                    }
+                    WakeWordListener.SetCancelWord(CancelWord);
                 }
 
                 // Awake

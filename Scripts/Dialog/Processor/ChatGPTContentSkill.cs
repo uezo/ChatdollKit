@@ -47,20 +47,20 @@ namespace ChatdollKit.Dialog.Processor
 #pragma warning disable CS1998
         public override async UniTask<Response> ProcessAsync(Request request, State state, User user, CancellationToken token)
         {
-            var apiStreamTask = (UniTask)request.Payloads[0];
+            var chatGPTSession = (ChatGPTSession)request.Payloads["LLMSession"];
 
             // Clear responseAnimations before parsing and performing
             responseAnimations.Clear();
 
             // Start parsing voices, faces and animations and performing them concurrently
-            var parseTask = ParseAnimatedVoiceAsync(token);
-            var performTask = PerformAnimatedVoiceAsync(token);
+            var parseTask = ParseAnimatedVoiceAsync(chatGPTSession, token);
+            var performTask = PerformAnimatedVoiceAsync(chatGPTSession, token);
 
             // Make response
             var response = new Response(request.Id, endTopic: false);
             response.Payloads = new Dictionary<string, object>()
             {
-                { "ApiStreamTask", apiStreamTask },
+                { "ChatGPTSession", chatGPTSession },
                 { "ParseTask", parseTask },
                 { "PerformTask", performTask },
                 { "UserMessage", new ChatGPTMessage("user", request.Text) }
@@ -74,7 +74,8 @@ namespace ChatdollKit.Dialog.Processor
         {
             // Parse payloads
             var payloads = (Dictionary<string, object>)response.Payloads;
-            var apiStreamTask = (UniTask)payloads["ApiStreamTask"];
+            var chatGPTSession = (ChatGPTSession)payloads["ChatGPTSession"];
+            var apiStreamTask = chatGPTSession.StreamingTask;
             var parseTask = (UniTask)payloads["ParseTask"];
             var performTask = (UniTask)payloads["PerformTask"];
             var userMessage = (ChatGPTMessage)payloads["UserMessage"];
@@ -88,10 +89,10 @@ namespace ChatdollKit.Dialog.Processor
 
             // Update histories
             chatGPT.AddHistory(state, userMessage);
-            chatGPT.AddHistory(state, new ChatGPTMessage("assistant", chatGPT.StreamBuffer));
+            chatGPT.AddHistory(state, new ChatGPTMessage("assistant", chatGPTSession.StreamBuffer));
         }
 
-        protected async UniTask ParseAnimatedVoiceAsync(CancellationToken token)
+        protected async UniTask ParseAnimatedVoiceAsync(ChatGPTSession chatGPTSession, CancellationToken token)
         {
             IsParsing = true;
 
@@ -105,18 +106,18 @@ namespace ChatdollKit.Dialog.Processor
                 while (!token.IsCancellationRequested)
                 {
                     // Split current buffer with the marks that represents the end of a sentence
-                    var splittedBuffer = chatGPT.StreamBuffer.Replace("。", "。|").Replace("、", "、|").Replace("！", "！|").Replace("？", "？|").Replace(". ", ". |").Replace(", ", ", |").Replace("\n", "").Split('|');
+                    var splittedBuffer = chatGPTSession.StreamBuffer.Replace("。", "。|").Replace("、", "、|").Replace("！", "！|").Replace("？", "？|").Replace(". ", ". |").Replace(", ", ", |").Replace("\n", "").Split('|');
 
-                    if (chatGPT.IsResponseDone && splitIndex == splittedBuffer.Length)
+                    if (chatGPTSession.IsResponseDone && splitIndex == splittedBuffer.Length)
                     {
                         // Exit while loop when stream response ends and all sentences has been processed
                         break;
                     }
 
-                    if (splittedBuffer.Count() > splitIndex + 1 || chatGPT.IsResponseDone)
+                    if (splittedBuffer.Count() > splitIndex + 1 || chatGPTSession.IsResponseDone)
                     {
                         // Process each splitted unprocessed sentence
-                        foreach (var text in splittedBuffer.Skip(splitIndex).Take(chatGPT.IsResponseDone ? splittedBuffer.Length - splitIndex : 1))
+                        foreach (var text in splittedBuffer.Skip(splitIndex).Take(chatGPTSession.IsResponseDone ? splittedBuffer.Length - splitIndex : 1))
                         {
                             splitIndex += 1;
                             if (!string.IsNullOrEmpty(text.Trim()))
@@ -190,13 +191,13 @@ namespace ChatdollKit.Dialog.Processor
             }
         }
 
-        protected async UniTask PerformAnimatedVoiceAsync(CancellationToken token)
+        protected async UniTask PerformAnimatedVoiceAsync(ChatGPTSession chatGPTSession, CancellationToken token)
         {
             var isFirstVoice = true;
             while (!token.IsCancellationRequested)
             {
                 // Performance ends when streaming response and parsing ends and all response animated voices are done
-                if (chatGPT.IsResponseDone && !IsParsing && responseAnimations.Count == 0) break;
+                if (chatGPTSession.IsResponseDone && !IsParsing && responseAnimations.Count == 0) break;
 
                 if (responseAnimations.Count > 0)
                 {

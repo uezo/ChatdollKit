@@ -89,8 +89,8 @@ namespace ChatdollKit
             if (EditorGUI.EndChangeCheck())
             {
                 WebVoiceLoaderBase ttsLoader = null;
-                VoiceRequestProviderBase voiceRequestProvider = null;
-                WakeWordListenerBase wakeWordListener = null;
+                IVoiceRequestProvider voiceRequestProvider = null;
+                IWakeWordListener wakeWordListener = null;
 
                 if (app.SpeechService == CloudService.Azure)
                 {
@@ -234,7 +234,7 @@ namespace ChatdollKit
             GUILayout.EndHorizontal();
         }
 
-        private void EnableComponents(GameObject gameObject, WebVoiceLoaderBase ttsLoader = null, VoiceRequestProviderBase voiceRequestProvider = null, WakeWordListenerBase wakeWordListener = null)
+        private void EnableComponents(GameObject gameObject, WebVoiceLoaderBase ttsLoader = null, IVoiceRequestProvider voiceRequestProvider = null, IWakeWordListener wakeWordListener = null)
         {
             // TTSLoaders
             foreach (var vl in gameObject.GetComponents<WebVoiceLoaderBase>())
@@ -249,14 +249,14 @@ namespace ChatdollKit
                 ttsLoader.IsDefault = true;
             }
 
-            foreach (var rp in gameObject.GetComponents<VoiceRequestProviderBase>())
+            foreach (var rp in gameObject.GetComponents<IVoiceRequestProvider>())
             {
-                rp.enabled = rp == voiceRequestProvider;
+                ((MonoBehaviour)rp).enabled = rp == voiceRequestProvider;
             }
 
-            foreach (var wwl in gameObject.GetComponents<WakeWordListenerBase>())
+            foreach (var wwl in gameObject.GetComponents<IWakeWordListener>())
             {
-                wwl.enabled = wwl == wakeWordListener;
+                ((MonoBehaviour)wwl).enabled = wwl == wakeWordListener;
             }
         }
 
@@ -277,7 +277,7 @@ namespace ChatdollKit
 
             // RequestProviders and WakeWordListener
             DestroyComponents(gameObject.GetComponents<IRequestProvider>());
-            DestroyComponents(gameObject.GetComponents<WakeWordListenerBase>());
+            DestroyComponents(gameObject.GetComponents<IWakeWordListener>());
 
             // Microphone (Voice recorder depends on this)
             DestroyComponents(gameObject.GetComponents<ChatdollMicrophone>());

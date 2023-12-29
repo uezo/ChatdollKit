@@ -15,18 +15,19 @@ namespace ChatdollKit.Dialog.Processor
 
         public override async UniTask<Response> ProcessAsync(Request request, State state, User user, CancellationToken token)
         {
-            var apiStreamTask = (UniTask)request.Payloads[0];
+            var chatGPTSession = (ChatGPTSession)request.Payloads["LLMSession"];
+            var apiStreamTask = chatGPTSession.StreamingTask;
 
             // TODO: Waiting AnimatedVoice
 
             await apiStreamTask;
 
-            var responseForRequest = await ExecuteFunction(chatGPT.StreamBuffer, request, state, user, token);
+            var responseForRequest = await ExecuteFunction(chatGPTSession.StreamBuffer, request, state, user, token);
 
             var functionName = GetFunctionSpec().name;
             var functionCallMessage = new ChatGPTMessage("assistant", function_call: new Dictionary<string, object>() {
                 { "name", functionName },
-                { "arguments", chatGPT.StreamBuffer }
+                { "arguments", chatGPTSession.StreamBuffer }
             });
 
             // Update histories after function finishes successfully
@@ -38,17 +39,17 @@ namespace ChatdollKit.Dialog.Processor
             messages.Add(new ChatGPTMessage(responseForRequest.Role, responseForRequest.Body, name: functionName));
 
             // Call ChatCompletion to get human-friendly response
-            apiStreamTask = chatGPT.ChatCompletionAsync(messages, false);
+            var chatGPTSessionAfterFunction = await chatGPT.GenerateContentAsync(messages, false);
 
             // Start parsing voices, faces and animations and performing them concurrently
-            var parseTask = ParseAnimatedVoiceAsync(token);
-            var performTask = PerformAnimatedVoiceAsync(token);
+            var parseTask = ParseAnimatedVoiceAsync(chatGPTSessionAfterFunction, token);
+            var performTask = PerformAnimatedVoiceAsync(chatGPTSessionAfterFunction, token);
 
             // Make response
             var response = new Response(request.Id, endTopic: false);
             response.Payloads = new Dictionary<string, object>()
             {
-                { "ApiStreamTask", apiStreamTask },
+                { "ChatGPTSession", chatGPTSessionAfterFunction },
                 { "ParseTask", parseTask },
                 { "PerformTask", performTask },
                 { "UserMessage", messages.Last() }
