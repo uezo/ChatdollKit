@@ -7,10 +7,11 @@ namespace ChatdollKit.Dialog.Processor
     public class ChatGPTRouter : SkillRouterBase
     {
         private ChatGPTService chatGPT;
-        private Dictionary<string, string> functionResolver = new Dictionary<string, string>();
+        private Dictionary<string, string> functionResolver;
 
-        private void Awake()
+        public override List<ISkill> RegisterSkills()
         {
+            // Get ChatGPT service for supported platform
 #if UNITY_WEBGL && !UNITY_EDITOR
             chatGPT = GetComponent<ChatGPTServiceWebGL>();
             if (chatGPT == null)
@@ -28,20 +29,23 @@ namespace ChatdollKit.Dialog.Processor
                 }
             }
 #endif
-        }
 
-        public override void RegisterSkill(ISkill skill)
-        {
-            base.RegisterSkill(skill);
-            if (skill is ChatGPTFunctionSkillBase)
+            var functionSkills = new List<ISkill>();
+            functionResolver = new Dictionary<string, string>();
+
+            // Register skills and get tool spec
+            foreach (var skill in base.RegisterSkills())
             {
-                var func = ((ChatGPTFunctionSkillBase)skill).GetFunctionSpec();
-                foreach (var gpt in GetComponents<ChatGPTService>())
+                if (skill is ChatGPTFunctionSkillBase)
                 {
-                    gpt.AddFunction(func);
+                    functionSkills.Add(skill);
+                    var func = ((ChatGPTFunctionSkillBase)skill).GetFunctionSpec();
+                    chatGPT.AddFunction(func);
+                    functionResolver.Add(func.name, skill.TopicName);
                 }
-                functionResolver.Add(func.name, skill.TopicName);
             }
+
+            return functionSkills;
         }
 
         public override async UniTask<IntentExtractionResult> ExtractIntentAsync(Request request, State state, CancellationToken token)
@@ -53,20 +57,21 @@ namespace ChatdollKit.Dialog.Processor
             {
                 messages.Add(new ChatGPTMessage("system", chatGPT.SystemMessageContent));
             }
+
             // Histories
             messages.AddRange(chatGPT.GetHistories(state));
+
             // User (current input)
             messages.Add(new ChatGPTMessage("user", request.Text));
 
-            request.Payloads.Add(chatGPT.ChatCompletionAsync(messages, token: token));
+            var chatGPTSession = await chatGPT.GenerateContentAsync(messages, token: token);
+            request.Payloads.Add("LLMSession", chatGPTSession);
 
-            var functionName = await chatGPT.WaitForFunctionName(token);
-
-            if (!string.IsNullOrEmpty(functionName))
+            if (!string.IsNullOrEmpty(chatGPTSession.FunctionName))
             {
-                if (functionResolver.ContainsKey(functionName))
+                if (functionResolver.ContainsKey(chatGPTSession.FunctionName))
                 {
-                    return new IntentExtractionResult(new Intent(functionResolver[functionName], Priority.Highest, true));
+                    return new IntentExtractionResult(new Intent(functionResolver[chatGPTSession.FunctionName], Priority.Highest, true));
                 }
             }
 

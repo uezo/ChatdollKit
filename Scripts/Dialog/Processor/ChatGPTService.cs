@@ -9,6 +9,11 @@ using Newtonsoft.Json;
 
 namespace ChatdollKit.Dialog.Processor
 {
+    public enum ResponseType
+    {
+        None, Content, FunctionCalling, Error, Timeout
+    }
+
     public class ChatGPTService : MonoBehaviour
     {
         [Header("API configuration")]
@@ -34,19 +39,71 @@ namespace ChatdollKit.Dialog.Processor
         [Header("Debug")]
         public bool DebugMode = false;
 
-        // Session data and status
-        public bool IsResponseDone { get; protected set; } = false;
-        public string StreamBuffer { get; protected set; }
-        public enum ResponseType
-        {
-            None, Content, FunctionCalling, Error
-        }
-        protected ResponseType responseType = ResponseType.None;
-        protected Delta firstDelta;
-
         protected List<ChatGPTFunction> chatGPTFunctions = new List<ChatGPTFunction>();
 
-        public virtual async UniTask ChatCompletionAsync(List<ChatGPTMessage> messages, bool useFunctions = true, int retryCounter = 1, CancellationToken token = default)
+        public void AddFunction(ChatGPTFunction function)
+        {
+            chatGPTFunctions.Add(function);
+        }
+
+        public List<ChatGPTMessage> GetHistories(State state)
+        {
+            List<ChatGPTMessage> histories;
+
+            if (state.Data.ContainsKey("ChatGPTHistories"))
+            {
+                if (state.Data["ChatGPTHistories"] is List<ChatGPTMessage>)
+                {
+
+                }
+                else
+                {
+                    state.Data["ChatGPTHistories"] = JsonConvert.DeserializeObject<List<ChatGPTMessage>>(
+                        JsonConvert.SerializeObject(state.Data["ChatGPTHistories"])
+                    );
+                }
+                histories = (List<ChatGPTMessage>)state.Data["ChatGPTHistories"];
+            }
+            else
+            {
+                histories = new List<ChatGPTMessage>();
+            }
+
+            return histories.Skip(histories.Count - HistoryTurns * 2).ToList();
+        }
+
+        public void AddHistory(State state, ChatGPTMessage message)
+        {
+            var histories = GetHistories(state);
+            histories.Add(message);
+            state.Data["ChatGPTHistories"] = histories;
+        }
+
+        public virtual async UniTask<ChatGPTSession> GenerateContentAsync(List<ChatGPTMessage> messages, bool useFunctions = true, int retryCounter = 1, CancellationToken token = default)
+        {
+            var chatGPTSession = new ChatGPTSession();
+            chatGPTSession.StreamingTask = StartStreamingAsync(chatGPTSession, messages, useFunctions, token);
+            chatGPTSession.FunctionName = await WaitForFunctionName(chatGPTSession, token);
+
+            if (chatGPTSession.ResponseType == ResponseType.Timeout)
+            {
+                if (retryCounter > 0)
+                {
+                    Debug.LogWarning($"ChatGPT timeouts with no response data. Retrying ...");
+                    chatGPTSession = await GenerateContentAsync(messages, useFunctions, retryCounter - 1, token);
+                }
+                else
+                {
+                    Debug.LogError($"ChatGPT timeouts with no response data.");
+                    chatGPTSession.ResponseType = ResponseType.Error;
+                    chatGPTSession.StreamBuffer = ErrorMessageContent;
+                }
+            }
+
+            return chatGPTSession;
+        }
+
+        public virtual async UniTask StartStreamingAsync(ChatGPTSession chatGPTSession, List<ChatGPTMessage> messages, bool useFunctions = true, CancellationToken token = default)
         {
             // Make request data
             var data = new Dictionary<string, object>()
@@ -90,22 +147,19 @@ namespace ChatdollKit.Dialog.Processor
             var bodyRaw = System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data));
             streamRequest.uploadHandler = new UploadHandlerRaw(bodyRaw);
             streamRequest.downloadHandler = new ChatGPTStreamDownloadHandler();
+
             ((ChatGPTStreamDownloadHandler)streamRequest.downloadHandler).DataCallbackFunc = (chunk) =>
             {
                 // Add received data to stream buffer
-                StreamBuffer += chunk;
+                chatGPTSession.StreamBuffer += chunk;
             };
             ((ChatGPTStreamDownloadHandler)streamRequest.downloadHandler).SetFirstDelta = (delta) =>
             {
-                firstDelta = delta;
-                responseType = delta.function_call != null ? ResponseType.FunctionCalling : ResponseType.Content;
+                chatGPTSession.FirstDelta = delta;
+                chatGPTSession.ResponseType = delta.function_call != null ? ResponseType.FunctionCalling : ResponseType.Content;
             };
 
             // Start API stream
-            IsResponseDone = false;
-            StreamBuffer = string.Empty;
-            responseType = ResponseType.None;
-            firstDelta = null;
             _ = streamRequest.SendWebRequest().ToUniTask();
 
             // Preprocessing response
@@ -122,16 +176,7 @@ namespace ChatdollKit.Dialog.Processor
                 else if (streamRequest.downloadedBytes == 0 && DateTime.Now > noDataResponseTimeoutsAt)
                 {
                     streamRequest.Abort();
-                    if (retryCounter > 0)
-                    {
-                        Debug.LogWarning($"ChatGPT timeouts with no response data. Retrying ...");
-                        await ChatCompletionAsync(messages, useFunctions, retryCounter - 1);
-                        return;
-                    }
-
-                    Debug.LogError($"ChatGPT timeouts with no response data.");
-                    responseType = ResponseType.Error;
-                    StreamBuffer = ErrorMessageContent;
+                    chatGPTSession.ResponseType = ResponseType.Timeout;
                     break;
                 }
 
@@ -139,7 +184,7 @@ namespace ChatdollKit.Dialog.Processor
                 else if (streamRequest.isDone)
                 {
                     Debug.LogError($"ChatGPT ends with error ({streamRequest.result}): {streamRequest.error}");
-                    responseType = ResponseType.Error;
+                    chatGPTSession.ResponseType = ResponseType.Error;
                     break;
                 }
 
@@ -147,7 +192,7 @@ namespace ChatdollKit.Dialog.Processor
                 else if (token.IsCancellationRequested)
                 {
                     Debug.Log("Preprocessing response from ChatGPT canceled.");
-                    responseType = ResponseType.Error;
+                    chatGPTSession.ResponseType = ResponseType.Error;
                     streamRequest.Abort();
                     break;
                 }
@@ -155,31 +200,31 @@ namespace ChatdollKit.Dialog.Processor
                 await UniTask.Delay(10);
             }
 
-            IsResponseDone = true;
+            chatGPTSession.IsResponseDone = true;
 
             if (DebugMode)
             {
-                Debug.Log($"Response from ChatGPT: {JsonConvert.SerializeObject(StreamBuffer)}");
+                Debug.Log($"Response from ChatGPT: {JsonConvert.SerializeObject(chatGPTSession.StreamBuffer)}");
             }
         }
 
-        public async UniTask<string> WaitForFunctionName (CancellationToken token)
+        public async UniTask<string> WaitForFunctionName(ChatGPTSession chatGPTSession, CancellationToken token)
         {
             // Wait for response type is set
-            while (responseType == ResponseType.None && !token.IsCancellationRequested)
+            while (chatGPTSession.ResponseType == ResponseType.None && !token.IsCancellationRequested)
             {
                 await UniTask.Delay(10, cancellationToken: token);
             }
 
-            if (responseType == ResponseType.FunctionCalling)
+            if (chatGPTSession.ResponseType == ResponseType.FunctionCalling)
             {
                 if (DebugMode)
                 {
-                    Debug.Log($"Function Calling response from ChatGPT: {firstDelta.function_call.name}");
+                    Debug.Log($"Function Calling response from ChatGPT: {chatGPTSession.FirstDelta.function_call.name}");
                 }
-                return firstDelta.function_call.name;
+                return chatGPTSession.FirstDelta.function_call.name;
             }
-            else if (responseType == ResponseType.Error)
+            else if (chatGPTSession.ResponseType == ResponseType.Error)
             {
                 if (DebugMode)
                 {
@@ -195,49 +240,6 @@ namespace ChatdollKit.Dialog.Processor
                 }
                 return string.Empty;
             }
-        }
-
-        public ChatGPTFunction GetFunction(string name)
-        {
-            return chatGPTFunctions.Where(f => f.name == name).First();
-        }
-
-        public void AddFunction(ChatGPTFunction function)
-        {
-            chatGPTFunctions.Add(function);
-        }
-
-        public List<ChatGPTMessage> GetHistories(State state)
-        {
-            List<ChatGPTMessage> histories;
-
-            if (state.Data.ContainsKey("ChatGPTHistories"))
-            {
-                if (state.Data["ChatGPTHistories"] is List<ChatGPTMessage>)
-                {
-
-                }
-                else
-                {
-                    state.Data["ChatGPTHistories"] = JsonConvert.DeserializeObject<List<ChatGPTMessage>>(
-                        JsonConvert.SerializeObject(state.Data["ChatGPTHistories"])
-                    );
-                }
-                histories = (List<ChatGPTMessage>)state.Data["ChatGPTHistories"];
-            }
-            else
-            {
-                histories = new List<ChatGPTMessage>();
-            }
-
-            return histories.Skip(histories.Count - HistoryTurns * 2).ToList();
-        }
-
-        public void AddHistory(State state, ChatGPTMessage message)
-        {
-            var histories = GetHistories(state);
-            histories.Add(message);
-            state.Data["ChatGPTHistories"] = histories;
         }
 
         // Internal classes
@@ -303,28 +305,47 @@ namespace ChatdollKit.Dialog.Processor
             }
         }
 
-        protected class ChatGPTStreamResponse
-        {
-            public string id { get; set; }
-            public List<StreamChoice> choices { get; set; }
-        }
+    }
 
-        protected class StreamChoice
-        {
-            public Delta delta { get; set; }
-        }
+    public class ChatGPTSession
+    {
+        public bool IsResponseDone { get; set; } = false;
+        public string StreamBuffer { get; set; }
+        public ResponseType ResponseType { get; set; } = ResponseType.None;
+        public Delta FirstDelta { get; set; }
+        public UniTask StreamingTask { get; set; }
+        public string FunctionName { get; set; }
 
-        protected class Delta
+        public ChatGPTSession()
         {
-            public string content { get; set; }
-            public FunctionCall function_call { get; set; }
+            IsResponseDone = false;
+            StreamBuffer = string.Empty;
+            ResponseType = ResponseType.None;
+            FirstDelta = null;
         }
+    }
 
-        protected class FunctionCall
-        {
-            public string name { get; set; }
-            public string arguments { get; set; }
-        }
+    public class ChatGPTStreamResponse
+    {
+        public string id { get; set; }
+        public List<StreamChoice> choices { get; set; }
+    }
+
+    public class StreamChoice
+    {
+        public Delta delta { get; set; }
+    }
+
+    public class Delta
+    {
+        public string content { get; set; }
+        public FunctionCall function_call { get; set; }
+    }
+
+    public class FunctionCall
+    {
+        public string name { get; set; }
+        public string arguments { get; set; }
     }
 
     public class ChatGPTMessage
