@@ -19,7 +19,7 @@ namespace ChatdollKit.Dialog
 
             if (ChatdollCamera != null)
             {
-                request.Payloads.Add(await ChatdollCamera.ReadCodeAsync(token));
+                request.Payloads.Add("qrcode", await ChatdollCamera.ReadCodeAsync(token));
             }
             else
             {

@@ -22,7 +22,7 @@ namespace ChatdollKit.Dialog
 
             if (ChatdollCamera != null)
             {
-                request.Payloads.Add(await ChatdollCamera.CaptureTextureWithTimerAsync(CameraCaption, SelfTimerSeconds, token));
+                request.Payloads.Add("photo", await ChatdollCamera.CaptureTextureWithTimerAsync(CameraCaption, SelfTimerSeconds, token));
             }
             else
             {
