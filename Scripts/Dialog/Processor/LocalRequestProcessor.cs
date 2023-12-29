@@ -13,32 +13,12 @@ namespace ChatdollKit.Dialog.Processor
         public Func<Request, CancellationToken, UniTask> OnStartShowingWaitingAnimationAsync { get; set; }
         public Func<Response, CancellationToken, UniTask> OnStartShowingResponseAsync { get; set; }
 
-        public LocalRequestProcessor(IUserStore userStore, IStateStore stateStore, ISkillRouter skillRouter, ISkill[] skills)
+        public LocalRequestProcessor(IUserStore userStore, IStateStore stateStore, ISkillRouter skillRouter)
         {
             UserStore = userStore ?? new MemoryUserStore();
             StateStore = stateStore ?? new MemoryStateStore();
             SkillRouter = skillRouter ?? new StaticSkillRouter();
-
-            // Register skills to router
-            if (skills.Length > 0)
-            {
-                foreach (var skill in skills)
-                {
-                    try
-                    {
-                        SkillRouter.RegisterSkill(skill);
-                        Debug.Log($"Skill '{skill.TopicName}' registered successfully");
-                    }
-                    catch(Exception ex)
-                    {
-                        Debug.LogWarning($"Failed to register '{skill.TopicName}': {ex.Message}\n{ex.StackTrace}");
-                    }
-                }
-            }
-            else
-            {
-                Debug.LogError("No skills registered");
-            }
+            SkillRouter.RegisterSkills();
         }
 
         public virtual async UniTask<Response> ProcessRequestAsync(Request request, CancellationToken token)

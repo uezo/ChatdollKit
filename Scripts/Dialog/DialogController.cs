@@ -103,10 +103,11 @@ namespace ChatdollKit.Dialog
             var wakeWordListeners = GetComponents<IWakeWordListener>();
             modelController = GetComponent<ModelController>();
             var attachedRequestProviders = GetComponents<IRequestProvider>();
+
+            // Components for LocalRequestProcessor
             var userStore = GetComponent<IUserStore>();
             var stateStore = GetComponent<IStateStore>();
             var skillRouter = GetComponent<ISkillRouter>();
-            var skills = GetComponents<ISkill>();
 
             if (!UserMessageWindow.IsInstance)
             {
@@ -179,7 +180,7 @@ namespace ChatdollKit.Dialog
                         skillRouter = gameObject.AddComponent<StaticSkillRouter>();
                     }
                     requestProcessor = new LocalRequestProcessor(
-                        userStore, stateStore, skillRouter, skills
+                        userStore, stateStore, skillRouter
                     );
                 }
                 else
