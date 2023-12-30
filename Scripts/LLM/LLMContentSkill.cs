@@ -71,7 +71,10 @@ namespace ChatdollKit.LLM
             await llmSession.StreamingTask;
 
             // Update histories
-            await llmService.AddHistoriesAsync(llmSession, state.Data, token);
+            if (llmSession.ResponseType != ResponseType.Error && llmSession.ResponseType != ResponseType.Timeout)
+            {
+                await llmService.AddHistoriesAsync(llmSession, state.Data, token);
+            }
 
             // Wait parsing and performance
             await parseTask;
