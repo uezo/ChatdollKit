@@ -117,7 +117,7 @@ namespace ChatdollKit.LLM.Gemini
         {
             var geminiSession = new GeminiSession();
             geminiSession.Contexts = messages;
-            geminiSession.StreamingTask = StartStreamingAsync(geminiSession, useFunctions, retryCounter, token);
+            geminiSession.StreamingTask = StartStreamingAsync(geminiSession, useFunctions, token);
             await WaitForResponseType(geminiSession, token);
 
             if (geminiSession.ResponseType == ResponseType.Timeout)
@@ -138,7 +138,7 @@ namespace ChatdollKit.LLM.Gemini
             return geminiSession;
         }
 
-        public virtual async UniTask StartStreamingAsync(GeminiSession geminiSession, bool useFunctions = true, int retryCounter = 1, CancellationToken token = default)
+        public virtual async UniTask StartStreamingAsync(GeminiSession geminiSession, bool useFunctions = true, CancellationToken token = default)
         {
             // GenerationConfig
             var generationConfig = new GeminiGenerationConfig()

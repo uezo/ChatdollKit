@@ -23,6 +23,7 @@ namespace ChatdollKit.LLM
                 if (s.IsEnabled)
                 {
                     llmService = s;
+                    Debug.Log($"Use LLMService: {llmService}");
                     break;
                 }
             }

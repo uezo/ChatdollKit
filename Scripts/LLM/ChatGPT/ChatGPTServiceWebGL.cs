@@ -10,7 +10,7 @@ namespace ChatdollKit.LLM.ChatGPT
 {
     public class ChatGPTServiceWebGL : ChatGPTService
     {
-        public new bool IsEnabled
+        public override bool IsEnabled
         {
             get
             {

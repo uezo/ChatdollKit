@@ -81,7 +81,7 @@ namespace ChatdollKit.LLM.Claude
         {
             var claudeSession = new ClaudeSession();
             claudeSession.Contexts = messages;
-            claudeSession.StreamingTask = StartStreamingAsync(claudeSession, useFunctions, retryCounter, token);
+            claudeSession.StreamingTask = StartStreamingAsync(claudeSession, useFunctions, token);
             await WaitForResponseType(claudeSession, token);
 
             if (claudeSession.ResponseType == ResponseType.Timeout)
@@ -102,7 +102,7 @@ namespace ChatdollKit.LLM.Claude
             return claudeSession;
         }
 
-        public virtual async UniTask StartStreamingAsync(ClaudeSession claudeSession, bool useFunctions = true, int retryCounter = 1, CancellationToken token = default)
+        public virtual async UniTask StartStreamingAsync(ClaudeSession claudeSession, bool useFunctions = true, CancellationToken token = default)
         {
             // Make request data
             var data = new Dictionary<string, object>()

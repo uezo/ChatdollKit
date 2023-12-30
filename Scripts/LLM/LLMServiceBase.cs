@@ -9,7 +9,7 @@ namespace ChatdollKit.LLM
     public class LLMServiceBase : MonoBehaviour, ILLMService
     {
         public bool _IsEnabled;
-        public bool IsEnabled {
+        public virtual bool IsEnabled {
             get {
 #if UNITY_WEBGL && !UNITY_EDITOR
                 return false;
