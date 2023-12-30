@@ -33,6 +33,21 @@ namespace ChatdollKit.LLM
                     SetLLMService(llm);
                 };
             }
+
+            if (llmService == null)
+            {
+                llmService = GetComponent<ILLMService>();
+
+                if (llmService == null)
+                {
+                    Debug.LogWarning("No LLMServices are available.");
+                }
+                else
+                {
+                    Debug.LogWarning($"Enabled LLMServices not found. Use {llmService}.");
+                    llmService.IsEnabled = true;
+                }
+            }
         }
 
         public virtual void SetLLMService(ILLMService llmService)
