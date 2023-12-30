@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 
@@ -6,7 +7,8 @@ namespace ChatdollKit.LLM
 {
     public interface ILLMService
     {
-        bool IsEnabled { get; }
+        bool IsEnabled { get; set; }
+        Action OnEnabled { get; set; }
         void AddTool(ILLMTool tool);
         UniTask AddHistoriesAsync(ILLMSession llmSession, object dataStore, CancellationToken token = default);
         UniTask<List<ILLMMessage>> MakePromptAsync(string userId, string inputText, Dictionary<string, object> payloads, CancellationToken token = default);

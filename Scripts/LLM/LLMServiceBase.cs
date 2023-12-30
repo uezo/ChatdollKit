@@ -17,17 +17,25 @@ namespace ChatdollKit.LLM
                 return _IsEnabled;
 #endif
             }
+            set
+            {
+                _IsEnabled = value;
+                if (value == true)
+                {
+                    OnEnabled?.Invoke();
+                }
+            }
         }
+        [Header("Debug")]
+        public bool DebugMode = false;
 
         [Header("Context configuration")]
         [TextArea(1, 6)]
         public string SystemMessageContent;
         public string ErrorMessageContent;
         public int HistoryTurns = 10;
-        public string HistoryKey = "LLMHistories";
 
-        [Header("Debug")]
-        public bool DebugMode = false;
+        public Action OnEnabled { get; set; }
 
         protected List<ILLMTool> llmTools = new List<ILLMTool>();
 

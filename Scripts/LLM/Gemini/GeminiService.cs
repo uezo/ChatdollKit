@@ -12,6 +12,8 @@ namespace ChatdollKit.LLM.Gemini
 {
     public class GeminiService : LLMServiceBase
     {
+        public string HistoryKey = "GeminiHistories";
+
         [Header("API configuration")]
         public string ApiKey;
         public string Model = "gemini-pro";

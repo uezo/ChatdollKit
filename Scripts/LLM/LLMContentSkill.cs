@@ -18,18 +18,9 @@ namespace ChatdollKit.LLM
         protected Dictionary<string, Model.Animation> animationsToPerform { get; set; } = new Dictionary<string, Model.Animation>();
         public bool IsParsing { get; protected set; } = false;
 
-        protected override void Awake()
+        public void SetLLMService(ILLMService llmService)
         {
-            base.Awake();
-
-            foreach (var s in GetComponents<ILLMService>())
-            {
-                if (s.IsEnabled)
-                {
-                    llmService = s;
-                    break;
-                }
-            }
+            this.llmService = llmService;
         }
 
         public void RegisterAnimation(string name, Model.Animation animation)
@@ -74,6 +65,10 @@ namespace ChatdollKit.LLM
             if (llmSession.ResponseType != ResponseType.Error && llmSession.ResponseType != ResponseType.Timeout)
             {
                 await llmService.AddHistoriesAsync(llmSession, state.Data, token);
+            }
+            else
+            {
+                Debug.LogWarning($"Messages are not added to histories for response type is not success: {llmSession.ResponseType}");
             }
 
             // Wait parsing and performance

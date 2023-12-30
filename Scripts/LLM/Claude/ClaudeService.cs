@@ -12,6 +12,8 @@ namespace ChatdollKit.LLM.Claude
 {
     public class ClaudeService : LLMServiceBase
     {
+        public string HistoryKey = "ClaudeHistories";
+
         [Header("API configuration")]
         public string ApiKey;
         public string Model = "claude-2.1";

@@ -15,33 +15,79 @@ namespace ChatdollKit.LLM
         [SerializeField]
         protected string contentSkillName = "LLMContent";
 
-        public override List<ISkill> RegisterSkills()
+        public virtual void Initialize()
         {
-            // Get enabled LLMService
+            // Get LLMServices and configure
+            foreach (var llm in GetComponents<ILLMService>())
+            {
+                // Set LLMService to use
+                if (llm.IsEnabled && llmService == null)
+                {
+                    llmService = llm;
+                    Debug.Log($"Use LLMService: {llmService}");
+                }
+
+                // Add OnChangeAction
+                llm.OnEnabled = () =>
+                {
+                    SetLLMService(llm);
+                };
+            }
+        }
+
+        public virtual void SetLLMService(ILLMService llmService)
+        {
+            // Use this LLMService
+            this.llmService = llmService;
+
+            // Set IsEnabled=false to other LLMServices
             foreach (var s in GetComponents<ILLMService>())
             {
-                if (s.IsEnabled)
+                if (s != llmService)
                 {
-                    llmService = s;
-                    Debug.Log($"Use LLMService: {llmService}");
-                    break;
+                    s.IsEnabled = false;
                 }
             }
 
+            // Set LLMService to skills
+            foreach (var skill in topicResolver.Values)
+            {
+                if (skill is LLMContentSkill)
+                {
+                    ((LLMContentSkill)skill).SetLLMService(this.llmService);
+                }
+            }
+        }
+
+        public override List<ISkill> RegisterSkills()
+        {
+            if (llmService == null)
+            {
+                Initialize();
+            }
+
+            // Register tool spec to toolResolver
             var llmFunctionSkills = new List<ISkill>();
             toolResolver = new Dictionary<string, string>();
-
-            // Register skills and get tool spec
             foreach (var skill in base.RegisterSkills())
             {
-                if (skill is LLMFunctionSkillBase)
+                if (skill is not LLMFunctionSkillBase) continue;
+
+                // Set tool to resolver
+                var tool = ((LLMFunctionSkillBase)skill).GetToolSpec();
+                toolResolver.Add(tool.name, skill.TopicName);
+
+                // Set skill as tool to LLMServices
+                foreach (var llm in GetComponents<ILLMService>())
                 {
-                    llmFunctionSkills.Add(skill);
-                    var tool = ((LLMFunctionSkillBase)skill).GetToolSpec();
-                    llmService.AddTool(tool);
-                    toolResolver.Add(tool.name, skill.TopicName);
+                    llm.AddTool(tool);
                 }
+
+                llmFunctionSkills.Add(skill);
             }
+
+            // Set LLMService to skills
+            SetLLMService(llmService);
 
             return llmFunctionSkills;
         }

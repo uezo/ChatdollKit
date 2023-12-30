@@ -12,6 +12,8 @@ namespace ChatdollKit.LLM.ChatGPT
 {
     public class ChatGPTService : LLMServiceBase
     {
+        public string HistoryKey = "ChatGPTHistories";
+
         [Header("API configuration")]
         public string ApiKey;
         public string Model = "gpt-3.5-turbo";
