@@ -30,7 +30,7 @@ namespace ChatdollKit.LLM.Claude
         protected bool isChatCompletionJSDone { get; set; } = false;
         protected Dictionary<string, ClaudeSession> sessions { get; set; } = new Dictionary<string, ClaudeSession>();
 
-        public override async UniTask StartStreamingAsync(ClaudeSession claudeSession, bool useFunctions = true, CancellationToken token = default)
+        public override async UniTask StartStreamingAsync(ClaudeSession claudeSession, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
         {
             // Add session for callback
             var sessionId = Guid.NewGuid().ToString();
@@ -50,6 +50,16 @@ namespace ChatdollKit.LLM.Claude
             if (TopK > 0)
             {
                 data.Add("top_k", TopK);
+            }
+            foreach (var p in customParameters)
+            {
+                data[p.Key] = p.Value;
+            }
+
+            // TODO: Support custom headers later...
+            if (customHeaders.Count >= 0)
+            {
+                Debug.LogWarning("Custom headers for Claude on WebGL is not supported for now.");
             }
 
             // Start API stream

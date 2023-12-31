@@ -13,6 +13,8 @@ namespace ChatdollKit.LLM.Gemini
     public class GeminiService : LLMServiceBase
     {
         public string HistoryKey = "GeminiHistories";
+        public string CustomParameterKey = "GeminiParameters";
+        public string CustomHeaderKey = "GeminiHeaders";
 
         [Header("API configuration")]
         public string ApiKey;
@@ -117,9 +119,15 @@ namespace ChatdollKit.LLM.Gemini
 
         public override async UniTask<ILLMSession> GenerateContentAsync(List<ILLMMessage> messages, Dictionary<string, object> payloads, bool useFunctions = true, int retryCounter = 1, CancellationToken token = default)
         {
+            // Custom parameters and headers
+            var stateData = (Dictionary<string, object>)payloads["StateData"];
+            var customParameters = stateData.ContainsKey(CustomParameterKey) ? (Dictionary<string, string>)stateData[CustomParameterKey] : new Dictionary<string, string>();
+            var customHeaders = stateData.ContainsKey(CustomHeaderKey) ? (Dictionary<string, string>)stateData[CustomHeaderKey] : new Dictionary<string, string>();
+
+            // Start streaming session
             var geminiSession = new GeminiSession();
             geminiSession.Contexts = messages;
-            geminiSession.StreamingTask = StartStreamingAsync(geminiSession, useFunctions, token);
+            geminiSession.StreamingTask = StartStreamingAsync(geminiSession, customParameters, customHeaders, useFunctions, token);
             await WaitForResponseType(geminiSession, token);
 
             if (geminiSession.ResponseType == ResponseType.Timeout)
@@ -140,7 +148,7 @@ namespace ChatdollKit.LLM.Gemini
             return geminiSession;
         }
 
-        public virtual async UniTask StartStreamingAsync(GeminiSession geminiSession, bool useFunctions = true, CancellationToken token = default)
+        public virtual async UniTask StartStreamingAsync(GeminiSession geminiSession, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
         {
             // GenerationConfig
             var generationConfig = new GeminiGenerationConfig()
@@ -158,6 +166,10 @@ namespace ChatdollKit.LLM.Gemini
                 { "contents", geminiSession.Contexts },
                 { "generationConfig", generationConfig }
             };
+            foreach (var p in customParameters)
+            {
+                data[p.Key] = p.Value;
+            }
 
             // Set tools. Multimodal model doesn't support function calling for now (2023.12.29)
             if (useFunctions && llmTools.Count > 0 && !Model.ToLower().Contains("vision"))
@@ -176,6 +188,11 @@ namespace ChatdollKit.LLM.Gemini
             );
             streamRequest.timeout = responseTimeoutSec;
             streamRequest.SetRequestHeader("Content-Type", "application/json");
+            foreach (var h in customHeaders)
+            {
+                streamRequest.SetRequestHeader(h.Key, h.Value);
+            }
+
             if (DebugMode)
             {
                 Debug.Log($"Request to Gemini: {JsonConvert.SerializeObject(data)}");

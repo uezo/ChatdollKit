@@ -13,6 +13,8 @@ namespace ChatdollKit.LLM.ChatGPT
     public class ChatGPTService : LLMServiceBase
     {
         public string HistoryKey = "ChatGPTHistories";
+        public string CustomParameterKey = "ChatGPTParameters";
+        public string CustomHeaderKey = "ChatGPTHeaders";
 
         [Header("API configuration")]
         public string ApiKey;
@@ -21,6 +23,11 @@ namespace ChatdollKit.LLM.ChatGPT
         public bool IsAzure;
         public int MaxTokens = 0;
         public float Temperature = 0.5f;
+        public float FrequencyPenalty = 0.0f;
+        public bool Logprobs = false;  // Not available on gpt-4v
+        public int TopLogprobs = 0;    // Set true to Logprobs to use TopLogprobs
+        public float PresencePenalty = 0.0f;
+        public List<string> Stop;
 
         [Header("Network configuration")]
         [SerializeField]
@@ -120,11 +127,18 @@ namespace ChatdollKit.LLM.ChatGPT
 
         public override async UniTask<ILLMSession> GenerateContentAsync(List<ILLMMessage> messages, Dictionary<string, object> payloads, bool useFunctions = true, int retryCounter = 1, CancellationToken token = default)
         {
+            // Custom parameters and headers
+            var stateData = (Dictionary<string, object>)payloads["StateData"];
+            var customParameters = stateData.ContainsKey(CustomParameterKey) ? (Dictionary<string, string>)stateData[CustomParameterKey] : new Dictionary<string, string>();
+            var customHeaders = stateData.ContainsKey(CustomHeaderKey) ? (Dictionary<string, string>)stateData[CustomHeaderKey] : new Dictionary<string, string>();
+
+            // Start streaming session
             var chatGPTSession = new ChatGPTSession();
             chatGPTSession.Contexts = messages;
-            chatGPTSession.StreamingTask = StartStreamingAsync(chatGPTSession, useFunctions, token);
+            chatGPTSession.StreamingTask = StartStreamingAsync(chatGPTSession, customParameters, customHeaders, useFunctions, token);
             chatGPTSession.FunctionName = await WaitForFunctionName(chatGPTSession, token);
 
+            // Retry
             if (chatGPTSession.ResponseType == ResponseType.Timeout)
             {
                 if (retryCounter > 0)
@@ -143,7 +157,7 @@ namespace ChatdollKit.LLM.ChatGPT
             return chatGPTSession;
         }
 
-        public virtual async UniTask StartStreamingAsync(ChatGPTSession chatGPTSession, bool useFunctions = true, CancellationToken token = default)
+        public virtual async UniTask StartStreamingAsync(ChatGPTSession chatGPTSession, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
         {
             // Make request data
             var data = new Dictionary<string, object>()
@@ -151,8 +165,11 @@ namespace ChatdollKit.LLM.ChatGPT
                 { "model", Model },
                 { "temperature", Temperature },
                 { "messages", chatGPTSession.Contexts },
+                { "frequency_penalty", FrequencyPenalty },
+                { "presence_penalty", PresencePenalty },
                 { "stream", true },
             };
+
             if (MaxTokens > 0)
             {
                 data.Add("max_tokens", MaxTokens);
@@ -160,6 +177,19 @@ namespace ChatdollKit.LLM.ChatGPT
             if (useFunctions && llmTools.Count > 0 && !Model.ToLower().Contains("vision"))
             {
                 data.Add("functions", llmTools);
+            }
+            if (Logprobs == true)
+            {
+                data.Add("logprobs", true);
+                data.Add("top_logprobs", TopLogprobs);
+            }
+            if (Stop != null && Stop.Count > 0)
+            {
+                data.Add("stop", Stop);
+            }
+            foreach (var p in customParameters)
+            {
+                data[p.Key] = p.Value;
             }
 
             // Prepare API request
@@ -178,6 +208,11 @@ namespace ChatdollKit.LLM.ChatGPT
                 streamRequest.SetRequestHeader("Authorization", "Bearer " + ApiKey);
             }
             streamRequest.SetRequestHeader("Content-Type", "application/json");
+            foreach (var h in customHeaders)
+            {
+                streamRequest.SetRequestHeader(h.Key, h.Value);
+            }
+
             if (DebugMode)
             {
                 Debug.Log($"Request to ChatGPT: {JsonConvert.SerializeObject(data)}");

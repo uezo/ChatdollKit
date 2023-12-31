@@ -13,6 +13,8 @@ namespace ChatdollKit.LLM.Claude
     public class ClaudeService : LLMServiceBase
     {
         public string HistoryKey = "ClaudeHistories";
+        public string CustomParameterKey = "ClaudeParameters";
+        public string CustomHeaderKey = "ClaudeHeaders";
 
         [Header("API configuration")]
         public string ApiKey;
@@ -81,11 +83,18 @@ namespace ChatdollKit.LLM.Claude
 
         public override async UniTask<ILLMSession> GenerateContentAsync(List<ILLMMessage> messages, Dictionary<string, object> payloads, bool useFunctions = true, int retryCounter = 1, CancellationToken token = default)
         {
+            // Custom parameters and headers
+            var stateData = (Dictionary<string, object>)payloads["StateData"];
+            var customParameters = stateData.ContainsKey(CustomParameterKey) ? (Dictionary<string, string>)stateData[CustomParameterKey] : new Dictionary<string, string>();
+            var customHeaders = stateData.ContainsKey(CustomHeaderKey) ? (Dictionary<string, string>)stateData[CustomHeaderKey] : new Dictionary<string, string>();
+
+            // Start streaming session
             var claudeSession = new ClaudeSession();
             claudeSession.Contexts = messages;
-            claudeSession.StreamingTask = StartStreamingAsync(claudeSession, useFunctions, token);
+            claudeSession.StreamingTask = StartStreamingAsync(claudeSession, customParameters, customHeaders, useFunctions, token);
             await WaitForResponseType(claudeSession, token);
 
+            // Retry
             if (claudeSession.ResponseType == ResponseType.Timeout)
             {
                 if (retryCounter > 0)
@@ -104,7 +113,7 @@ namespace ChatdollKit.LLM.Claude
             return claudeSession;
         }
 
-        public virtual async UniTask StartStreamingAsync(ClaudeSession claudeSession, bool useFunctions = true, CancellationToken token = default)
+        public virtual async UniTask StartStreamingAsync(ClaudeSession claudeSession, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
         {
             // Make request data
             var data = new Dictionary<string, object>()
@@ -121,6 +130,10 @@ namespace ChatdollKit.LLM.Claude
             {
                 data.Add("top_k", TopK);
             }
+            foreach (var p in customParameters)
+            {
+                data[p.Key] = p.Value;
+            }
 
             // Prepare API request
             using var streamRequest = new UnityWebRequest(
@@ -132,6 +145,11 @@ namespace ChatdollKit.LLM.Claude
             streamRequest.SetRequestHeader("anthropic-beta", "messages-2023-12-15");
             streamRequest.SetRequestHeader("Content-Type", "application/json");
             streamRequest.SetRequestHeader("x-api-key", ApiKey);
+            foreach (var h in customHeaders)
+            {
+                streamRequest.SetRequestHeader(h.Key, h.Value);
+            }
+
             if (DebugMode)
             {
                 Debug.Log($"Request to Claude: {JsonConvert.SerializeObject(data)}");
