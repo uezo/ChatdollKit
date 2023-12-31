@@ -30,7 +30,7 @@ namespace ChatdollKit.LLM.ChatGPT
         protected bool isChatCompletionJSDone { get; set; } = false;
         protected Dictionary<string, ChatGPTSession> sessions { get; set; } = new Dictionary<string, ChatGPTSession>();
 
-        public override async UniTask StartStreamingAsync(ChatGPTSession chatGPTSession, bool useFunctions = true, CancellationToken token = default)
+        public override async UniTask StartStreamingAsync(ChatGPTSession chatGPTSession, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
         {
             // Add session for callback
             var sessionId = Guid.NewGuid().ToString();
@@ -62,6 +62,16 @@ namespace ChatdollKit.LLM.ChatGPT
             if (Stop != null && Stop.Count > 0)
             {
                 data.Add("stop", Stop);
+            }
+            foreach (var p in customParameters)
+            {
+                data[p.Key] = p.Value;
+            }
+
+            // TODO: Support custom headers later...
+            if (customHeaders.Count >= 0)
+            {
+                Debug.LogWarning("Custom headers for ChatGPT on WebGL is not supported for now.");
             }
 
             // Start API stream

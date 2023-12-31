@@ -30,7 +30,7 @@ namespace ChatdollKit.LLM.Gemini
         protected bool isChatCompletionJSDone { get; set; } = false;
         protected Dictionary<string, GeminiSession> sessions { get; set; } = new Dictionary<string, GeminiSession>();
 
-        public override async UniTask StartStreamingAsync(GeminiSession geminiSession, bool useFunctions = true, CancellationToken token = default)
+        public override async UniTask StartStreamingAsync(GeminiSession geminiSession, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
         {
             // Add session for callback
             var sessionId = Guid.NewGuid().ToString();
@@ -52,6 +52,16 @@ namespace ChatdollKit.LLM.Gemini
                 { "contents", geminiSession.Contexts },
                 { "generationConfig", generationConfig }
             };
+            foreach (var p in customParameters)
+            {
+                data[p.Key] = p.Value;
+            }
+
+            // TODO: Support custom headers later...
+            if (customHeaders.Count >= 0)
+            {
+                Debug.LogWarning("Custom headers for Gemini on WebGL is not supported for now.");
+            }
 
             // Set tools. Multimodal model doesn't support function calling for now (2023.12.29)
             if (useFunctions && llmTools.Count > 0 && !Model.ToLower().Contains("vision"))
