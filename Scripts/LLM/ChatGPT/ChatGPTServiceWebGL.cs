@@ -42,6 +42,8 @@ namespace ChatdollKit.LLM.ChatGPT
                 { "model", Model },
                 { "temperature", Temperature },
                 { "messages", chatGPTSession.Contexts },
+                { "frequency_penalty", FrequencyPenalty },
+                { "presence_penalty", PresencePenalty },
                 { "stream", true },
             };
             if (MaxTokens > 0)
@@ -51,6 +53,15 @@ namespace ChatdollKit.LLM.ChatGPT
             if (useFunctions && llmTools.Count > 0)
             {
                 data.Add("functions", llmTools);
+            }
+            if (Logprobs == true)
+            {
+                data.Add("logprobs", true);
+                data.Add("top_logprobs", TopLogprobs);
+            }
+            if (Stop != null && Stop.Count > 0)
+            {
+                data.Add("stop", Stop);
             }
 
             // Start API stream
