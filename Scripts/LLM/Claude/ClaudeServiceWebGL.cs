@@ -22,6 +22,7 @@ namespace ChatdollKit.LLM.Claude
             }
         }
 
+#if UNITY_WEBGL
         [DllImport("__Internal")]
         protected static extern void StartClaudeMessageStreamJS(string targetObjectName, string sessionId, string url, string apiKey, string chatCompletionRequest);
         [DllImport("__Internal")]
@@ -192,5 +193,6 @@ namespace ChatdollKit.LLM.Claude
                 isChatCompletionJSDone = true;
             }
         }
+#endif
     }
 }

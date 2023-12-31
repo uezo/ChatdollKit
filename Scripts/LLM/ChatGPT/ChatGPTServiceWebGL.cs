@@ -22,6 +22,7 @@ namespace ChatdollKit.LLM.ChatGPT
             }
         }
 
+#if UNITY_WEBGL
         [DllImport("__Internal")]
         protected static extern void ChatCompletionJS(string targetObjectName, string sessionId, string url, string apiKey, string chatCompletionRequest);
         [DllImport("__Internal")]
@@ -220,5 +221,6 @@ namespace ChatdollKit.LLM.ChatGPT
                 isChatCompletionJSDone = true;
             }
         }
+#endif
     }
 }
