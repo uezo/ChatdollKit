@@ -21,6 +21,11 @@ namespace ChatdollKit.LLM.ChatGPT
         public bool IsAzure;
         public int MaxTokens = 0;
         public float Temperature = 0.5f;
+        public float FrequencyPenalty = 0.0f;
+        public bool Logprobs = false;  // Not available on gpt-4v
+        public int TopLogprobs = 0;    // Set true to Logprobs to use TopLogprobs
+        public float PresencePenalty = 0.0f;
+        public List<string> Stop;
 
         [Header("Network configuration")]
         [SerializeField]
@@ -151,8 +156,11 @@ namespace ChatdollKit.LLM.ChatGPT
                 { "model", Model },
                 { "temperature", Temperature },
                 { "messages", chatGPTSession.Contexts },
+                { "frequency_penalty", FrequencyPenalty },
+                { "presence_penalty", PresencePenalty },
                 { "stream", true },
             };
+
             if (MaxTokens > 0)
             {
                 data.Add("max_tokens", MaxTokens);
@@ -160,6 +168,15 @@ namespace ChatdollKit.LLM.ChatGPT
             if (useFunctions && llmTools.Count > 0 && !Model.ToLower().Contains("vision"))
             {
                 data.Add("functions", llmTools);
+            }
+            if (Logprobs == true)
+            {
+                data.Add("logprobs", true);
+                data.Add("top_logprobs", TopLogprobs);
+            }
+            if (Stop != null && Stop.Count > 0)
+            {
+                data.Add("stop", Stop);
             }
 
             // Prepare API request
