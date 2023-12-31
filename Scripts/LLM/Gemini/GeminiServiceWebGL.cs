@@ -22,6 +22,7 @@ namespace ChatdollKit.LLM.Gemini
             }
         }
 
+#if UNITY_WEBGL
         [DllImport("__Internal")]
         protected static extern void StartGeminiMessageStreamJS(string targetObjectName, string sessionId, string url, string apiKey, string chatCompletionRequest);
         [DllImport("__Internal")]
@@ -208,5 +209,6 @@ namespace ChatdollKit.LLM.Gemini
                 isChatCompletionJSDone = true;
             }
         }
+#endif
     }
 }
