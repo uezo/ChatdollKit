@@ -5,18 +5,19 @@ using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
 using ChatdollKit.Dialog;
 using ChatdollKit.Dialog.Processor;
+using ChatdollKit.LLM;
 
 namespace ChatdollKit.Examples.ChatGPT
 {
-    public class ReminderSkill : ChatGPTFunctionSkillBase
+    public class ReminderSkill : LLMFunctionSkillBase
     {
         public string FunctionName = "add_reminder";
         public string FunctionDescription = "Add item to reminder.";
 
-        public override ChatGPTFunction GetFunctionSpec()
+        public override ILLMTool GetToolSpec()
         {
             // Make function spec for ChatGPT Function Calling
-            var func = new ChatGPTFunction(FunctionName, FunctionDescription);
+            var func = new LLMTool(FunctionName, FunctionDescription);
             func.AddProperty("title", new Dictionary<string, object>() { { "type", "string" } });
             func.AddProperty("remind_at", new Dictionary<string, object>() { { "type", "string" }, { "format", "date-time" } });
             return func;

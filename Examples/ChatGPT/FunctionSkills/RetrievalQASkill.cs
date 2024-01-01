@@ -5,10 +5,11 @@ using Cysharp.Threading.Tasks;
 using ChatdollKit.Dialog;
 using ChatdollKit.Dialog.Processor;
 using ChatdollKit.Network;
+using ChatdollKit.LLM;
 
 namespace ChatdollKit.Examples.ChatGPT
 {
-    public class RetrievalQASkill : ChatGPTFunctionSkillBase
+    public class RetrievalQASkill : LLMFunctionSkillBase
     {
         public string FunctionName = "get_openai_terms_of_use";
         public string FunctionDescription = "Get information about terms of use of OpenAI services including ChatGPT.";
@@ -17,10 +18,10 @@ namespace ChatdollKit.Examples.ChatGPT
         [TextArea(1, 6)]
         protected string questionPrompt = "Please respond to user questions based on the following information. Keep the response within 200 characters and make it suitable for direct reading aloud.\n\n";
 
-        public override ChatGPTFunction GetFunctionSpec()
+        public override ILLMTool GetToolSpec()
         {
             // Make function spec for ChatGPT Function Calling
-            return new ChatGPTFunction(FunctionName, FunctionDescription);
+            return new LLMTool(FunctionName, FunctionDescription);
         }
 
         protected override async UniTask<FunctionResponse> ExecuteFunction(string argumentsJsonString, Request request, State state, User user, CancellationToken token)
