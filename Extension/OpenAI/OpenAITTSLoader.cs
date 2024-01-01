@@ -48,6 +48,12 @@ namespace ChatdollKit.Extension.OpenAI
         {
             if (token.IsCancellationRequested) { return null; };
 
+            if (string.IsNullOrEmpty(voice.Text.Replace(" ", "").Replace("\n", "").Trim()))
+            {
+                Debug.LogWarning("Query for OpenAI TTS is empty");
+                return null;
+            }
+
             var headers = new Dictionary<string, string>()
             {
                 { "Authorization", $"Bearer {ApiKey}"  },

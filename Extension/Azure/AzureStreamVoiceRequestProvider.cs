@@ -78,6 +78,7 @@ namespace ChatdollKit.Extension.Azure
         {
             OnRecognizing = (sender, e) =>
             {
+                IsDetectingVoice = true;
                 recognizedTextBuffer = e.Result.Text;
             };
             OnRecognized = (sender, e) =>
@@ -136,6 +137,7 @@ namespace ChatdollKit.Extension.Azure
             {
                 try
                 {
+                    IsDetectingVoice = false;
                     recognizer.Recognizing -= OnRecognizing;
                     recognizer.Recognized -= OnRecognized;
                     await recognizer.StopContinuousRecognitionAsync();
