@@ -605,7 +605,7 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 4623211973538491283}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &2893757555470248017
+--- !u!114 &2893757555470248022
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -614,70 +614,172 @@ MonoBehaviour:
   m_GameObject: {fileID: 2893757555470248016}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6ece8a267c4b7434da7da3a4859eb5b7, type: 3}
+  m_Script: {fileID: 11500000, guid: 1436aab79be70429b9891c1481f6841a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Name: 
-  FunctionName: add_reminder
-  FunctionDescription: Add item to reminder.
---- !u!114 &2893757555470248018
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2893757555470248016}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a93cf486a4df24f47a9e6e671a20e854, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Name: 
-  FunctionName: get_weather
-  FunctionDescription: Get current weather in the location.
---- !u!114 &2893757555470248019
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2893757555470248016}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: de7f2181f3b3b496ba86968cc312f11f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Name: 
---- !u!114 &2893757555470248020
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2893757555470248016}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5c9853557e2b74d8d947619144de2315, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &2893757555470248021
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2893757555470248016}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 124166487f788420998c172570993898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  IsEnabled: 0
+  AutoStart: 1
+  PrintResult: 0
+  VoiceDetectionThreshold: 0.1
+  VoiceDetectionRaisedThreshold: 0.5
+  VoiceDetectionMinimumLength: 0.2
+  SilenceDurationToEndRecording: 0.3
+  VoiceRecognitionMaximumLength: 3
+  WakeWords: []
+  CancelWords: []
+  IgnoreWords:
+  - "\u3002"
+  - "\u3001"
+  - "\uFF1F"
+  - "\uFF01"
   ApiKey: 
-  Model: gpt-3.5-turbo-1106
-  ChatCompletionUrl: 
-  IsAzure: 0
-  MaxTokens: 0
+  Model: whisper-1
+  Language: 
+  Prompt: 
+  Temperature: 0
+--- !u!114 &2893757555470248023
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2893757555470248016}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 00c0e9781e80d44ddbc90fa3ec6fb838, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  IsEnabled: 0
+  CancelWords: []
+  IgnoreWords:
+  - "\u3002"
+  - "\u3001"
+  - "\uFF1F"
+  - "\uFF01"
+  PrintResult: 0
+  VoiceDetectionThreshold: 0.1
+  VoiceDetectionMinimumLength: 0.3
+  SilenceDurationToEndRecording: 1
+  ListeningTimeout: 20
+  listeningMessage: '[ Listening ... ]'
+  ApiKey: 
+  Model: whisper-1
+  Language: 
+  Prompt: 
+  Temperature: 0
+--- !u!114 &2893757555470248024
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2893757555470248016}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f9ddc79bad1e48e58ab63dcb3343871, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Timeout: 10
+  isDebug: 0
+  _Name: OpenAI
+  _IsDefault: 1
+  ApiKey: 
+  Voice: nova
+  Speed: 1
+--- !u!114 &2893757555470248025
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2893757555470248016}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2482c7eb4e9ea41ecbd54a4a33815a4c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &2893757555470248026
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2893757555470248016}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 26abceb55bcd6405fb061c37b9693223, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  contentSkillName: LLMContent
+--- !u!114 &2893757555470248027
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2893757555470248016}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dca3ada52baa2497793834a3a1ded6b8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Name: 
+--- !u!114 &2893757555470248028
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2893757555470248016}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1cdc0df0c3fe04b37b9009c204d539c2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _IsEnabled: 0
+  DebugMode: 1
+  SystemMessageContent: "* You are my sister. We are very close and we speak in a
+    casual manner.\n* To prioritize tempo in conversation, please respond in 50 characters
+    or less, up to 2 sentences.\n* Do not generate in Markdown format. Generate plain
+    text.\n* You have four expressions: 'Joy', 'Angry', 'Sorrow', 'Fun' and 'Surprised'.\n*
+    If you want to express a particular emotion, please insert it at the beginning
+    of the sentence like [face:Joy].\n\nExample\n[face:Joy]Hey, you can see the ocean!
+    [face:Fun]Let's go swimming.\n\n* You can express your emotions through the following
+    animations:\n\n- angry_hands_on_waist\n- brave_hand_on_chest\n- calm_hands_on_back\n-
+    concern_right_hand_front\n- energetic_right_fist_up\n- energetic_right_hand_piece\n-
+    pitiable_right_hand_on_back_head\n- surprise_hands_open_front\n- walking\n- waving_arm\n-
+    look_away\n- nodding_once\n- swinging_body\n\n* If you want to express emotions
+    with gestures, insert the animation into the response message like [anim:waving_arm].\n\nExample\n[anim:waving_arm]Hey,
+    over here!\n\nIf you understand, reply just \u201Cok\u201D.\n"
+  ErrorMessageContent: 
+  HistoryTurns: 10
+  HistoryKey: GeminiHistories
+  CustomParameterKey: GeminiParameters
+  CustomHeaderKey: GeminiHeaders
+  ApiKey: 
+  Model: gemini-pro
+  GenerateContentUrl: 
+  MaxOutputTokens: 0
   Temperature: 0.5
+  TopP: 1
+  TopK: 0
+  StopSequences: []
+  responseTimeoutSec: 30
+  noDataResponseTimeoutSec: 10
+--- !u!114 &2893757555470248029
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2893757555470248016}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 570614241e18f45348e6ec1c31ce0a8c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _IsEnabled: 0
+  DebugMode: 1
   SystemMessageContent: '* You are my sister. We are very close and we speak in a
     casual manner.
 
@@ -743,45 +845,124 @@ MonoBehaviour:
     over here!
 
 
-    Okay, let''s talk!'
+    Okay, let''s talk!
+
+'
+  ErrorMessageContent: 
   HistoryTurns: 10
-  ErrorMessageContent: "[face:Sorrow]\u30A8\u30E9\u30FC\u306B\u306A\u3063\u3061\u3083\u3063\u305F"
+  HistoryKey: ClaudeHistories
+  CustomParameterKey: ClaudeParameters
+  CustomHeaderKey: ClaudeHeaders
+  ApiKey: 
+  Model: claude-2.1
+  CreateMessageUrl: 
+  MaxTokens: 500
+  Temperature: 0.5
+  TopK: 0
+  StopSequences: []
   responseTimeoutSec: 30
   noDataResponseTimeoutSec: 5
+--- !u!114 &2893757555470248030
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2893757555470248016}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1ea29e736c884bd5bf42b3010aa42ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _IsEnabled: 1
   DebugMode: 1
---- !u!114 &2893757555470248022
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2893757555470248016}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1436aab79be70429b9891c1481f6841a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  IsEnabled: 0
-  AutoStart: 1
-  PrintResult: 0
-  VoiceDetectionThreshold: 0.1
-  VoiceDetectionRaisedThreshold: 0.5
-  VoiceDetectionMinimumLength: 0.2
-  SilenceDurationToEndRecording: 0.3
-  VoiceRecognitionMaximumLength: 3
-  WakeWords: []
-  CancelWords: []
-  IgnoreWords:
-  - "\u3002"
-  - "\u3001"
-  - "\uFF1F"
-  - "\uFF01"
+  SystemMessageContent: '* You are my sister. We are very close and we speak in a
+    casual manner.
+
+    * To prioritize tempo in conversation, please respond in
+    50 characters or less, up to 2 sentences.
+
+    * You have four expressions: ''Joy'',
+    ''Angry'', ''Sorrow'', ''Fun'' and ''Surprised''.
+
+    * If you want to express
+    a particular emotion, please insert it at the beginning of the sentence like
+    [face:Joy].
+
+
+    Example
+
+    [face:Joy]Hey, you can see the ocean! [face:Fun]Let''s
+    go swimming.
+
+
+    * You can express your emotions through the following animations:
+
+
+    -
+    angry_hands_on_waist
+
+    - brave_hand_on_chest
+
+    - calm_hands_on_back
+
+    -
+    concern_right_hand_front
+
+    - energetic_right_fist_up
+
+    - energetic_right_hand_piece
+
+    -
+    pitiable_right_hand_on_back_head
+
+    - surprise_hands_open_front
+
+    - walking
+
+    -
+    waving_arm
+
+    - look_away
+
+    - nodding_once
+
+    - swinging_body
+
+
+    *
+    If you want to express emotions with gestures, insert the animation into the
+    response message like [anim:waving_arm].
+
+
+    Example
+
+    [anim:waving_arm]Hey,
+    over here!
+
+
+    Okay, let''s talk!
+
+'
+  ErrorMessageContent: 
+  HistoryTurns: 10
+  HistoryKey: ChatGPTHistories
+  CustomParameterKey: ChatGPTParameters
+  CustomHeaderKey: ChatGPTHeaders
   ApiKey: 
-  Model: whisper-1
-  Language: 
-  Prompt: 
-  Temperature: 0
---- !u!114 &2893757555470248023
+  Model: gpt-3.5-turbo
+  ChatCompletionUrl: 
+  IsAzure: 0
+  MaxTokens: 0
+  Temperature: 0.5
+  FrequencyPenalty: 0
+  Logprobs: 0
+  TopLogprobs: 0
+  PresencePenalty: 0
+  Stop: []
+  responseTimeoutSec: 30
+  noDataResponseTimeoutSec: 5
+--- !u!114 &2893757555470248044
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -790,59 +971,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 2893757555470248016}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 00c0e9781e80d44ddbc90fa3ec6fb838, type: 3}
+  m_Script: {fileID: 11500000, guid: a93cf486a4df24f47a9e6e671a20e854, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  IsEnabled: 0
-  CancelWords: []
-  IgnoreWords:
-  - "\u3002"
-  - "\u3001"
-  - "\uFF1F"
-  - "\uFF01"
-  PrintResult: 0
-  VoiceDetectionThreshold: 0.1
-  VoiceDetectionMinimumLength: 0.3
-  SilenceDurationToEndRecording: 1
-  ListeningTimeout: 20
-  MessageWindow: {fileID: 0}
-  listeningMessage: '[ Listening ... ]'
-  ApiKey: 
-  Model: whisper-1
-  Language: 
-  Prompt: 
-  Temperature: 0
---- !u!114 &2893757555470248024
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2893757555470248016}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2f9ddc79bad1e48e58ab63dcb3343871, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Timeout: 10
-  isDebug: 0
-  _Name: OpenAI
-  _IsDefault: 1
-  ApiKey: 
-  Voice: nova
-  Speed: 1
---- !u!114 &2893757555470248025
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2893757555470248016}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2482c7eb4e9ea41ecbd54a4a33815a4c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  Name: 
+  FunctionName: get_weather
+  FunctionDescription: Get current weather in the location.
 --- !u!1001 &4623211973538491283
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -897,8 +1031,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7494064416744276939, guid: 9923f5ee8d02c4f658216c52051a0d17,
         type: 3}
+      propertyPath: OpenAIApiKey
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 7494064416744276939, guid: 9923f5ee8d02c4f658216c52051a0d17,
+        type: 3}
       propertyPath: SpeechService
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 7494064416744276939, guid: 9923f5ee8d02c4f658216c52051a0d17,
+        type: 3}
+      propertyPath: OpenAILanguage
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 7494064416744276942, guid: 9923f5ee8d02c4f658216c52051a0d17,
         type: 3}
