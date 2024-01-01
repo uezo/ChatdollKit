@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 using ChatdollKit.Dialog;
@@ -16,19 +17,32 @@ namespace ChatdollKit.UI
         private Color32 voiceNotDetectedColor = new Color32(255, 255, 255, 255);
 
         private WakeWordListenerBase wakeWordListener;
-        private VoiceRequestProviderBase voiceRequestProvider;
+        private IVoiceRequestProvider voiceRequestProvider;
+
+        private Func<bool> IsWWLDetectingVoice;
+        private Func<bool> IsVRPDetectingVoice;
 
         private void Start()
         {
             wakeWordListener = gameObject.GetComponent<WakeWordListenerBase>();
-            voiceRequestProvider = gameObject.GetComponent<VoiceRequestProviderBase>();
+            IsWWLDetectingVoice = () => { return wakeWordListener.IsDetectingVoice; };
+
+            voiceRequestProvider = gameObject.GetComponent<IVoiceRequestProvider>();
+            if (voiceRequestProvider is VoiceRequestProviderBase)
+            {
+                IsVRPDetectingVoice = () => { return ((VoiceRequestProviderBase)voiceRequestProvider).IsDetectingVoice; };
+            }
+            else if (voiceRequestProvider is NonRecordingVoiceRequestProviderBase)
+            {
+                IsVRPDetectingVoice = () => { return ((NonRecordingVoiceRequestProviderBase)voiceRequestProvider).IsDetectingVoice; };
+            }
 
             microphoneSlider.value = 1.0f - wakeWordListener.VoiceDetectionThreshold;
         }
 
         private void LateUpdate()
         {
-            if (wakeWordListener.IsDetectingVoice || voiceRequestProvider.IsDetectingVoice)
+            if (IsWWLDetectingVoice() || IsVRPDetectingVoice())
             {
                 sliderHandleImage.color = voiceDetectedColor;
             }
@@ -41,7 +55,10 @@ namespace ChatdollKit.UI
         public void UpdateMicrophoneSensitivity()
         {
             wakeWordListener.VoiceDetectionThreshold = 1.0f - microphoneSlider.value;
-            voiceRequestProvider.VoiceDetectionThreshold = 1.0f - microphoneSlider.value;
+            if (voiceRequestProvider is VoiceRequestProviderBase)
+            {
+                ((VoiceRequestProviderBase)voiceRequestProvider).VoiceDetectionThreshold = 1.0f - microphoneSlider.value;
+            }
         }
     }
 }
