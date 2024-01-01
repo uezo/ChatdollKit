@@ -33,7 +33,10 @@ namespace ChatdollKit.LLM
             llmSession.Contexts.Add(humanFriendlyAnswerRequestMessage);
 
             // Call LLM to get human-friendly response
-            var llmSessionForHuman = await llmService.GenerateContentAsync(llmSession.Contexts, useFunctions: false);
+            var payloads = new Dictionary<string, object>();
+            payloads.Add("RequestPayloads", request.Payloads);
+            payloads.Add("StateData", state.Data);
+            var llmSessionForHuman = await llmService.GenerateContentAsync(llmSession.Contexts, payloads, false, token: token);
 
             // Make response
             var response = new Response(request.Id, endTopic: false);

@@ -5,18 +5,19 @@ using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
 using ChatdollKit.Dialog;
 using ChatdollKit.Dialog.Processor;
+using ChatdollKit.LLM;
 
 namespace ChatdollKit.Examples.ChatGPT
 {
-    public class WeatherSkill : ChatGPTFunctionSkillBase
+    public class WeatherSkill : LLMFunctionSkillBase
     {
         public string FunctionName = "get_weather";
         public string FunctionDescription = "Get current weather in the location.";
 
-        public override ChatGPTFunction GetFunctionSpec()
+        public override ILLMTool GetToolSpec()
         {
-            // Make function spec for ChatGPT Function Calling
-            var func = new ChatGPTFunction(FunctionName, FunctionDescription);
+            // Make function spec for Function Calling
+            var func = new LLMTool(FunctionName, FunctionDescription);
             func.AddProperty("location", new Dictionary<string, object>() { { "type", "string" } });
             return func;
         }
@@ -32,7 +33,7 @@ namespace ChatdollKit.Examples.ChatGPT
             var resp = new Dictionary<string, object>()
             {
                 { "weather", "Fine" },
-                { "temperature", 36.7 }
+                { "temperature", 23.5 }
             };
             await UniTask.Delay(100);
 
