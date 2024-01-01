@@ -10,7 +10,7 @@ namespace ChatdollKit.Dialog
     {
         // This provides voice request
         public RequestType RequestType { get; } = RequestType.Voice;
-        public string TextInput { get; set; }
+        public virtual string TextInput { get; set; }
 
         [Header("Cancellation Settings")]
         public List<string> CancelWords = new List<string>();
