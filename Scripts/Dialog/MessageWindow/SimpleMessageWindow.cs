@@ -89,6 +89,10 @@ namespace ChatdollKit.Dialog
                     messageText.text = string.Empty;
                 }
             }
+            catch (OperationCanceledException)
+            {
+                // Ignore OperationCanceledException
+            }
             catch (Exception ex)
             {
                 Debug.LogWarning($"Error occured in showing message: {ex.Message}\n{ex.StackTrace}");
