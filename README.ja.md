@@ -1,7 +1,7 @@
 ﻿# ChatdollKit
 ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャットボットを作るためのフレームワークです。 [🇬🇧README in English is here](https://github.com/uezo/ChatdollKit/blob/master/README.ja.md)
 
-- [🇯🇵 Live demo in Japanese](https://uezo.blob.core.windows.net/github/chatdollkit/demo_ja/index.html)「こんにちは」と話しかけると会話がスタートします。会話がスタートしたら、雑談に加えて「東京の天気は？」などと聞くと天気予報を教えてくれます。
+- [🇯🇵 Live demo in Japanese](https://unagiken.com/chatdollkit/playground/index.html) OpenAI API Keyをご用意ください。「こんにちは」と話しかけると会話がスタートします。
 - [🇬🇧 Live demo English](https://uezo.blob.core.windows.net/github/chatdollkit/demo_en/index.html) Say "Hello" to start conversation. This demo just returns what you say (echo).
 
 <img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit-overview.png" width="720">
@@ -13,11 +13,16 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
     - 表情の制御
     - まばたきと口パク
 
+- Generative AI
+    - マルチLLM: ChatGPT / Azure OpenAI Service, Anthropic Claude, Google Gemini Pro and others
+    - Agents: Function Calling (ChatGPT / Gemini) or your prompt engineering
+    - マルチモーダル: GPT-4V and Gemini-Pro-Visionに対応
+    - 感情表現: Autonomous face expression and animation
+
 - 対話制御
     - 音声認識・テキスト読み上げ（OpenAI、Azure、Google、Watson、VOICEROID、VOICEVOX等）
-    - 対話の文脈・ステート管理
+    - 対話の文脈・ステート管理（生成AIではコンテキスト、メモリー管理も含む）
     - 発話意図の抽出と対話トピックのルーティング
-    - ChatGPT / Azure OpenAI Service対応（表情の自律制御も可能）
 
 - 入出力
     - ウェイクワードによる起動
@@ -100,7 +105,11 @@ ModelControllerのコンテキストメニューから `Setup Animator` を選�
 
 ## 🍳 Skill
 
-`ChatdollKit` におうむ返しスキルの `Examples/Echo/Skills/EchoSkill` を追加します。または、もしAIとの会話を今すぐ楽しみたいときは、ChatGPT対話スキルの `Examples/ChatGPT/Skills/ChatGPTSkill` を追加しましょう。
+`ChatdollKit` におうむ返しスキルの `Examples/Echo/Skills/EchoSkill` を追加します。または、もしAIとの会話を今すぐ楽しみたいときは、以下のコンポーネントを追加して `ChatGPTService` にOpenAI API Keyを設定しましょう。
+
+- ChatdollKit/Scripts/LLM/ChatGPT/ChatGPTService
+- ChatdollKit/Scripts/LLM/LLMRouter
+- ChatdollKit/Scripts/LLM/LLMContentSkill
 
 <img src="Documents/Images/skill.png" width="640">
 

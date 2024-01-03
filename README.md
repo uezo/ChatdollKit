@@ -2,7 +2,7 @@
 3D virtual assistant SDK that enables you to make your 3D model into a voice-enabled chatbot. [🇯🇵日本語のREADMEはこちら](https://github.com/uezo/ChatdollKit/blob/master/README.ja.md)
 
 - [🇬🇧 Live demo English](https://uezo.blob.core.windows.net/github/chatdollkit/demo_en/index.html) Say "Hello" to start conversation. This demo just returns what you say (echo).
-- [🇯🇵 Live demo in Japanese](https://uezo.blob.core.windows.net/github/chatdollkit/demo_ja/index.html)「こんにちは」と話しかけると会話がスタートします。会話がスタートしたら、雑談に加えて「東京の天気は？」などと聞くと天気予報を教えてくれます。
+- [🇯🇵 Live demo in Japanese](https://unagiken.com/chatdollkit/playground/index.html) OpenAI API Keyをご用意ください。「こんにちは」と話しかけると会話がスタートします。
 
 <img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit-overview.png" width="720">
 
@@ -14,11 +14,16 @@
     - Face expression control
     - Blink and lipsync
 
+- Generative AI
+    - Multiple LLMs: ChatGPT / Azure OpenAI Service, Anthropic Claude, Google Gemini Pro and others
+    - Agents: Function Calling (ChatGPT / Gemini) or your prompt engineering
+    - Multimodal: GPT-4V and Gemini-Pro-Vision are suppored
+    - Emotions: Autonomous face expression and animation
+
 - Dialog
     - Speech-to-Text and Text-to-Speech (OpenAI, Azure, Google, Watson, VOICEVOX, VOICEROID etc)
-    - Dialog state management
+    - Dialog state management (in other word, context or memory)
     - Intent extraction and topic routing
-    - ChatGPT / Azure OpenAI Service (with autonomous face expression)
 
 - I/O
     - Wakeword
@@ -102,7 +107,11 @@ Select the speech service (OpenAI/Azure/Google/Watson) you use and set API key a
 
 ## 🍳 Skill
 
-Attach `Examples/Echo/Skills/EchoSkill` to `ChatdollKit`. This is a skill for justs echo. Or, attach `Examples/ChatGPT/Skills/ChatGPTSkill` and set OpenAI API Key if you want to enjoy conversation with AI😊
+Attach `Examples/Echo/Skills/EchoSkill` to `ChatdollKit`. This is a skill for just echo. Or, if you want to enjoy conversation with AI, attach components and set OpenAI API Key to `ChatGPTService`:
+
+- ChatdollKit/Scripts/LLM/ChatGPT/ChatGPTService
+- ChatdollKit/Scripts/LLM/LLMRouter
+- ChatdollKit/Scripts/LLM/LLMContentSkill
 
 <img src="Documents/Images/skill.png" width="640">
 
