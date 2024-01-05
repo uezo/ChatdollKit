@@ -218,7 +218,7 @@ namespace ChatdollKit.LLM.Gemini
             streamRequest.downloadHandler = downloadHandler;
 
             // Start API stream
-            _ = streamRequest.SendWebRequest().ToUniTask();
+            _ = streamRequest.SendWebRequest();
 
             // Preprocessing response
             var noDataResponseTimeoutsAt = DateTime.Now.AddMilliseconds(noDataResponseTimeoutSec * 1000);
