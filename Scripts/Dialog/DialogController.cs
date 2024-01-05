@@ -109,12 +109,35 @@ namespace ChatdollKit.Dialog
             var stateStore = GetComponent<IStateStore>();
             var skillRouter = GetComponent<ISkillRouter>();
 
+            // Search message windows
+            foreach (var messageWindow in GetComponentsInChildren<MessageWindowBase>(true))
+            {
+                if (messageWindow.name == "UserMessageWindow" && UserMessageWindow == null)
+                {
+                    UserMessageWindow = messageWindow;
+                }
+                else if (messageWindow.name == "CharacterMessageWindow" && CharacterMessageWindow == null)
+                {
+                    CharacterMessageWindow = messageWindow;
+                }
+            }
+
+            // User message window
+            if (UserMessageWindow == null)
+            {
+                Debug.LogWarning("UserMessageWindow is not set.");
+            }
             if (!UserMessageWindow.IsInstance)
             {
                 // Create MessageWindow instance
                 UserMessageWindow = Instantiate(UserMessageWindow);
             }
 
+            // Character message window
+            if (CharacterMessageWindow == null)
+            {
+                Debug.LogWarning("CharacterMessageWindow is not set.");
+            }
             // Synchronize speech and character message window
             modelController.OnSayStart = (text, token) =>
             {
