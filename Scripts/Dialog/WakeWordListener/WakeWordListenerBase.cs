@@ -50,14 +50,6 @@ namespace ChatdollKit.Dialog
         {
             if (AutoStart)
             {
-                if (OnWakeAsync == null)
-                {
-                    Debug.LogError("OnWakeAsync must be set");
-#pragma warning disable CS1998
-                    OnWakeAsync = async (ww) => { Debug.LogWarning("Nothing is invoked by wakeword. Set Func to OnWakeAsync."); };
-#pragma warning restore CS1998
-                }
-
 #pragma warning disable CS4014
                 StartListeningAsync();
 #pragma warning restore CS4014
@@ -108,6 +100,14 @@ namespace ChatdollKit.Dialog
             {
                 Debug.LogWarning("WakeWordListener is already listening");
                 return;
+            }
+
+            if (OnWakeAsync == null)
+            {
+                Debug.LogError("Start WakeWordListener failed. OnWakeAsync must be set.");
+#pragma warning disable CS1998
+                OnWakeAsync = async (ww) => { Debug.LogWarning("Nothing is invoked by wakeword. Set Func to OnWakeAsync."); };
+#pragma warning restore CS1998
             }
 
             StartListening();   // Start recorder here to asure that GetVoiceAsync will be called after recorder started
