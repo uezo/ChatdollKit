@@ -20,7 +20,12 @@ namespace ChatdollKit.Model
 
         private void Awake()
         {
-            SkinnedMeshRenderer = gameObject.GetComponent<ModelController>().SkinnedMeshRenderer;
+            Setup(gameObject.GetComponent<ModelController>().AvatarModel);
+        }
+
+        public void Setup(GameObject avatarObject)
+        {
+            SkinnedMeshRenderer = AvatarUtility.GetFacialSkinnedMeshRenderer(avatarObject);
             blinker = gameObject.GetComponent<IBlink>();
             LoadFaces();
             if (faceClips.Count == 0)
@@ -105,6 +110,9 @@ namespace ChatdollKit.Model
                 Debug.LogWarning("Face configuration is not set");
                 return;
             }
+
+            faceClips.Clear();
+            faceValues.Clear();
 
             foreach (var faceClip in FaceClipConfiguration.FaceClips)
             {

@@ -68,7 +68,7 @@ namespace ChatdollKit.Extension.VRM
                 var animator = characterObject.GetComponent<Animator>();
                 animator.runtimeAnimatorController = animatorController;
                 var lipSyncHelper = modelController.gameObject.GetComponent<VRMuLipSyncHelper>();
-                lipSyncHelper.ConfigureVisemeRuntime(modelController);
+                lipSyncHelper.ConfigureViseme(characterObject);
 
                 // Initialize ChatdollKit
                 modelController.gameObject.SetActive(true);

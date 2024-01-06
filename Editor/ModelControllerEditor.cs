@@ -11,6 +11,23 @@ using ChatdollKit.Model;
 [CustomEditor(typeof(ModelController))]
 public class FaceClipEditor : Editor
 {
+    public override void OnInspectorGUI()
+    {
+        var app = target as ModelController;
+
+        if (EditorApplication.isPlaying)
+        {
+            if (GUILayout.Button("Change Avatar"))
+            {
+                app.SetAvatar(activation: true);
+            }
+
+            GUILayout.Space(20.0f);
+        }
+
+        base.OnInspectorGUI();
+    }
+
     // Setup ModelController
     [MenuItem("CONTEXT/ModelController/Setup ModelController")]
     private static void Setup(MenuCommand menuCommand)
@@ -46,14 +63,14 @@ public class FaceClipEditor : Editor
         }
 
         // Set skinned mesh renderer before configure facial expression and lipsync
-        var skinnedMeshRenderers = modelController.AvatarModel.gameObject.GetComponentsInChildren<SkinnedMeshRenderer>();
-        var facialSkinnedMeshRenderer = GetFacialSkinnedMeshRenderer(skinnedMeshRenderers);
+        var facialSkinnedMeshRenderer = AvatarUtility.GetFacialSkinnedMeshRenderer(modelController.AvatarModel);
+        // TODO: Remove SkinnedMeshRenderer from ModelController
         modelController.SkinnedMeshRenderer = facialSkinnedMeshRenderer;
         EditorUtility.SetDirty(modelController);
 
         // Configure uLipSyncHelper
         var lipSyncHelper = modelController.gameObject.GetComponent<uLipSyncHelper>();
-        lipSyncHelper.ConfigureViseme();
+        lipSyncHelper.ConfigureViseme(modelController.AvatarModel);
         EditorUtility.SetDirty(modelController.gameObject.GetComponent<uLipSyncBlendShape>());
 
         // Blink and FaceExpression
@@ -71,7 +88,7 @@ public class FaceClipEditor : Editor
             // Set blink target
             if (blinker != null)
             {
-                blinker.Setup(modelController.SkinnedMeshRenderer);
+                blinker.Setup(modelController.AvatarModel);
                 EditorUtility.SetDirty(blinker);
             }
 
