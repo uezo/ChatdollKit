@@ -12,19 +12,10 @@ namespace ChatdollKit.Model
             // do nothing
         }
 
-#if UNITY_EDITOR
-        public virtual void ConfigureViseme()
+        public virtual void ConfigureViseme(GameObject avatarObject)
         {
-            // Get GameObjects
-            var modelController = gameObject.GetComponent<ModelController>();
-            if (modelController == null || modelController.AudioSource == null)
-            {
-                Debug.LogError("Add and setup ModelController before. You can retry setting up LipSync by selecting `Reset` in the context menu of OVRLipSyncHelper.");
-                return;
-            }
-
             // Get BlendShapeMap for viseme
-            var blendShapeMap = GetBlendShapeMap(modelController);
+            var blendShapeMap = GetBlendShapeMap(avatarObject);
 
             // Get/Add uLipSyncBlendShape
             var uLipSyncBlendShape = gameObject.GetComponent<uLipSyncBlendShape>();
@@ -34,7 +25,7 @@ namespace ChatdollKit.Model
             }
 
             // Configure uLipSyncBlendShape
-            uLipSyncBlendShape.skinnedMeshRenderer = modelController.SkinnedMeshRenderer;
+            uLipSyncBlendShape.skinnedMeshRenderer = AvatarUtility.GetFacialSkinnedMeshRenderer(avatarObject);
 
             // Apply blend shapes
             uLipSyncBlendShape.blendShapes.Clear();
@@ -43,6 +34,7 @@ namespace ChatdollKit.Model
                 uLipSyncBlendShape.blendShapes.Add(new uLipSyncBlendShape.BlendShapeInfo() { phoneme = map.Key, index = map.Value, maxWeight = 1 });
             }
 
+#if UNITY_EDITOR
             // Get/Add uLipSync
             var uLipSyncMain = gameObject.GetComponent<uLipSync.uLipSync>();
             if (uLipSyncMain == null)
@@ -59,12 +51,12 @@ namespace ChatdollKit.Model
             {
                 uLipSyncMain.profile = UnityEditor.AssetDatabase.LoadAssetAtPath<Profile>(UnityEditor.AssetDatabase.GUIDToAssetPath(profiles.First()));
             }
-        }
 #endif
+        }
 
-        protected virtual Dictionary<string, int> GetBlendShapeMap(ModelController modelController)
+        protected virtual Dictionary<string, int> GetBlendShapeMap(GameObject avatarObject)
         {
-            var mesh = modelController.SkinnedMeshRenderer.sharedMesh;
+            var mesh = AvatarUtility.GetFacialSkinnedMeshRenderer(avatarObject).sharedMesh;
             var blendShapeMap = new Dictionary<string, int>()
             {
                 { "A", 0 }, { "I", 0 }, { "U", 0 }, { "E", 0 }, { "O", 0 }, { "N", -1 }, { "-", -1 }

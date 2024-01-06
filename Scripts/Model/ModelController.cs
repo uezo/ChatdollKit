@@ -562,5 +562,40 @@ namespace ChatdollKit.Model
             return faceQueue.First();
         }
 #endregion
+
+#region Avatar
+        public void SetAvatar(GameObject avatarObject = null, bool activation = false)
+        {
+            var currentAvatarObject = animator.gameObject;
+            var newAvatarObject = avatarObject == null ? AvatarModel : avatarObject;
+
+            if (activation)
+            {
+                currentAvatarObject.SetActive(false);
+            }
+
+            // Animator
+            animator = newAvatarObject.gameObject.GetComponent<Animator>();
+
+            // Blink (Blink at first because FaceExpression depends blink)
+            // TODO: Make the dependency simple
+            GetComponent<IBlink>()?.Setup(newAvatarObject);
+
+            // Face expression
+            faceExpressionProxy.Setup(newAvatarObject);
+
+            // LipSync
+            lipSyncHelper.ConfigureViseme(newAvatarObject);
+
+            // Start idling
+            currentAnimation = null;  // Set null to newly start idling animation
+            StartIdling(true);
+
+            if (activation)
+            {
+                newAvatarObject.SetActive(true);
+            }
+        }
+#endregion
     }
 }

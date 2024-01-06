@@ -1,4 +1,4 @@
-﻿using Cysharp.Threading.Tasks;
+﻿using UnityEngine;
 
 namespace ChatdollKit.Model
 {
@@ -6,5 +6,6 @@ namespace ChatdollKit.Model
     {
         void SetExpression(string name = "Neutral", float value = 1.0f);
         void SetExpressionSmoothly(string name = "Neutral", float value = 1.0f);
+        void Setup(GameObject avatarObject);
     }
 }

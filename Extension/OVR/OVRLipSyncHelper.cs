@@ -15,27 +15,17 @@ namespace ChatdollKit.Extension.OVR
             LipSyncContext.ResetContext();
         }
 
-#if UNITY_EDITOR
-        public void ConfigureViseme()
+        public void ConfigureViseme(GameObject avatarObject)
         {
-            // Get GameObjects
-            var modelController = gameObject.GetComponent<ModelController>();
-            if (modelController == null || modelController.AudioSource == null)
-            {
-                Debug.LogError("Add and setup ModelController before. You can retry setting up LipSync by selecting `Reset` in the context menu of OVRLipSyncHelper.");
-                return;
-            }
-            var voiceAudioObject = modelController.AudioSource.gameObject;
-
             // Get/Add OVRLipSyncContextMorphTarget
-            var morphTarget = voiceAudioObject.GetComponent<OVRLipSyncContextMorphTarget>();
+            var morphTarget = GetComponent<OVRLipSyncContextMorphTarget>();
             if (morphTarget == null)
             {
-                morphTarget = voiceAudioObject.AddComponent<OVRLipSyncContextMorphTarget>();
+                morphTarget = gameObject.AddComponent<OVRLipSyncContextMorphTarget>();
             }
 
             // Configure OVRLipSyncContextMorphTarget
-            morphTarget.skinnedMeshRenderer = modelController.SkinnedMeshRenderer;
+            morphTarget.skinnedMeshRenderer = AvatarUtility.GetFacialSkinnedMeshRenderer(avatarObject);
 
             // Map blend shapes
             Dictionary<string, int> blendShapeMap = null;
@@ -67,14 +57,14 @@ namespace ChatdollKit.Extension.OVR
             }
 
             // Get/Add OVRLipSyncContext
-            var lipSyncContext = voiceAudioObject.GetComponent<OVRLipSyncContext>();
+            var lipSyncContext = GetComponent<OVRLipSyncContext>();
             if (lipSyncContext == null)
             {
-                lipSyncContext = voiceAudioObject.AddComponent<OVRLipSyncContext>();
+                lipSyncContext = gameObject.AddComponent<OVRLipSyncContext>();
             }
 
             // Configure OVRLipSyncContext
-            lipSyncContext.audioSource = modelController.AudioSource;
+            lipSyncContext.audioSource = GetComponent<AudioSource>();
             lipSyncContext.audioLoopback = true;
             LipSyncContext = lipSyncContext;
         }
@@ -222,6 +212,5 @@ namespace ChatdollKit.Extension.OVR
 
             return false;
         }
-#endif
     }
 }

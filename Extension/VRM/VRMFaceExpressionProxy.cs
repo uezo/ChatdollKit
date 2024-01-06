@@ -19,7 +19,12 @@ namespace ChatdollKit.Extension.VRM
 
         private void Awake()
         {
-            blendShapeProxy = gameObject.GetComponent<ModelController>().AvatarModel.gameObject.GetComponent<VRMBlendShapeProxy>();
+            Setup(gameObject.GetComponent<ModelController>().AvatarModel);
+        }
+
+        public void Setup(GameObject avatarObject)
+        {
+            blendShapeProxy = avatarObject.GetComponent<VRMBlendShapeProxy>();
             blinker = gameObject.GetComponent<IBlink>();
         }
 

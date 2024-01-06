@@ -1,8 +1,6 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 using ChatdollKit.Dialog;
-using ChatdollKit.Dialog.Processor;
 using ChatdollKit.Model;
 using ChatdollKit.LLM;
 
@@ -55,17 +53,6 @@ namespace ChatdollKit.Demo
             };
 #pragma warning restore CS1998
 
-            // Animation and face expression for start up
-            var animationOnStart = new List<Model.Animation>();
-            animationOnStart.Add(new Model.Animation("BaseParam", 6, 0.5f));
-            animationOnStart.Add(new Model.Animation("BaseParam", 10, 3.0f));
-            //animationOnStart.Add(new Model.Animation("BaseParam", 101, 20.0f));
-            modelController.Animate(animationOnStart);
-
-            var faceOnStart = new List<FaceExpression>();
-            faceOnStart.Add(new FaceExpression("Joy", 3.0f));
-            modelController.SetFace(faceOnStart);
-
             // Animations used in conversation
             foreach (var llmContentSkill in gameObject.GetComponents<LLMContentSkill>())
             {
@@ -87,6 +74,17 @@ namespace ChatdollKit.Demo
                     break;
                 }
             }
+
+            // Animation and face expression for start up
+            var animationOnStart = new List<Model.Animation>();
+            animationOnStart.Add(new Model.Animation("BaseParam", 6, 0.5f));
+            animationOnStart.Add(new Model.Animation("BaseParam", 10, 3.0f));
+            //animationOnStart.Add(new Model.Animation("BaseParam", 101, 20.0f));
+            modelController.Animate(animationOnStart);
+
+            var faceOnStart = new List<FaceExpression>();
+            faceOnStart.Add(new FaceExpression("Joy", 3.0f));
+            modelController.SetFace(faceOnStart);
         }
 
         //private void Update()

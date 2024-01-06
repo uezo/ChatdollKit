@@ -1,4 +1,5 @@
-﻿using Cysharp.Threading.Tasks;
+﻿using UnityEngine;
+using Cysharp.Threading.Tasks;
 
 namespace ChatdollKit.Model
 {
@@ -6,5 +7,6 @@ namespace ChatdollKit.Model
     {
         UniTask StartBlinkAsync(bool startNew = false);
         void StopBlink();
+        void Setup(GameObject avatarObject);
     }
 }
