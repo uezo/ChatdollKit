@@ -25,8 +25,8 @@ namespace ChatdollKit.IO
         // Status and mute
         public bool IsListening { get; set; }
         [SerializeField]
-        private bool isMuted = false;
-        private bool isPreviousMuted = false;
+        private bool isMuted = true;
+        private bool isPreviousMuted = true;
         public bool IsMuted
         {
             get { return isMuted; }

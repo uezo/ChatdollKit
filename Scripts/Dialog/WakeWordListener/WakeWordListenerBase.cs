@@ -44,6 +44,11 @@ namespace ChatdollKit.Dialog
         public Func<UniTask> OnCancelAsync { get; set; }
         public Func<bool> ShouldRaiseThreshold { get; set; } = () => { return false; };
 
+        public new bool IsListening
+        {
+            get { return base.IsListening; }
+        }
+
         protected ChatdollHttp client = new ChatdollHttp();
 
         protected virtual void Start()
@@ -94,6 +99,16 @@ namespace ChatdollKit.Dialog
             CancelWords.Add(cancelWord);
         }
 
+        public virtual new void StartListening()
+        {
+            _ = StartListeningAsync();
+        }
+
+        public virtual new void StopListening()
+        {
+            cancellationTokenSource.Cancel();
+        }
+
         protected virtual async UniTask StartListeningAsync()
         {
             if (IsListening)
@@ -110,7 +125,7 @@ namespace ChatdollKit.Dialog
 #pragma warning restore CS1998
             }
 
-            StartListening();   // Start recorder here to asure that GetVoiceAsync will be called after recorder started
+            base.StartListening();   // Start recorder here to asure that GetVoiceAsync will be called after recorder started
 
             try
             {
@@ -149,7 +164,7 @@ namespace ChatdollKit.Dialog
             }
             finally
             {
-                StopListening();
+                base.StopListening();
             }
         }
 

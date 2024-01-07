@@ -50,6 +50,11 @@ namespace ChatdollKit.Dialog
         protected string recognitionId = string.Empty;
         protected ChatdollHttp client = new ChatdollHttp();
 
+        public new bool IsListening
+        {
+            get { return base.IsListening; }
+        }
+
         public void SetMessageWindow(IMessageWindow messageWindow)
         {
             MessageWindow = messageWindow;
