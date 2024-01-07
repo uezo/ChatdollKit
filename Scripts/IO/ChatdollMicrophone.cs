@@ -22,9 +22,32 @@ namespace ChatdollKit.IO
         private int previousPosition;
         public MicrophoneCapturedData CapturedData { get; private set; }
 
-        // Status and timestamp
-        public bool IsListening;
-        public bool IsEnabled = true;
+        // Status and mute
+        public bool IsListening { get; set; }
+        [SerializeField]
+        private bool isMuted = true;
+        private bool isPreviousMuted = true;
+        public bool IsMuted
+        {
+            get { return isMuted; }
+            set
+            {
+                isMuted = value;
+                if (value)
+                {
+                    Debug.Log("Microphone muted. Stop listening.");
+                    StopListening();
+                }
+                else
+                {
+                    if (!IsListening)
+                    {
+                        Debug.Log("Microphone unmuted. Start listening.");
+                        StartListening();
+                    }
+                }
+            }
+        }
 
         // Microphone device
         public string DeviceName;
@@ -33,35 +56,14 @@ namespace ChatdollKit.IO
         // Runtime configurations
         public int SamplingFrequency = 16000;
 
-        // Mute
-        public bool IsMuted { get; private set; } = false;
-
         // Debug
         public bool DebugMicrophone = false;
         public bool DebugSamplingData = false;
         public bool PrintDevices = false;
 
-        private void Awake()
-        {
-#if PLATFORM_ANDROID
-            // Request permission if Android
-            if (!Permission.HasUserAuthorizedPermission(Permission.Microphone))
-            {
-                Permission.RequestUserPermission(Permission.Microphone);
-            }
-#endif
-
-#if UNITY_WEBGL && !UNITY_EDITOR
-            if (gameObject.GetComponent<Microphone>() == null)
-            {
-                gameObject.AddComponent<Microphone>();
-            }
-#endif
-        }
-
         private void Start()
         {
-            if (SamplingFrequency > 0)
+            if (!IsMuted)
             {
                 StartListening();
             }
@@ -69,6 +71,23 @@ namespace ChatdollKit.IO
 
         private void Update()
         {
+            // Control mute
+            if (isMuted != isPreviousMuted)
+            {
+                IsMuted = isMuted;
+            }
+            isPreviousMuted = isMuted;
+
+            // Return if muted or not listening
+            if (IsMuted || !IsListening)
+            {
+                if (DebugMicrophone)
+                {
+                    Debug.Log($"Microphone is not listening: {IsListening} (IsMuted: {IsMuted})");
+                }
+                return;
+            }
+
             CapturedData = new MicrophoneCapturedData(microphoneInput.channels, microphoneInput.frequency);
 
             if (DebugSamplingData)
@@ -93,16 +112,6 @@ namespace ChatdollKit.IO
                 IsMicrophoneEnabled = true;
 #endif
                 Debug.Log("Permission for microphone is granted");
-            }
-
-            // Return if disabled or not listening
-            if (!IsEnabled || !IsListening)
-            {
-                if (DebugMicrophone)
-                {
-                    Debug.Log($"Microphone is not listening: {IsListening} (IsEnabled: {IsEnabled})");
-                }
-                return;
             }
 
             try
@@ -159,30 +168,6 @@ namespace ChatdollKit.IO
             StopListening();
         }
 
-        public void SetMute(bool mute)
-        {
-            if (mute)
-            {
-                Debug.Log("Microphone muted. Stop listening.");
-                StopListening();
-            }
-            else
-            {
-                Debug.Log("Microphone unmuted. Start listening.");
-                if (SamplingFrequency > 0)
-                {
-                    StartListening();
-                }
-            }
-
-            IsMuted = mute;
-        }
-
-        public void ToggleMute()
-        {
-            SetMute(!IsMuted);
-        }
-
         public void ChangeInputDevice(string deviceName)
         {
             DeviceName = deviceName;
@@ -191,6 +176,36 @@ namespace ChatdollKit.IO
 
         public void StartListening()
         {
+            // Check sampling rate
+            if (SamplingFrequency <= 0)
+            {
+                Debug.LogWarning("Set sampling frequency larger than 0 before start ChatdollMicrophone.");
+                return;
+            }
+
+            // Check mute
+            if (IsMuted)
+            {
+                Debug.LogWarning("Microphone is muted.");
+                return;
+            }
+
+            // Permission
+#if PLATFORM_ANDROID
+            // Request permission if Android
+            if (!Permission.HasUserAuthorizedPermission(Permission.Microphone))
+            {
+                Permission.RequestUserPermission(Permission.Microphone);
+            }
+#endif
+            // WebGL
+#if UNITY_WEBGL && !UNITY_EDITOR
+            if (gameObject.GetComponent<Microphone>() == null)
+            {
+                gameObject.AddComponent<Microphone>();
+            }
+#endif
+
             // (Re)start microphone
             if (Microphone.IsRecording(listeningDeviceName))
             {

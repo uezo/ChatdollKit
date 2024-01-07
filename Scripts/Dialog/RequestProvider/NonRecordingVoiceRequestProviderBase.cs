@@ -11,6 +11,8 @@ namespace ChatdollKit.Dialog
         // This provides voice request
         public RequestType RequestType { get; } = RequestType.Voice;
         public virtual string TextInput { get; set; }
+        public virtual bool IsListening { get; protected set; }
+        public virtual bool IsMuted { get; set; }
         public bool IsDetectingVoice { get; protected set; } = false;
 
         [Header("Cancellation Settings")]

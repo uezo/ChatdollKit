@@ -33,6 +33,10 @@ namespace ChatdollKit.IO
         protected Action<AudioClip> onRecordingEnd;
         protected Action<Exception> onError;
 
+        // Microphone controller
+        public Func<bool> UnmuteOnListeningStart { get; set; } = () => { return true; };
+        public Func<bool> MuteOnListeningStop { get; set; } = () => { return true; };
+
         // Testing and debugging
         public string TextInput { get; set; }
 
@@ -110,7 +114,12 @@ namespace ChatdollKit.IO
 
         public void StartListening()
         {
+            // Unmute microphone on start
             microphone = gameObject.GetComponent<ChatdollMicrophone>();
+            if (UnmuteOnListeningStart())
+            {
+                microphone.IsMuted = false;
+            }
 
             // Initialize data and status
             recordedData = new List<float>();
@@ -124,6 +133,13 @@ namespace ChatdollKit.IO
 
         public void StopListening()
         {
+            // Mute microphone on end
+            microphone = gameObject.GetComponent<ChatdollMicrophone>();
+            if (MuteOnListeningStop())
+            {
+                microphone.IsMuted = true;
+            }
+
             // Clear data
             recordedData?.Clear();
 

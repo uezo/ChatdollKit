@@ -37,7 +37,7 @@ namespace ChatdollKit.Extension.Azure
         }
 
         private bool isMuted = false;
-        public bool IsMuted {
+        public override bool IsMuted {
             get
             {
                 return isMuted;
@@ -63,8 +63,6 @@ namespace ChatdollKit.Extension.Azure
                 }
             }
         }
-
-        public bool IsListening { get; set; } = false;
 
         private EventHandler<SpeechRecognitionEventArgs> OnRecognizing { get; set; }
         private EventHandler<SpeechRecognitionEventArgs> OnRecognized { get; set; }

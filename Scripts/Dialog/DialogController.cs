@@ -37,8 +37,17 @@ namespace ChatdollKit.Dialog
         public MessageWindowBase UserMessageWindow;
         public MessageWindowBase CharacterMessageWindow;
 
-        [Header("Camera")]
+        [Header("I/O")]
         public ChatdollCamera ChatdollCamera;
+        private ChatdollMicrophone chatdollMicrophone;
+        [SerializeField]
+        private bool isMuted = false;
+        private bool isPreviousMuted = false;
+        public bool IsMuted
+        {
+            get { return isMuted; }
+            set { isMuted = value; }
+        }
 
         // Dialog Status
         public enum DialogStatus
@@ -54,6 +63,7 @@ namespace ChatdollKit.Dialog
             Finalizing
         }
         public DialogStatus Status { get; private set; }
+        public string DialogSessionId { get; private set; }
 
         public bool IsChatting { get; private set; }
         public bool IsError { get; private set; }
@@ -151,6 +161,9 @@ namespace ChatdollKit.Dialog
                 CharacterMessageWindow?.Hide();
             };
 
+            // Microphone
+            chatdollMicrophone = GetComponent<ChatdollMicrophone>();
+
             // Create ChatdollCamera instance
             ChatdollCamera = Instantiate(ChatdollCamera);
 
@@ -172,6 +185,11 @@ namespace ChatdollKit.Dialog
                     {
                         // Register cancel word to VoiceRequestProvider
                         rp.SetCancelWord(CancelWord);
+                    }
+
+                    if (rp is VoiceRecorderBase)
+                    {
+                        ((VoiceRecorderBase)rp).UnmuteOnListeningStart = () => { return !IsMuted; };
                     }
                     RequestProviders.Add(RequestType.Voice, rp);
                     break;
@@ -239,12 +257,6 @@ namespace ChatdollKit.Dialog
                     WakeWordListener.SetWakeWord(new WakeWord() { Text = WakeWord, Intent = string.Empty });
                 }
 
-                // Register cancel word
-                if (!string.IsNullOrEmpty(CancelWord))
-                {
-                    WakeWordListener.SetCancelWord(CancelWord);
-                }
-
                 // Awake
                 WakeWordListener.OnWakeAsync = async (wakeword) =>
                 {
@@ -257,11 +269,6 @@ namespace ChatdollKit.Dialog
                         await OnWakeAsyncDefault(wakeword);
                     }
                 };
-
-                // Cancel
-#pragma warning disable CS1998
-                WakeWordListener.OnCancelAsync = async () => { StopDialog(); };
-#pragma warning restore CS1998
 
                 // Raise voice detection threshold when chatting
                 WakeWordListener.ShouldRaiseThreshold = () => { return IsChatting; };
@@ -382,18 +389,32 @@ namespace ChatdollKit.Dialog
         // Start chatting loop
         public async UniTask StartDialogAsync(DialogRequest dialogRequest = null)
         {
-            await (OnDialogStartAsync == null ? OnDialogStartAsyncDefault() : OnDialogStartAsync());
-
             Status = DialogStatus.Initializing;
+            DialogSessionId = Guid.NewGuid().ToString();
+            var currentDialogSessionId = DialogSessionId;
 
-            if (dialogRequest == null)
+            try
             {
-                dialogRequest = new DialogRequest(GetClientId == null ? GetClientIdDefault() : GetClientId());
+                await (OnDialogStartAsync == null ? OnDialogStartAsyncDefault() : OnDialogStartAsync());
+
+                if (dialogRequest == null)
+                {
+                    dialogRequest = new DialogRequest(GetClientId == null ? GetClientIdDefault() : GetClientId());
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Error at initializing dialog: {ex}\n{ex.StackTrace}");
+                Status = DialogStatus.Idling;
+                return;
             }
 
-            // Get cancellation token
+            // Stop running dialog and get cancellation token
             StopDialog(true, false);
             var token = GetDialogToken();
+
+            // Stop WakeWordListener and microphone
+            WakeWordListener.StopListening();
 
             // Request
             Request request = null;
@@ -430,11 +451,16 @@ namespace ChatdollKit.Dialog
                     if (request == null)
                     {
                         // Get request (microphone / camera / QR code, etc)
-                        Status = DialogStatus.Listening;
                         var requestProvider = RequestProviders[requestType];
+                        Status = DialogStatus.Listening;
                         request = await requestProvider.GetRequestAsync(token);
+                        Status = DialogStatus.Processing;
                         request.ClientId = dialogRequest.ClientId;
                         request.Tokens = dialogRequest.Tokens;
+                    }
+                    else
+                    {
+                        Status = DialogStatus.Processing;
                     }
 
                     if (!request.IsSet())
@@ -447,7 +473,6 @@ namespace ChatdollKit.Dialog
                     {
                         await OnRequestAsync(request, token);
                     }
-                    Status = DialogStatus.Processing;
                     var skillResponse = await requestProcessor.ProcessRequestAsync(request, token);
                     if (OnResponseAsync != null)
                     {
@@ -489,6 +514,7 @@ namespace ChatdollKit.Dialog
             }
             finally
             {
+                // Reset flags
                 IsError = false;
                 IsChatting = false;
 
@@ -497,6 +523,12 @@ namespace ChatdollKit.Dialog
                     // NOTE: Cancel is triggered not only when just canceled but when invoked another chat session
                     // Restart idling animation and reset face expression
                     modelController?.StartIdling();
+                }
+
+                if (currentDialogSessionId == DialogSessionId)
+                {
+                    // Reset status and start WakeWordListener when another session is not started
+                    Status = DialogStatus.Idling;
                 }
             }
         }
@@ -531,6 +563,55 @@ namespace ChatdollKit.Dialog
             // Create new TokenSource and return its token
             dialogTokenSource = new CancellationTokenSource();
             return dialogTokenSource.Token;
+        }
+
+        private void Update()
+        {
+            // Control mute
+            if (isMuted != isPreviousMuted)
+            {
+                IsMuted = isMuted;
+            }
+            isPreviousMuted = isMuted;
+
+            // Sync DialogController mute/unmute with Microphone mute/unmute
+            if (!chatdollMicrophone.IsMuted && IsMuted)
+            {
+                // Mute microphone anyway
+                chatdollMicrophone.IsMuted = true;
+            }
+            else if (chatdollMicrophone.IsMuted && !IsMuted)
+            {
+                // Unmute when VoiceRequestProvider is based on VoiceRecorder and it is listening
+                if (RequestProviders[RequestType.Voice] is VoiceRecorderBase)
+                {
+                    if (((IVoiceRequestProvider)RequestProviders[RequestType.Voice]).IsListening)
+                    {
+                        chatdollMicrophone.IsMuted = false;
+                    }
+                }
+            }
+
+            // Sync DialogController mute/unmute with NonVoiceRecordingRequestProvider
+            if (RequestProviders[RequestType.Voice] is NonRecordingVoiceRequestProviderBase)
+            {
+                var vrp = (NonRecordingVoiceRequestProviderBase)RequestProviders[RequestType.Voice];
+                if (vrp.IsMuted != IsMuted)
+                {
+                    // Sync IsMuted
+                    vrp.IsMuted = IsMuted;
+                }
+            }
+
+            // Control WakeWordListener
+            if ((Status != DialogStatus.Idling || IsMuted) && WakeWordListener.IsListening)
+            {
+                WakeWordListener.StopListening();
+            }
+            else if (Status == DialogStatus.Idling && !IsMuted && !WakeWordListener.IsListening)
+            {
+                WakeWordListener.StartListening();
+            }
         }
     }
 }

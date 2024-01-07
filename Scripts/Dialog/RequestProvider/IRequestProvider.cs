@@ -14,5 +14,6 @@ namespace ChatdollKit.Dialog
         void SetMessageWindow(IMessageWindow messageWindow);
         void SetCancelWord(string cancelWord);
         string TextInput { get; set; }
+        bool IsListening { get; }
     }
 }

@@ -44,20 +44,17 @@ namespace ChatdollKit.Dialog
         public Func<UniTask> OnCancelAsync { get; set; }
         public Func<bool> ShouldRaiseThreshold { get; set; } = () => { return false; };
 
+        public new bool IsListening
+        {
+            get { return base.IsListening; }
+        }
+
         protected ChatdollHttp client = new ChatdollHttp();
 
         protected virtual void Start()
         {
             if (AutoStart)
             {
-                if (OnWakeAsync == null)
-                {
-                    Debug.LogError("OnWakeAsync must be set");
-#pragma warning disable CS1998
-                    OnWakeAsync = async (ww) => { Debug.LogWarning("Nothing is invoked by wakeword. Set Func to OnWakeAsync."); };
-#pragma warning restore CS1998
-                }
-
 #pragma warning disable CS4014
                 StartListeningAsync();
 #pragma warning restore CS4014
@@ -102,6 +99,16 @@ namespace ChatdollKit.Dialog
             CancelWords.Add(cancelWord);
         }
 
+        public virtual new void StartListening()
+        {
+            _ = StartListeningAsync();
+        }
+
+        public virtual new void StopListening()
+        {
+            cancellationTokenSource.Cancel();
+        }
+
         protected virtual async UniTask StartListeningAsync()
         {
             if (IsListening)
@@ -110,7 +117,15 @@ namespace ChatdollKit.Dialog
                 return;
             }
 
-            StartListening();   // Start recorder here to asure that GetVoiceAsync will be called after recorder started
+            if (OnWakeAsync == null)
+            {
+                Debug.LogError("Start WakeWordListener failed. OnWakeAsync must be set.");
+#pragma warning disable CS1998
+                OnWakeAsync = async (ww) => { Debug.LogWarning("Nothing is invoked by wakeword. Set Func to OnWakeAsync."); };
+#pragma warning restore CS1998
+            }
+
+            base.StartListening();   // Start recorder here to asure that GetVoiceAsync will be called after recorder started
 
             try
             {
@@ -149,7 +164,7 @@ namespace ChatdollKit.Dialog
             }
             finally
             {
-                StopListening();
+                base.StopListening();
             }
         }
 
