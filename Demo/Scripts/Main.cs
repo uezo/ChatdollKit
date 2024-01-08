@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using ChatdollKit.Dialog;
 using ChatdollKit.Model;
 using ChatdollKit.LLM;
@@ -13,6 +14,9 @@ namespace ChatdollKit.Demo
 
         //private int secondsToSleep = 60;
         //private DateTime sleepStartAt;
+
+        [SerializeField]
+        private InputField requestInput;
 
         void Start()
         {
@@ -103,5 +107,27 @@ namespace ChatdollKit.Demo
         //        _ = modelController.ChangeIdlingModeAsync("sleep");
         //    }
         //}
+
+        public void OnWakeButton()
+        {
+            _ = dialogController.StartDialogAsync();
+        }
+
+        public void OnSubmitRequestInput()
+        {
+            var inputText = requestInput.text.Trim();
+            requestInput.text = string.Empty;
+            if (string.IsNullOrEmpty(inputText)) return;
+
+            if (dialogController.Status == DialogController.DialogStatus.Idling)
+            {
+                var dialogRequest = new DialogRequest("_", new WakeWord() { Text = inputText, SkipPrompt = true }.CloneWithRecognizedText(inputText), true);
+                _ = dialogController.StartDialogAsync(dialogRequest);
+            }
+            else
+            {
+                ((IVoiceRequestProvider)dialogController.RequestProviders[RequestType.Voice]).TextInput = inputText;
+            }
+        }
     }
 }
