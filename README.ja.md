@@ -37,7 +37,9 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 
 # 🚀 クイックスタート
 
-セットアップ手順についてはこちらの2分程度の動画をご覧いただくとより簡単に理解できます: https://www.youtube.com/watch?v=aJ0iDZ0o4Es
+セットアップ手順についてはこちらの動画をご覧いただくとより簡単に理解できます。ChatGPTと会話するデモシーンを動かせるまでの手順です: https://www.youtube.com/watch?v=rRtm18QSJtc
+
+[![](https://img.youtube.com/vi/rRtm18QSJtc/0.jpg)](https://www.youtube.com/watch?v=rRtm18QSJtc)
 
 ## 📦 パッケージのインポート
 
