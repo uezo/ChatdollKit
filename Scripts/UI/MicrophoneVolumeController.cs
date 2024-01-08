@@ -18,12 +18,15 @@ namespace ChatdollKit.UI
 
         private WakeWordListenerBase wakeWordListener;
         private IVoiceRequestProvider voiceRequestProvider;
+        private DialogController dialogController;
 
         private Func<bool> IsWWLDetectingVoice;
         private Func<bool> IsVRPDetectingVoice;
 
         private void Start()
         {
+            dialogController = gameObject.GetComponent<DialogController>();
+
             wakeWordListener = gameObject.GetComponent<WakeWordListenerBase>();
             IsWWLDetectingVoice = () => { return wakeWordListener.IsDetectingVoice; };
 
@@ -58,6 +61,15 @@ namespace ChatdollKit.UI
             if (voiceRequestProvider is VoiceRequestProviderBase)
             {
                 ((VoiceRequestProviderBase)voiceRequestProvider).VoiceDetectionThreshold = 1.0f - microphoneSlider.value;
+            }
+
+            if (microphoneSlider.value == 0 && !dialogController.IsMuted)
+            {
+                dialogController.IsMuted = true;
+            }
+            else if (microphoneSlider.value > 0 && dialogController.IsMuted)
+            {
+                dialogController.IsMuted = false;
             }
         }
     }

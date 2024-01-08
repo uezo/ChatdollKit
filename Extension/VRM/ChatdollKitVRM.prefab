@@ -780,10 +780,11 @@ MonoBehaviour:
   ErrorAnimationParamValue: 0
   UseRemoteServer: 0
   BaseUrl: 
-  UserMessageWindow: {fileID: 0}
-  CharacterMessageWindow: {fileID: 0}
+  UserMessageWindow: {fileID: 6836961680212054203}
+  CharacterMessageWindow: {fileID: 6727544427828251976}
   ChatdollCamera: {fileID: 1401176156841536948, guid: 03c2a6d89452c44868a1110cdb20b0b8,
     type: 3}
+  isMuted: 0
 --- !u!114 &7494064416744276939
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -809,6 +810,9 @@ MonoBehaviour:
   GoogleLanguage: ja-JP
   GoogleGender: FEMALE
   GoogleSpeakerName: ja-JP-Standard-A
+  OpenAIApiKey: 
+  OpenAILanguage: 
+  OpenAIVoice: nova
   WatsonTTSApiKey: 
   WatsonTTSBaseUrl: 
   WatsonTTSSpeakerName: ja-JP_EmiV3Voice
@@ -828,9 +832,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eee78d1c87c5f4f11882273e2bdd3b68, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  IsEnabled: 1
+  isMuted: 1
   DeviceName: 
   SamplingFrequency: 16000
+  DebugMicrophone: 0
+  DebugSamplingData: 0
+  PrintDevices: 0
 --- !u!82 &7522973787264026898
 AudioSource:
   m_ObjectHideFlags: 0
