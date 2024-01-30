@@ -1,6 +1,7 @@
 ﻿# ChatdollKit
 3D virtual assistant SDK that enables you to make your 3D model into a voice-enabled chatbot. [🇯🇵日本語のREADMEはこちら](https://github.com/uezo/ChatdollKit/blob/master/README.ja.md)
 
+- [🍎 iOS App: OshaberiAI](https://apps.apple.com/us/app/oshaberiai/id6446883638) A Virtual Agent App made with ChatdollKit: a perfect fusion of character creation by AI prompt engineering, customizable 3D VRM models, and your favorite voices by VOICEVOX.
 - [🇬🇧 Live demo English](https://uezo.blob.core.windows.net/github/chatdollkit/demo_en/index.html) Say "Hello" to start conversation. This demo just returns what you say (echo).
 - [🇯🇵 Live demo in Japanese](https://unagiken.com/chatdollkit/playground/index.html) OpenAI API Keyをご用意ください。「こんにちは」と話しかけると会話がスタートします。
 
