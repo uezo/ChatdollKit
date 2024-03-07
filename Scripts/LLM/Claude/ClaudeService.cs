@@ -74,8 +74,17 @@ namespace ChatdollKit.LLM.Claude
             var histories = GetHistoriesFromStateData((Dictionary<string, object>)payloads["StateData"]);
             messages.AddRange(histories.Skip(histories.Count - HistoryTurns * 2).ToList());
 
-            // User (current input)
-            messages.Add(new ClaudeMessage("user", inputText));
+            if (((Dictionary<string, object>)payloads["RequestPayloads"]).ContainsKey("imageBytes"))
+            {
+                // Message with image
+                var imageBytes = (byte[])((Dictionary<string, object>)payloads["RequestPayloads"])["imageBytes"];
+                messages.Add(new ClaudeMessage("user", inputText, "image/jpeg", Convert.ToBase64String(imageBytes)));
+            }
+            else
+            {
+                // Text message
+                messages.Add(new ClaudeMessage("user", inputText));
+            }
 
             return messages;
         }
@@ -299,15 +308,57 @@ namespace ChatdollKit.LLM.Claude
         public string text { get; set; }
     }
 
+    public class ClaudeImageSource
+    {
+        public string type { get; } = "base64";
+        public string media_type { get; set; }
+        public string data { get; set; }
+    }
+
+    public class ClaudeContent
+    {
+        public string type { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string text { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public ClaudeImageSource source { get; set; }
+
+        public ClaudeContent() { }
+
+        public ClaudeContent(string text)
+        {
+            type = "text";
+            this.text = text;
+        }
+
+        public ClaudeContent(string mediaType, string data)
+        {
+            type = "image";
+            source = new ClaudeImageSource();
+            source.media_type = mediaType;
+            source.data = data;
+        }
+    }
+
     public class ClaudeMessage : ILLMMessage
     {
         public string role { get; set; }
-        public string content { get; set; }
+        public List<ClaudeContent> content { get; set; }
 
-        public ClaudeMessage(string role = null, string content = null)
+        public ClaudeMessage(string role, string text = null, string mediaType = null, string data = null)
         {
             this.role = role;
-            this.content = content;
+            content = new List<ClaudeContent>();
+
+            if (!string.IsNullOrEmpty(text))
+            {
+                content.Add(new ClaudeContent(text));
+            }
+
+            if (!string.IsNullOrEmpty(mediaType) && !string.IsNullOrEmpty(data))
+            {
+                content.Add(new ClaudeContent(mediaType, data));
+            }
         }
     }
 }
