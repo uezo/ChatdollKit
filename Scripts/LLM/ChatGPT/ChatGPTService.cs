@@ -119,7 +119,23 @@ namespace ChatdollKit.LLM.ChatGPT
             messages.AddRange(histories);
 
             // User (current input)
-            messages.Add(new ChatGPTUserMessage(inputText));
+            if (((Dictionary<string, object>)payloads["RequestPayloads"]).ContainsKey("imageBytes"))
+            {
+                // Message with image as binary
+                var imageBytes = (byte[])((Dictionary<string, object>)payloads["RequestPayloads"])["imageBytes"];
+                messages.Add(new ChatGPTUserMessage(inputText, "data:image/jpeg;base64," + Convert.ToBase64String(imageBytes)));
+            }
+            else if (((Dictionary<string, object>)payloads["RequestPayloads"]).ContainsKey("imageUrl"))
+            {
+                // Message with image as url
+                var imageUrl = (string)((Dictionary<string, object>)payloads["RequestPayloads"])["imageUrl"];
+                messages.Add(new ChatGPTUserMessage(inputText, imageUrl));
+            }
+            else
+            {
+                // Text message
+                messages.Add(new ChatGPTUserMessage(inputText));
+            }
 
             return messages;
         }
@@ -453,6 +469,19 @@ namespace ChatdollKit.LLM.ChatGPT
         {
             content = new List<IContentPart>();
             content.Add(new TextContentPart(text));
+        }
+
+        public ChatGPTUserMessage(string text, string imageUrl)
+        {
+            content = new List<IContentPart>();
+            if (!string.IsNullOrEmpty(text))
+            {
+                content.Add(new TextContentPart(text));
+            }
+            if (!string.IsNullOrEmpty(imageUrl))
+            {
+                content.Add(new ImageUrlContentPart(imageUrl));
+            }
         }
     }
 
