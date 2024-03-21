@@ -6,16 +6,39 @@ using ChatdollKit.Dialog;
 using ChatdollKit.Model;
 using ChatdollKit.LLM;
 
+using ChatdollKit.Extension.OpenAI;
+using VoicevoxTTS = ChatdollKit.Extension.Voicevox.VoicevoxTTSLoader;
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+using ChatGPTService = ChatdollKit.LLM.ChatGPT.ChatGPTServiceWebGL;
+using ClaudeService = ChatdollKit.LLM.Claude.ClaudeServiceWebGL;
+using GeminiService = ChatdollKit.LLM.Gemini.GeminiServiceWebGL;
+#else
+using ChatGPTService = ChatdollKit.LLM.ChatGPT.ChatGPTService;
+using ClaudeService = ChatdollKit.LLM.Claude.ClaudeService;
+using GeminiService = ChatdollKit.LLM.Gemini.GeminiService;
+#endif
+
 namespace ChatdollKit.Demo
 {
     public class Main : MonoBehaviour
     {
+        // ChatdollKit components
         private ModelController modelController;
         private DialogController dialogController;
 
-        //private int secondsToSleep = 60;
+        private OpenAIWakeWordListener wakeWordListener;
+        private OpenAIVoiceRequestProvider voiceRequestProvider;
+        private OpenAITTSLoader openAITTSLoader;
+        private VoicevoxTTS voicevoxTTSLoader;
+
+        private ChatGPTService chatGPTService;
+        private ClaudeService claudeService;
+        private GeminiService geminiService;
+
         //private DateTime sleepStartAt;
 
+        // Input UI
         [SerializeField]
         private InputField requestInput;
         [SerializeField]
@@ -27,13 +50,33 @@ namespace ChatdollKit.Demo
         [SerializeField]
         private InputField imagePathInput;
 
+        // Setting UI
+        public GameObject SettingPanel;
+        public InputField OpenAIApiKeyInput;
+        public Dropdown LLMDropdown;
+        public InputField LLMModelInput;
+        public InputField LLMApiKeyInput;
+        public InputField TTSSpeakerInput;
+        public InputField TTSUrlInput;
+
+        public GameObject PromptPanel;
+        public Dropdown PromptDropdown;
+        public InputField PromptInput;
+
         void Start()
         {
-            // Adjust frame rate to improve performance (Optional)
-            Application.targetFrameRate = 60;
-
+            // Get ChatdollKit components
             modelController = gameObject.GetComponent<ModelController>();
             dialogController = gameObject.GetComponent<DialogController>();
+
+            wakeWordListener = gameObject.GetComponent<OpenAIWakeWordListener>();
+            voiceRequestProvider = gameObject.GetComponent<OpenAIVoiceRequestProvider>();
+            openAITTSLoader = gameObject.GetComponent<OpenAITTSLoader>();
+            voicevoxTTSLoader = gameObject.GetComponent<VoicevoxTTS>();
+
+            chatGPTService = gameObject.GetComponent<ChatGPTService>();
+            claudeService = gameObject.GetComponent<ClaudeService>();
+            geminiService = gameObject.GetComponent<GeminiService>();
 
             // Animation and face expression for idling
             modelController.AddIdleAnimation(new Model.Animation("BaseParam", 6, 5f));
@@ -101,6 +144,16 @@ namespace ChatdollKit.Demo
                 }
             }
 
+            // Setting on start
+            if (string.IsNullOrEmpty(voiceRequestProvider.ApiKey) && SettingPanel != null)
+            {
+                ShowSettingPanel();
+            }
+            else
+            {
+                chatGPTService.ApiKey = voiceRequestProvider.ApiKey;
+            }
+
             // Animation and face expression for start up
             var animationOnStart = new List<Model.Animation>();
             animationOnStart.Add(new Model.Animation("BaseParam", 6, 0.5f));
@@ -130,6 +183,7 @@ namespace ChatdollKit.Demo
         //    }
         //}
 
+        // Conversation UI
         public void OnWakeButton()
         {
             _ = dialogController.StartDialogAsync();
@@ -152,6 +206,7 @@ namespace ChatdollKit.Demo
             }
         }
 
+        // Image UI
         public void OnImageButton()
         {
             ActivateImagePathPanel(!imagePathPanel.activeSelf);
@@ -241,6 +296,162 @@ namespace ChatdollKit.Demo
             resizedTexture.Apply();
 
             return resizedTexture;
+        }
+
+        // Settings
+        public void ShowSettingPanel()
+        {
+            // Get API key
+            OpenAIApiKeyInput.text = voiceRequestProvider.ApiKey;
+
+            // Set current LLM
+            if (chatGPTService.IsEnabled)
+            {
+                LLMDropdown.value = 0;
+            }
+            else if (claudeService.IsEnabled)
+            {
+                LLMDropdown.value = 1;
+            }
+            else if (geminiService.IsEnabled)
+            {
+                LLMDropdown.value = 2;
+            }
+
+            OnChangeLLMDropdown();
+
+            // TTS
+            if (!string.IsNullOrEmpty(voicevoxTTSLoader.EndpointUrl))
+            {
+                TTSUrlInput.text = voicevoxTTSLoader.EndpointUrl;
+                TTSSpeakerInput.text = voicevoxTTSLoader.Speaker.ToString();
+            }
+
+            SettingPanel.SetActive(true);
+        }
+
+        public void ApplySettings()
+        {
+            // Set API keys
+            wakeWordListener.ApiKey = OpenAIApiKeyInput.text;
+            voiceRequestProvider.ApiKey = OpenAIApiKeyInput.text;
+            openAITTSLoader.ApiKey = OpenAIApiKeyInput.text;
+
+            // Switch LLM
+            if (LLMDropdown.value == 0)
+            {
+                chatGPTService.IsEnabled = true;
+                chatGPTService.ApiKey = OpenAIApiKeyInput.text;
+                chatGPTService.Model = LLMModelInput.text;
+            }
+            else if (LLMDropdown.value == 1)
+            {
+                claudeService.IsEnabled = true;
+                claudeService.ApiKey = LLMApiKeyInput.text;
+                claudeService.Model = LLMModelInput.text;
+            }
+            else if (LLMDropdown.value == 2)
+            {
+                geminiService.IsEnabled = true;
+                geminiService.ApiKey = LLMApiKeyInput.text;
+                geminiService.Model = LLMModelInput.text;
+            }
+
+            // Switch TTS
+            if (string.IsNullOrEmpty(TTSUrlInput.text))
+            {
+                modelController.RegisterTTSFunction(openAITTSLoader.Name, openAITTSLoader.GetAudioClipAsync, true);
+            }
+            else
+            {
+                voicevoxTTSLoader.EndpointUrl = TTSUrlInput.text;
+                try
+                {
+                    voicevoxTTSLoader.Speaker = int.Parse(TTSSpeakerInput.text);
+                }
+                catch
+                {
+                    voicevoxTTSLoader.Speaker = 2;
+                }
+                voicevoxTTSLoader.ClearCache();
+                modelController.RegisterTTSFunction(voicevoxTTSLoader.Name, voicevoxTTSLoader.GetAudioClipAsync, true);
+            }
+
+            SettingPanel.SetActive(false);
+        }
+
+        public void OnChangeLLMDropdown()
+        {
+            if (LLMDropdown.value == 0)
+            {
+                LLMModelInput.text = chatGPTService.Model;
+            }
+            else if (LLMDropdown.value == 1)
+            {
+                LLMApiKeyInput.text = claudeService.ApiKey;
+                LLMModelInput.text = claudeService.Model;
+            }
+            else if (LLMDropdown.value == 2)
+            {
+                LLMApiKeyInput.text = geminiService.ApiKey;
+                LLMModelInput.text = geminiService.Model;
+            }
+        }
+
+        // Prompt
+        public void ShowPromptPanel()
+        {
+            // Set current LLM
+            if (chatGPTService.IsEnabled)
+            {
+                PromptDropdown.value = 0;
+            }
+            else if (claudeService.IsEnabled)
+            {
+                PromptDropdown.value = 1;
+            }
+            else if (geminiService.IsEnabled)
+            {
+                PromptDropdown.value = 2;
+            }
+
+            OnChangePromptDropdown();
+
+            PromptPanel.SetActive(true);
+        }
+
+        public void ApplyPrompt()
+        {
+            if (PromptDropdown.value == 0)
+            {
+                chatGPTService.SystemMessageContent = PromptInput.text;
+            }
+            else if (PromptDropdown.value == 1)
+            {
+                claudeService.SystemMessageContent = PromptInput.text;
+            }
+            else if (PromptDropdown.value == 2)
+            {
+                geminiService.SystemMessageContent = PromptInput.text;
+            }
+
+            PromptPanel.SetActive(false);
+        }
+
+        public void OnChangePromptDropdown()
+        {
+            if (PromptDropdown.value == 0)
+            {
+                PromptInput.text = chatGPTService.SystemMessageContent;
+            }
+            else if (PromptDropdown.value == 1)
+            {
+                PromptInput.text = claudeService.SystemMessageContent;
+            }
+            else if (PromptDropdown.value == 2)
+            {
+                PromptInput.text = geminiService.SystemMessageContent;
+            }
         }
     }
 }
