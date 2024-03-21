@@ -2149,6 +2149,16 @@ MonoBehaviour:
   imageIcon: {fileID: 1972243665}
   imagePathPanel: {fileID: 1067896882}
   imagePathInput: {fileID: 1909479325}
+  SettingPanel: {fileID: 0}
+  OpenAIApiKeyInput: {fileID: 0}
+  LLMDropdown: {fileID: 0}
+  LLMModelInput: {fileID: 0}
+  LLMApiKeyInput: {fileID: 0}
+  TTSSpeakerInput: {fileID: 0}
+  TTSUrlInput: {fileID: 0}
+  PromptPanel: {fileID: 0}
+  PromptDropdown: {fileID: 0}
+  PromptInput: {fileID: 0}
 --- !u!114 &2893757555470248026
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2305,7 +2315,7 @@ MonoBehaviour:
   CustomParameterKey: ClaudeParameters
   CustomHeaderKey: ClaudeHeaders
   ApiKey: 
-  Model: claude-2.1
+  Model: claude-3-haiku-20240307
   CreateMessageUrl: 
   MaxTokens: 500
   Temperature: 0.5
@@ -2465,6 +2475,11 @@ PrefabInstance:
       propertyPath: skinnedMeshRenderer
       value: 
       objectReference: {fileID: 112896202}
+    - target: {fileID: 5629975078845771366, guid: 9923f5ee8d02c4f658216c52051a0d17,
+        type: 3}
+      propertyPath: targetFrameRate
+      value: 30
+      objectReference: {fileID: 0}
     - target: {fileID: 5748450511267680287, guid: 9923f5ee8d02c4f658216c52051a0d17,
         type: 3}
       propertyPath: m_MatchWidthOrHeight
