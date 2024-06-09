@@ -21,7 +21,7 @@ namespace ChatdollKit.Dialog
         public bool PrintResult = false;
 
         [Header("Voice Recorder Settings")]
-        public float VoiceDetectionThreshold = 0.1f;
+        public float VoiceDetectionThreshold = -50.0f;
         public float VoiceDetectionMinimumLength = 0.3f;
         public float SilenceDurationToEndRecording = 1.0f;
         public float ListeningTimeout = 20.0f;
@@ -102,6 +102,11 @@ namespace ChatdollKit.Dialog
         // Create request using voice recognition
         public virtual async UniTask<Request> GetRequestAsync(CancellationToken token)
         {
+            if (VoiceDetectionThreshold >= 0)
+            {
+                VoiceDetectionThreshold = 20.0f * Mathf.Log10(VoiceDetectionThreshold);
+            }
+
             var request = new Request(RequestType);
 
             voiceDetectionThreshold = VoiceDetectionThreshold;
