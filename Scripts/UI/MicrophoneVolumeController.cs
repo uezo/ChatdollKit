@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.UI;
 using ChatdollKit.Dialog;
+using ChatdollKit.IO;
 
 namespace ChatdollKit.UI
 {
@@ -15,7 +16,13 @@ namespace ChatdollKit.UI
         private Color32 voiceDetectedColor = new Color32(0, 204, 0, 255);
         [SerializeField]
         private Color32 voiceNotDetectedColor = new Color32(255, 255, 255, 255);
+        [SerializeField]
+        private Text volumeText;
 
+        private float volumeUpdateInterval = 0.33f;
+        private float volumeUpdateTimer = 0.0f;
+
+        private ChatdollMicrophone microphone;
         private WakeWordListenerBase wakeWordListener;
         private IVoiceRequestProvider voiceRequestProvider;
         private DialogController dialogController;
@@ -25,6 +32,7 @@ namespace ChatdollKit.UI
 
         private void Start()
         {
+            microphone = GetComponent<ChatdollMicrophone>();
             dialogController = gameObject.GetComponent<DialogController>();
 
             wakeWordListener = gameObject.GetComponent<WakeWordListenerBase>();
@@ -40,11 +48,18 @@ namespace ChatdollKit.UI
                 IsVRPDetectingVoice = () => { return ((NonRecordingVoiceRequestProviderBase)voiceRequestProvider).IsDetectingVoice; };
             }
 
-            microphoneSlider.value = 1.0f - wakeWordListener.VoiceDetectionThreshold;
+            microphoneSlider.value = -1 * wakeWordListener.VoiceDetectionThreshold;
         }
 
         private void LateUpdate()
         {
+            volumeUpdateTimer += Time.deltaTime;
+            if (volumeUpdateTimer >= volumeUpdateInterval)
+            {
+                volumeText.text = $"{microphone.CurrentVolume:f1} / {-1 * microphoneSlider.value:f1} db";
+                volumeUpdateTimer = 0.0f;
+            }
+
             if (IsWWLDetectingVoice() || IsVRPDetectingVoice())
             {
                 sliderHandleImage.color = voiceDetectedColor;
@@ -57,10 +72,10 @@ namespace ChatdollKit.UI
 
         public void UpdateMicrophoneSensitivity()
         {
-            wakeWordListener.VoiceDetectionThreshold = 1.0f - microphoneSlider.value;
+            wakeWordListener.VoiceDetectionThreshold = -1 * microphoneSlider.value;
             if (voiceRequestProvider is VoiceRequestProviderBase)
             {
-                ((VoiceRequestProviderBase)voiceRequestProvider).VoiceDetectionThreshold = 1.0f - microphoneSlider.value;
+                ((VoiceRequestProviderBase)voiceRequestProvider).VoiceDetectionThreshold = -1 * microphoneSlider.value;
             }
 
             if (microphoneSlider.value == 0 && !dialogController.IsMuted)
