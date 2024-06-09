@@ -48,6 +48,7 @@ namespace ChatdollKit.IO
                 }
             }
         }
+        public float CurrentVolume { get; private set; }
 
         // Microphone device
         public string DeviceName;
@@ -71,6 +72,8 @@ namespace ChatdollKit.IO
 
         private void Update()
         {
+            CurrentVolume = -99.9f;
+
             // Control mute
             if (isMuted != isPreviousMuted)
             {
@@ -160,6 +163,8 @@ namespace ChatdollKit.IO
                 StopListening();
                 Debug.LogError($"ChatdollMicrophone stopped: {ex.Message}\n{ex.StackTrace}");
             }
+
+            CurrentVolume = CapturedData.Volume;
         }
 
         private void OnDestroy()
@@ -266,20 +271,20 @@ namespace ChatdollKit.IO
     {
         public int ChannelCount { get; }
         public int Frequency { get; }
-        public float MaxVolume { get; private set; }
+        public float Volume { get; private set; }
         public float[] Data { get; private set; }
 
         public MicrophoneCapturedData(int channelCount, int frequency)
         {
             ChannelCount = channelCount;
             Frequency = frequency;
-            MaxVolume = 0;
+            Volume = 0;
             Data = new float[] { };
         }
 
         public void SetData(float[] capturedData)
         {
-            MaxVolume = capturedData.Length > 0 ? capturedData.Max(d => Math.Abs(d)) : 0;
+            Volume = 20.0f * Mathf.Log10(capturedData.Length > 0 ? capturedData.Average(d => Math.Abs(d)) : 0.00001f);
             Data = capturedData;
         }
     }

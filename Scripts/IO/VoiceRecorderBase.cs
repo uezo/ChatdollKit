@@ -55,10 +55,11 @@ namespace ChatdollKit.IO
 
                 // Handle recorded voice
                 recordedData.AddRange(capturedData.Data);
-                if (capturedData.MaxVolume > voiceDetectionThreshold && capturedData.MaxVolume < voiceDetectionMaxThreshold)
+
+                if (capturedData.Volume > voiceDetectionThreshold && capturedData.Volume < voiceDetectionMaxThreshold)
                 {
                     IsDetectingVoice = true;
-                    onDetectVoice?.Invoke(capturedData.MaxVolume);
+                    onDetectVoice?.Invoke(capturedData.Volume);
 
                     // Start or continue recording when the volume of captured sound is larger than threshold
                     if (!IsRecording)

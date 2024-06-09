@@ -17,8 +17,8 @@ namespace ChatdollKit.Dialog
         public bool PrintResult = false;
 
         [Header("Voice Recorder Settings")]
-        public float VoiceDetectionThreshold = 0.1f;
-        public float VoiceDetectionRaisedThreshold = 0.5f;
+        public float VoiceDetectionThreshold = -50.0f;
+        public float VoiceDetectionRaisedThreshold = -15.0f;
         public float VoiceDetectionMinimumLength = 0.2f;
         public float SilenceDurationToEndRecording = 0.3f;
         public float VoiceRecognitionMaximumLength = 3.0f;
@@ -53,6 +53,12 @@ namespace ChatdollKit.Dialog
 
         protected virtual void Start()
         {
+            if (VoiceDetectionThreshold >= 0)
+            {
+                VoiceDetectionThreshold = 20.0f * Mathf.Log10(VoiceDetectionThreshold);
+                VoiceDetectionRaisedThreshold = 20.0f * Mathf.Log10(VoiceDetectionRaisedThreshold);
+            }
+
             if (AutoStart)
             {
 #pragma warning disable CS4014
