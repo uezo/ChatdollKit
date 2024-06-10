@@ -29,7 +29,7 @@ namespace ChatdollKit.LLM
             await llmService.AddHistoriesAsync(llmSession, state.Data, token);
 
             // Add human message for next request
-            var humanFriendlyAnswerRequestMessage = llmService.CreateMessageAfterFunction(responseForRequest.Role, responseForRequest.Body, name: llmSession.FunctionName);
+            var humanFriendlyAnswerRequestMessage = llmService.CreateMessageAfterFunction(responseForRequest.Role, responseForRequest.Body, llmSession: llmSession);
             llmSession.Contexts.Add(humanFriendlyAnswerRequestMessage);
 
             // Call LLM to get human-friendly response

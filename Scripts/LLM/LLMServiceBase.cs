@@ -45,7 +45,7 @@ namespace ChatdollKit.LLM
         }
 
 #pragma warning disable CS1998
-        public virtual ILLMMessage CreateMessageAfterFunction(string role = null, string content = null, Dictionary<string, object> function_call = null, string name = null, Dictionary<string, object> arguments = null)
+        public virtual ILLMMessage CreateMessageAfterFunction(string role = null, string content = null, ILLMSession llmSession = null, Dictionary<string, object> arguments = null)
         {
             throw new NotImplementedException("LLMServiceBase.CreateMessageAfterFunction must be implemented");
         }

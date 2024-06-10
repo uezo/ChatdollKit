@@ -40,7 +40,7 @@ namespace ChatdollKit.LLM.ChatGPT
             TypeNameHandling = TypeNameHandling.All
         };
 
-        public override ILLMMessage CreateMessageAfterFunction(string role = null, string content = null, Dictionary<string, object> function_call = null, string name = null, Dictionary<string, object> arguments = null)
+        public override ILLMMessage CreateMessageAfterFunction(string role = null, string content = null, ILLMSession llmSession = null, Dictionary<string, object> arguments = null)
         {
             if (role == "user")
             {
@@ -48,7 +48,7 @@ namespace ChatdollKit.LLM.ChatGPT
             }
             else
             {
-                return new ChatGPTFunctionMessage(content, name);
+                return new ChatGPTFunctionMessage(content, ((ChatGPTSession)llmSession).ToolCallId);
             }
         }
 
@@ -88,9 +88,16 @@ namespace ChatdollKit.LLM.ChatGPT
             // Add assistant message
             if (llmSession.ResponseType == ResponseType.FunctionCalling)
             {
-                var functionCallMessage = new ChatGPTAssistantMessage(function_call: new Dictionary<string, object>() {
-                    { "name", llmSession.FunctionName },
-                    { "arguments", llmSession.StreamBuffer }
+                var functionCallMessage = new ChatGPTAssistantMessage(tool_calls: new List<Dictionary<string, object>>() {
+                    new Dictionary<string, object>()
+                    {
+                        { "id", ((ChatGPTSession)llmSession).ToolCallId },
+                        { "type", "function" },
+                        { "function", new Dictionary<string, string>() {
+                            { "name", llmSession.FunctionName },
+                            { "arguments", llmSession.StreamBuffer }
+                        }},
+                    }
                 });
                 serializedMessages.Add(JsonConvert.SerializeObject(functionCallMessage, messageSerializationSettings));
 
@@ -152,7 +159,9 @@ namespace ChatdollKit.LLM.ChatGPT
             var chatGPTSession = new ChatGPTSession();
             chatGPTSession.Contexts = messages;
             chatGPTSession.StreamingTask = StartStreamingAsync(chatGPTSession, customParameters, customHeaders, useFunctions, token);
-            chatGPTSession.FunctionName = await WaitForFunctionName(chatGPTSession, token);
+            var funcInfo = await WaitForFunctionInfo(chatGPTSession, token);
+            chatGPTSession.ToolCallId = funcInfo["id"];
+            chatGPTSession.FunctionName = funcInfo["name"];
 
             // Retry
             if (chatGPTSession.ResponseType == ResponseType.Timeout)
@@ -192,7 +201,16 @@ namespace ChatdollKit.LLM.ChatGPT
             }
             if (useFunctions && llmTools.Count > 0 && !Model.ToLower().Contains("vision"))
             {
-                data.Add("functions", llmTools);
+                var tools = new List<Dictionary<string, object>>();
+                foreach (var tool in llmTools)
+                {
+                    tools.Add(new Dictionary<string, object>()
+                    {
+                        { "type", "function" },
+                        { "function", tool }
+                    });
+                }
+                data.Add("tools", tools);
             }
             if (Logprobs == true)
             {
@@ -248,7 +266,7 @@ namespace ChatdollKit.LLM.ChatGPT
             downloadHandler.SetFirstDelta = (delta) =>
             {
                 chatGPTSession.FirstDelta = delta;
-                chatGPTSession.ResponseType = delta.function_call != null ? ResponseType.FunctionCalling : ResponseType.Content;
+                chatGPTSession.ResponseType = delta.tool_calls != null ? ResponseType.FunctionCalling : ResponseType.Content;
             };
             streamRequest.downloadHandler = downloadHandler;
 
@@ -301,8 +319,14 @@ namespace ChatdollKit.LLM.ChatGPT
             }
         }
 
-        public async UniTask<string> WaitForFunctionName(ChatGPTSession chatGPTSession, CancellationToken token)
+        public async UniTask<Dictionary<string, string>> WaitForFunctionInfo(ChatGPTSession chatGPTSession, CancellationToken token)
         {
+            var func = new Dictionary<string, string>()
+            {
+                { "id", string.Empty },
+                { "name", string.Empty }
+            };
+
             // Wait for response type is set
             while (chatGPTSession.ResponseType == ResponseType.None && !token.IsCancellationRequested)
             {
@@ -313,9 +337,10 @@ namespace ChatdollKit.LLM.ChatGPT
             {
                 if (DebugMode)
                 {
-                    Debug.Log($"Function Calling response from ChatGPT: {chatGPTSession.FirstDelta.function_call.name}");
+                    Debug.Log($"Function Calling response from ChatGPT: {chatGPTSession.FirstDelta.tool_calls[0].function.name}");
                 }
-                return chatGPTSession.FirstDelta.function_call.name;
+                func["id"] = chatGPTSession.FirstDelta.tool_calls[0].id;
+                func["name"] = chatGPTSession.FirstDelta.tool_calls[0].function.name;
             }
             else if (chatGPTSession.ResponseType == ResponseType.Error)
             {
@@ -323,7 +348,6 @@ namespace ChatdollKit.LLM.ChatGPT
                 {
                     Debug.Log($"Error response");
                 }
-                return string.Empty;
             }
             else
             {
@@ -331,8 +355,9 @@ namespace ChatdollKit.LLM.ChatGPT
                 {
                     Debug.Log($"Content response from ChatGPT");
                 }
-                return string.Empty;
             }
+
+            return func;
         }
 
         // Internal classes
@@ -373,6 +398,7 @@ namespace ChatdollKit.LLM.ChatGPT
                         // Azure OpenAI returns empty choices first response. (returns prompt_filter_results)
                         try
                         {
+                            if (j == null) continue;
                             if (j.choices.Count == 0) continue;
                         }
                         catch (Exception)
@@ -387,13 +413,13 @@ namespace ChatdollKit.LLM.ChatGPT
                             SetFirstDelta(delta);
                             isDeltaSet = true;
                         }
-                        if (delta.function_call == null)
+                        if (delta.tool_calls == null)
                         {
                             resp += delta.content;
                         }
-                        else
+                        else if (delta.tool_calls.Count > 0)
                         {
-                            resp += delta.function_call.arguments;
+                            resp += delta.tool_calls[0].function.arguments;
                         }
                     }
                 }
@@ -418,7 +444,13 @@ namespace ChatdollKit.LLM.ChatGPT
     public class Delta
     {
         public string content { get; set; }
-        public FunctionCall function_call { get; set; }
+        public  List<ToolCall> tool_calls { get; set; }
+    }
+
+    public class ToolCall
+    {
+        public string id { get; set; }
+        public FunctionCall function { get; set; }
     }
 
     public class FunctionCall
@@ -430,6 +462,7 @@ namespace ChatdollKit.LLM.ChatGPT
     public class ChatGPTSession : LLMSession
     {
         public Delta FirstDelta { get; set; }
+        public string ToolCallId { get; set; }
 
         public ChatGPTSession() : base()
         {
@@ -490,7 +523,7 @@ namespace ChatdollKit.LLM.ChatGPT
         public string role { get; } = "assistant";
         public string content { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public Dictionary<string, object> function_call { get; set; }
+        public  List<Dictionary<string, object>> tool_calls { get; set; }
 
         [JsonConstructor]
         public ChatGPTAssistantMessage(string role, string content)
@@ -499,31 +532,31 @@ namespace ChatdollKit.LLM.ChatGPT
             this.content = content;
         }
 
-        public ChatGPTAssistantMessage(string content = null, Dictionary<string, object> function_call = null)
+        public ChatGPTAssistantMessage(string content = null, List<Dictionary<string, object>> tool_calls = null)
         {
             this.content = content;
-            this.function_call = function_call;
+            this.tool_calls = tool_calls;
         }
     }
 
     public class ChatGPTFunctionMessage : ILLMMessage
     {
-        public string role { get; } = "function";
+        public string role { get; } = "tool";
         public string content { get; set; }
-        public string name { get; set; }
+        public string tool_call_id { get; set; }
 
         [JsonConstructor]
-        public ChatGPTFunctionMessage(string role, string content, string name = null)
+        public ChatGPTFunctionMessage(string role, string content, string tool_call_id = null)
         {
             this.role = role;
             this.content = content;
-            this.name = name;
+            this.tool_call_id = tool_call_id;
         }
 
-        public ChatGPTFunctionMessage(string content = null, string name = null)
+        public ChatGPTFunctionMessage(string content = null, string tool_call_id = null)
         {
             this.content = content;
-            this.name = name;
+            this.tool_call_id = tool_call_id;
         }
     }
 
@@ -546,11 +579,11 @@ namespace ChatdollKit.LLM.ChatGPT
     public class ImageUrlContentPart : IContentPart
     {
         public string type { get; } = "image_url";
-        public string image_url { get; set; }
+        public Dictionary<string, string> image_url { get; set; }
 
         public ImageUrlContentPart(string image_url)
         {
-            this.image_url = image_url;
+            this.image_url = new Dictionary<string, string>() { { "url", image_url } };
         }
     }
 
