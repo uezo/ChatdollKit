@@ -56,9 +56,9 @@ namespace ChatdollKit.LLM.Gemini
         }
 
 #pragma warning disable CS1998
-        public override async UniTask AddHistoriesAsync(ILLMSession llmSession, object dataStore, CancellationToken token = default)
+        public async UniTask AddHistoriesAsync(ILLMSession llmSession, Dictionary<string, object> dataStore, CancellationToken token = default)
         {
-            var histories = GetHistoriesFromStateData((Dictionary<string, object>)dataStore);
+            var histories = GetHistoriesFromStateData(dataStore);
             var userMessage = (GeminiMessage)llmSession.Contexts.Last();
             // Multiturn is not supported for gemini-pro-vision and image input modality is not enabled for gemini-pro
             userMessage.parts.RemoveAll(p => p.inlineData != null);
@@ -127,7 +127,7 @@ namespace ChatdollKit.LLM.Gemini
             // Start streaming session
             var geminiSession = new GeminiSession();
             geminiSession.Contexts = messages;
-            geminiSession.StreamingTask = StartStreamingAsync(geminiSession, customParameters, customHeaders, useFunctions, token);
+            geminiSession.StreamingTask = StartStreamingAsync(geminiSession, stateData, customParameters, customHeaders, useFunctions, token);
             await WaitForResponseType(geminiSession, token);
 
             if (geminiSession.ResponseType == ResponseType.Timeout)
@@ -148,7 +148,7 @@ namespace ChatdollKit.LLM.Gemini
             return geminiSession;
         }
 
-        public virtual async UniTask StartStreamingAsync(GeminiSession geminiSession, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
+        public virtual async UniTask StartStreamingAsync(GeminiSession geminiSession, Dictionary<string, object> stateData, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
         {
             // GenerationConfig
             var generationConfig = new GeminiGenerationConfig()
@@ -256,6 +256,16 @@ namespace ChatdollKit.LLM.Gemini
                 }
 
                 await UniTask.Delay(10);
+            }
+
+            // Update histories
+            if (geminiSession.ResponseType != ResponseType.Error && geminiSession.ResponseType != ResponseType.Timeout)
+            {
+                await AddHistoriesAsync(geminiSession, stateData, token);
+            }
+            else
+            {
+                Debug.LogWarning($"Messages are not added to histories for response type is not success: {geminiSession.ResponseType}");
             }
 
             geminiSession.IsResponseDone = true;

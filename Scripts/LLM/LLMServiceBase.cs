@@ -50,11 +50,6 @@ namespace ChatdollKit.LLM
             throw new NotImplementedException("LLMServiceBase.CreateMessageAfterFunction must be implemented");
         }
 
-        public virtual UniTask AddHistoriesAsync(ILLMSession llmSession, object dataStore, CancellationToken token = default)
-        {
-            throw new NotImplementedException("LLMServiceBase.AddHistoriesAsync must be implemented");
-        }
-
         public virtual async UniTask<List<ILLMMessage>> MakePromptAsync(string userId, string inputText, Dictionary<string, object> payloads, CancellationToken token = default)
         {
             throw new NotImplementedException("LLMServiceBase.MakePromptAsync must be implemented");

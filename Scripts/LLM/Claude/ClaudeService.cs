@@ -56,9 +56,9 @@ namespace ChatdollKit.LLM.Claude
         }
 
 #pragma warning disable CS1998
-        public override async UniTask AddHistoriesAsync(ILLMSession llmSession, object dataStore, CancellationToken token = default)
+        public async UniTask AddHistoriesAsync(ILLMSession llmSession, Dictionary<string, object> dataStore, CancellationToken token = default)
         {
-            var histories = GetHistoriesFromStateData((Dictionary<string, object>)dataStore);
+            var histories = GetHistoriesFromStateData(dataStore);
             var userMessage = (ClaudeMessage)llmSession.Contexts.Last();
             histories.Add(userMessage);
             histories.Add(new ClaudeMessage("assistant", llmSession.StreamBuffer));
@@ -100,7 +100,7 @@ namespace ChatdollKit.LLM.Claude
             // Start streaming session
             var claudeSession = new ClaudeSession();
             claudeSession.Contexts = messages;
-            claudeSession.StreamingTask = StartStreamingAsync(claudeSession, customParameters, customHeaders, useFunctions, token);
+            claudeSession.StreamingTask = StartStreamingAsync(claudeSession, stateData, customParameters, customHeaders, useFunctions, token);
             await WaitForResponseType(claudeSession, token);
 
             // Retry
@@ -122,7 +122,7 @@ namespace ChatdollKit.LLM.Claude
             return claudeSession;
         }
 
-        public virtual async UniTask StartStreamingAsync(ClaudeSession claudeSession, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
+        public virtual async UniTask StartStreamingAsync(ClaudeSession claudeSession, Dictionary<string, object> stateData, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
         {
             // Make request data
             var data = new Dictionary<string, object>()
@@ -218,6 +218,16 @@ namespace ChatdollKit.LLM.Claude
                 }
 
                 await UniTask.Delay(10);
+            }
+
+            // Update histories
+            if (claudeSession.ResponseType != ResponseType.Error && claudeSession.ResponseType != ResponseType.Timeout)
+            {
+                await AddHistoriesAsync(claudeSession, stateData, token);
+            }
+            else
+            {
+                Debug.LogWarning($"Messages are not added to histories for response type is not success: {claudeSession.ResponseType}");
             }
 
             claudeSession.IsResponseDone = true;

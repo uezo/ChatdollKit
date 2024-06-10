@@ -61,16 +61,6 @@ namespace ChatdollKit.LLM
             // Wait API stream ends
             await llmSession.StreamingTask;
 
-            // Update histories
-            if (llmSession.ResponseType != ResponseType.Error && llmSession.ResponseType != ResponseType.Timeout)
-            {
-                await llmService.AddHistoriesAsync(llmSession, state.Data, token);
-            }
-            else
-            {
-                Debug.LogWarning($"Messages are not added to histories for response type is not success: {llmSession.ResponseType}");
-            }
-
             // Wait parsing and performance
             await parseTask;
             await performTask;

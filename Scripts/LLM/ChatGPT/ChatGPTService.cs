@@ -76,10 +76,10 @@ namespace ChatdollKit.LLM.ChatGPT
         }
 
 #pragma warning disable CS1998
-        public override async UniTask AddHistoriesAsync(ILLMSession llmSession, object dataStore, CancellationToken token = default)
+        public async UniTask AddHistoriesAsync(ILLMSession llmSession, Dictionary<string, object> dataStore, CancellationToken token = default)
         {
             // Prepare state store
-            var serializedMessages = (JArray)((Dictionary<string, object>)dataStore)[HistoryKey];
+            var serializedMessages = (JArray)dataStore[HistoryKey];
 
             // Add user message
             var serializedUserMessage = JsonConvert.SerializeObject(llmSession.Contexts.Last(), messageSerializationSettings);
@@ -158,7 +158,7 @@ namespace ChatdollKit.LLM.ChatGPT
             // Start streaming session
             var chatGPTSession = new ChatGPTSession();
             chatGPTSession.Contexts = messages;
-            chatGPTSession.StreamingTask = StartStreamingAsync(chatGPTSession, customParameters, customHeaders, useFunctions, token);
+            chatGPTSession.StreamingTask = StartStreamingAsync(chatGPTSession, stateData, customParameters, customHeaders, useFunctions, token);
             var funcInfo = await WaitForFunctionInfo(chatGPTSession, token);
             chatGPTSession.ToolCallId = funcInfo["id"];
             chatGPTSession.FunctionName = funcInfo["name"];
@@ -182,7 +182,7 @@ namespace ChatdollKit.LLM.ChatGPT
             return chatGPTSession;
         }
 
-        public virtual async UniTask StartStreamingAsync(ChatGPTSession chatGPTSession, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
+        public virtual async UniTask StartStreamingAsync(ChatGPTSession chatGPTSession, Dictionary<string, object> stateData, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
         {
             // Make request data
             var data = new Dictionary<string, object>()
@@ -309,6 +309,16 @@ namespace ChatdollKit.LLM.ChatGPT
                 }
 
                 await UniTask.Delay(10);
+            }
+
+            // Update histories
+            if (chatGPTSession.ResponseType != ResponseType.Error && chatGPTSession.ResponseType != ResponseType.Timeout)
+            {
+                await AddHistoriesAsync(chatGPTSession, stateData, token);
+            }
+            else
+            {
+                Debug.LogWarning($"Messages are not added to histories for response type is not success: {chatGPTSession.ResponseType}");
             }
 
             chatGPTSession.IsResponseDone = true;

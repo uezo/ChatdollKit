@@ -18,15 +18,12 @@ namespace ChatdollKit.LLM
         {
             var llmSession = (ILLMSession)request.Payloads["LLMSession"];
 
-            // TODO: Waiting AnimatedVoice
+            // TODO: Waiting AnimatedVoice. See https://x.com/uezochan/status/1795216169969864865
 
             await llmSession.StreamingTask;
 
             // Execute function
             var responseForRequest = await ExecuteFunction(llmSession.StreamBuffer, request, state, user, token);
-
-            // Update histories after function finishes successfully
-            await llmService.AddHistoriesAsync(llmSession, state.Data, token);
 
             // Add human message for next request
             var humanFriendlyAnswerRequestMessage = llmService.CreateMessageAfterFunction(responseForRequest.Role, responseForRequest.Body, llmSession: llmSession);
