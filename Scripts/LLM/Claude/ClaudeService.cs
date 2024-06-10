@@ -32,7 +32,7 @@ namespace ChatdollKit.LLM.Claude
         [SerializeField]
         protected float noDataResponseTimeoutSec = 5.0f;
 
-        public override ILLMMessage CreateMessageAfterFunction(string role = null, string content = null, Dictionary<string, object> function_call = null, string name = null, Dictionary<string, object> arguments = null)
+        public override ILLMMessage CreateMessageAfterFunction(string role = null, string content = null, ILLMSession llmSession = null, Dictionary<string, object> arguments = null)
         {
             // Create human message for next request after function execution
             return new ClaudeMessage("user", "this is dummy. claude has no function calling for now");
