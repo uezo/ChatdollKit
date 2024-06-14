@@ -17,8 +17,11 @@ namespace ChatdollKit.UI
         [SerializeField]
         private Color32 voiceNotDetectedColor = new Color32(255, 255, 255, 255);
         [SerializeField]
+        private GameObject volumePanel;
+        [SerializeField]
         private Text volumeText;
 
+        private float volumePanelHideTimer = 0.0f;
         private float volumeUpdateInterval = 0.33f;
         private float volumeUpdateTimer = 0.0f;
 
@@ -53,10 +56,26 @@ namespace ChatdollKit.UI
 
         private void LateUpdate()
         {
+            if (volumePanel.activeSelf)
+            {
+                volumePanelHideTimer += Time.deltaTime;
+                if (volumePanelHideTimer >= 5.0f)
+                {
+                    volumePanel.SetActive(false);
+                }
+            }
+
             volumeUpdateTimer += Time.deltaTime;
             if (volumeUpdateTimer >= volumeUpdateInterval)
             {
-                volumeText.text = $"{microphone.CurrentVolume:f1} / {-1 * microphoneSlider.value:f1} db";
+                if (microphone.IsMuted)
+                {
+                    volumeText.text = $"Muted";
+                }
+                else
+                {
+                    volumeText.text = $"{microphone.CurrentVolume:f1} / {-1 * microphoneSlider.value:f1} db";
+                }
                 volumeUpdateTimer = 0.0f;
             }
 
@@ -72,6 +91,9 @@ namespace ChatdollKit.UI
 
         public void UpdateMicrophoneSensitivity()
         {
+            volumePanel.SetActive(true);
+            volumePanelHideTimer = 0.0f;
+
             wakeWordListener.VoiceDetectionThreshold = -1 * microphoneSlider.value;
             if (voiceRequestProvider is VoiceRequestProviderBase)
             {

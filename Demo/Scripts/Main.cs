@@ -1,8 +1,11 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
+using Cysharp.Threading.Tasks;
 using ChatdollKit.Dialog;
+using ChatdollKit.IO;
 using ChatdollKit.Model;
 using ChatdollKit.LLM;
 
@@ -49,6 +52,8 @@ namespace ChatdollKit.Demo
         private GameObject imagePathPanel;
         [SerializeField]
         private InputField imagePathInput;
+        [SerializeField]
+        private SimpleCamera simpleCamera;
 
         // Setting UI
         public GameObject SettingPanel;
@@ -77,6 +82,8 @@ namespace ChatdollKit.Demo
             chatGPTService = gameObject.GetComponent<ChatGPTService>();
             claudeService = gameObject.GetComponent<ClaudeService>();
             geminiService = gameObject.GetComponent<GeminiService>();
+
+            chatGPTService.CaptureImage = CaptureImageAsync;
 
             // Animation and face expression for idling
             modelController.AddIdleAnimation(new Model.Animation("BaseParam", 6, 5f));
@@ -182,6 +189,24 @@ namespace ChatdollKit.Demo
         //        _ = modelController.ChangeIdlingModeAsync("sleep");
         //    }
         //}
+
+        // Autonomous vision control
+        private async UniTask<byte[]> CaptureImageAsync(string source)
+        {
+            if (simpleCamera != null)
+            {
+                try
+                {
+                    return await simpleCamera.CaptureImageAsync();
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"Error at CaptureImageAsync: {ex.Message}\n{ex.StackTrace}");
+                }
+            }
+
+            return null;
+        }
 
         // Conversation UI
         public void OnWakeButton()

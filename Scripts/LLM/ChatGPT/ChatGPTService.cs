@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -34,6 +35,8 @@ namespace ChatdollKit.LLM.ChatGPT
         protected int responseTimeoutSec = 30;
         [SerializeField]
         protected float noDataResponseTimeoutSec = 5.0f;
+
+        public Func<string, UniTask<byte[]>> CaptureImage = null;
 
         protected JsonSerializerSettings messageSerializationSettings = new JsonSerializerSettings
         {
@@ -76,10 +79,10 @@ namespace ChatdollKit.LLM.ChatGPT
         }
 
 #pragma warning disable CS1998
-        public override async UniTask AddHistoriesAsync(ILLMSession llmSession, object dataStore, CancellationToken token = default)
+        public async UniTask AddHistoriesAsync(ILLMSession llmSession, Dictionary<string, object> dataStore, CancellationToken token = default)
         {
             // Prepare state store
-            var serializedMessages = (JArray)((Dictionary<string, object>)dataStore)[HistoryKey];
+            var serializedMessages = (JArray)dataStore[HistoryKey];
 
             // Add user message
             var serializedUserMessage = JsonConvert.SerializeObject(llmSession.Contexts.Last(), messageSerializationSettings);
@@ -158,7 +161,7 @@ namespace ChatdollKit.LLM.ChatGPT
             // Start streaming session
             var chatGPTSession = new ChatGPTSession();
             chatGPTSession.Contexts = messages;
-            chatGPTSession.StreamingTask = StartStreamingAsync(chatGPTSession, customParameters, customHeaders, useFunctions, token);
+            chatGPTSession.StreamingTask = StartStreamingAsync(chatGPTSession, stateData, customParameters, customHeaders, useFunctions, token);
             var funcInfo = await WaitForFunctionInfo(chatGPTSession, token);
             chatGPTSession.ToolCallId = funcInfo["id"];
             chatGPTSession.FunctionName = funcInfo["name"];
@@ -182,7 +185,7 @@ namespace ChatdollKit.LLM.ChatGPT
             return chatGPTSession;
         }
 
-        public virtual async UniTask StartStreamingAsync(ChatGPTSession chatGPTSession, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
+        public virtual async UniTask StartStreamingAsync(ChatGPTSession chatGPTSession, Dictionary<string, object> stateData, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
         {
             // Make request data
             var data = new Dictionary<string, object>()
@@ -258,9 +261,11 @@ namespace ChatdollKit.LLM.ChatGPT
 
             var downloadHandler = new ChatGPTStreamDownloadHandler();
             downloadHandler.DebugMode = DebugMode;
+            var localStreamBuffer = string.Empty;
             downloadHandler.SetReceivedChunk = (chunk) =>
             {
                 // Add received data to stream buffer
+                localStreamBuffer += chunk;
                 chatGPTSession.StreamBuffer += chunk;
             };
             downloadHandler.SetFirstDelta = (delta) =>
@@ -311,11 +316,53 @@ namespace ChatdollKit.LLM.ChatGPT
                 await UniTask.Delay(10);
             }
 
-            chatGPTSession.IsResponseDone = true;
+            // Remove non-text content to keep context light
+            var lastUserMessage = (ChatGPTUserMessage)chatGPTSession.Contexts.Last();
+            lastUserMessage.content.RemoveAll(part => !(part is TextContentPart));
 
-            if (DebugMode)
+            // Update histories
+            if (chatGPTSession.ResponseType != ResponseType.Error && chatGPTSession.ResponseType != ResponseType.Timeout)
             {
-                Debug.Log($"Response from ChatGPT: {JsonConvert.SerializeObject(chatGPTSession.StreamBuffer)}");
+                await AddHistoriesAsync(chatGPTSession, stateData, token);
+            }
+            else
+            {
+                Debug.LogWarning($"Messages are not added to histories for response type is not success: {chatGPTSession.ResponseType}");
+            }
+
+            var extractedTags = ExtractTags(localStreamBuffer);
+
+            if (CaptureImage != null && extractedTags.ContainsKey("vision"))
+            {
+                // Get image
+                var imageBytes = await CaptureImage(extractedTags["vision"]);
+
+                // Make contexts
+                var lastUserContentText = ((TextContentPart)lastUserMessage.content[0]).text;
+                if (imageBytes != null)
+                {
+                    chatGPTSession.Contexts.Add(new ChatGPTAssistantMessage(chatGPTSession.StreamBuffer));
+                    chatGPTSession.Contexts.Add(new ChatGPTUserMessage(new List<IContentPart>() {
+                        new TextContentPart(lastUserContentText),
+                        new ImageUrlContentPart("data:image/jpeg;base64," + Convert.ToBase64String(imageBytes))
+                    }));
+                }
+                else
+                {
+                    chatGPTSession.Contexts.Add(new ChatGPTUserMessage("Please inform the user that an error occurred while capturing the image."));
+                }
+
+                // Call recursively with image
+                await StartStreamingAsync(chatGPTSession, stateData, customParameters, customHeaders, useFunctions, token);
+            }
+            else
+            {
+                chatGPTSession.IsResponseDone = true;
+
+                if (DebugMode)
+                {
+                    Debug.Log($"Response from ChatGPT: {JsonConvert.SerializeObject(chatGPTSession.StreamBuffer)}");
+                }
             }
         }
 
@@ -358,6 +405,25 @@ namespace ChatdollKit.LLM.ChatGPT
             }
 
             return func;
+        }
+
+        private Dictionary<string, string> ExtractTags(string text)
+        {
+            var tagPattern = @"\[(\w+):([^\]]+)\]";
+            var matches = Regex.Matches(text, tagPattern);
+            var result = new Dictionary<string, string>();
+
+            foreach (Match match in matches)
+            {
+                if (match.Groups.Count == 3)
+                {
+                    var key = match.Groups[1].Value;
+                    var value = match.Groups[2].Value;
+                    result[key] = value;
+                }
+            }
+
+            return result;
         }
 
         // Internal classes
