@@ -117,6 +117,13 @@ namespace ChatdollKit.IO
                 Debug.Log("Permission for microphone is granted");
             }
 
+            if (!Microphone.IsRecording(listeningDeviceName))
+            {
+                Debug.LogWarning("Microphone stopped unexpectedly. Restarting microphone...");
+                StartListening();
+                return;
+            }
+
             try
             {
                 // Get position
@@ -278,7 +285,7 @@ namespace ChatdollKit.IO
         {
             ChannelCount = channelCount;
             Frequency = frequency;
-            Volume = 0;
+            Volume = -99.9f;
             Data = new float[] { };
         }
 
