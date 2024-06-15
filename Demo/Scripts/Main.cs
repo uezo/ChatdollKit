@@ -1,25 +1,16 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
-using Cysharp.Threading.Tasks;
 using ChatdollKit.Dialog;
 using ChatdollKit.IO;
 using ChatdollKit.Model;
 using ChatdollKit.LLM;
 using ChatdollKit.UI;
 
-using ChatdollKit.Extension.OpenAI;
-using VoicevoxTTS = ChatdollKit.Extension.Voicevox.VoicevoxTTSLoader;
-
 #if UNITY_WEBGL && !UNITY_EDITOR
 using ChatGPTService = ChatdollKit.LLM.ChatGPT.ChatGPTServiceWebGL;
-using ClaudeService = ChatdollKit.LLM.Claude.ClaudeServiceWebGL;
-using GeminiService = ChatdollKit.LLM.Gemini.GeminiServiceWebGL;
 #else
 using ChatGPTService = ChatdollKit.LLM.ChatGPT.ChatGPTService;
-using ClaudeService = ChatdollKit.LLM.Claude.ClaudeService;
-using GeminiService = ChatdollKit.LLM.Gemini.GeminiService;
 #endif
 
 namespace ChatdollKit.Demo
@@ -30,31 +21,15 @@ namespace ChatdollKit.Demo
         private ModelController modelController;
         private DialogController dialogController;
 
-        private OpenAIWakeWordListener wakeWordListener;
-        private OpenAIVoiceRequestProvider voiceRequestProvider;
-        private OpenAITTSLoader openAITTSLoader;
-        private VoicevoxTTS voicevoxTTSLoader;
-
-        private ChatGPTService chatGPTService;
-        private ClaudeService claudeService;
-        private GeminiService geminiService;
-
-        //private DateTime sleepStartAt;
-
         // Input UI
         [SerializeField]
         private InputUI inputUI;
         [SerializeField]
         private SimpleCamera simpleCamera;
+        [SerializeField]
+        private SettingsUI settingsUI;
 
-        // Setting UI
-        public GameObject SettingPanel;
-        public InputField OpenAIApiKeyInput;
-        public Dropdown LLMDropdown;
-        public InputField LLMModelInput;
-        public InputField LLMApiKeyInput;
-        public InputField TTSSpeakerInput;
-        public InputField TTSUrlInput;
+        //private DateTime sleepStartAt;
 
         void Start()
         {
@@ -62,16 +37,23 @@ namespace ChatdollKit.Demo
             modelController = gameObject.GetComponent<ModelController>();
             dialogController = gameObject.GetComponent<DialogController>();
 
-            wakeWordListener = gameObject.GetComponent<OpenAIWakeWordListener>();
-            voiceRequestProvider = gameObject.GetComponent<OpenAIVoiceRequestProvider>();
-            openAITTSLoader = gameObject.GetComponent<OpenAITTSLoader>();
-            voicevoxTTSLoader = gameObject.GetComponent<VoicevoxTTS>();
+            // Image capture for ChatGPT vision
+            gameObject.GetComponent<ChatGPTService>().CaptureImage = async (string source) =>
+            {
+                if (simpleCamera != null)
+                {
+                    try
+                    {
+                        return await simpleCamera.CaptureImageAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogError($"Error at CaptureImageAsync: {ex.Message}\n{ex.StackTrace}");
+                    }
+                }
 
-            chatGPTService = gameObject.GetComponent<ChatGPTService>();
-            claudeService = gameObject.GetComponent<ClaudeService>();
-            geminiService = gameObject.GetComponent<GeminiService>();
-
-            chatGPTService.CaptureImage = CaptureImageAsync;
+                return null;
+            };
 
             // Animation and face expression for idling
             modelController.AddIdleAnimation(new Model.Animation("BaseParam", 6, 5f));
@@ -137,20 +119,12 @@ namespace ChatdollKit.Demo
             }
 
             // Setting on start
-            if (string.IsNullOrEmpty(voiceRequestProvider.ApiKey) && SettingPanel != null)
-            {
-                ShowSettingPanel();
-            }
-            else
-            {
-                chatGPTService.ApiKey = voiceRequestProvider.ApiKey;
-            }
+            settingsUI.Show();
 
             // Animation and face expression for start up
             var animationOnStart = new List<Model.Animation>();
             animationOnStart.Add(new Model.Animation("BaseParam", 6, 0.5f));
             animationOnStart.Add(new Model.Animation("BaseParam", 10, 3.0f));
-            //animationOnStart.Add(new Model.Animation("BaseParam", 101, 20.0f));
             modelController.Animate(animationOnStart);
 
             var faceOnStart = new List<FaceExpression>();
@@ -174,123 +148,5 @@ namespace ChatdollKit.Demo
         //        _ = modelController.ChangeIdlingModeAsync("sleep");
         //    }
         //}
-
-        // Autonomous vision control
-        private async UniTask<byte[]> CaptureImageAsync(string source)
-        {
-            if (simpleCamera != null)
-            {
-                try
-                {
-                    return await simpleCamera.CaptureImageAsync();
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogError($"Error at CaptureImageAsync: {ex.Message}\n{ex.StackTrace}");
-                }
-            }
-
-            return null;
-        }
-
-        // Settings
-        public void ShowSettingPanel()
-        {
-            // Get API key
-            OpenAIApiKeyInput.text = voiceRequestProvider.ApiKey;
-
-            // Set current LLM
-            if (chatGPTService.IsEnabled)
-            {
-                LLMDropdown.value = 0;
-            }
-            else if (claudeService.IsEnabled)
-            {
-                LLMDropdown.value = 1;
-            }
-            else if (geminiService.IsEnabled)
-            {
-                LLMDropdown.value = 2;
-            }
-
-            OnChangeLLMDropdown();
-
-            // TTS
-            if (!string.IsNullOrEmpty(voicevoxTTSLoader.EndpointUrl))
-            {
-                TTSUrlInput.text = voicevoxTTSLoader.EndpointUrl;
-                TTSSpeakerInput.text = voicevoxTTSLoader.Speaker.ToString();
-            }
-
-            SettingPanel.SetActive(true);
-        }
-
-        public void ApplySettings()
-        {
-            // Set API keys
-            wakeWordListener.ApiKey = OpenAIApiKeyInput.text;
-            voiceRequestProvider.ApiKey = OpenAIApiKeyInput.text;
-            openAITTSLoader.ApiKey = OpenAIApiKeyInput.text;
-
-            // Switch LLM
-            if (LLMDropdown.value == 0)
-            {
-                chatGPTService.IsEnabled = true;
-                chatGPTService.ApiKey = OpenAIApiKeyInput.text;
-                chatGPTService.Model = LLMModelInput.text;
-            }
-            else if (LLMDropdown.value == 1)
-            {
-                claudeService.IsEnabled = true;
-                claudeService.ApiKey = LLMApiKeyInput.text;
-                claudeService.Model = LLMModelInput.text;
-            }
-            else if (LLMDropdown.value == 2)
-            {
-                geminiService.IsEnabled = true;
-                geminiService.ApiKey = LLMApiKeyInput.text;
-                geminiService.Model = LLMModelInput.text;
-            }
-
-            // Switch TTS
-            if (string.IsNullOrEmpty(TTSUrlInput.text))
-            {
-                modelController.RegisterTTSFunction(openAITTSLoader.Name, openAITTSLoader.GetAudioClipAsync, true);
-            }
-            else
-            {
-                voicevoxTTSLoader.EndpointUrl = TTSUrlInput.text;
-                try
-                {
-                    voicevoxTTSLoader.Speaker = int.Parse(TTSSpeakerInput.text);
-                }
-                catch
-                {
-                    voicevoxTTSLoader.Speaker = 2;
-                }
-                voicevoxTTSLoader.ClearCache();
-                modelController.RegisterTTSFunction(voicevoxTTSLoader.Name, voicevoxTTSLoader.GetAudioClipAsync, true);
-            }
-
-            SettingPanel.SetActive(false);
-        }
-
-        public void OnChangeLLMDropdown()
-        {
-            if (LLMDropdown.value == 0)
-            {
-                LLMModelInput.text = chatGPTService.Model;
-            }
-            else if (LLMDropdown.value == 1)
-            {
-                LLMApiKeyInput.text = claudeService.ApiKey;
-                LLMModelInput.text = claudeService.Model;
-            }
-            else if (LLMDropdown.value == 2)
-            {
-                LLMApiKeyInput.text = geminiService.ApiKey;
-                LLMModelInput.text = geminiService.Model;
-            }
-        }
     }
 }
