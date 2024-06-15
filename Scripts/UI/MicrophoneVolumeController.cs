@@ -27,6 +27,7 @@ namespace ChatdollKit.UI
         private float volumePanelHideTimer = 0.0f;
         private float volumeUpdateInterval = 0.33f;
         private float volumeUpdateTimer = 0.0f;
+        private float previousVolume = -99.9f;
 
         private ChatdollMicrophone microphone;
         private DialogController dialogController;
@@ -75,9 +76,14 @@ namespace ChatdollKit.UI
                 }
                 else
                 {
-                    volumeText.text = $"{microphone.CurrentVolume:f1} / {-1 * microphoneSlider.value:f1} db";
+                    var volumeToShow = microphone.CurrentVolume > -99.9f ? microphone.CurrentVolume : previousVolume;
+                    volumeText.text = $"{volumeToShow:f1} / {-1 * microphoneSlider.value:f1} db";
                 }
                 volumeUpdateTimer = 0.0f;
+            }
+            if (microphone.CurrentVolume > -99.9f)
+            {
+                previousVolume = microphone.CurrentVolume;
             }
 
             if (IsWWLDetectingVoice() || IsVRPDetectingVoice())
