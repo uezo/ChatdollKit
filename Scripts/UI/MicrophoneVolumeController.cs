@@ -9,6 +9,9 @@ namespace ChatdollKit.UI
     public class MicrophoneVolumeController : MonoBehaviour
     {
         [SerializeField]
+        private GameObject chatdollKitObject;
+
+        [SerializeField]
         private Slider microphoneSlider;
         [SerializeField]
         private Image sliderHandleImage;
@@ -24,32 +27,31 @@ namespace ChatdollKit.UI
         private float volumePanelHideTimer = 0.0f;
         private float volumeUpdateInterval = 0.33f;
         private float volumeUpdateTimer = 0.0f;
+        private float previousVolume = -99.9f;
 
         private ChatdollMicrophone microphone;
+        private DialogController dialogController;
         private WakeWordListenerBase wakeWordListener;
         private IVoiceRequestProvider voiceRequestProvider;
-        private DialogController dialogController;
 
         private Func<bool> IsWWLDetectingVoice;
         private Func<bool> IsVRPDetectingVoice;
 
         private void Start()
         {
-            microphone = GetComponent<ChatdollMicrophone>();
-            dialogController = gameObject.GetComponent<DialogController>();
-
-            wakeWordListener = gameObject.GetComponent<WakeWordListenerBase>();
-            IsWWLDetectingVoice = () => { return wakeWordListener.IsDetectingVoice; };
-
-            voiceRequestProvider = gameObject.GetComponent<IVoiceRequestProvider>();
-            if (voiceRequestProvider is VoiceRequestProviderBase)
+            if (chatdollKitObject == null)
             {
-                IsVRPDetectingVoice = () => { return ((VoiceRequestProviderBase)voiceRequestProvider).IsDetectingVoice; };
+                chatdollKitObject = FindObjectOfType<ChatdollKit>()?.gameObject;
+                if (chatdollKitObject == null)
+                {
+                    Debug.LogError("ChatdollKit is not found in this scene.");
+                }
             }
-            else if (voiceRequestProvider is NonRecordingVoiceRequestProviderBase)
-            {
-                IsVRPDetectingVoice = () => { return ((NonRecordingVoiceRequestProviderBase)voiceRequestProvider).IsDetectingVoice; };
-            }
+
+            microphone = chatdollKitObject.GetComponent<ChatdollMicrophone>();
+            dialogController = chatdollKitObject.GetComponent<DialogController>();
+
+            UpdateListeners();
 
             microphoneSlider.value = -1 * wakeWordListener.VoiceDetectionThreshold;
         }
@@ -74,9 +76,14 @@ namespace ChatdollKit.UI
                 }
                 else
                 {
-                    volumeText.text = $"{microphone.CurrentVolume:f1} / {-1 * microphoneSlider.value:f1} db";
+                    var volumeToShow = microphone.CurrentVolume > -99.9f ? microphone.CurrentVolume : previousVolume;
+                    volumeText.text = $"{volumeToShow:f1} / {-1 * microphoneSlider.value:f1} db";
                 }
                 volumeUpdateTimer = 0.0f;
+            }
+            if (microphone.CurrentVolume > -99.9f)
+            {
+                previousVolume = microphone.CurrentVolume;
             }
 
             if (IsWWLDetectingVoice() || IsVRPDetectingVoice())
@@ -107,6 +114,24 @@ namespace ChatdollKit.UI
             else if (microphoneSlider.value > 0 && dialogController.IsMuted)
             {
                 dialogController.IsMuted = false;
+            }
+        }
+
+        public void UpdateListeners()
+        {
+            // Get WakeWordListener and VoiceRequestProvider that is currently used in DialogController
+
+            wakeWordListener = (WakeWordListenerBase)dialogController.WakeWordListener;
+            IsWWLDetectingVoice = () => { return wakeWordListener.IsDetectingVoice; };
+
+            voiceRequestProvider = (IVoiceRequestProvider)dialogController.RequestProviders[RequestType.Voice];
+            if (voiceRequestProvider is VoiceRequestProviderBase)
+            {
+                IsVRPDetectingVoice = () => { return ((VoiceRequestProviderBase)voiceRequestProvider).IsDetectingVoice; };
+            }
+            else if (voiceRequestProvider is NonRecordingVoiceRequestProviderBase)
+            {
+                IsVRPDetectingVoice = () => { return ((NonRecordingVoiceRequestProviderBase)voiceRequestProvider).IsDetectingVoice; };
             }
         }
     }

@@ -1,25 +1,16 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using UnityEngine;
-using UnityEngine.UI;
-using Cysharp.Threading.Tasks;
 using ChatdollKit.Dialog;
 using ChatdollKit.IO;
 using ChatdollKit.Model;
 using ChatdollKit.LLM;
-
-using ChatdollKit.Extension.OpenAI;
-using VoicevoxTTS = ChatdollKit.Extension.Voicevox.VoicevoxTTSLoader;
+using ChatdollKit.UI;
 
 #if UNITY_WEBGL && !UNITY_EDITOR
 using ChatGPTService = ChatdollKit.LLM.ChatGPT.ChatGPTServiceWebGL;
-using ClaudeService = ChatdollKit.LLM.Claude.ClaudeServiceWebGL;
-using GeminiService = ChatdollKit.LLM.Gemini.GeminiServiceWebGL;
 #else
 using ChatGPTService = ChatdollKit.LLM.ChatGPT.ChatGPTService;
-using ClaudeService = ChatdollKit.LLM.Claude.ClaudeService;
-using GeminiService = ChatdollKit.LLM.Gemini.GeminiService;
 #endif
 
 namespace ChatdollKit.Demo
@@ -30,43 +21,15 @@ namespace ChatdollKit.Demo
         private ModelController modelController;
         private DialogController dialogController;
 
-        private OpenAIWakeWordListener wakeWordListener;
-        private OpenAIVoiceRequestProvider voiceRequestProvider;
-        private OpenAITTSLoader openAITTSLoader;
-        private VoicevoxTTS voicevoxTTSLoader;
-
-        private ChatGPTService chatGPTService;
-        private ClaudeService claudeService;
-        private GeminiService geminiService;
-
-        //private DateTime sleepStartAt;
-
         // Input UI
         [SerializeField]
-        private InputField requestInput;
-        [SerializeField]
-        private Image imagePreview;
-        [SerializeField]
-        private Image imageIcon;
-        [SerializeField]
-        private GameObject imagePathPanel;
-        [SerializeField]
-        private InputField imagePathInput;
+        private InputUI inputUI;
         [SerializeField]
         private SimpleCamera simpleCamera;
+        [SerializeField]
+        private SettingsUI settingsUI;
 
-        // Setting UI
-        public GameObject SettingPanel;
-        public InputField OpenAIApiKeyInput;
-        public Dropdown LLMDropdown;
-        public InputField LLMModelInput;
-        public InputField LLMApiKeyInput;
-        public InputField TTSSpeakerInput;
-        public InputField TTSUrlInput;
-
-        public GameObject PromptPanel;
-        public Dropdown PromptDropdown;
-        public InputField PromptInput;
+        //private DateTime sleepStartAt;
 
         void Start()
         {
@@ -74,16 +37,23 @@ namespace ChatdollKit.Demo
             modelController = gameObject.GetComponent<ModelController>();
             dialogController = gameObject.GetComponent<DialogController>();
 
-            wakeWordListener = gameObject.GetComponent<OpenAIWakeWordListener>();
-            voiceRequestProvider = gameObject.GetComponent<OpenAIVoiceRequestProvider>();
-            openAITTSLoader = gameObject.GetComponent<OpenAITTSLoader>();
-            voicevoxTTSLoader = gameObject.GetComponent<VoicevoxTTS>();
+            // Image capture for ChatGPT vision
+            gameObject.GetComponent<ChatGPTService>().CaptureImage = async (string source) =>
+            {
+                if (simpleCamera != null)
+                {
+                    try
+                    {
+                        return await simpleCamera.CaptureImageAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogError($"Error at CaptureImageAsync: {ex.Message}\n{ex.StackTrace}");
+                    }
+                }
 
-            chatGPTService = gameObject.GetComponent<ChatGPTService>();
-            claudeService = gameObject.GetComponent<ClaudeService>();
-            geminiService = gameObject.GetComponent<GeminiService>();
-
-            chatGPTService.CaptureImage = CaptureImageAsync;
+                return null;
+            };
 
             // Animation and face expression for idling
             modelController.AddIdleAnimation(new Model.Animation("BaseParam", 6, 5f));
@@ -108,14 +78,11 @@ namespace ChatdollKit.Demo
             {
                 if (request.Type == RequestType.Voice)
                 {
-                    if (imagePreview.sprite != null)
+                    var imageBytes = inputUI.GetImageBytes();
+                    if (imageBytes != null)
                     {
-                        // Set image to request
-                        var imageBytes = imagePreview.sprite.texture.EncodeToJPG();
-                        imagePreview.sprite = null;
-                        imagePreview.gameObject.SetActive(false);
-                        imageIcon.gameObject.SetActive(true);
                         request.Payloads["imageBytes"] = imageBytes;
+                        inputUI.ClearImage();
                     }
                 }
 
@@ -152,20 +119,12 @@ namespace ChatdollKit.Demo
             }
 
             // Setting on start
-            if (string.IsNullOrEmpty(voiceRequestProvider.ApiKey) && SettingPanel != null)
-            {
-                ShowSettingPanel();
-            }
-            else
-            {
-                chatGPTService.ApiKey = voiceRequestProvider.ApiKey;
-            }
+            settingsUI.Show();
 
             // Animation and face expression for start up
             var animationOnStart = new List<Model.Animation>();
             animationOnStart.Add(new Model.Animation("BaseParam", 6, 0.5f));
             animationOnStart.Add(new Model.Animation("BaseParam", 10, 3.0f));
-            //animationOnStart.Add(new Model.Animation("BaseParam", 101, 20.0f));
             modelController.Animate(animationOnStart);
 
             var faceOnStart = new List<FaceExpression>();
@@ -189,294 +148,5 @@ namespace ChatdollKit.Demo
         //        _ = modelController.ChangeIdlingModeAsync("sleep");
         //    }
         //}
-
-        // Autonomous vision control
-        private async UniTask<byte[]> CaptureImageAsync(string source)
-        {
-            if (simpleCamera != null)
-            {
-                try
-                {
-                    return await simpleCamera.CaptureImageAsync();
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogError($"Error at CaptureImageAsync: {ex.Message}\n{ex.StackTrace}");
-                }
-            }
-
-            return null;
-        }
-
-        // Conversation UI
-        public void OnWakeButton()
-        {
-            _ = dialogController.StartDialogAsync();
-        }
-
-        public void OnSubmitRequestInput()
-        {
-            var inputText = requestInput.text.Trim();
-            requestInput.text = string.Empty;
-            if (string.IsNullOrEmpty(inputText)) return;
-
-            if (dialogController.Status == DialogController.DialogStatus.Idling)
-            {
-                var dialogRequest = new DialogRequest("_", new WakeWord() { Text = inputText, SkipPrompt = true }.CloneWithRecognizedText(inputText), true);
-                _ = dialogController.StartDialogAsync(dialogRequest);
-            }
-            else
-            {
-                ((IVoiceRequestProvider)dialogController.RequestProviders[RequestType.Voice]).TextInput = inputText;
-            }
-        }
-
-        // Image UI
-        public void OnImageButton()
-        {
-            ActivateImagePathPanel(!imagePathPanel.activeSelf);
-        }
-
-        public void OnSubmitImagePath()
-        {
-            var path = imagePathInput.text;
-            ActivateImagePathPanel(false);
-
-            if (string.IsNullOrEmpty(path))
-            {
-                // Clear image when path is empty
-                imagePreview.sprite = null;
-                imagePreview.gameObject.SetActive(false);
-                imageIcon.gameObject.SetActive(true);
-                return;
-            }
-
-            // Load image from file
-            var imageBytes = File.ReadAllBytes(path);
-            var texture = new Texture2D(2, 2);
-            texture.LoadImage(imageBytes);
-
-            // Resize image
-            var resizedTexture = ResizeTexture(texture, 640);
-
-            // Set image to preview
-            var sprite = Sprite.Create(resizedTexture, new Rect(0.0f, 0.0f, resizedTexture.width, resizedTexture.height), new Vector2(0.5f, 0.5f));
-            imagePreview.preserveAspect = true;
-            imagePreview.sprite = sprite;
-            imageIcon.gameObject.SetActive(false);
-            imagePreview.gameObject.SetActive(true);
-        }
-
-        private void ActivateImagePathPanel(bool activate)
-        {
-            imagePathInput.text = string.Empty;
-            imagePathPanel.SetActive(activate);
-            requestInput.enabled = !activate;
-
-            if (activate)
-            {
-                imagePathInput.Select();
-            }
-            else
-            {
-                requestInput.Select();
-            }
-        }
-
-        private static Texture2D ResizeTexture(Texture2D originalTexture, int maxLength)
-        {
-            var width = originalTexture.width;
-            var height = originalTexture.height;
-
-            if (Mathf.Max(width, height) < maxLength)
-            {
-                // Use original texture if smaller than the max
-                return originalTexture;
-            }
-
-            // Calculate the resized size keeping aspect ratio
-            var aspect = (float)width / height;
-            if (width > height)
-            {
-                width = maxLength;
-                height = Mathf.RoundToInt(maxLength / aspect);
-            }
-            else
-            {
-                height = maxLength;
-                width = Mathf.RoundToInt(maxLength * aspect);
-            }
-
-            // Make resized texture
-            var resizedTexture = new Texture2D(width, height, TextureFormat.RGBA32, false);
-            for (int y = 0; y < height; y++)
-            {
-                for (int x = 0; x < width; x++)
-                {
-                    float u = (float)x / (width - 1);
-                    float v = (float)y / (height - 1);
-                    resizedTexture.SetPixel(x, y, originalTexture.GetPixelBilinear(u, v));
-                }
-            }
-            resizedTexture.Apply();
-
-            return resizedTexture;
-        }
-
-        // Settings
-        public void ShowSettingPanel()
-        {
-            // Get API key
-            OpenAIApiKeyInput.text = voiceRequestProvider.ApiKey;
-
-            // Set current LLM
-            if (chatGPTService.IsEnabled)
-            {
-                LLMDropdown.value = 0;
-            }
-            else if (claudeService.IsEnabled)
-            {
-                LLMDropdown.value = 1;
-            }
-            else if (geminiService.IsEnabled)
-            {
-                LLMDropdown.value = 2;
-            }
-
-            OnChangeLLMDropdown();
-
-            // TTS
-            if (!string.IsNullOrEmpty(voicevoxTTSLoader.EndpointUrl))
-            {
-                TTSUrlInput.text = voicevoxTTSLoader.EndpointUrl;
-                TTSSpeakerInput.text = voicevoxTTSLoader.Speaker.ToString();
-            }
-
-            SettingPanel.SetActive(true);
-        }
-
-        public void ApplySettings()
-        {
-            // Set API keys
-            wakeWordListener.ApiKey = OpenAIApiKeyInput.text;
-            voiceRequestProvider.ApiKey = OpenAIApiKeyInput.text;
-            openAITTSLoader.ApiKey = OpenAIApiKeyInput.text;
-
-            // Switch LLM
-            if (LLMDropdown.value == 0)
-            {
-                chatGPTService.IsEnabled = true;
-                chatGPTService.ApiKey = OpenAIApiKeyInput.text;
-                chatGPTService.Model = LLMModelInput.text;
-            }
-            else if (LLMDropdown.value == 1)
-            {
-                claudeService.IsEnabled = true;
-                claudeService.ApiKey = LLMApiKeyInput.text;
-                claudeService.Model = LLMModelInput.text;
-            }
-            else if (LLMDropdown.value == 2)
-            {
-                geminiService.IsEnabled = true;
-                geminiService.ApiKey = LLMApiKeyInput.text;
-                geminiService.Model = LLMModelInput.text;
-            }
-
-            // Switch TTS
-            if (string.IsNullOrEmpty(TTSUrlInput.text))
-            {
-                modelController.RegisterTTSFunction(openAITTSLoader.Name, openAITTSLoader.GetAudioClipAsync, true);
-            }
-            else
-            {
-                voicevoxTTSLoader.EndpointUrl = TTSUrlInput.text;
-                try
-                {
-                    voicevoxTTSLoader.Speaker = int.Parse(TTSSpeakerInput.text);
-                }
-                catch
-                {
-                    voicevoxTTSLoader.Speaker = 2;
-                }
-                voicevoxTTSLoader.ClearCache();
-                modelController.RegisterTTSFunction(voicevoxTTSLoader.Name, voicevoxTTSLoader.GetAudioClipAsync, true);
-            }
-
-            SettingPanel.SetActive(false);
-        }
-
-        public void OnChangeLLMDropdown()
-        {
-            if (LLMDropdown.value == 0)
-            {
-                LLMModelInput.text = chatGPTService.Model;
-            }
-            else if (LLMDropdown.value == 1)
-            {
-                LLMApiKeyInput.text = claudeService.ApiKey;
-                LLMModelInput.text = claudeService.Model;
-            }
-            else if (LLMDropdown.value == 2)
-            {
-                LLMApiKeyInput.text = geminiService.ApiKey;
-                LLMModelInput.text = geminiService.Model;
-            }
-        }
-
-        // Prompt
-        public void ShowPromptPanel()
-        {
-            // Set current LLM
-            if (chatGPTService.IsEnabled)
-            {
-                PromptDropdown.value = 0;
-            }
-            else if (claudeService.IsEnabled)
-            {
-                PromptDropdown.value = 1;
-            }
-            else if (geminiService.IsEnabled)
-            {
-                PromptDropdown.value = 2;
-            }
-
-            OnChangePromptDropdown();
-
-            PromptPanel.SetActive(true);
-        }
-
-        public void ApplyPrompt()
-        {
-            if (PromptDropdown.value == 0)
-            {
-                chatGPTService.SystemMessageContent = PromptInput.text;
-            }
-            else if (PromptDropdown.value == 1)
-            {
-                claudeService.SystemMessageContent = PromptInput.text;
-            }
-            else if (PromptDropdown.value == 2)
-            {
-                geminiService.SystemMessageContent = PromptInput.text;
-            }
-
-            PromptPanel.SetActive(false);
-        }
-
-        public void OnChangePromptDropdown()
-        {
-            if (PromptDropdown.value == 0)
-            {
-                PromptInput.text = chatGPTService.SystemMessageContent;
-            }
-            else if (PromptDropdown.value == 1)
-            {
-                PromptInput.text = claudeService.SystemMessageContent;
-            }
-            else if (PromptDropdown.value == 2)
-            {
-                PromptInput.text = geminiService.SystemMessageContent;
-            }
-        }
     }
 }
