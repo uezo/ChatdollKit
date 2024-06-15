@@ -1,8 +1,10 @@
+using System;
 using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
 using ChatdollKit.Dialog;
 using ChatdollKit.IO;
+using ChatdollKit.LLM.ChatGPT;
 
 namespace ChatdollKit.UI
 {
@@ -60,6 +62,24 @@ namespace ChatdollKit.UI
             requestInput.text = string.Empty;
             if (string.IsNullOrEmpty(inputText)) return;
 
+            if (dialogController.OnRequestAsync == null)
+            {
+#pragma warning disable CS1998
+                dialogController.OnRequestAsync = async (request, token) =>
+                {
+                    if (request.Type == RequestType.Voice)
+                    {
+                        var imageBytes = GetImageBytes();
+                        if (imageBytes != null)
+                        {
+                            request.Payloads["imageBytes"] = imageBytes;
+                            ClearImage();
+                        }
+                    }
+                };
+#pragma warning restore CS1998
+            }
+
             if (dialogController.Status == DialogController.DialogStatus.Idling)
             {
                 var dialogRequest = new DialogRequest("_", new WakeWord() { Text = inputText, SkipPrompt = true }.CloneWithRecognizedText(inputText), true);
@@ -77,6 +97,23 @@ namespace ChatdollKit.UI
             if (simpleCamera != null)
             {
                 simpleCamera.ToggleCamera();
+
+                var chatGPTService = chatdollKitObject.GetComponent<ChatGPTService>();
+                if (chatGPTService != null && chatGPTService.CaptureImage == null)
+                {
+                    chatGPTService.CaptureImage = async (string source) =>
+                    {
+                        try
+                        {
+                            return await simpleCamera.CaptureImageAsync();
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.LogError($"Error at CaptureImageAsync: {ex.Message}\n{ex.StackTrace}");
+                        }
+                        return null;
+                    };
+                }
             }
             else
             {
