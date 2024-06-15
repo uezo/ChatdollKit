@@ -22,17 +22,7 @@ namespace ChatdollKit.Demo
     public class SettingsUI : MonoBehaviour
     {
         [SerializeField]
-        private DialogController dialogController;
-        [SerializeField]
-        private ModelController modelController;
-        [SerializeField]
-        private OpenAIWakeWordListener wakeWordListener;
-        [SerializeField]
-        private OpenAIVoiceRequestProvider voiceRequestProvider;
-        [SerializeField]
-        private OpenAITTSLoader openAITTSLoader;
-        [SerializeField]
-        private VoicevoxTTS voicevoxTTSLoader;
+        private GameObject chatdollKitObject;
 
         // Setting UI
         [SerializeField]
@@ -50,9 +40,35 @@ namespace ChatdollKit.Demo
         [SerializeField]
         private InputField TTSUrlInput;
 
+        private DialogController dialogController;
+        private ModelController modelController;
+        private OpenAIWakeWordListener wakeWordListener;
+        private OpenAIVoiceRequestProvider voiceRequestProvider;
+        private OpenAITTSLoader openAITTSLoader;
+        private VoicevoxTTS voicevoxTTSLoader;
+
         private ChatGPTService chatGPTService;
         private ClaudeService claudeService;
         private GeminiService geminiService;
+
+        private void Start()
+        {
+            if (chatdollKitObject == null)
+            {
+                chatdollKitObject = FindObjectOfType<ChatdollKit>()?.gameObject;
+                if (chatdollKitObject == null)
+                {
+                    Debug.LogError("ChatdollKit is not found in this scene.");
+                }
+            }
+
+            dialogController = chatdollKitObject.GetComponent<DialogController>();
+            modelController = chatdollKitObject.GetComponent<ModelController>();
+            wakeWordListener = chatdollKitObject.GetComponent<OpenAIWakeWordListener>();
+            voiceRequestProvider = chatdollKitObject.GetComponent<OpenAIVoiceRequestProvider>();
+            openAITTSLoader = chatdollKitObject.GetComponent<OpenAITTSLoader>();
+            voicevoxTTSLoader = chatdollKitObject.GetComponent<VoicevoxTTS>();
+        }
 
         public void Show()
         {

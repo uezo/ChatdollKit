@@ -9,9 +9,7 @@ namespace ChatdollKit.UI
     public class MicrophoneVolumeController : MonoBehaviour
     {
         [SerializeField]
-        private ChatdollMicrophone microphone;
-        [SerializeField]
-        private DialogController dialogController;
+        private GameObject chatdollKitObject;
 
         [SerializeField]
         private Slider microphoneSlider;
@@ -30,6 +28,8 @@ namespace ChatdollKit.UI
         private float volumeUpdateInterval = 0.33f;
         private float volumeUpdateTimer = 0.0f;
 
+        private ChatdollMicrophone microphone;
+        private DialogController dialogController;
         private WakeWordListenerBase wakeWordListener;
         private IVoiceRequestProvider voiceRequestProvider;
 
@@ -38,6 +38,18 @@ namespace ChatdollKit.UI
 
         private void Start()
         {
+            if (chatdollKitObject == null)
+            {
+                chatdollKitObject = FindObjectOfType<ChatdollKit>()?.gameObject;
+                if (chatdollKitObject == null)
+                {
+                    Debug.LogError("ChatdollKit is not found in this scene.");
+                }
+            }
+
+            microphone = chatdollKitObject.GetComponent<ChatdollMicrophone>();
+            dialogController = chatdollKitObject.GetComponent<DialogController>();
+
             UpdateListeners();
 
             microphoneSlider.value = -1 * wakeWordListener.VoiceDetectionThreshold;

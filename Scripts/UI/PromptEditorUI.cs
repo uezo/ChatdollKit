@@ -18,7 +18,7 @@ namespace ChatdollKit.UI
     public class PromptEditorUI : MonoBehaviour
     {
         [SerializeField]
-        private DialogController dialogController;
+        private GameObject chatdollKitObject;
 
         [SerializeField]
         private GameObject PromptPanel;
@@ -27,9 +27,24 @@ namespace ChatdollKit.UI
         [SerializeField]
         private InputField PromptInput;
 
+        private DialogController dialogController;
         private ChatGPTService chatGPTService;
         private ClaudeService claudeService;
         private GeminiService geminiService;
+
+        private void Start()
+        {
+            if (chatdollKitObject == null)
+            {
+                chatdollKitObject = FindObjectOfType<ChatdollKit>()?.gameObject;
+                if (chatdollKitObject == null)
+                {
+                    Debug.LogError("ChatdollKit is not found in this scene.");
+                }
+            }
+
+            dialogController = chatdollKitObject.GetComponent<DialogController>();
+        }
 
         public void Show()
         {

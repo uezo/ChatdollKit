@@ -2,13 +2,17 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
 using ChatdollKit.Dialog;
+using ChatdollKit.IO;
 
 namespace ChatdollKit.UI
 {
     public class InputUI : MonoBehaviour
     {
         [SerializeField]
+        private GameObject chatdollKitObject;
         private DialogController dialogController;
+        [SerializeField]
+        private SimpleCamera simpleCamera;
 
         // Input UI
         [SerializeField]
@@ -21,6 +25,28 @@ namespace ChatdollKit.UI
         private GameObject imagePathPanel;
         [SerializeField]
         private InputField imagePathInput;
+
+        private void Start()
+        {
+            if (chatdollKitObject == null)
+            {
+                chatdollKitObject = FindObjectOfType<ChatdollKit>()?.gameObject;
+                if (chatdollKitObject == null)
+                {
+                    Debug.LogError("ChatdollKit is not found in this scene.");
+                }
+            }
+            dialogController = chatdollKitObject.GetComponent<DialogController>();
+
+            if (simpleCamera == null)
+            {
+                simpleCamera = FindObjectOfType<SimpleCamera>();
+                if (simpleCamera == null)
+                {
+                    Debug.LogWarning("SimpleCamera is not found in this scene.");
+                }
+            }
+        }
 
         // Conversation UI
         public void OnWakeButton()
@@ -42,6 +68,19 @@ namespace ChatdollKit.UI
             else
             {
                 ((IVoiceRequestProvider)dialogController.RequestProviders[RequestType.Voice]).TextInput = inputText;
+            }
+        }
+
+        // Camera
+        public void OnCameraButton()
+        {
+            if (simpleCamera != null)
+            {
+                simpleCamera.ToggleCamera();
+            }
+            else
+            {
+                Debug.LogWarning("SimpleCamera is not available.");
             }
         }
 
