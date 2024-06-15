@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
 using Cysharp.Threading.Tasks;
@@ -56,10 +55,6 @@ namespace ChatdollKit.Demo
         public InputField LLMApiKeyInput;
         public InputField TTSSpeakerInput;
         public InputField TTSUrlInput;
-
-        public GameObject PromptPanel;
-        public Dropdown PromptDropdown;
-        public InputField PromptInput;
 
         void Start()
         {
@@ -295,62 +290,6 @@ namespace ChatdollKit.Demo
             {
                 LLMApiKeyInput.text = geminiService.ApiKey;
                 LLMModelInput.text = geminiService.Model;
-            }
-        }
-
-        // Prompt
-        public void ShowPromptPanel()
-        {
-            // Set current LLM
-            if (chatGPTService.IsEnabled)
-            {
-                PromptDropdown.value = 0;
-            }
-            else if (claudeService.IsEnabled)
-            {
-                PromptDropdown.value = 1;
-            }
-            else if (geminiService.IsEnabled)
-            {
-                PromptDropdown.value = 2;
-            }
-
-            OnChangePromptDropdown();
-
-            PromptPanel.SetActive(true);
-        }
-
-        public void ApplyPrompt()
-        {
-            if (PromptDropdown.value == 0)
-            {
-                chatGPTService.SystemMessageContent = PromptInput.text;
-            }
-            else if (PromptDropdown.value == 1)
-            {
-                claudeService.SystemMessageContent = PromptInput.text;
-            }
-            else if (PromptDropdown.value == 2)
-            {
-                geminiService.SystemMessageContent = PromptInput.text;
-            }
-
-            PromptPanel.SetActive(false);
-        }
-
-        public void OnChangePromptDropdown()
-        {
-            if (PromptDropdown.value == 0)
-            {
-                PromptInput.text = chatGPTService.SystemMessageContent;
-            }
-            else if (PromptDropdown.value == 1)
-            {
-                PromptInput.text = claudeService.SystemMessageContent;
-            }
-            else if (PromptDropdown.value == 2)
-            {
-                PromptInput.text = geminiService.SystemMessageContent;
             }
         }
     }
