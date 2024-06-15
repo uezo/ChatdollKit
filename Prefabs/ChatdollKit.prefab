@@ -190,7 +190,6 @@ GameObject:
   - component: {fileID: 2893757556556708107}
   - component: {fileID: -6319102202658376751}
   - component: {fileID: 1011412479596385445}
-  - component: {fileID: 7201188432993092321}
   - component: {fileID: 5961072085055072626}
   - component: {fileID: 7443860407171112592}
   - component: {fileID: 2448531312791225379}
@@ -453,27 +452,6 @@ MonoBehaviour:
   fpsText: {fileID: 6097582344785036082}
   targetFrameRate: 0
   interval: 0.5
---- !u!114 &7201188432993092321
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2893757556556708096}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3fbd5adbc41d948bab27161ad203bc0e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  microphoneSlider: {fileID: 1157403350529352956}
-  sliderHandleImage: {fileID: 2142968677857777599}
-  voiceDetectedColor:
-    serializedVersion: 2
-    rgba: 4278242304
-  voiceNotDetectedColor:
-    serializedVersion: 2
-    rgba: 4294967295
-  volumeText: {fileID: 307210404190001038}
 --- !u!114 &5961072085055072626
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -932,7 +910,7 @@ PrefabInstance:
     - target: {fileID: 6366771210131660893, guid: 3fbec9d909d9a44b18705bf89ec2d5f6, type: 3}
       propertyPath: m_OnValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 7201188432993092321}
+      objectReference: {fileID: 0}
     - target: {fileID: 6366771210131660893, guid: 3fbec9d909d9a44b18705bf89ec2d5f6, type: 3}
       propertyPath: m_OnValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: UpdateMicrophoneSensitivity
@@ -1017,46 +995,21 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6625304332498329769, guid: 3fbec9d909d9a44b18705bf89ec2d5f6, type: 3}
+      propertyPath: microphone
+      value: 
+      objectReference: {fileID: 2893757556556708107}
+    - target: {fileID: 6625304332498329769, guid: 3fbec9d909d9a44b18705bf89ec2d5f6, type: 3}
+      propertyPath: dialogController
+      value: 
+      objectReference: {fileID: 2893757556556708105}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3fbec9d909d9a44b18705bf89ec2d5f6, type: 3}
---- !u!114 &307210404190001038 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 5483082681438589743, guid: 3fbec9d909d9a44b18705bf89ec2d5f6, type: 3}
-  m_PrefabInstance: {fileID: 5211998037449295009}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &1157403350529352956 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 6366771210131660893, guid: 3fbec9d909d9a44b18705bf89ec2d5f6, type: 3}
-  m_PrefabInstance: {fileID: 5211998037449295009}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 67db9e8f0e2ae9c40bc1e2b64352a6b4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!224 &1260282044649651205 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 6424903075241654436, guid: 3fbec9d909d9a44b18705bf89ec2d5f6, type: 3}
   m_PrefabInstance: {fileID: 5211998037449295009}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &2142968677857777599 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 6190732262279123742, guid: 3fbec9d909d9a44b18705bf89ec2d5f6, type: 3}
-  m_PrefabInstance: {fileID: 5211998037449295009}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 

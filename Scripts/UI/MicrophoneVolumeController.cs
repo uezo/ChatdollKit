@@ -9,6 +9,11 @@ namespace ChatdollKit.UI
     public class MicrophoneVolumeController : MonoBehaviour
     {
         [SerializeField]
+        private ChatdollMicrophone microphone;
+        [SerializeField]
+        private DialogController dialogController;
+
+        [SerializeField]
         private Slider microphoneSlider;
         [SerializeField]
         private Image sliderHandleImage;
@@ -25,31 +30,15 @@ namespace ChatdollKit.UI
         private float volumeUpdateInterval = 0.33f;
         private float volumeUpdateTimer = 0.0f;
 
-        private ChatdollMicrophone microphone;
         private WakeWordListenerBase wakeWordListener;
         private IVoiceRequestProvider voiceRequestProvider;
-        private DialogController dialogController;
 
         private Func<bool> IsWWLDetectingVoice;
         private Func<bool> IsVRPDetectingVoice;
 
         private void Start()
         {
-            microphone = GetComponent<ChatdollMicrophone>();
-            dialogController = gameObject.GetComponent<DialogController>();
-
-            wakeWordListener = gameObject.GetComponent<WakeWordListenerBase>();
-            IsWWLDetectingVoice = () => { return wakeWordListener.IsDetectingVoice; };
-
-            voiceRequestProvider = gameObject.GetComponent<IVoiceRequestProvider>();
-            if (voiceRequestProvider is VoiceRequestProviderBase)
-            {
-                IsVRPDetectingVoice = () => { return ((VoiceRequestProviderBase)voiceRequestProvider).IsDetectingVoice; };
-            }
-            else if (voiceRequestProvider is NonRecordingVoiceRequestProviderBase)
-            {
-                IsVRPDetectingVoice = () => { return ((NonRecordingVoiceRequestProviderBase)voiceRequestProvider).IsDetectingVoice; };
-            }
+            UpdateListeners();
 
             microphoneSlider.value = -1 * wakeWordListener.VoiceDetectionThreshold;
         }
@@ -107,6 +96,24 @@ namespace ChatdollKit.UI
             else if (microphoneSlider.value > 0 && dialogController.IsMuted)
             {
                 dialogController.IsMuted = false;
+            }
+        }
+
+        public void UpdateListeners()
+        {
+            // Get WakeWordListener and VoiceRequestProvider that is currently used in DialogController
+
+            wakeWordListener = (WakeWordListenerBase)dialogController.WakeWordListener;
+            IsWWLDetectingVoice = () => { return wakeWordListener.IsDetectingVoice; };
+
+            voiceRequestProvider = (IVoiceRequestProvider)dialogController.RequestProviders[RequestType.Voice];
+            if (voiceRequestProvider is VoiceRequestProviderBase)
+            {
+                IsVRPDetectingVoice = () => { return ((VoiceRequestProviderBase)voiceRequestProvider).IsDetectingVoice; };
+            }
+            else if (voiceRequestProvider is NonRecordingVoiceRequestProviderBase)
+            {
+                IsVRPDetectingVoice = () => { return ((NonRecordingVoiceRequestProviderBase)voiceRequestProvider).IsDetectingVoice; };
             }
         }
     }
