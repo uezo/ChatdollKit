@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -18,7 +19,7 @@ namespace ChatdollKit.LLM.Gemini
 
         [Header("API configuration")]
         public string ApiKey;
-        public string Model = "gemini-pro";
+        public string Model = "gemini-1.5-flash-latest";
         public string GenerateContentUrl;
         public int MaxOutputTokens = 0;
         public float Temperature = 0.5f;
@@ -31,6 +32,8 @@ namespace ChatdollKit.LLM.Gemini
         protected int responseTimeoutSec = 30;
         [SerializeField]
         protected float noDataResponseTimeoutSec = 10.0f;   // Some requests like multi-modal takes time longer
+
+        public Func<string, UniTask<byte[]>> CaptureImage = null;
 
         public override ILLMMessage CreateMessageAfterFunction(string role = null, string content = null, ILLMSession llmSession = null, Dictionary<string, object> arguments = null)
         {
@@ -60,7 +63,6 @@ namespace ChatdollKit.LLM.Gemini
         {
             var histories = GetHistoriesFromStateData(dataStore);
             var userMessage = (GeminiMessage)llmSession.Contexts.Last();
-            // Multiturn is not supported for gemini-pro-vision and image input modality is not enabled for gemini-pro
             userMessage.parts.RemoveAll(p => p.inlineData != null);
             userMessage.parts.RemoveAll(p => p.fileData != null);
             histories.Add(userMessage);
@@ -86,19 +88,6 @@ namespace ChatdollKit.LLM.Gemini
         {
             var messages = new List<ILLMMessage>();
 
-            if (((Dictionary<string, object>)payloads["RequestPayloads"]).ContainsKey("imageBytes"))
-            {
-                // Vision model doesn't support multiturn chat
-                var imageBytes = (byte[])((Dictionary<string, object>)payloads["RequestPayloads"])["imageBytes"];
-                messages.Add(new GeminiMessage("user", inputText, inlineData: new GeminiInlineData("image/jpeg", imageBytes)));
-                Model = "gemini-pro-vision";
-                return messages;
-            }
-            else
-            {
-                Model = "gemini-pro";
-            }
-
             // System
             if (!string.IsNullOrEmpty(SystemMessageContent))
             {
@@ -111,7 +100,15 @@ namespace ChatdollKit.LLM.Gemini
             messages.AddRange(histories.Skip(histories.Count - HistoryTurns * 2).ToList());
 
             // User (current input)
-            messages.Add(new GeminiMessage("user", inputText));
+            if (((Dictionary<string, object>)payloads["RequestPayloads"]).ContainsKey("imageBytes"))
+            {
+                var imageBytes = (byte[])((Dictionary<string, object>)payloads["RequestPayloads"])["imageBytes"];
+                messages.Add(new GeminiMessage("user", inputText, inlineData: new GeminiInlineData("image/jpeg", imageBytes)));
+            }
+            else
+            {
+                messages.Add(new GeminiMessage("user", inputText));
+            }
 
             return messages;
         }
@@ -203,8 +200,10 @@ namespace ChatdollKit.LLM.Gemini
             streamRequest.uploadHandler = new UploadHandlerRaw(bodyRaw);
             var downloadHandler = new GeminiStreamDownloadHandler();
             downloadHandler.DebugMode = DebugMode;
+            var localStreamBuffer = string.Empty;
             downloadHandler.SetReceivedChunk = (chunk) =>
             {
+                localStreamBuffer += chunk;
                 geminiSession.StreamBuffer += chunk;
             };
             downloadHandler.SetResponseType = (responseType, functionName) =>
@@ -258,6 +257,14 @@ namespace ChatdollKit.LLM.Gemini
                 await UniTask.Delay(10);
             }
 
+            // Remove non-text parts to keep context light
+            var lastUserMessage = geminiSession.Contexts.Last() as GeminiMessage;
+            if (lastUserMessage != null)
+            {
+                lastUserMessage.parts.RemoveAll(p => p.inlineData != null);
+                lastUserMessage.parts.RemoveAll(p => p.fileData != null);
+            }
+
             // Update histories
             if (geminiSession.ResponseType != ResponseType.Error && geminiSession.ResponseType != ResponseType.Timeout)
             {
@@ -268,11 +275,36 @@ namespace ChatdollKit.LLM.Gemini
                 Debug.LogWarning($"Messages are not added to histories for response type is not success: {geminiSession.ResponseType}");
             }
 
-            geminiSession.IsResponseDone = true;
+            var extractedTags = ExtractTags(localStreamBuffer);
 
-            if (DebugMode)
+            if (CaptureImage != null && extractedTags.ContainsKey("vision"))
             {
-                Debug.Log($"Response from Gemini: {JsonConvert.SerializeObject(geminiSession.StreamBuffer)}");
+                // Get image
+                var imageBytes = await CaptureImage(extractedTags["vision"]);
+
+                // Make contexts
+                var lastUserContentText = lastUserMessage.parts.Where(p => !string.IsNullOrEmpty(p.text)).First().text;
+                if (imageBytes != null)
+                {
+                    geminiSession.Contexts.Add(new GeminiMessage("model", geminiSession.StreamBuffer));
+                    geminiSession.Contexts.Add(new GeminiMessage("user", lastUserContentText, inlineData: new GeminiInlineData("image/jpeg", imageBytes)));
+                }
+                else
+                {
+                    geminiSession.Contexts.Add(new GeminiMessage("user", "Please inform the user that an error occurred while capturing the image."));
+                }
+
+                // Call recursively with image
+                await StartStreamingAsync(geminiSession, stateData, customParameters, customHeaders, useFunctions, token);
+            }
+            else
+            {
+                geminiSession.IsResponseDone = true;
+
+                if (DebugMode)
+                {
+                    Debug.Log($"Response from Gemini: {JsonConvert.SerializeObject(geminiSession.StreamBuffer)}");
+                }
             }
         }
 
@@ -283,6 +315,25 @@ namespace ChatdollKit.LLM.Gemini
             {
                 await UniTask.Delay(10, cancellationToken: token);
             }
+        }
+
+        protected Dictionary<string, string> ExtractTags(string text)
+        {
+            var tagPattern = @"\[(\w+):([^\]]+)\]";
+            var matches = Regex.Matches(text, tagPattern);
+            var result = new Dictionary<string, string>();
+
+            foreach (Match match in matches)
+            {
+                if (match.Groups.Count == 3)
+                {
+                    var key = match.Groups[1].Value;
+                    var value = match.Groups[2].Value;
+                    result[key] = value;
+                }
+            }
+
+            return result;
         }
 
         // Internal classes
@@ -311,32 +362,43 @@ namespace ChatdollKit.LLM.Gemini
                         // Remove "[" or "," to parse as JSON
                         receivedData = receivedData.Substring(1);
 
-                        // Remove trailing "]" to parse as JSON
-                        if (receivedData.EndsWith("]"))
+                        // Remove trailing "]" or "," to parse as JSON
+                        if (receivedData.EndsWith("]") || receivedData.EndsWith(","))
                         {
                             receivedData = receivedData.Substring(0, receivedData.Length - 1);
                         }
 
-                        var streamResponse = JsonConvert.DeserializeObject<GeminiStreamResponse>(receivedData);
-                        if (streamResponse == null) return true;
+                        var streamResponses = JsonConvert.DeserializeObject<List<GeminiStreamResponse>>("[" + receivedData + "]");
 
-                        if (streamResponse.candidates[0].content.parts[0].functionCall != null)
+                        if (streamResponses.Count == 0)
                         {
-                            if (responseType == ResponseType.None)
-                            {
-                                responseType = ResponseType.FunctionCalling;
-                                SetResponseType(responseType, streamResponse.candidates[0].content.parts[0].functionCall.name);
-                            }
-                            SetReceivedChunk(JsonConvert.SerializeObject(streamResponse.candidates[0].content.parts[0].functionCall.args));
+                            return true;
                         }
-                        else
+                        else if (streamResponses.Count > 1)
                         {
-                            if (responseType == ResponseType.None)
+                            Debug.Log($"Multiple JSON: {streamResponses.Count}");
+                        }
+
+                        foreach (var streamResponse in streamResponses)
+                        {
+                            if (streamResponse.candidates[0].content.parts[0].functionCall != null)
                             {
-                                responseType = ResponseType.Content;
-                                SetResponseType(responseType, string.Empty);
+                                if (responseType == ResponseType.None)
+                                {
+                                    responseType = ResponseType.FunctionCalling;
+                                    SetResponseType(responseType, streamResponse.candidates[0].content.parts[0].functionCall.name);
+                                }
+                                SetReceivedChunk(JsonConvert.SerializeObject(streamResponse.candidates[0].content.parts[0].functionCall.args));
                             }
-                            SetReceivedChunk(streamResponse.candidates[0].content.parts[0].text);
+                            else
+                            {
+                                if (responseType == ResponseType.None)
+                                {
+                                    responseType = ResponseType.Content;
+                                    SetResponseType(responseType, string.Empty);
+                                }
+                                SetReceivedChunk(streamResponse.candidates[0].content.parts[0].text);
+                            }
                         }
                     }
 
