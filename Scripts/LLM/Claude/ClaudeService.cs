@@ -36,8 +36,14 @@ namespace ChatdollKit.LLM.Claude
 
         public override ILLMMessage CreateMessageAfterFunction(string role = null, string content = null, ILLMSession llmSession = null, Dictionary<string, object> arguments = null)
         {
-            // Create human message for next request after function execution
-            return new ClaudeMessage("user", "this is dummy. claude has no function calling for now");
+            if (role == "user")
+            {
+                return new ClaudeMessage("user", content);
+            }
+            else
+            {
+                return new ClaudeMessage("user", tool_use_id: ((ClaudeSession)llmSession).ToolUseId, tool_use_content: content);
+            }
         }
 
         protected List<ClaudeMessage> GetHistoriesFromStateData(Dictionary<string, object> stateData)
@@ -61,9 +67,30 @@ namespace ChatdollKit.LLM.Claude
         public async UniTask AddHistoriesAsync(ILLMSession llmSession, Dictionary<string, object> dataStore, CancellationToken token = default)
         {
             var histories = GetHistoriesFromStateData(dataStore);
+
+            // Add user message
             var userMessage = (ClaudeMessage)llmSession.Contexts.Last();
             histories.Add(userMessage);
-            histories.Add(new ClaudeMessage("assistant", llmSession.StreamBuffer));
+
+            // Add assistant message
+            if (llmSession.ResponseType == ResponseType.FunctionCalling)
+            {
+                var functionCallMessage = new ClaudeMessage("assistant");
+                functionCallMessage.content.Add(new ClaudeContent() {
+                    type = "tool_use",
+                    id = ((ClaudeSession)llmSession).ToolUseId,
+                    name = llmSession.FunctionName,
+                    input = JsonConvert.DeserializeObject<Dictionary<string, object>>(llmSession.StreamBuffer)
+                });;
+                histories.Add(functionCallMessage);
+
+                // Add also to contexts for using this message in this turn
+                llmSession.Contexts.Add(functionCallMessage);
+            }
+            else
+            {
+                histories.Add(new ClaudeMessage("assistant", llmSession.StreamBuffer));
+            }
         }
 
         public override async UniTask<List<ILLMMessage>> MakePromptAsync(string userId, string inputText, Dictionary<string, object> payloads, CancellationToken token = default)
@@ -80,7 +107,7 @@ namespace ChatdollKit.LLM.Claude
             {
                 // Message with image
                 var imageBytes = (byte[])((Dictionary<string, object>)payloads["RequestPayloads"])["imageBytes"];
-                messages.Add(new ClaudeMessage("user", inputText, "image/jpeg", Convert.ToBase64String(imageBytes)));
+                messages.Add(new ClaudeMessage("user", inputText, "image/jpeg", imageBytes));
             }
             else
             {
@@ -139,6 +166,17 @@ namespace ChatdollKit.LLM.Claude
                 { "temperature", Temperature },
                 { "stream", true },
             };
+
+            if (llmTools.Count > 0) // tools must be included when tool_result
+            {
+                var claudeTools = new List<ClaudeTool>();
+                foreach (var tool in llmTools)
+                {
+                    claudeTools.Add(new ClaudeTool(tool));
+                }
+                data.Add("tools", claudeTools);
+            }
+
             if (TopK > 0)
             {
                 data.Add("top_k", TopK);
@@ -176,6 +214,11 @@ namespace ChatdollKit.LLM.Claude
             {
                 claudeSession.CurrentStreamBuffer += chunk;
                 claudeSession.StreamBuffer += chunk;
+            };
+            downloadHandler.SetToolCallInfo = (id, name) =>
+            {
+                claudeSession.ToolUseId = id;
+                claudeSession.FunctionName = name;
             };
             downloadHandler.SetResponseType = (responseType) =>
             {
@@ -257,7 +300,7 @@ namespace ChatdollKit.LLM.Claude
                 {
                     claudeSession.Contexts.Add(new ClaudeMessage("assistant", claudeSession.StreamBuffer));
                     // Image -> Text get the better accuracy
-                    var userMessageWithVision = new ClaudeMessage("user", mediaType: "image/jpeg", data: Convert.ToBase64String(imageBytes));
+                    var userMessageWithVision = new ClaudeMessage("user", mediaType: "image/jpeg", data: imageBytes);
                     userMessageWithVision.content.Add(new ClaudeContent(lastUserContentText));
                     claudeSession.Contexts.Add(userMessageWithVision);
                 }
@@ -292,9 +335,10 @@ namespace ChatdollKit.LLM.Claude
         protected class ClaudeStreamDownloadHandler : DownloadHandlerScript
         {
             public Action<string> SetReceivedChunk;
+            public Action<string, string> SetToolCallInfo;
             public Action<ResponseType> SetResponseType;
             public bool DebugMode = false;
-            private bool isFirstDelta = true;
+            private string contentBlockType = string.Empty;
 
             protected override bool ReceiveData(byte[] data, int dataLength)
             {
@@ -325,15 +369,36 @@ namespace ChatdollKit.LLM.Claude
                             continue;
                         }
 
-                        if (csr.delta == null || string.IsNullOrEmpty(csr.delta.text)) continue;
-
-                        if (isFirstDelta)
+                        if (csr.type == "content_block_start")
                         {
-                            SetResponseType(ResponseType.Content);
-                            isFirstDelta = false;
+                            contentBlockType = csr.content_block.type;
+                            if (contentBlockType == "tool_use")
+                            {
+                                SetToolCallInfo(csr.content_block.id, csr.content_block.name);
+                                SetResponseType(ResponseType.FunctionCalling);
+                            }
+                            else
+                            {
+                                SetResponseType(ResponseType.Content);
+                            }
+                            continue;
                         }
-
-                        resp += csr.delta.text;
+                        else if (csr.type == "content_block_delta")
+                        {
+                            if (contentBlockType == "tool_use")
+                            {
+                                resp += csr.delta.partial_json;
+                            }
+                            else
+                            {
+                                resp += csr.delta.text;
+                            }
+                        }
+                        else if (csr.type == "content_block_stop")
+                        {
+                            // NOTE: Only the first content block is used
+                            break;
+                        }
                     }
                 }
 
@@ -346,18 +411,27 @@ namespace ChatdollKit.LLM.Claude
 
     public class ClaudeSession : LLMSession
     {
-
+        public string ToolUseId { get; set; }
     }
 
     public class ClaudeStreamResponse
     {
         public string type { get; set; }
+        public CLaudeContentBlock content_block { get; set; }
         public ClaudeDelta delta { get; set; }
+    }
+
+    public class CLaudeContentBlock
+    {
+        public string type { get; set; }
+        public string id { get; set; }
+        public string name { get; set; }
     }
 
     public class ClaudeDelta
     {
         public string text { get; set; }
+        public string partial_json { get; set; }
     }
 
     public class ClaudeImageSource
@@ -375,6 +449,20 @@ namespace ChatdollKit.LLM.Claude
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public ClaudeImageSource source { get; set; }
 
+        // ToolUse Response
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string id { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string name { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public Dictionary<string, object> input { get; set; }
+
+        // ToolUse Result Request
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string tool_use_id { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string content { get; set; }
+
         public ClaudeContent() { }
 
         public ClaudeContent(string text)
@@ -383,12 +471,19 @@ namespace ChatdollKit.LLM.Claude
             this.text = text;
         }
 
-        public ClaudeContent(string mediaType, string data)
+        public ClaudeContent(string mediaType, byte[] imageBytes)
         {
             type = "image";
             source = new ClaudeImageSource();
             source.media_type = mediaType;
-            source.data = data;
+            source.data = Convert.ToBase64String(imageBytes);
+        }
+
+        public ClaudeContent(string tool_use_id, string content)
+        {
+            type = "tool_result";
+            this.tool_use_id = tool_use_id;
+            this.content = content;
         }
     }
 
@@ -397,7 +492,7 @@ namespace ChatdollKit.LLM.Claude
         public string role { get; set; }
         public List<ClaudeContent> content { get; set; }
 
-        public ClaudeMessage(string role, string text = null, string mediaType = null, string data = null)
+        public ClaudeMessage(string role, string text = null, string mediaType = null, byte[] data = null, string tool_use_id = null, string tool_use_content = null)
         {
             this.role = role;
             content = new List<ClaudeContent>();
@@ -407,10 +502,52 @@ namespace ChatdollKit.LLM.Claude
                 content.Add(new ClaudeContent(text));
             }
 
-            if (!string.IsNullOrEmpty(mediaType) && !string.IsNullOrEmpty(data))
+            if (!string.IsNullOrEmpty(mediaType) && data != null)
             {
                 content.Add(new ClaudeContent(mediaType, data));
             }
+
+            if (!string.IsNullOrEmpty(tool_use_id) && !string.IsNullOrEmpty(tool_use_content))
+            {
+                content.Add(new ClaudeContent(tool_use_id, tool_use_content));
+            }
+        }
+    }
+
+    public class ClaudeTool : ILLMTool
+    {
+        public string name { get; set; }
+        public string description { get; set; }
+        [JsonIgnore]
+        public ILLMToolParameters parameters {
+            get
+            {
+                return input_schema;
+            }
+            set
+            {
+                input_schema = value;
+            }
+        }
+        public ILLMToolParameters input_schema { get; set; }
+
+        public ClaudeTool(string name, string description)
+        {
+            this.name = name;
+            this.description = description;
+            input_schema = new LLMToolParameters();
+        }
+
+        public ClaudeTool(ILLMTool llmTool)
+        {
+            name = llmTool.name;
+            description = llmTool.description;
+            parameters = llmTool.parameters;
+        }
+
+        public void AddProperty(string key, Dictionary<string, object> value)
+        {
+            parameters.properties.Add(key, value);
         }
     }
 }

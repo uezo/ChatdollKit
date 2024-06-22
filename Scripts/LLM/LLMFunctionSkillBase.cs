@@ -19,7 +19,6 @@ namespace ChatdollKit.LLM
             var llmSession = (ILLMSession)request.Payloads["LLMSession"];
 
             // TODO: Waiting AnimatedVoice. See https://x.com/uezochan/status/1795216169969864865
-
             await llmSession.StreamingTask;
 
             // Execute function
