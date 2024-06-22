@@ -18,7 +18,7 @@ namespace ChatdollKit.LLM.Claude
 
         [Header("API configuration")]
         public string ApiKey;
-        public string Model = "claude-2.1";
+        public string Model = "claude-3-haiku-20240307";
         public string CreateMessageUrl;
         public int MaxTokens = 500;
         public float Temperature = 0.5f;
@@ -31,6 +31,8 @@ namespace ChatdollKit.LLM.Claude
         protected int responseTimeoutSec = 30;
         [SerializeField]
         protected float noDataResponseTimeoutSec = 5.0f;
+
+        public Func<string, UniTask<byte[]>> CaptureImage = null;
 
         public override ILLMMessage CreateMessageAfterFunction(string role = null, string content = null, ILLMSession llmSession = null, Dictionary<string, object> arguments = null)
         {
@@ -124,6 +126,8 @@ namespace ChatdollKit.LLM.Claude
 
         public virtual async UniTask StartStreamingAsync(ClaudeSession claudeSession, Dictionary<string, object> stateData, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
         {
+            claudeSession.CurrentStreamBuffer = string.Empty;
+
             // Make request data
             var data = new Dictionary<string, object>()
             {
@@ -151,7 +155,6 @@ namespace ChatdollKit.LLM.Claude
             );
             streamRequest.timeout = responseTimeoutSec;
             streamRequest.SetRequestHeader("anthropic-version", "2023-06-01");
-            streamRequest.SetRequestHeader("anthropic-beta", "messages-2023-12-15");
             streamRequest.SetRequestHeader("Content-Type", "application/json");
             streamRequest.SetRequestHeader("x-api-key", ApiKey);
             foreach (var h in customHeaders)
@@ -171,6 +174,7 @@ namespace ChatdollKit.LLM.Claude
             downloadHandler.DebugMode = DebugMode;
             downloadHandler.SetReceivedChunk = (chunk) =>
             {
+                claudeSession.CurrentStreamBuffer += chunk;
                 claudeSession.StreamBuffer += chunk;
             };
             downloadHandler.SetResponseType = (responseType) =>
@@ -220,6 +224,13 @@ namespace ChatdollKit.LLM.Claude
                 await UniTask.Delay(10);
             }
 
+            // Remove non-text parts to keep context light
+            var lastUserMessage = claudeSession.Contexts.Last() as ClaudeMessage;
+            if (lastUserMessage != null)
+            {
+                lastUserMessage.content.RemoveAll(c => c.type == "image");
+            }
+
             // Update histories
             if (claudeSession.ResponseType != ResponseType.Error && claudeSession.ResponseType != ResponseType.Timeout)
             {
@@ -230,11 +241,42 @@ namespace ChatdollKit.LLM.Claude
                 Debug.LogWarning($"Messages are not added to histories for response type is not success: {claudeSession.ResponseType}");
             }
 
-            claudeSession.IsResponseDone = true;
+            var extractedTags = ExtractTags(claudeSession.CurrentStreamBuffer);
 
-            if (DebugMode)
+            if (CaptureImage != null && extractedTags.ContainsKey("vision") && claudeSession.IsVisionAvailable)
             {
-                Debug.Log($"Response from Claude: {JsonConvert.SerializeObject(claudeSession.StreamBuffer)}");
+                // Prevent infinit loop
+                claudeSession.IsVisionAvailable = false;
+
+                // Get image
+                var imageBytes = await CaptureImage(extractedTags["vision"]);
+
+                // Make contexts
+                var lastUserContentText = lastUserMessage.content.Where(c => !string.IsNullOrEmpty(c.text)).First().text;
+                if (imageBytes != null)
+                {
+                    claudeSession.Contexts.Add(new ClaudeMessage("assistant", claudeSession.StreamBuffer));
+                    // Image -> Text get the better accuracy
+                    var userMessageWithVision = new ClaudeMessage("user", mediaType: "image/jpeg", data: Convert.ToBase64String(imageBytes));
+                    userMessageWithVision.content.Add(new ClaudeContent(lastUserContentText));
+                    claudeSession.Contexts.Add(userMessageWithVision);
+                }
+                else
+                {
+                    claudeSession.Contexts.Add(new ClaudeMessage("user", "Please inform the user that an error occurred while capturing the image."));
+                }
+
+                // Call recursively with image
+                await StartStreamingAsync(claudeSession, stateData, customParameters, customHeaders, useFunctions, token);
+            }
+            else
+            {
+                claudeSession.IsResponseDone = true;
+
+                if (DebugMode)
+                {
+                    Debug.Log($"Response from Claude: {JsonConvert.SerializeObject(claudeSession.StreamBuffer)}");
+                }
             }
         }
 
