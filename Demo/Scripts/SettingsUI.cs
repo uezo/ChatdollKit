@@ -72,6 +72,20 @@ namespace ChatdollKit.Demo
 
         public void Show()
         {
+            if (chatdollKitObject == null)
+            {
+                chatdollKitObject = FindObjectOfType<ChatdollKit>()?.gameObject;
+                if (chatdollKitObject == null)
+                {
+                    Debug.LogError("ChatdollKit is not found in this scene.");
+                }
+            }
+
+            if (dialogController == null)
+            {
+                dialogController = chatdollKitObject.GetComponent<DialogController>();
+            }
+
             // Get LLMService components
             chatGPTService = dialogController.GetComponent<ChatGPTService>();
             claudeService = dialogController.GetComponent<ClaudeService>();

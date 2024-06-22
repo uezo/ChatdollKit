@@ -355,9 +355,10 @@ namespace ChatdollKit.LLM.ChatGPT
                 if (imageBytes != null)
                 {
                     chatGPTSession.Contexts.Add(new ChatGPTAssistantMessage(chatGPTSession.StreamBuffer));
+                    // Image -> Text to get the better accuracy
                     chatGPTSession.Contexts.Add(new ChatGPTUserMessage(new List<IContentPart>() {
-                        new TextContentPart(lastUserContentText),
-                        new ImageUrlContentPart("data:image/jpeg;base64," + Convert.ToBase64String(imageBytes))
+                        new ImageUrlContentPart("data:image/jpeg;base64," + Convert.ToBase64String(imageBytes)),
+                        new TextContentPart(lastUserContentText)
                     }));
                 }
                 else

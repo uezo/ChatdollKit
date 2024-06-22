@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 using ChatdollKit.Dialog;
 using ChatdollKit.IO;
 using ChatdollKit.Model;
@@ -9,8 +10,12 @@ using ChatdollKit.UI;
 
 #if UNITY_WEBGL && !UNITY_EDITOR
 using ChatGPTService = ChatdollKit.LLM.ChatGPT.ChatGPTServiceWebGL;
+using ClaudeService = ChatdollKit.LLM.Claude.ClaudeServiceWebGL;
+using GeminiService = ChatdollKit.LLM.Gemini.GeminiServiceWebGL;
 #else
 using ChatGPTService = ChatdollKit.LLM.ChatGPT.ChatGPTService;
+using ClaudeService = ChatdollKit.LLM.Claude.ClaudeService;
+using GeminiService = ChatdollKit.LLM.Gemini.GeminiService;
 #endif
 
 namespace ChatdollKit.Demo
@@ -38,22 +43,9 @@ namespace ChatdollKit.Demo
             dialogController = gameObject.GetComponent<DialogController>();
 
             // Image capture for ChatGPT vision
-            gameObject.GetComponent<ChatGPTService>().CaptureImage = async (string source) =>
-            {
-                if (simpleCamera != null)
-                {
-                    try
-                    {
-                        return await simpleCamera.CaptureImageAsync();
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.LogError($"Error at CaptureImageAsync: {ex.Message}\n{ex.StackTrace}");
-                    }
-                }
-
-                return null;
-            };
+            gameObject.GetComponent<ChatGPTService>().CaptureImage = CaptureImageAsync;
+            gameObject.GetComponent<ClaudeService>().CaptureImage = CaptureImageAsync;
+            gameObject.GetComponent<GeminiService>().CaptureImage = CaptureImageAsync;
 
             // Animation and face expression for idling
             modelController.AddIdleAnimation(new Model.Animation("BaseParam", 6, 5f));
@@ -148,5 +140,24 @@ namespace ChatdollKit.Demo
         //        _ = modelController.ChangeIdlingModeAsync("sleep");
         //    }
         //}
+
+        private async UniTask<byte[]> CaptureImageAsync(string source)
+        {
+            Debug.LogWarning("cap");
+
+            if (simpleCamera != null)
+            {
+                try
+                {
+                    return await simpleCamera.CaptureImageAsync();
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"Error at CaptureImageAsync: {ex.Message}\n{ex.StackTrace}");
+                }
+            }
+
+            return null;
+        }
     }
 }
