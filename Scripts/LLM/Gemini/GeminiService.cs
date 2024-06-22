@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -147,6 +146,9 @@ namespace ChatdollKit.LLM.Gemini
 
         public virtual async UniTask StartStreamingAsync(GeminiSession geminiSession, Dictionary<string, object> stateData, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
         {
+            // Clear current stream buffer here
+            geminiSession.CurrentStreamBuffer = string.Empty;
+
             // GenerationConfig
             var generationConfig = new GeminiGenerationConfig()
             {
@@ -200,10 +202,9 @@ namespace ChatdollKit.LLM.Gemini
             streamRequest.uploadHandler = new UploadHandlerRaw(bodyRaw);
             var downloadHandler = new GeminiStreamDownloadHandler();
             downloadHandler.DebugMode = DebugMode;
-            var localStreamBuffer = string.Empty;
             downloadHandler.SetReceivedChunk = (chunk) =>
             {
-                localStreamBuffer += chunk;
+                geminiSession.CurrentStreamBuffer += chunk;
                 geminiSession.StreamBuffer += chunk;
             };
             downloadHandler.SetResponseType = (responseType, functionName) =>
@@ -275,10 +276,13 @@ namespace ChatdollKit.LLM.Gemini
                 Debug.LogWarning($"Messages are not added to histories for response type is not success: {geminiSession.ResponseType}");
             }
 
-            var extractedTags = ExtractTags(localStreamBuffer);
+            var extractedTags = ExtractTags(geminiSession.CurrentStreamBuffer);
 
-            if (CaptureImage != null && extractedTags.ContainsKey("vision"))
+            if (CaptureImage != null && extractedTags.ContainsKey("vision") && geminiSession.IsVisionAvailable)
             {
+                // Prevent infinit loop
+                geminiSession.IsVisionAvailable = false;
+
                 // Get image
                 var imageBytes = await CaptureImage(extractedTags["vision"]);
 
@@ -315,25 +319,6 @@ namespace ChatdollKit.LLM.Gemini
             {
                 await UniTask.Delay(10, cancellationToken: token);
             }
-        }
-
-        protected Dictionary<string, string> ExtractTags(string text)
-        {
-            var tagPattern = @"\[(\w+):([^\]]+)\]";
-            var matches = Regex.Matches(text, tagPattern);
-            var result = new Dictionary<string, string>();
-
-            foreach (Match match in matches)
-            {
-                if (match.Groups.Count == 3)
-                {
-                    var key = match.Groups[1].Value;
-                    var value = match.Groups[2].Value;
-                    result[key] = value;
-                }
-            }
-
-            return result;
         }
 
         // Internal classes

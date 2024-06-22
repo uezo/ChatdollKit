@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -162,9 +161,7 @@ namespace ChatdollKit.LLM.ChatGPT
             var chatGPTSession = new ChatGPTSession();
             chatGPTSession.Contexts = messages;
             chatGPTSession.StreamingTask = StartStreamingAsync(chatGPTSession, stateData, customParameters, customHeaders, useFunctions, token);
-            var funcInfo = await WaitForFunctionInfo(chatGPTSession, token);
-            chatGPTSession.ToolCallId = funcInfo["id"];
-            chatGPTSession.FunctionName = funcInfo["name"];
+            await WaitForFunctionInfo(chatGPTSession, token);
 
             // Retry
             if (chatGPTSession.ResponseType == ResponseType.Timeout)
@@ -187,6 +184,8 @@ namespace ChatdollKit.LLM.ChatGPT
 
         public virtual async UniTask StartStreamingAsync(ChatGPTSession chatGPTSession, Dictionary<string, object> stateData, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
         {
+            chatGPTSession.CurrentStreamBuffer = string.Empty;
+
             // Make request data
             var data = new Dictionary<string, object>()
             {
@@ -261,17 +260,25 @@ namespace ChatdollKit.LLM.ChatGPT
 
             var downloadHandler = new ChatGPTStreamDownloadHandler();
             downloadHandler.DebugMode = DebugMode;
-            var localStreamBuffer = string.Empty;
             downloadHandler.SetReceivedChunk = (chunk) =>
             {
                 // Add received data to stream buffer
-                localStreamBuffer += chunk;
+                chatGPTSession.CurrentStreamBuffer += chunk;
                 chatGPTSession.StreamBuffer += chunk;
             };
             downloadHandler.SetFirstDelta = (delta) =>
             {
                 chatGPTSession.FirstDelta = delta;
-                chatGPTSession.ResponseType = delta.tool_calls != null ? ResponseType.FunctionCalling : ResponseType.Content;
+                if (delta.tool_calls != null)
+                {
+                    chatGPTSession.ToolCallId = delta.tool_calls[0].id;
+                    chatGPTSession.FunctionName = delta.tool_calls[0].function.name;
+                    chatGPTSession.ResponseType = ResponseType.FunctionCalling;
+                }
+                else
+                {
+                    chatGPTSession.ResponseType = ResponseType.Content;
+                }
             };
             streamRequest.downloadHandler = downloadHandler;
 
@@ -317,8 +324,11 @@ namespace ChatdollKit.LLM.ChatGPT
             }
 
             // Remove non-text content to keep context light
-            var lastUserMessage = (ChatGPTUserMessage)chatGPTSession.Contexts.Last();
-            lastUserMessage.content.RemoveAll(part => !(part is TextContentPart));
+            var lastUserMessage = chatGPTSession.Contexts.Last() as ChatGPTUserMessage;
+            if (lastUserMessage != null)
+            {
+                lastUserMessage.content.RemoveAll(part => !(part is TextContentPart));
+            }
 
             // Update histories
             if (chatGPTSession.ResponseType != ResponseType.Error && chatGPTSession.ResponseType != ResponseType.Timeout)
@@ -330,10 +340,13 @@ namespace ChatdollKit.LLM.ChatGPT
                 Debug.LogWarning($"Messages are not added to histories for response type is not success: {chatGPTSession.ResponseType}");
             }
 
-            var extractedTags = ExtractTags(localStreamBuffer);
+            var extractedTags = ExtractTags(chatGPTSession.CurrentStreamBuffer);
 
-            if (CaptureImage != null && extractedTags.ContainsKey("vision"))
+            if (CaptureImage != null && extractedTags.ContainsKey("vision") && chatGPTSession.IsVisionAvailable)
             {
+                // Prevent infinit loop
+                chatGPTSession.IsVisionAvailable = false;
+
                 // Get image
                 var imageBytes = await CaptureImage(extractedTags["vision"]);
 
@@ -366,14 +379,8 @@ namespace ChatdollKit.LLM.ChatGPT
             }
         }
 
-        public async UniTask<Dictionary<string, string>> WaitForFunctionInfo(ChatGPTSession chatGPTSession, CancellationToken token)
+        public async UniTask WaitForFunctionInfo(ChatGPTSession chatGPTSession, CancellationToken token)
         {
-            var func = new Dictionary<string, string>()
-            {
-                { "id", string.Empty },
-                { "name", string.Empty }
-            };
-
             // Wait for response type is set
             while (chatGPTSession.ResponseType == ResponseType.None && !token.IsCancellationRequested)
             {
@@ -386,8 +393,6 @@ namespace ChatdollKit.LLM.ChatGPT
                 {
                     Debug.Log($"Function Calling response from ChatGPT: {chatGPTSession.FirstDelta.tool_calls[0].function.name}");
                 }
-                func["id"] = chatGPTSession.FirstDelta.tool_calls[0].id;
-                func["name"] = chatGPTSession.FirstDelta.tool_calls[0].function.name;
             }
             else if (chatGPTSession.ResponseType == ResponseType.Error)
             {
@@ -403,27 +408,6 @@ namespace ChatdollKit.LLM.ChatGPT
                     Debug.Log($"Content response from ChatGPT");
                 }
             }
-
-            return func;
-        }
-
-        private Dictionary<string, string> ExtractTags(string text)
-        {
-            var tagPattern = @"\[(\w+):([^\]]+)\]";
-            var matches = Regex.Matches(text, tagPattern);
-            var result = new Dictionary<string, string>();
-
-            foreach (Match match in matches)
-            {
-                if (match.Groups.Count == 3)
-                {
-                    var key = match.Groups[1].Value;
-                    var value = match.Groups[2].Value;
-                    result[key] = value;
-                }
-            }
-
-            return result;
         }
 
         // Internal classes
@@ -510,7 +494,7 @@ namespace ChatdollKit.LLM.ChatGPT
     public class Delta
     {
         public string content { get; set; }
-        public  List<ToolCall> tool_calls { get; set; }
+        public List<ToolCall> tool_calls { get; set; }
     }
 
     public class ToolCall
@@ -589,7 +573,7 @@ namespace ChatdollKit.LLM.ChatGPT
         public string role { get; } = "assistant";
         public string content { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public  List<Dictionary<string, object>> tool_calls { get; set; }
+        public List<Dictionary<string, object>> tool_calls { get; set; }
 
         [JsonConstructor]
         public ChatGPTAssistantMessage(string role, string content)
