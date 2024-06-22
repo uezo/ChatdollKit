@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using System.Threading;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
@@ -60,12 +61,33 @@ namespace ChatdollKit.LLM
             throw new NotImplementedException("LLMServiceBase.GenerateContentAsync must be implemented");
         }
 #pragma warning restore CS1998
+
+        protected virtual Dictionary<string, string> ExtractTags(string text)
+        {
+            var tagPattern = @"\[(\w+):([^\]]+)\]";
+            var matches = Regex.Matches(text, tagPattern);
+            var result = new Dictionary<string, string>();
+
+            foreach (Match match in matches)
+            {
+                if (match.Groups.Count == 3)
+                {
+                    var key = match.Groups[1].Value;
+                    var value = match.Groups[2].Value;
+                    result[key] = value;
+                }
+            }
+
+            return result;
+        }
     }
 
     public class LLMSession : ILLMSession
     {
         public bool IsResponseDone { get; set; } = false;
         public string StreamBuffer { get; set; }
+        public string CurrentStreamBuffer { get; set; }
+        public bool IsVisionAvailable { get; set; } = true;
         public ResponseType ResponseType { get; set; } = ResponseType.None;
         public UniTask StreamingTask { get; set; }
         public string FunctionName { get; set; }
@@ -75,6 +97,7 @@ namespace ChatdollKit.LLM
         {
             IsResponseDone = false;
             StreamBuffer = string.Empty;
+            CurrentStreamBuffer = string.Empty;
             ResponseType = ResponseType.None;
             Contexts = new List<ILLMMessage>();
         }

@@ -24,6 +24,8 @@ namespace ChatdollKit.LLM
     {
         bool IsResponseDone { get; set; }
         string StreamBuffer { get; set; }
+        string CurrentStreamBuffer { get; set; }
+        bool IsVisionAvailable { get; set; }
         ResponseType ResponseType { get; set; }
         UniTask StreamingTask { get; set; }
         string FunctionName { get; set; }
