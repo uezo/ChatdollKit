@@ -291,7 +291,10 @@ namespace ChatdollKit.LLM.Gemini
                 if (imageBytes != null)
                 {
                     geminiSession.Contexts.Add(new GeminiMessage("model", geminiSession.StreamBuffer));
-                    geminiSession.Contexts.Add(new GeminiMessage("user", lastUserContentText, inlineData: new GeminiInlineData("image/jpeg", imageBytes)));
+                    // Image -> Text to get the better accuracy
+                    var userMessageWithVision = new GeminiMessage("user", inlineData: new GeminiInlineData("image/jpeg", imageBytes));
+                    userMessageWithVision.parts.Add(new GeminiPart(text: lastUserContentText));
+                    geminiSession.Contexts.Add(userMessageWithVision);
                 }
                 else
                 {
@@ -492,7 +495,7 @@ namespace ChatdollKit.LLM.Gemini
         public GeminiInlineData(string mimeType, byte[] imageBytes)
         {
             this.mimeType = mimeType;
-            data = Convert.ToBase64String(imageBytes); ;
+            data = Convert.ToBase64String(imageBytes);
         }
     }
 
