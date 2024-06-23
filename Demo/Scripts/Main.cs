@@ -111,7 +111,7 @@ namespace ChatdollKit.Demo
             }
 
             // Setting on start
-            settingsUI.Show();
+            settingsUI.Show(initializeComponents: true);
 
             // Animation and face expression for start up
             var animationOnStart = new List<Model.Animation>();
@@ -143,8 +143,6 @@ namespace ChatdollKit.Demo
 
         private async UniTask<byte[]> CaptureImageAsync(string source)
         {
-            Debug.LogWarning("cap");
-
             if (simpleCamera != null)
             {
                 try

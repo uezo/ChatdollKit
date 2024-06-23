@@ -5,6 +5,7 @@ using System.Threading;
 using UnityEngine;
 using Newtonsoft.Json;
 using Cysharp.Threading.Tasks;
+using System.Linq;
 
 namespace ChatdollKit.LLM.Gemini
 {
@@ -31,11 +32,22 @@ namespace ChatdollKit.LLM.Gemini
         protected bool isChatCompletionJSDone { get; set; } = false;
         protected Dictionary<string, GeminiSession> sessions { get; set; } = new Dictionary<string, GeminiSession>();
 
-        public override async UniTask StartStreamingAsync(GeminiSession geminiSession, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
+        public override async UniTask StartStreamingAsync(GeminiSession geminiSession, Dictionary<string, object> stateData, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
         {
-            // Add session for callback
-            var sessionId = Guid.NewGuid().ToString();
-            sessions.Add(sessionId, geminiSession);
+            geminiSession.CurrentStreamBuffer = string.Empty;
+
+            string sessionId;
+            if (stateData.ContainsKey("chatGPTSessionId"))
+            {
+                // Use existing session id for callback
+                sessionId = (string)stateData["chatGPTSessionId"];
+            }
+            else
+            {
+                // Add session for callback
+                sessionId = Guid.NewGuid().ToString();
+                sessions.Add(sessionId, geminiSession);
+            }
 
             // GenerationConfig
             var generationConfig = new GeminiGenerationConfig()
@@ -74,6 +86,13 @@ namespace ChatdollKit.LLM.Gemini
                  });
             }
 
+            var serializedData = JsonConvert.SerializeObject(data);
+
+            if (DebugMode)
+            {
+                Debug.Log($"Request to Gemini: {serializedData}");
+            }
+
             // Start API stream
             isChatCompletionJSDone = false;
             StartGeminiMessageStreamJS(
@@ -81,7 +100,7 @@ namespace ChatdollKit.LLM.Gemini
                 sessionId,
                 string.IsNullOrEmpty(GenerateContentUrl) ? $"https://generativelanguage.googleapis.com/v1beta/models/{Model}:streamGenerateContent" : GenerateContentUrl,
                 ApiKey,
-                JsonConvert.SerializeObject(data)
+                serializedData
             );
 
             // Preprocessing response
@@ -123,13 +142,62 @@ namespace ChatdollKit.LLM.Gemini
                 await UniTask.Delay(10);
             }
 
-            geminiSession.IsResponseDone = true;
-
-            sessions.Remove(sessionId);
-
-            if (DebugMode)
+            // Remove non-text parts to keep context light
+            var lastUserMessage = geminiSession.Contexts.Last() as GeminiMessage;
+            if (lastUserMessage != null)
             {
-                Debug.Log($"Response from Gemini: {JsonConvert.SerializeObject(geminiSession.StreamBuffer)}");
+                lastUserMessage.parts.RemoveAll(p => p.inlineData != null);
+                lastUserMessage.parts.RemoveAll(p => p.fileData != null);
+            }
+
+            // Update histories
+            if (geminiSession.ResponseType != ResponseType.Error && geminiSession.ResponseType != ResponseType.Timeout)
+            {
+                await AddHistoriesAsync(geminiSession, stateData, token);
+            }
+            else
+            {
+                Debug.LogWarning($"Messages are not added to histories for response type is not success: {geminiSession.ResponseType}");
+            }
+
+            var extractedTags = ExtractTags(geminiSession.CurrentStreamBuffer);
+
+            if (CaptureImage != null && extractedTags.ContainsKey("vision") && geminiSession.IsVisionAvailable)
+            {
+                // Prevent infinit loop
+                geminiSession.IsVisionAvailable = false;
+
+                // Get image
+                var imageBytes = await CaptureImage(extractedTags["vision"]);
+
+                // Make contexts
+                var lastUserContentText = lastUserMessage.parts.Where(p => !string.IsNullOrEmpty(p.text)).First().text;
+                if (imageBytes != null)
+                {
+                    geminiSession.Contexts.Add(new GeminiMessage("model", geminiSession.StreamBuffer));
+                    // Image -> Text to get the better accuracy
+                    var userMessageWithVision = new GeminiMessage("user", inlineData: new GeminiInlineData("image/jpeg", imageBytes));
+                    userMessageWithVision.parts.Add(new GeminiPart(text: lastUserContentText));
+                    geminiSession.Contexts.Add(userMessageWithVision);
+                }
+                else
+                {
+                    geminiSession.Contexts.Add(new GeminiMessage("user", "Please inform the user that an error occurred while capturing the image."));
+                }
+
+                // Call recursively with image
+                await StartStreamingAsync(geminiSession, stateData, customParameters, customHeaders, useFunctions, token);
+            }
+            else
+            {
+                geminiSession.IsResponseDone = true;
+
+                sessions.Remove(sessionId);
+
+                if (DebugMode)
+                {
+                    Debug.Log($"Response from Gemini: {JsonConvert.SerializeObject(geminiSession.StreamBuffer)}");
+                }
             }
         }
 
@@ -162,6 +230,7 @@ namespace ChatdollKit.LLM.Gemini
 
             // TODO: Local buffer for a chunk data is not deserializable
 
+            var resp = string.Empty;
             var isDone = false;
             if (chunkString.StartsWith("[") || chunkString.StartsWith(","))
             {
@@ -188,7 +257,7 @@ namespace ChatdollKit.LLM.Gemini
                             geminiSession.FunctionName = streamResponse.candidates[0].content.parts[0].functionCall.name;
                         }
                     }
-                    geminiSession.StreamBuffer += JsonConvert.SerializeObject(streamResponse.candidates[0].content.parts[0].functionCall.args);
+                    resp = JsonConvert.SerializeObject(streamResponse.candidates[0].content.parts[0].functionCall.args);
                 }
                 else
                 {
@@ -196,13 +265,16 @@ namespace ChatdollKit.LLM.Gemini
                     {
                         geminiSession.ResponseType = ResponseType.Content;
                     }
-                    geminiSession.StreamBuffer += streamResponse.candidates[0].content.parts[0].text;
+                    resp = streamResponse.candidates[0].content.parts[0].text;
                 }
             }
             else if (chunkString.EndsWith("]"))
             {
                 isDone = true;
             }
+
+            geminiSession.CurrentStreamBuffer += resp;
+            geminiSession.StreamBuffer += resp;
 
             if (isDone)
             {

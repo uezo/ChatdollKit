@@ -36,8 +36,13 @@ namespace ChatdollKit.LLM.Gemini
 
         public override ILLMMessage CreateMessageAfterFunction(string role = null, string content = null, ILLMSession llmSession = null, Dictionary<string, object> arguments = null)
         {
-            // Create human message for next request after function execution
-            return new GeminiMessage("user", content, null, null);
+            return new GeminiMessage(
+                string.IsNullOrEmpty(role) ? "function" : role,
+                functionResponse: new GeminiFunctionResponse() {
+                    name = llmSession.FunctionName,
+                    response = JsonConvert.DeserializeObject<Dictionary<string, object>>(content)
+                }
+            );
         }
 
         protected List<GeminiMessage> GetHistoriesFromStateData(Dictionary<string, object> stateData)
@@ -424,7 +429,7 @@ namespace ChatdollKit.LLM.Gemini
         public string role { get; set; }
         public List<GeminiPart> parts { get; set; }
 
-        public GeminiMessage(string role = null, string text = null, GeminiFileData fileData = null, GeminiInlineData inlineData = null, GeminiFunctionCall functionCall = null)
+        public GeminiMessage(string role = null, string text = null, GeminiFileData fileData = null, GeminiInlineData inlineData = null, GeminiFunctionCall functionCall = null, GeminiFunctionResponse functionResponse = null)
         {
             this.role = role;
             parts = new List<GeminiPart>();
@@ -445,6 +450,10 @@ namespace ChatdollKit.LLM.Gemini
             {
                 parts.Add(new GeminiPart(functionCall: functionCall));
             }
+            if (functionResponse != null)
+            {
+                parts.Add(new GeminiPart(functionResponse: functionResponse));
+            }
         }
     }
 
@@ -458,13 +467,16 @@ namespace ChatdollKit.LLM.Gemini
         public GeminiInlineData inlineData { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public GeminiFunctionCall functionCall { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public GeminiFunctionResponse functionResponse { get; set; }
 
-        public GeminiPart(string text = null, GeminiFileData fileData = null, GeminiInlineData inlineData = null, GeminiFunctionCall functionCall = null)
+        public GeminiPart(string text = null, GeminiFileData fileData = null, GeminiInlineData inlineData = null, GeminiFunctionCall functionCall = null, GeminiFunctionResponse functionResponse = null)
         {
             this.text = text;
             this.fileData = fileData;
             this.inlineData = inlineData;
             this.functionCall = functionCall;
+            this.functionResponse = functionResponse;
         }
     }
 
@@ -503,6 +515,12 @@ namespace ChatdollKit.LLM.Gemini
     {
         public string name { get; set; }
         public Dictionary<string, object> args { get; set; }
+    }
+
+    public class GeminiFunctionResponse
+    {
+        public string name { get; set; }
+        public Dictionary<string, object> response { get; set; }
     }
 
     // Configuration
