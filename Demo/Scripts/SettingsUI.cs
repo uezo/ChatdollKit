@@ -53,6 +53,11 @@ namespace ChatdollKit.Demo
 
         private void Start()
         {
+            InitializeComponents();
+        }
+
+        private void InitializeComponents()
+        {
             if (chatdollKitObject == null)
             {
                 chatdollKitObject = FindObjectOfType<ChatdollKit>()?.gameObject;
@@ -70,20 +75,11 @@ namespace ChatdollKit.Demo
             voicevoxTTSLoader = chatdollKitObject.GetComponent<VoicevoxTTS>();
         }
 
-        public void Show()
+        public void Show(bool initializeComponents = false)
         {
-            if (chatdollKitObject == null)
+            if (initializeComponents)
             {
-                chatdollKitObject = FindObjectOfType<ChatdollKit>()?.gameObject;
-                if (chatdollKitObject == null)
-                {
-                    Debug.LogError("ChatdollKit is not found in this scene.");
-                }
-            }
-
-            if (dialogController == null)
-            {
-                dialogController = chatdollKitObject.GetComponent<DialogController>();
+                InitializeComponents();
             }
 
             // Get LLMService components
@@ -123,7 +119,6 @@ namespace ChatdollKit.Demo
 
             OnChangeLLMDropdown();
 
-            // TTS
             if (!string.IsNullOrEmpty(voicevoxTTSLoader.EndpointUrl))
             {
                 TTSUrlInput.text = voicevoxTTSLoader.EndpointUrl;
