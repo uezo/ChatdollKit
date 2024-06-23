@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using UnityEngine;
@@ -31,11 +32,22 @@ namespace ChatdollKit.LLM.ChatGPT
         protected bool isChatCompletionJSDone { get; set; } = false;
         protected Dictionary<string, ChatGPTSession> sessions { get; set; } = new Dictionary<string, ChatGPTSession>();
 
-        public override async UniTask StartStreamingAsync(ChatGPTSession chatGPTSession, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
+        public override async UniTask StartStreamingAsync(ChatGPTSession chatGPTSession, Dictionary<string, object> stateData, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
         {
-            // Add session for callback
-            var sessionId = Guid.NewGuid().ToString();
-            sessions.Add(sessionId, chatGPTSession);
+            chatGPTSession.CurrentStreamBuffer = string.Empty;
+
+            string sessionId;
+            if (stateData.ContainsKey("chatGPTSessionId"))
+            {
+                // Use existing session id for callback
+                sessionId = (string)stateData["chatGPTSessionId"];
+            }
+            else
+            {
+                // Add session for callback
+                sessionId = Guid.NewGuid().ToString();
+                sessions.Add(sessionId, chatGPTSession);
+            }
 
             // Make request data
             var data = new Dictionary<string, object>()
@@ -53,7 +65,16 @@ namespace ChatdollKit.LLM.ChatGPT
             }
             if (useFunctions && llmTools.Count > 0)
             {
-                data.Add("functions", llmTools);
+                var tools = new List<Dictionary<string, object>>();
+                foreach (var tool in llmTools)
+                {
+                    tools.Add(new Dictionary<string, object>()
+                    {
+                        { "type", "function" },
+                        { "function", tool }
+                    });
+                }
+                data.Add("tools", tools);
             }
             if (Logprobs == true)
             {
@@ -75,6 +96,13 @@ namespace ChatdollKit.LLM.ChatGPT
                 Debug.LogWarning("Custom headers for ChatGPT on WebGL is not supported for now.");
             }
 
+            var serializedData = JsonConvert.SerializeObject(data);
+
+            if (DebugMode)
+            {
+                Debug.Log($"Request to ChatGPT: {serializedData}");
+            }
+
             // Start API stream
             isChatCompletionJSDone = false;
             ChatCompletionJS(
@@ -82,7 +110,7 @@ namespace ChatdollKit.LLM.ChatGPT
                 sessionId,
                 string.IsNullOrEmpty(ChatCompletionUrl) ? "https://api.openai.com/v1/chat/completions" : ChatCompletionUrl,
                 ApiKey,
-                JsonConvert.SerializeObject(data)
+                serializedData
             );
 
             // Preprocessing response
@@ -98,6 +126,7 @@ namespace ChatdollKit.LLM.ChatGPT
                 // Timeout with no response data
                 else if (string.IsNullOrEmpty(chatGPTSession.StreamBuffer) && DateTime.Now > noDataResponseTimeoutsAt)
                 {
+                    Debug.LogError($"ChatGPT timeouts");
                     AbortChatCompletionJS();
                     chatGPTSession.ResponseType = ResponseType.Timeout;
                     sessions.Remove(sessionId);
@@ -124,13 +153,62 @@ namespace ChatdollKit.LLM.ChatGPT
                 await UniTask.Delay(10);
             }
 
-            chatGPTSession.IsResponseDone = true;
-
-            sessions.Remove(sessionId);
-
-            if (DebugMode)
+            // Remove non-text content to keep context light
+            var lastUserMessage = chatGPTSession.Contexts.Last() as ChatGPTUserMessage;
+            if (lastUserMessage != null)
             {
-                Debug.Log($"Response from ChatGPT: {JsonConvert.SerializeObject(chatGPTSession.StreamBuffer)}");
+                lastUserMessage.content.RemoveAll(part => !(part is TextContentPart));
+            }
+
+            // Update histories
+            if (chatGPTSession.ResponseType != ResponseType.Error && chatGPTSession.ResponseType != ResponseType.Timeout)
+            {
+                await AddHistoriesAsync(chatGPTSession, stateData, token);
+            }
+            else
+            {
+                Debug.LogWarning($"Messages are not added to histories for response type is not success: {chatGPTSession.ResponseType}");
+            }
+
+            var extractedTags = ExtractTags(chatGPTSession.CurrentStreamBuffer);
+
+            if (CaptureImage != null && extractedTags.ContainsKey("vision") && chatGPTSession.IsVisionAvailable)
+            {
+                // Prevent infinit loop
+                chatGPTSession.IsVisionAvailable = false;
+
+                // Get image
+                var imageBytes = await CaptureImage(extractedTags["vision"]);
+
+                // Make contexts
+                var lastUserContentText = ((TextContentPart)lastUserMessage.content[0]).text;
+                if (imageBytes != null)
+                {
+                    chatGPTSession.Contexts.Add(new ChatGPTAssistantMessage(chatGPTSession.StreamBuffer));
+                    // Image -> Text to get the better accuracy
+                    chatGPTSession.Contexts.Add(new ChatGPTUserMessage(new List<IContentPart>() {
+                        new ImageUrlContentPart("data:image/jpeg;base64," + Convert.ToBase64String(imageBytes)),
+                        new TextContentPart(lastUserContentText)
+                    }));
+                }
+                else
+                {
+                    chatGPTSession.Contexts.Add(new ChatGPTUserMessage("Please inform the user that an error occurred while capturing the image."));
+                }
+
+                // Call recursively with image
+                await StartStreamingAsync(chatGPTSession, stateData, customParameters, customHeaders, useFunctions, token);
+            }
+            else
+            {
+                chatGPTSession.IsResponseDone = true;
+
+                sessions.Remove(sessionId);
+
+                if (DebugMode)
+                {
+                    Debug.Log($"Response from ChatGPT: {JsonConvert.SerializeObject(chatGPTSession.StreamBuffer)}");
+                }
             }
         }
 
@@ -147,6 +225,11 @@ namespace ChatdollKit.LLM.ChatGPT
                 return;
             }
 
+            if (DebugMode)
+            {
+                Debug.Log($"Chunk from ChatGPT: {chunkString}");
+            }
+
             if (!sessions.ContainsKey(sessionId))
             {
                 Debug.LogWarning($"Session not found. Set true to isChatCompletionJSDone.: {sessionId}");
@@ -156,12 +239,11 @@ namespace ChatdollKit.LLM.ChatGPT
 
             var chatGPTSession = sessions[sessionId];
 
-            var isDeltaSet = false;
             var temp = string.Empty;
             var isDone = false;
+
             foreach (var d in chunkString.Split("data:"))
             {
-
                 if (!string.IsNullOrEmpty(d))
                 {
                     if (d.Trim() != "[DONE]")
@@ -190,19 +272,28 @@ namespace ChatdollKit.LLM.ChatGPT
                         }
 
                         var delta = j.choices[0].delta;
-                        if (!isDeltaSet)
+                        if (chatGPTSession.FirstDelta == null)
                         {
                             chatGPTSession.FirstDelta = delta;
-                            chatGPTSession.ResponseType = delta.function_call != null ? ResponseType.FunctionCalling : ResponseType.Content;
-                            isDeltaSet = true;
+
+                            if (delta.tool_calls != null)
+                            {
+                                chatGPTSession.ToolCallId = chatGPTSession.FirstDelta.tool_calls[0].id;
+                                chatGPTSession.FunctionName = chatGPTSession.FirstDelta.tool_calls[0].function.name;
+                                chatGPTSession.ResponseType = ResponseType.FunctionCalling;
+                            }
+                            else
+                            {
+                                chatGPTSession.ResponseType = ResponseType.Content;
+                            }
                         }
-                        if (delta.function_call == null)
+                        if (delta.tool_calls == null)
                         {
                             temp += delta.content;
                         }
                         else
                         {
-                            temp += delta.function_call.arguments;
+                            temp += delta.tool_calls[0].function.arguments;
                         }
                     }
                     else
@@ -214,6 +305,7 @@ namespace ChatdollKit.LLM.ChatGPT
                 }
             }
 
+            chatGPTSession.CurrentStreamBuffer += temp;
             chatGPTSession.StreamBuffer += temp;
 
             if (isDone)

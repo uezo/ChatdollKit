@@ -117,12 +117,14 @@ namespace ChatdollKit.IO
                 Debug.Log("Permission for microphone is granted");
             }
 
+#if !UNITY_WEBGL || UNITY_EDITOR
             if (!Microphone.IsRecording(listeningDeviceName))
             {
                 Debug.LogWarning("Microphone stopped unexpectedly. Restarting microphone...");
                 StartListening();
                 return;
             }
+#endif
 
             try
             {
