@@ -1,7 +1,8 @@
 using System;
+using System.Collections;
+using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
-using System.IO;
 #if PLATFORM_ANDROID
 using UnityEngine.Android;
 #endif
@@ -25,10 +26,17 @@ namespace ChatdollKit.IO
         private float waitAfterStart = 0.5f;
         [SerializeField]
         private string savePathForDebug;
+        [SerializeField]
+        private Image stillImage;
+        [SerializeField]
+        private Image stillFadeImage;
+        [SerializeField]
+        private Button stillImageButton;
 
         public bool IsCameraEnabled { get; private set; } = false;
         public bool IsAlreadyStarted { get; private set; } = false;
         private WebCamTexture webCamTexture;
+        private bool isStillImageAnimating;
 
         private void Awake()
         {
@@ -39,6 +47,11 @@ namespace ChatdollKit.IO
                 Permission.RequestUserPermission(Permission.Camera);
             }
 #endif
+            foreach (var device in WebCamTexture.devices)
+            {
+                Debug.Log(device.name);
+            }
+
         }
 
         private void Update()
@@ -105,6 +118,7 @@ namespace ChatdollKit.IO
                         }
                     }
 
+                    AdjustStillImageComponentsSize();
                     previewWindow.gameObject.SetActive(true);
                 }
 
@@ -117,10 +131,40 @@ namespace ChatdollKit.IO
             }
         }
 
+        private void AdjustStillImageComponentsSize()
+        {
+            // Calculate preview size
+            var previewWindowTransform = previewWindow.GetComponent<RectTransform>();
+            float previewWidth = previewWindowTransform.rect.width;
+            float previewHeight = previewWindowTransform.rect.height;
+            float textureAspectRatio = (float)webCamTexture.width / webCamTexture.height;
+            float adjustedWidth, adjustedHeight;
+            if (previewWidth / previewHeight > textureAspectRatio)
+            {
+                adjustedHeight = previewHeight;
+                adjustedWidth = adjustedHeight * textureAspectRatio;
+            }
+            else
+            {
+                adjustedWidth = previewWidth;
+                adjustedHeight = adjustedWidth / textureAspectRatio;
+            }
+            var previewSize = new Vector2(adjustedWidth, adjustedHeight);
+
+            // Still button
+            var buttonRectTransform = stillImageButton.GetComponent<RectTransform>();
+            buttonRectTransform.sizeDelta = previewSize;
+
+            // Still image
+            var fadeImageRectTransform = stillFadeImage.GetComponent<RectTransform>();
+            fadeImageRectTransform.sizeDelta = previewSize;
+        }
+
         public void Stop()
         {
             previewWindow.gameObject.SetActive(false);
             webCamTexture?.Stop();
+            ClearStillImage();
             IsAlreadyStarted = false;
         }
 
@@ -272,6 +316,67 @@ namespace ChatdollKit.IO
 
             rotatedTexture.Apply();
             return rotatedTexture;
+        }
+
+        public void OnStillImageButton()
+        {
+            if (stillImage.sprite == null && IsAlreadyStarted)
+            {
+                LoadStillImageAsync();
+            }
+            else
+            {
+                ClearStillImage();
+            }
+        }
+
+        private async void LoadStillImageAsync()
+        {
+            var imageBytes = await CaptureImageAsync();
+
+            var texture = new Texture2D(2, 2);
+            texture.LoadImage(imageBytes);
+
+            // Set image to preview
+            var sprite = Sprite.Create(texture, new Rect(0.0f, 0.0f, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+            stillImage.preserveAspect = true;
+            stillImage.sprite = sprite;
+
+            // Fade effect
+            StartCoroutine(StillButtonFadeEffect());
+
+            stillImage.gameObject.SetActive(true);
+        }
+
+        private void ClearStillImage()
+        {
+            stillImage.sprite = null;
+            stillImage.gameObject.SetActive(false);
+        }
+
+        private IEnumerator StillButtonFadeEffect()
+        {
+            isStillImageAnimating = true;
+
+            float originalAlpha = stillFadeImage.color.a;
+
+            stillFadeImage.color = new Color(stillFadeImage.color.r, stillFadeImage.color.g, stillFadeImage.color.b, 0.7f);
+            stillFadeImage.gameObject.SetActive(true);
+
+            yield return new WaitForSeconds(0.1f);
+
+            float elapsedTime = 0f;
+            while (elapsedTime < 0.1f)
+            {
+                elapsedTime += Time.deltaTime;
+                float alpha = Mathf.Lerp(0.7f, originalAlpha, elapsedTime / 0.1f);
+                stillFadeImage.color = new Color(stillFadeImage.color.r, stillFadeImage.color.g, stillFadeImage.color.b, alpha);
+                yield return null;
+            }
+
+            stillFadeImage.color = new Color(stillFadeImage.color.r, stillFadeImage.color.g, stillFadeImage.color.b, originalAlpha);
+            stillFadeImage.gameObject.SetActive(false);
+            isStillImageAnimating = false;
         }
     }
 }
