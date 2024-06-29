@@ -562,37 +562,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 604132903}
   m_CullTransparentMesh: 1
---- !u!1 &752062249
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 752062250}
-  m_Layer: 0
-  m_Name: GameObject
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &752062250
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 752062249}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 358.5, y: 251.5, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &787704586
 GameObject:
   m_ObjectHideFlags: 0
@@ -845,7 +814,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: -40}
-  m_SizeDelta: {x: 0, y: 200}
+  m_SizeDelta: {x: 0, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &988352080
 MonoBehaviour:
@@ -1618,17 +1587,41 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 5073112476045599096, guid: bc809780ccf424eca882e1789e95b5b1, type: 3}
+    - target: {fileID: 4035509247442940956, guid: bc809780ccf424eca882e1789e95b5b1, type: 3}
       propertyPath: m_AnchoredPosition.x
       value: 90
       objectReference: {fileID: 0}
+    - target: {fileID: 4035509247442940956, guid: bc809780ccf424eca882e1789e95b5b1, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -160
+      objectReference: {fileID: 0}
+    - target: {fileID: 5073112476045599096, guid: bc809780ccf424eca882e1789e95b5b1, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 60
+      objectReference: {fileID: 0}
     - target: {fileID: 5073112476045599096, guid: bc809780ccf424eca882e1789e95b5b1, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -120
+      value: -60
+      objectReference: {fileID: 0}
+    - target: {fileID: 5191865355704110550, guid: bc809780ccf424eca882e1789e95b5b1, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 60
       objectReference: {fileID: 0}
     - target: {fileID: 7003297212767236862, guid: bc809780ccf424eca882e1789e95b5b1, type: 3}
       propertyPath: m_Name
       value: SimpleCamera
+      objectReference: {fileID: 0}
+    - target: {fileID: 7319390587381492478, guid: bc809780ccf424eca882e1789e95b5b1, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7537928435981231974, guid: bc809780ccf424eca882e1789e95b5b1, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8939906166107047678, guid: bc809780ccf424eca882e1789e95b5b1, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1675,13 +1668,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   IsEnabled: 0
-  AutoStart: 1
-  PrintResult: 0
   VoiceDetectionThreshold: -50
-  VoiceDetectionRaisedThreshold: -15
   VoiceDetectionMinimumLength: 0.2
   SilenceDurationToEndRecording: 0.3
+  VoiceDetectionRaisedThreshold: -15
   VoiceRecognitionMaximumLength: 3
+  AutoStart: 1
+  PrintResult: 0
   WakeWords: []
   CancelWords: []
   IgnoreWords:
@@ -1707,6 +1700,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   IsEnabled: 0
+  VoiceDetectionThreshold: -50
+  VoiceDetectionMinimumLength: 0.3
+  SilenceDurationToEndRecording: 1
+  ListeningTimeout: 20
   CancelWords: []
   IgnoreWords:
   - "\u3002"
@@ -1714,10 +1711,6 @@ MonoBehaviour:
   - "\uFF1F"
   - "\uFF01"
   PrintResult: 0
-  VoiceDetectionThreshold: -50
-  VoiceDetectionMinimumLength: 0.3
-  SilenceDurationToEndRecording: 1
-  ListeningTimeout: 20
   listeningMessage: '[ Listening ... ]'
   ApiKey: 
   Model: whisper-1
@@ -2414,4 +2407,3 @@ SceneRoots:
   - {fileID: 1682043795}
   - {fileID: 883646628}
   - {fileID: 1483195896}
-  - {fileID: 752062250}
