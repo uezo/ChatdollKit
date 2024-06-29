@@ -374,7 +374,7 @@ namespace ChatdollKit.IO
             }
         }
 
-        private async void LoadStillImageAsync()
+        public async void LoadStillImageAsync()
         {
             var imageBytes = await CaptureImageAsync();
 
@@ -392,10 +392,20 @@ namespace ChatdollKit.IO
             stillImage.gameObject.SetActive(true);
         }
 
-        private void ClearStillImage()
+        public void ClearStillImage()
         {
             stillImage.sprite = null;
             stillImage.gameObject.SetActive(false);
+        }
+
+        public byte[] GetStillImage()
+        {
+            if (stillImage.sprite != null)
+            {
+                return stillImage.sprite.texture.EncodeToJPG();
+            }
+
+            return null;
         }
 
         private IEnumerator StillButtonFadeEffect()
