@@ -1,7 +1,8 @@
 using System;
+using System.Collections;
+using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
-using System.IO;
 #if PLATFORM_ANDROID
 using UnityEngine.Android;
 #endif
@@ -13,8 +14,8 @@ namespace ChatdollKit.IO
     {
         [SerializeField]
         private RawImage previewWindow;
-        [SerializeField]
-        private string deviceName;
+        public string DeviceName;
+        public string SubDeviceName;
         [SerializeField]
         private Vector2Int size = new Vector2Int(640, 480);
         [SerializeField]
@@ -24,11 +25,23 @@ namespace ChatdollKit.IO
         [SerializeField]
         private float waitAfterStart = 0.5f;
         [SerializeField]
+        private bool PrintDevicesOnStart;
+        [SerializeField]
         private string savePathForDebug;
+        [SerializeField]
+        private Image stillImage;
+        [SerializeField]
+        private Image stillFadeImage;
+        [SerializeField]
+        private Button stillImageButton;
+        [SerializeField]
+        private Button toggleDeviceButton;
 
+        private string currentDeviceName { get; set; }
         public bool IsCameraEnabled { get; private set; } = false;
         public bool IsAlreadyStarted { get; private set; } = false;
         private WebCamTexture webCamTexture;
+        private bool isStillImageAnimating;
 
         private void Awake()
         {
@@ -39,6 +52,16 @@ namespace ChatdollKit.IO
                 Permission.RequestUserPermission(Permission.Camera);
             }
 #endif
+
+            currentDeviceName = DeviceName;
+
+            if (PrintDevicesOnStart)
+            {
+                foreach (var device in GetDevices())
+                {
+                    Debug.Log(device.name);
+                }
+            }
         }
 
         private void Update()
@@ -73,7 +96,7 @@ namespace ChatdollKit.IO
             try
             {
                 // Configure and start camera
-                webCamTexture = new WebCamTexture(deviceName, size.x, size.y, fps > 0 ? fps : 10);
+                webCamTexture = new WebCamTexture(currentDeviceName, size.x, size.y, fps > 0 ? fps : 10);
                 previewWindow.texture = webCamTexture;
                 webCamTexture.Play();
 
@@ -93,19 +116,35 @@ namespace ChatdollKit.IO
                     {
                         if (device.name == webCamTexture.deviceName)
                         {
+#if PLATFORM_IOS && !UNITY_EDITOR
+                            if (device.isFrontFacing)
+                            {
+                                previewWindow.transform.rotation = Quaternion.Euler(0, 0, -webCamTexture.videoRotationAngle);
+                            }
+                            else
+                            {
+                                previewWindow.transform.rotation = Quaternion.Euler(0, 180, -webCamTexture.videoRotationAngle);
+                            }
+#else
                             if (device.isFrontFacing)
                             {
                                 previewWindow.transform.rotation = Quaternion.Euler(0, 180, -webCamTexture.videoRotationAngle);
                             }
                             else
                             {
-                                // should be 0, not 180. but iOS requires 180 :(
-                                previewWindow.transform.rotation = Quaternion.Euler(0, 180, -webCamTexture.videoRotationAngle);
+                                previewWindow.transform.rotation = Quaternion.Euler(0, 0, -webCamTexture.videoRotationAngle);
                             }
+# endif
                         }
                     }
 
+                    AdjustStillImageComponentsSize();
                     previewWindow.gameObject.SetActive(true);
+
+                    if (!string.IsNullOrEmpty(SubDeviceName))
+                    {
+                        toggleDeviceButton.gameObject.SetActive(true);
+                    }
                 }
 
                 IsAlreadyStarted = true;
@@ -117,10 +156,41 @@ namespace ChatdollKit.IO
             }
         }
 
+        private void AdjustStillImageComponentsSize()
+        {
+            // Calculate preview size
+            var previewWindowTransform = previewWindow.GetComponent<RectTransform>();
+            float previewWidth = previewWindowTransform.rect.width;
+            float previewHeight = previewWindowTransform.rect.height;
+            float textureAspectRatio = (float)webCamTexture.width / webCamTexture.height;
+            float adjustedWidth, adjustedHeight;
+            if (previewWidth / previewHeight > textureAspectRatio)
+            {
+                adjustedHeight = previewHeight;
+                adjustedWidth = adjustedHeight * textureAspectRatio;
+            }
+            else
+            {
+                adjustedWidth = previewWidth;
+                adjustedHeight = adjustedWidth / textureAspectRatio;
+            }
+            var previewSize = new Vector2(adjustedWidth, adjustedHeight);
+
+            // Still button
+            var buttonRectTransform = stillImageButton.GetComponent<RectTransform>();
+            buttonRectTransform.sizeDelta = previewSize;
+
+            // Still image
+            var fadeImageRectTransform = stillFadeImage.GetComponent<RectTransform>();
+            fadeImageRectTransform.sizeDelta = previewSize;
+        }
+
         public void Stop()
         {
             previewWindow.gameObject.SetActive(false);
+            toggleDeviceButton.gameObject.SetActive(false);
             webCamTexture?.Stop();
+            ClearStillImage();
             IsAlreadyStarted = false;
         }
 
@@ -134,6 +204,24 @@ namespace ChatdollKit.IO
             {
                 _ = StartAsync();
             }
+        }
+
+        public void ToggleDevice()
+        {
+            if (!IsAlreadyStarted) return;
+            if (string.IsNullOrEmpty(SubDeviceName)) return;
+
+            if (currentDeviceName == DeviceName)
+            {
+                currentDeviceName = SubDeviceName;
+            }
+            else
+            {
+                currentDeviceName = DeviceName;
+            }
+
+            Stop();
+            _ = StartAsync();
         }
 
         public async UniTask<byte[]> CaptureImageAsync()
@@ -272,6 +360,77 @@ namespace ChatdollKit.IO
 
             rotatedTexture.Apply();
             return rotatedTexture;
+        }
+
+        public void OnStillImageButton()
+        {
+            if (stillImage.sprite == null && IsAlreadyStarted)
+            {
+                LoadStillImageAsync();
+            }
+            else
+            {
+                ClearStillImage();
+            }
+        }
+
+        public async void LoadStillImageAsync()
+        {
+            var imageBytes = await CaptureImageAsync();
+
+            var texture = new Texture2D(2, 2);
+            texture.LoadImage(imageBytes);
+
+            // Set image to preview
+            var sprite = Sprite.Create(texture, new Rect(0.0f, 0.0f, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+            stillImage.preserveAspect = true;
+            stillImage.sprite = sprite;
+
+            // Fade effect
+            StartCoroutine(StillButtonFadeEffect());
+
+            stillImage.gameObject.SetActive(true);
+        }
+
+        public void ClearStillImage()
+        {
+            stillImage.sprite = null;
+            stillImage.gameObject.SetActive(false);
+        }
+
+        public byte[] GetStillImage()
+        {
+            if (stillImage.sprite != null)
+            {
+                return stillImage.sprite.texture.EncodeToJPG();
+            }
+
+            return null;
+        }
+
+        private IEnumerator StillButtonFadeEffect()
+        {
+            isStillImageAnimating = true;
+
+            float originalAlpha = stillFadeImage.color.a;
+
+            stillFadeImage.color = new Color(stillFadeImage.color.r, stillFadeImage.color.g, stillFadeImage.color.b, 0.7f);
+            stillFadeImage.gameObject.SetActive(true);
+
+            yield return new WaitForSeconds(0.1f);
+
+            float elapsedTime = 0f;
+            while (elapsedTime < 0.1f)
+            {
+                elapsedTime += Time.deltaTime;
+                float alpha = Mathf.Lerp(0.7f, originalAlpha, elapsedTime / 0.1f);
+                stillFadeImage.color = new Color(stillFadeImage.color.r, stillFadeImage.color.g, stillFadeImage.color.b, alpha);
+                yield return null;
+            }
+
+            stillFadeImage.color = new Color(stillFadeImage.color.r, stillFadeImage.color.g, stillFadeImage.color.b, originalAlpha);
+            stillFadeImage.gameObject.SetActive(false);
+            isStillImageAnimating = false;
         }
     }
 }

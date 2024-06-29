@@ -70,11 +70,12 @@ namespace ChatdollKit.Demo
             {
                 if (request.Type == RequestType.Voice)
                 {
-                    var imageBytes = inputUI.GetImageBytes();
+                    var imageBytes = inputUI.GetImageBytes() ?? simpleCamera.GetStillImage();
                     if (imageBytes != null)
                     {
                         request.Payloads["imageBytes"] = imageBytes;
                         inputUI.ClearImage();
+                        simpleCamera.ClearStillImage();
                     }
                 }
 
