@@ -10,6 +10,8 @@ namespace ChatdollKit.Dialog
 {
     public class VoiceRequestProviderBase : VoiceRecorderBase, IVoiceRequestProvider
     {
+        public float ListeningTimeout = 20.0f;
+
         // This provides voice request
         public RequestType RequestType { get; } = RequestType.Voice;
 
@@ -20,22 +22,10 @@ namespace ChatdollKit.Dialog
         [Header("Test and Debug")]
         public bool PrintResult = false;
 
-        [Header("Voice Recorder Settings")]
-        public float VoiceDetectionThreshold = -50.0f;
-        public float VoiceDetectionMinimumLength = 0.3f;
-        public float SilenceDurationToEndRecording = 1.0f;
-        public float ListeningTimeout = 20.0f;
-
         [Header("UI")]
         public IMessageWindow MessageWindow;
         [SerializeField]
         protected string listeningMessage = "[ Listening ... ]";
-        public Action OnListeningStart;
-        public Action OnListeningStop;
-        public Action OnRecordingStart = () => { Debug.Log("Recording voice request started"); };
-        public Action<float> OnDetectVoice;
-        public Action<AudioClip> OnRecordingEnd = (a) => { Debug.Log("Recording voice request ended"); };
-        public Action<Exception> OnError = (e) => { Debug.LogError($"Recording voice request error: {e.Message}\n{e.StackTrace}"); };
 
         // Actions for each status
 #pragma warning disable CS1998
@@ -108,16 +98,6 @@ namespace ChatdollKit.Dialog
             }
 
             var request = new Request(RequestType);
-
-            voiceDetectionThreshold = VoiceDetectionThreshold;
-            voiceDetectionMinimumLength = VoiceDetectionMinimumLength;
-            silenceDurationToEndRecording = SilenceDurationToEndRecording;
-            onListeningStart = OnListeningStart;
-            onListeningStop = OnListeningStop;
-            onRecordingStart = OnRecordingStart;
-            onDetectVoice = OnDetectVoice;
-            onRecordingEnd = OnRecordingEnd;
-            onError = OnError;
 
             StartListening();
 
