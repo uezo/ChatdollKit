@@ -10,25 +10,14 @@ namespace ChatdollKit.Dialog
 {
     public class WakeWordListenerBase : VoiceRecorderBase, IWakeWordListener
     {
+        public float VoiceDetectionRaisedThreshold = -15.0f;
+        public float VoiceRecognitionMaximumLength = 3.0f;
+
         public bool AutoStart = true;
         public Func<string, UniTask> OnRecognizedAsync;
 
         [Header("Test and Debug")]
         public bool PrintResult = false;
-
-        [Header("Voice Recorder Settings")]
-        public float VoiceDetectionThreshold = -50.0f;
-        public float VoiceDetectionRaisedThreshold = -15.0f;
-        public float VoiceDetectionMinimumLength = 0.2f;
-        public float SilenceDurationToEndRecording = 0.3f;
-        public float VoiceRecognitionMaximumLength = 3.0f;
-
-        public Action OnListeningStart;
-        public Action OnListeningStop;
-        public Action OnRecordingStart;
-        public Action<float> OnDetectVoice;
-        public Action<AudioClip> OnRecordingEnd;
-        public Action<Exception> OnError = (e) => { Debug.LogError($"Recording wakeword error: {e.Message}\n{e.StackTrace}"); };
 
         // Protected members for recording voice and recognize task
         protected CancellationTokenSource cancellationTokenSource;
@@ -70,7 +59,7 @@ namespace ChatdollKit.Dialog
         protected virtual void Update()
         {
             // Observe which threshold should be applied in every frames
-            voiceDetectionThreshold = ShouldRaiseThreshold() ? VoiceDetectionRaisedThreshold : VoiceDetectionThreshold;
+            VoiceDetectionThreshold = ShouldRaiseThreshold() ? VoiceDetectionRaisedThreshold : VoiceDetectionThreshold;
         }
 
         protected override void OnDestroy()
@@ -140,15 +129,15 @@ namespace ChatdollKit.Dialog
 
                 while (!token.IsCancellationRequested)
                 {
-                    voiceDetectionThreshold = VoiceDetectionThreshold;
-                    voiceDetectionMinimumLength = VoiceDetectionMinimumLength;
-                    silenceDurationToEndRecording = SilenceDurationToEndRecording;
-                    onListeningStart = OnListeningStart;
-                    onListeningStop = OnListeningStop;
-                    onRecordingStart = OnRecordingStart;
-                    onDetectVoice = OnDetectVoice;
-                    onRecordingEnd = OnRecordingEnd;
-                    onError = OnError;
+                    //voiceDetectionThreshold = VoiceDetectionThreshold;
+                    //voiceDetectionMinimumLength = VoiceDetectionMinimumLength;
+                    //silenceDurationToEndRecording = SilenceDurationToEndRecording;
+                    //onListeningStart = OnListeningStart;
+                    //onListeningStop = OnListeningStop;
+                    //onRecordingStart = OnRecordingStart;
+                    //onDetectVoice = OnDetectVoice;
+                    //onRecordingEnd = OnRecordingEnd;
+                    //onError = OnError;
 
                     var voiceRecorderResponse = await GetVoiceAsync(0.0f, token);
                     if (voiceRecorderResponse != null)
