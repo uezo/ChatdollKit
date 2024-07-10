@@ -297,7 +297,7 @@ namespace ChatdollKit.LLM.Dify
                         try
                         {
                             var dsr = JsonConvert.DeserializeObject<DifyStreamResponse>(d);
-                            if (dsr.@event == "message")
+                            if (dsr.@event == "message" || dsr.@event == "agent_message")
                             {
                                 SetReceivedChunk(dsr.answer, dsr.conversation_id);
                                 continue;

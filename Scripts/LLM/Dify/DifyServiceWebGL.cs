@@ -229,7 +229,7 @@ namespace ChatdollKit.LLM.Dify
                     try
                     {
                         var dsr = JsonConvert.DeserializeObject<DifyStreamResponse>(d);
-                        if (dsr.@event == "message")
+                        if (dsr.@event == "message" || dsr.@event == "agent_message")
                         {
                             difySession.CurrentStreamBuffer += dsr.answer;
                             difySession.StreamBuffer += dsr.answer;
