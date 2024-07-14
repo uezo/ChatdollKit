@@ -60,6 +60,7 @@ namespace ChatdollKit.LLM
 
             // Wait API stream ends
             await llmSession.StreamingTask;
+            await llmSession.OnStreamingEnd();
 
             // Wait parsing and performance
             await parseTask;

@@ -13,6 +13,7 @@ namespace ChatdollKit.LLM
         UniTask<List<ILLMMessage>> MakePromptAsync(string userId, string inputText, Dictionary<string, object> payloads, CancellationToken token = default);
         UniTask<ILLMSession> GenerateContentAsync(List<ILLMMessage> messages, Dictionary<string, object> payloads = null, bool useFunctions = true, int retryCounter = 1, CancellationToken token = default);
         ILLMMessage CreateMessageAfterFunction(string role = null, string content = null, ILLMSession llmSession = null, Dictionary<string, object> arguments = null);
+        Func<ILLMSession, CancellationToken, UniTask> OnStreamingEnd { get; set; }
     }
 
     public enum ResponseType
@@ -28,6 +29,7 @@ namespace ChatdollKit.LLM
         bool IsVisionAvailable { get; set; }
         ResponseType ResponseType { get; set; }
         UniTask StreamingTask { get; set; }
+        Func<UniTask> OnStreamingEnd { get; set; }
         string FunctionName { get; set; }
         List<ILLMMessage> Contexts { get; set; }
     }

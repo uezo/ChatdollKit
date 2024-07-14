@@ -116,6 +116,13 @@ namespace ChatdollKit.LLM
             var messages = await llmService.MakePromptAsync(state.UserId, request.Text, payloads, token);
 
             var llmSession = await llmService.GenerateContentAsync(messages, payloads, token: token);
+            llmSession.OnStreamingEnd = async () =>
+            {
+                if (llmService.OnStreamingEnd != null)
+                {
+                    await llmService.OnStreamingEnd(llmSession, token);
+                }
+            };
             request.Payloads.Add("LLMSession", llmSession);
 
             if (!string.IsNullOrEmpty(llmSession.FunctionName))

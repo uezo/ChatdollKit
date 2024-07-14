@@ -38,6 +38,8 @@ namespace ChatdollKit.LLM
 
         public Action OnEnabled { get; set; }
 
+        public Func<ILLMSession, CancellationToken, UniTask> OnStreamingEnd { get; set; }
+
         protected List<ILLMTool> llmTools = new List<ILLMTool>();
 
         public virtual void AddTool(ILLMTool tool)
@@ -90,6 +92,7 @@ namespace ChatdollKit.LLM
         public bool IsVisionAvailable { get; set; } = true;
         public ResponseType ResponseType { get; set; } = ResponseType.None;
         public UniTask StreamingTask { get; set; }
+        public Func<UniTask> OnStreamingEnd { get; set; }
         public string FunctionName { get; set; }
         public List<ILLMMessage> Contexts { get; set; }
 
