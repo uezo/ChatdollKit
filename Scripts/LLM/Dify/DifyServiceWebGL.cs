@@ -73,9 +73,9 @@ namespace ChatdollKit.LLM.Dify
                 };
             }
 
-            if (!string.IsNullOrEmpty(CurrentConversationId))
+            if (!string.IsNullOrEmpty(difySession.ConversationId))
             {
-                data.Add("conversation_id", CurrentConversationId);
+                data.Add("conversation_id", difySession.ConversationId);
             }
 
             foreach (var p in customParameters)
@@ -145,6 +145,16 @@ namespace ChatdollKit.LLM.Dify
                 }
 
                 await UniTask.Delay(10);
+            }
+
+            // Update histories (put ConversationId to state)
+            if (difySession.ResponseType != ResponseType.Error && difySession.ResponseType != ResponseType.Timeout)
+            {
+                await AddHistoriesAsync(difySession, stateData, token);
+            }
+            else
+            {
+                Debug.LogWarning($"Messages are not added to histories for response type is not success: {difySession.ResponseType}");
             }
 
             var extractedTags = ExtractTags(difySession.CurrentStreamBuffer);
@@ -233,7 +243,7 @@ namespace ChatdollKit.LLM.Dify
                         {
                             difySession.CurrentStreamBuffer += dsr.answer;
                             difySession.StreamBuffer += dsr.answer;
-                            CurrentConversationId = dsr.conversation_id;
+                            difySession.ConversationId = dsr.conversation_id;
                             continue;
                         }
                         else if (dsr.@event == "message_end")
