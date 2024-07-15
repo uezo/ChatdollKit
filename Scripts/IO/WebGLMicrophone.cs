@@ -24,6 +24,7 @@ namespace ChatdollKit.IO
         private float[] capturedData;
         private bool loop;
         private int currentPosition;
+        private bool isAlreadyStarted = false;
 
         // Singleton
         private static WebGLMicrophone instance;
@@ -52,11 +53,21 @@ namespace ChatdollKit.IO
 
         public static AudioClip Start(string deviceName, bool loop, int lengthSec, int frequency)
         {
+            if (Instance.isAlreadyStarted)
+            {
+                Debug.Log($"WebGLMicrophone is already started");
+                return Instance.microphoneClip;
+            }
+            else
+            {
+                Instance.isAlreadyStarted = true;
+            }
+
             if (!IsRecording(deviceName))
             {
                 Instance.loop = loop;
                 Instance.currentPosition = 0;
-                var channels = 1;   // デバイスから取得できるのであればするけど・・・
+                var channels = 1;
                 Instance.capturedData = new float[FIXED_FREQUENCY * lengthSec * channels];
                 if (Instance.microphoneClip != null)
                 {
@@ -98,17 +109,17 @@ namespace ChatdollKit.IO
         private void SetSamplingData(string samplingDataString)
         {
             var samplingData = samplingDataString.Split(',').Select(s => Convert.ToSingle(s)).ToArray();
-
+            var pos = currentPosition;
 
             for (int i = 0; i < samplingData.Length; i++)
             {
-                capturedData[currentPosition] = samplingData[i];
-                currentPosition++;
-                if (currentPosition == capturedData.Length)
+                capturedData[pos] = samplingData[i];
+                pos++;
+                if (pos == capturedData.Length)
                 {
                     if (loop)
                     {
-                        currentPosition = 0;
+                        pos = 0;
                     }
                     else
                     {
@@ -121,6 +132,7 @@ namespace ChatdollKit.IO
             {
                 microphoneClip.SetData(capturedData, 0);
             }
+            currentPosition = pos;
         }
 #endif
     }

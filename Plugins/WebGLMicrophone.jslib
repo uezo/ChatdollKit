@@ -5,6 +5,8 @@ mergeInto(LibraryManager.library, {
         document.webGLMicrophone.isRecording = 0;
         document.webGLMicrophone.targetObjectName = UTF8ToString(targetObjectNamePtr);
         document.webGLMicrophone.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        document.webGLMicrophone.source = null;
+        document.webGLMicrophone.scriptNode = null;
 
         // Observe the state of audio context for microphone and resume if disabled
         setInterval(function() {
@@ -16,14 +18,18 @@ mergeInto(LibraryManager.library, {
     },
 
     StartWebGLMicrophone: function() {
+        document.webGLMicrophone.isRecording = 1;
+
         if (navigator.mediaDevices.getUserMedia) {
-            navigator.mediaDevices.getUserMedia({ audio: true })
+            navigator.mediaDevices.getUserMedia({ audio: { 
+                sampleRate: { ideal: 44100 },
+            }, })
             .then(function(stream) {
                 // Setup nodes
                 var audioContext = document.webGLMicrophone.audioContext;
                 var source = audioContext.createMediaStreamSource(stream);
                 var scriptNode = audioContext.createScriptProcessor(4096, 1, 1);
-                scriptNode.onaudioprocess = function (stream) {
+                scriptNode.onaudioprocess = function (event) {
                     SendMessage(document.webGLMicrophone.targetObjectName, "SetSamplingData", event.inputBuffer.getChannelData(0).join(','));
                 };
                 // Connect nodes;
@@ -32,21 +38,26 @@ mergeInto(LibraryManager.library, {
 
                 document.webGLMicrophone.scriptNode = scriptNode;
                 document.webGLMicrophone.source = source;
-                document.webGLMicrophone.isRecording = 1;
 
                 console.log("WebGLMicrophone started recording");
             })
             .catch(function(err) {
                 console.log("Failed in GetUserMedia: " + error);
+                document.webGLMicrophone.isRecording = 0;
             });
         }
     },
 
     EndWebGLMicrophone: function() {
-        document.webGLMicrophone.source.disconnect(document.webGLMicrophone.scriptNode);
-        document.webGLMicrophone.source = null;
-        document.webGLMicrophone.scriptNode.disconnect();
-        document.webGLMicrophone.scriptNode = null;
+        console.log("EndWebGLMicrophone");
+        if (document.webGLMicrophone.source != null) {
+            document.webGLMicrophone.source.disconnect(document.webGLMicrophone.scriptNode);
+            document.webGLMicrophone.source = null;
+        }
+        if (document.webGLMicrophone.scriptNode != null) {
+            document.webGLMicrophone.scriptNode.disconnect();
+            document.webGLMicrophone.scriptNode = null;
+        }
         document.webGLMicrophone.isRecording = 0;
     },
 
