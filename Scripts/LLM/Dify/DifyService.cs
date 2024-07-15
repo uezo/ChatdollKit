@@ -10,6 +10,7 @@ namespace ChatdollKit.LLM.Dify
 {
     public class DifyService : LLMServiceBase
     {
+        public string ConversationIdKey = "DifyConversationId";
         public string CustomParameterKey = "DifyParameters";
         public string CustomHeaderKey = "DifyHeaders";
 
@@ -24,11 +25,14 @@ namespace ChatdollKit.LLM.Dify
         [SerializeField]
         protected float noDataResponseTimeoutSec = 10.0f;
 
-        protected string CurrentConversationId = string.Empty;
-
         public Func<string, UniTask<byte[]>> CaptureImage = null;
 
 #pragma warning disable CS1998
+        public async UniTask AddHistoriesAsync(ILLMSession llmSession, Dictionary<string, object> dataStore, CancellationToken token = default)
+        {
+            dataStore[ConversationIdKey] = ((DifySession)llmSession).ConversationId;
+        }
+
         public override async UniTask<List<ILLMMessage>> MakePromptAsync(string userId, string inputText, Dictionary<string, object> payloads, CancellationToken token = default)
         {
             var messages = new List<ILLMMessage>();
@@ -60,6 +64,17 @@ namespace ChatdollKit.LLM.Dify
             // Start streaming session
             var difySession = new DifySession();
             difySession.Contexts = messages;
+
+            var requestPayloads = (Dictionary<string, object>)payloads["RequestPayloads"];
+            if (requestPayloads.ContainsKey(ConversationIdKey) && !string.IsNullOrEmpty((string)requestPayloads[ConversationIdKey]))
+            {
+                difySession.ConversationId = requestPayloads[ConversationIdKey] as string;
+            }
+            else if (stateData.ContainsKey(ConversationIdKey) && !string.IsNullOrEmpty((string)stateData[ConversationIdKey]))
+            {
+                difySession.ConversationId = stateData[ConversationIdKey] as string;
+            }
+
             difySession.StreamingTask = StartStreamingAsync(difySession, stateData, customParameters, customHeaders, useFunctions, token);
 
             // Retry
@@ -110,9 +125,9 @@ namespace ChatdollKit.LLM.Dify
                 };
             }
 
-            if (!string.IsNullOrEmpty(CurrentConversationId))
+            if (!string.IsNullOrEmpty(difySession.ConversationId))
             {
-                data.Add("conversation_id", CurrentConversationId);
+                data.Add("conversation_id", difySession.ConversationId);
             }
 
             foreach (var p in customParameters)
@@ -149,7 +164,7 @@ namespace ChatdollKit.LLM.Dify
                 difySession.StreamBuffer += answer;
                 if (!string.IsNullOrEmpty(convid))
                 {
-                    CurrentConversationId = convid;
+                    difySession.ConversationId = convid;
                 }
             };
             streamRequest.downloadHandler = downloadHandler;
@@ -193,6 +208,16 @@ namespace ChatdollKit.LLM.Dify
                 }
 
                 await UniTask.Delay(10);
+            }
+
+            // Update histories (put ConversationId to state)
+            if (difySession.ResponseType != ResponseType.Error && difySession.ResponseType != ResponseType.Timeout)
+            {
+                await AddHistoriesAsync(difySession, stateData, token);
+            }
+            else
+            {
+                Debug.LogWarning($"Messages are not added to histories for response type is not success: {difySession.ResponseType}");
             }
 
             var extractedTags = ExtractTags(difySession.CurrentStreamBuffer);
@@ -318,7 +343,7 @@ namespace ChatdollKit.LLM.Dify
 
     public class DifySession : LLMSession
     {
-
+        public string ConversationId { get; set; }
     }
 
     public class DifyRequestMessage : ILLMMessage
