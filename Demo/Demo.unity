@@ -1674,7 +1674,7 @@ MonoBehaviour:
   VoiceDetectionRaisedThreshold: -15
   VoiceRecognitionMaximumLength: 3
   AutoStart: 1
-  PrintResult: 0
+  PrintResult: 1
   WakeWords: []
   CancelWords: []
   IgnoreWords:
@@ -1682,6 +1682,7 @@ MonoBehaviour:
   - "\u3001"
   - "\uFF1F"
   - "\uFF01"
+  WakeLength: 0
   ApiKey: 
   Model: whisper-1
   Language: 
@@ -2003,7 +2004,7 @@ MonoBehaviour:
   CustomParameterKey: ChatGPTParameters
   CustomHeaderKey: ChatGPTHeaders
   ApiKey: 
-  Model: gpt-3.5-turbo-0125
+  Model: gpt-4o-mini
   ChatCompletionUrl: 
   IsAzure: 0
   MaxTokens: 0
@@ -2014,7 +2015,7 @@ MonoBehaviour:
   PresencePenalty: 0
   Stop: []
   responseTimeoutSec: 30
-  noDataResponseTimeoutSec: 5
+  noDataResponseTimeoutSec: 10
 --- !u!114 &2893757555470248058
 MonoBehaviour:
   m_ObjectHideFlags: 0
