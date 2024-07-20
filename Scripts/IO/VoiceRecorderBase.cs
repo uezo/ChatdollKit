@@ -194,17 +194,17 @@ namespace ChatdollKit.IO
 
         protected virtual void OnRecordingStartDefault()
         {
-            Debug.Log($"Recording start: {gameObject.name}");
+            Debug.Log($"Recording start: {this.GetType().Name}");
         }
 
         protected virtual void OnRecordingEndDefault(AudioClip audioClip)
         {
-            Debug.Log($"Recording end: {gameObject.name}");
+            Debug.Log($"Recording end: {this.GetType().Name}");
         }
 
         protected virtual void OnErrorDefault(Exception ex)
         {
-            Debug.LogError($"Recording error at {gameObject.name}: {ex.Message}\n{ex.StackTrace}");
+            Debug.LogError($"Recording error at {this.GetType().Name}: {ex.Message}\n{ex.StackTrace}");
         }
     }
 

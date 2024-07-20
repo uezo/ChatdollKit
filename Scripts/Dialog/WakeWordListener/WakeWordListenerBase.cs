@@ -26,6 +26,7 @@ namespace ChatdollKit.Dialog
         public List<WakeWord> WakeWords;
         public List<string> CancelWords;
         public List<string> IgnoreWords = new List<string>() { "。", "、", "？", "！" };
+        public int WakeLength;
 
         public Func<string, WakeWord> ExtractWakeWord { get; set; }
         public Func<string, string> ExtractCancelWord { get; set; }
@@ -45,7 +46,6 @@ namespace ChatdollKit.Dialog
             if (VoiceDetectionThreshold >= 0)
             {
                 VoiceDetectionThreshold = 20.0f * Mathf.Log10(VoiceDetectionThreshold);
-                VoiceDetectionRaisedThreshold = 20.0f * Mathf.Log10(VoiceDetectionRaisedThreshold);
             }
 
             if (AutoStart)
@@ -54,12 +54,6 @@ namespace ChatdollKit.Dialog
                 StartListeningAsync();
 #pragma warning restore CS4014
             }
-        }
-
-        protected virtual void Update()
-        {
-            // Observe which threshold should be applied in every frames
-            VoiceDetectionThreshold = ShouldRaiseThreshold() ? VoiceDetectionRaisedThreshold : VoiceDetectionThreshold;
         }
 
         protected override void OnDestroy()
@@ -129,16 +123,6 @@ namespace ChatdollKit.Dialog
 
                 while (!token.IsCancellationRequested)
                 {
-                    //voiceDetectionThreshold = VoiceDetectionThreshold;
-                    //voiceDetectionMinimumLength = VoiceDetectionMinimumLength;
-                    //silenceDurationToEndRecording = SilenceDurationToEndRecording;
-                    //onListeningStart = OnListeningStart;
-                    //onListeningStop = OnListeningStop;
-                    //onRecordingStart = OnRecordingStart;
-                    //onDetectVoice = OnDetectVoice;
-                    //onRecordingEnd = OnRecordingEnd;
-                    //onError = OnError;
-
                     var voiceRecorderResponse = await GetVoiceAsync(0.0f, token);
                     if (voiceRecorderResponse != null)
                     {
@@ -242,6 +226,18 @@ namespace ChatdollKit.Dialog
                     {
                         return ww.CloneWithRecognizedText(text);
                     }
+                }
+            }
+
+            if (WakeLength > 0)
+            {
+                if (textLower.Length >= WakeLength)
+                {
+                    if (PrintResult)
+                    {
+                        Debug.Log($"Wake by length: {textLower.Length} >= {WakeLength}");
+                    }
+                    return new WakeWord() { Text = text, SkipPrompt = true }.CloneWithRecognizedText(text);
                 }
             }
 
