@@ -26,6 +26,7 @@ namespace ChatdollKit.Dialog
         public List<WakeWord> WakeWords;
         public List<string> CancelWords;
         public List<string> IgnoreWords = new List<string>() { "。", "、", "？", "！" };
+        public int WakeLength;
 
         public Func<string, WakeWord> ExtractWakeWord { get; set; }
         public Func<string, string> ExtractCancelWord { get; set; }
@@ -225,6 +226,18 @@ namespace ChatdollKit.Dialog
                     {
                         return ww.CloneWithRecognizedText(text);
                     }
+                }
+            }
+
+            if (WakeLength > 0)
+            {
+                if (textLower.Length >= WakeLength)
+                {
+                    if (PrintResult)
+                    {
+                        Debug.Log($"Wake by length: {textLower.Length} >= {WakeLength}");
+                    }
+                    return new WakeWord() { Text = text, SkipPrompt = true }.CloneWithRecognizedText(text);
                 }
             }
 
