@@ -18,7 +18,7 @@ namespace ChatdollKit.LLM.ChatGPT
 
         [Header("API configuration")]
         public string ApiKey;
-        public string Model = "gpt-3.5-turbo";
+        public string Model = "gpt-4o-mini";
         public string ChatCompletionUrl;
         public bool IsAzure;
         public int MaxTokens = 0;
