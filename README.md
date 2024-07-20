@@ -8,48 +8,29 @@
 <img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit-overview.png" width="720">
 
 
-# ✨ Features
+## ✨ Features
 
-- 3D Model
-    - Speech and motion synchronization
-    - Face expression control
-    - Blink and lipsync
-
-- Generative AI
-    - Multiple LLMs: ChatGPT / Azure OpenAI Service, Anthropic Claude, Google Gemini Pro and others
-    - Agents: Function Calling (ChatGPT / Gemini) or your prompt engineering
-    - Multimodal: GPT-4V and Gemini-Pro-Vision are suppored
-    - Emotions: Autonomous face expression and animation
-
-- Dialog
-    - Speech-to-Text and Text-to-Speech (OpenAI, Azure, Google, Watson, VOICEVOX, VOICEROID etc)
-    - Dialog state management (in other word, context or memory)
-    - Intent extraction and topic routing
-
-- I/O
-    - Wakeword
-    - Camera and QR Code
-
-- Platforms
-    - Windows / Mac / Linux / iOS / Android and anywhere Unity supports
-    - VR / AR / WebGL / Gatebox
+- **Generative AI Native**: Supports multiple LLMs like ChatGPT, Anthropic Claude, Google Gemini Pro, Dify, and others, with function calling (ChatGPT/Gemini) and multimodal capabilities.
+- **3D model expression**: Synchronizes speech and motion, controls facial expressions and animations autonomously, supports blinking and lip-sync.
+- **Dialog control**: Integrates Speech-to-Text and Text-to-Speech (OpenAI, Azure, Google, Watson, VOICEVOX, VOICEROID, etc.), manages dialog state (context or memory), extracts intents and routes topics, supports wakeword detection.
+- **Multi platforms**: Compatible with Windows, Mac, Linux, iOS, Android, and other Unity-supported platforms, including VR, AR, and WebGL.
 
 ... and more! See [ChatdollKit Documentation](Documents/manual.md) to learn details.
 
 
-# 🚀 Quick start
+## 🚀 Quick start
 
 You can learn how to setup ChatdollKit by watching this video that runs the demo scene(including chat with ChatGPT): https://www.youtube.com/watch?v=rRtm18QSJtc
 
 [![](https://img.youtube.com/vi/rRtm18QSJtc/0.jpg)](https://www.youtube.com/watch?v=rRtm18QSJtc)
 
-## 📦 Import packages
+### 📦 Import packages
 
 Download the latest version of [ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases) and import it into your Unity project after import dependencies;
 
 - `Burst` from Unity Package Manager (Window > Package Manager)
-- [UniTask](https://github.com/Cysharp/UniTask)(Ver.2.3.1)
-- [uLipSync](https://github.com/hecomi/uLipSync)(v2.6.1)
+- [UniTask](https://github.com/Cysharp/UniTask)(Tested on Ver.2.5.4)
+- [uLipSync](https://github.com/hecomi/uLipSync)(Tested on v3.1.0)
 - For VRM model: [UniVRM](https://github.com/vrm-c/UniVRM/releases/tag/v0.89.0)(v0.89.0) and [VRM Extension](https://github.com/uezo/ChatdollKit/releases)
 - JSON.NET: If your project doesn't have JSON.NET, add it from Package Manager > [+] > Add package from git URL... > com.unity.nuget.newtonsoft-json
 - [Azure Speech SDK](https://learn.microsoft.com/ja-jp/azure/ai-services/speech-service/quickstarts/setup-platform?pivots=programming-language-csharp&tabs=macos%2Cubuntu%2Cdotnetcli%2Cunity%2Cjre%2Cmaven%2Cnodejs%2Cmac%2Cpypi#install-the-speech-sdk-for-unity): (Optional) Required for real-time speech recognition using a stream.
@@ -57,7 +38,7 @@ Download the latest version of [ChatdollKit.unitypackage](https://github.com/uez
 <img src="Documents/Images/burst.png" width="640">
 
 
-## 🐟 Resource preparation
+### 🐟 Resource preparation
 
 Add 3D model to the scene and adjust as you like. Also install required resources for the 3D model like shaders etc.
 In this README, I use Cygnet-chan that we can perchase at Booth. https://booth.pm/ja/items/1870320
@@ -65,21 +46,21 @@ In this README, I use Cygnet-chan that we can perchase at Booth. https://booth.p
 And, import animation clips. In this README, I use [Anime Girls Idle Animations Free](https://assetstore.unity.com/packages/3d/animations/anime-girl-idle-animations-free-150406). I believe it is worth for you to purchase the pro edition👍
 
 
-## 🎁 Put ChatdollKit prefab
+### 🎁 Put ChatdollKit prefab
 
 Put `ChatdollKit/Prefabs/ChatdollKit` or `ChatdollKit/Prefabs/ChatdollKitVRM` to the scene. And, create EventSystem to use UI components.
 
 <img src="Documents/Images/chatdollkit_to_scene.png" width="640">
 
 
-## 🐈 ModelController
+### 🐈 ModelController
 
 Select `Setup ModelController` in the context menu of ModelController. If *NOT* VRM, make sure that shapekey for blink to `Blink Blend Shape Name` is set after setup. If not correct or blank, set it manually.
 
 <img src="Documents/Images/modelcontroller.png" width="640">
 
 
-## 💃 Animator
+### 💃 Animator
 
 Select `Setup Animator` in the context menu of ModelController and select the folder that contains animation clips or their parent folder. In this case put animation clips in `01_Idles` and `03_Others` onto `Base Layer` for override blending, `02_Layers` onto `Additive Layer` for additive blending.
 
@@ -94,32 +75,35 @@ Lastly, set the value to `Idle Animation Value` on the inspector of ModelControl
 <img src="Documents/Images/idleanimation02.png" width="640">
 
 
-## 🦜 DialogController
+### 🦜 DialogController
 
 On the inspector of `DialogController`, set `Wake Word` to start conversation (e.g. hello / こんにちは🇯🇵), `Cancel Word` to stop comversation (e.g. end / おしまい🇯🇵), `Prompt Voice` to require voice request from user (e.g. what's up? / どうしたの？🇯🇵).
 
 <img src="Documents/Images/dialogcontroller.png" width="640">
 
 
-## 🍣 ChatdollKit
+### 🍣 ChatdollKit
 
 Select the speech service (OpenAI/Azure/Google/Watson) you use and set API key and some properties like Region and BaseUrl on inspector of ChatdollKit.
 
 <img src="Documents/Images/chatdollkit.png" width="640">
 
 
-## 🍳 Skill
+### 🍳 Skill
 
-Attach `Examples/Echo/Skills/EchoSkill` to `ChatdollKit`. This is a skill for just echo. Or, if you want to enjoy conversation with AI, attach components and set OpenAI API Key to `ChatGPTService`:
+Attach the common components to use LLM:
 
-- ChatdollKit/Scripts/LLM/ChatGPT/ChatGPTService
 - ChatdollKit/Scripts/LLM/LLMRouter
 - ChatdollKit/Scripts/LLM/LLMContentSkill
 
-<img src="Documents/Images/skill.png" width="640">
+Additionally, attach the specific LLM vendor component you want to use and set the API key:
+
+- ChatdollKit/Scripts/LLM/ChatGPT/ChatGPTService
+- ChatdollKit/Scripts/LLM/Claude/ClaudeService
+- ChatdollKit/Scripts/LLM/Gemini/GeminiService
 
 
-## 🤗 Face Expression (*NON* VRM only)
+### 🤗 Face Expression (*NON* VRM only)
 
 Select `Setup VRC FaceExpression Proxy` in the context menu of VRC FaceExpression Proxy. Neutral, Joy, Angry, Sorrow and Fun face expression with all zero value and Blink face with blend shape for blink = 100.0f are automatically created.
 
@@ -130,7 +114,7 @@ You can edit shape keys by editing Face Clip Configuration directly or by captur
 <img src="Documents/Images/faceexpressionedit.png" width="640">
 
 
-## 🥳 Run
+### 🥳 Run
 
 Press Play button of Unity editor. You can see the model starts with idling animation and blinking.
 
@@ -142,7 +126,7 @@ Press Play button of Unity editor. You can see the model starts with idling anim
 <img src="Documents/Images/run.png" width="640">
 
 
-# 🌊 Use Azure OpenAI Service
+## 🌊 Use Azure OpenAI Service
 
 To use Azure OpenAI Service set following info on inspector of ChatGPTService component:
 
@@ -158,7 +142,7 @@ format: https://{your-resource-name}.openai.azure.com/openai/deployments/{deploy
 NOTE: `Model` on inspector is ignored. Engine in url is used.
 
 
-# 👷‍♀️ Build your own app
+## 👷‍♀️ Build your own app
 
 See the `MultiSkills` example. That is more rich application including:
 
@@ -168,7 +152,7 @@ See the `MultiSkills` example. That is more rich application including:
 We are now preparing contents to create more rich virtual assistant using ChatdollKit.
 
 
-# 🌐 Run on WebGL
+## 🌐 Run on WebGL
 
 Refer to the following tips for now. We are preparing demo for WebGL.
 
@@ -182,6 +166,8 @@ Refer to the following tips for now. We are preparing demo for WebGL.
 - If you want to show multibyte characters in message window put the font that includes multibyte characters to your project and set it to message windows.
 
 
-# ❤️ Thanks
+## ❤️ Thanks
 
 - [uLipSync](https://github.com/hecomi/uLipSync) (LipSync) (c)[hecomi](https://twitter.com/hecomi)
+- [UniTask](https://github.com/Cysharp/UniTask) (async/await integration) (c)[neuecc](https://x.com/neuecc)
+- [UniVRM](https://github.com/vrm-c/UniVRM/releases/tag/v0.89.0) (VRM) (c)[VRM Consortium](https://x.com/vrm_pr) / (c)[Masataka SUMI](https://x.com/santarh) for MToon
