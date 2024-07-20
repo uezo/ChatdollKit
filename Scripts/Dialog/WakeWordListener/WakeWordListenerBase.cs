@@ -45,7 +45,6 @@ namespace ChatdollKit.Dialog
             if (VoiceDetectionThreshold >= 0)
             {
                 VoiceDetectionThreshold = 20.0f * Mathf.Log10(VoiceDetectionThreshold);
-                VoiceDetectionRaisedThreshold = 20.0f * Mathf.Log10(VoiceDetectionRaisedThreshold);
             }
 
             if (AutoStart)
@@ -54,12 +53,6 @@ namespace ChatdollKit.Dialog
                 StartListeningAsync();
 #pragma warning restore CS4014
             }
-        }
-
-        protected virtual void Update()
-        {
-            // Observe which threshold should be applied in every frames
-            VoiceDetectionThreshold = ShouldRaiseThreshold() ? VoiceDetectionRaisedThreshold : VoiceDetectionThreshold;
         }
 
         protected override void OnDestroy()
@@ -129,16 +122,6 @@ namespace ChatdollKit.Dialog
 
                 while (!token.IsCancellationRequested)
                 {
-                    //voiceDetectionThreshold = VoiceDetectionThreshold;
-                    //voiceDetectionMinimumLength = VoiceDetectionMinimumLength;
-                    //silenceDurationToEndRecording = SilenceDurationToEndRecording;
-                    //onListeningStart = OnListeningStart;
-                    //onListeningStop = OnListeningStop;
-                    //onRecordingStart = OnRecordingStart;
-                    //onDetectVoice = OnDetectVoice;
-                    //onRecordingEnd = OnRecordingEnd;
-                    //onError = OnError;
-
                     var voiceRecorderResponse = await GetVoiceAsync(0.0f, token);
                     if (voiceRecorderResponse != null)
                     {
