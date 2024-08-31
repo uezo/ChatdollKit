@@ -459,18 +459,21 @@ namespace ChatdollKit.LLM.ChatGPT
                         }
 
                         var delta = j.choices[0].delta;
-                        if (!isDeltaSet)
+                        if (delta != null)
                         {
-                            SetFirstDelta(delta);
-                            isDeltaSet = true;
-                        }
-                        if (delta.tool_calls == null)
-                        {
-                            resp += delta.content;
-                        }
-                        else if (delta.tool_calls.Count > 0)
-                        {
-                            resp += delta.tool_calls[0].function.arguments;
+                            if (!isDeltaSet)
+                            {
+                                SetFirstDelta(delta);
+                                isDeltaSet = true;
+                            }
+                            if (delta.tool_calls == null)
+                            {
+                                resp += delta.content;
+                            }
+                            else if (delta.tool_calls.Count > 0)
+                            {
+                                resp += delta.tool_calls[0].function.arguments;
+                            }
                         }
                     }
                 }
