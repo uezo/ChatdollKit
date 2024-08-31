@@ -14,6 +14,7 @@ namespace ChatdollKit.Dialog
         [Header("Wake Word and Cancel Word")]
         [SerializeField] protected string WakeWord;
         [SerializeField] protected string CancelWord;
+        [SerializeField] protected bool controlWakeWordListenerInDialog = true;
 
         [Header("Prompt")]
         [SerializeField] protected string PromptVoice;
@@ -414,7 +415,10 @@ namespace ChatdollKit.Dialog
             var token = GetDialogToken();
 
             // Stop WakeWordListener and microphone
-            WakeWordListener.StopListening();
+            if (controlWakeWordListenerInDialog)
+            {
+                WakeWordListener.StopListening();
+            }
 
             // Request
             Request request = null;
@@ -604,13 +608,16 @@ namespace ChatdollKit.Dialog
             }
 
             // Control WakeWordListener
-            if ((Status != DialogStatus.Idling || IsMuted) && WakeWordListener.IsListening)
+            if (controlWakeWordListenerInDialog)
             {
-                WakeWordListener.StopListening();
-            }
-            else if (Status == DialogStatus.Idling && !IsMuted && !WakeWordListener.IsListening)
-            {
-                WakeWordListener.StartListening();
+                if ((Status != DialogStatus.Idling || IsMuted) && WakeWordListener.IsListening)
+                {
+                    WakeWordListener.StopListening();
+                }
+                else if (Status == DialogStatus.Idling && !IsMuted && !WakeWordListener.IsListening)
+                {
+                    WakeWordListener.StartListening();
+                }
             }
         }
     }
