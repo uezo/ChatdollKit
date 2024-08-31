@@ -272,28 +272,31 @@ namespace ChatdollKit.LLM.ChatGPT
                         }
 
                         var delta = j.choices[0].delta;
-                        if (chatGPTSession.FirstDelta == null)
+                        if (delta != null)
                         {
-                            chatGPTSession.FirstDelta = delta;
-
-                            if (delta.tool_calls != null)
+                            if (chatGPTSession.FirstDelta == null)
                             {
-                                chatGPTSession.ToolCallId = chatGPTSession.FirstDelta.tool_calls[0].id;
-                                chatGPTSession.FunctionName = chatGPTSession.FirstDelta.tool_calls[0].function.name;
-                                chatGPTSession.ResponseType = ResponseType.FunctionCalling;
+                                chatGPTSession.FirstDelta = delta;
+
+                                if (delta.tool_calls != null)
+                                {
+                                    chatGPTSession.ToolCallId = chatGPTSession.FirstDelta.tool_calls[0].id;
+                                    chatGPTSession.FunctionName = chatGPTSession.FirstDelta.tool_calls[0].function.name;
+                                    chatGPTSession.ResponseType = ResponseType.FunctionCalling;
+                                }
+                                else
+                                {
+                                    chatGPTSession.ResponseType = ResponseType.Content;
+                                }
+                            }
+                            if (delta.tool_calls == null)
+                            {
+                                temp += delta.content;
                             }
                             else
                             {
-                                chatGPTSession.ResponseType = ResponseType.Content;
+                                temp += delta.tool_calls[0].function.arguments;
                             }
-                        }
-                        if (delta.tool_calls == null)
-                        {
-                            temp += delta.content;
-                        }
-                        else
-                        {
-                            temp += delta.tool_calls[0].function.arguments;
                         }
                     }
                     else
