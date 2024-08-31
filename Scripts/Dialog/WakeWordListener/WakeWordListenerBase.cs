@@ -10,7 +10,6 @@ namespace ChatdollKit.Dialog
 {
     public class WakeWordListenerBase : VoiceRecorderBase, IWakeWordListener
     {
-        public float VoiceDetectionRaisedThreshold = -15.0f;
         public float VoiceRecognitionMaximumLength = 3.0f;
 
         public bool AutoStart = true;
@@ -43,9 +42,13 @@ namespace ChatdollKit.Dialog
 
         protected virtual void Start()
         {
-            if (VoiceDetectionThreshold >= 0)
+            if (VoiceDetectionThreshold > 0)
             {
                 VoiceDetectionThreshold = 20.0f * Mathf.Log10(VoiceDetectionThreshold);
+            }
+            else if (VoiceDetectionThreshold == 0)
+            {
+                VoiceDetectionThreshold = 0.0f;
             }
 
             if (AutoStart)
