@@ -151,5 +151,10 @@ namespace ChatdollKit.Dialog.Processor
                 throw ex;
             }
         }
+
+        public virtual async UniTask ClearStateAsync(string userId)
+        {
+            await StateStore.DeleteStateAsync(userId);
+        }
     }
 }
