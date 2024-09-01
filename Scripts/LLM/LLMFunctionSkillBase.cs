@@ -33,6 +33,7 @@ namespace ChatdollKit.LLM
             payloads.Add("RequestPayloads", request.Payloads);
             payloads.Add("StateData", state.Data);
             var llmSessionForHuman = await llmService.GenerateContentAsync(llmSession.Contexts, payloads, false, token: token);
+            llmSessionForHuman.OnStreamingEnd = llmSession.OnStreamingEnd;
 
             // Make response
             var response = new Response(request.Id, endTopic: false);
