@@ -569,6 +569,18 @@ namespace ChatdollKit.Dialog
             return dialogTokenSource.Token;
         }
 
+        public async UniTask ClearStateAsync(string userId = null)
+        {
+            if (requestProcessor is LocalRequestProcessor)
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    userId = GetClientIdDefault();
+                }
+                await ((LocalRequestProcessor)requestProcessor).ClearStateAsync(userId);
+            }           
+        }
+
         private void Update()
         {
             // Control mute
