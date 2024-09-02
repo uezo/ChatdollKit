@@ -405,6 +405,7 @@ namespace ChatdollKit.LLM.CommandR
     public class CommandRSession : LLMSession
     {
         public List<CommandRMessage> ChatHistories;
+        public string PartialStreamEndChunk;    // Used for WebGL
     }
 
     public class CommandRStreamResponse
