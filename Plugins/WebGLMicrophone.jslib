@@ -21,9 +21,7 @@ mergeInto(LibraryManager.library, {
         document.webGLMicrophone.isRecording = 1;
 
         if (navigator.mediaDevices.getUserMedia) {
-            navigator.mediaDevices.getUserMedia({ audio: { 
-                sampleRate: { ideal: 44100 },
-            }, })
+            navigator.mediaDevices.getUserMedia({ audio: true })
             .then(function(stream) {
                 // Setup nodes
                 var audioContext = document.webGLMicrophone.audioContext;
