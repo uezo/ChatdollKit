@@ -63,8 +63,12 @@ namespace ChatdollKit.Extension.StyleBertVits2
         {
             if (token.IsCancellationRequested) { return null; };
 
+            var textToSpeech = voice.Text.Replace(" ", "").Replace("\n", "").Trim();
+
+            if (string.IsNullOrEmpty(textToSpeech)) return null;
+
             // Make query
-            var url = EndpointUrl + $"/voice?text={UnityWebRequest.EscapeURL(voice.Text, Encoding.UTF8)}";
+            var url = EndpointUrl + $"/voice?text={UnityWebRequest.EscapeURL(textToSpeech, Encoding.UTF8)}";
             if (!string.IsNullOrEmpty(ModelName)) url += $"&model_name={UnityWebRequest.EscapeURL(ModelName, Encoding.UTF8)}";
             url += $"&model_id={ModelId}";
             if (!string.IsNullOrEmpty(SpeakerName)) url += $"&speaker_name={UnityWebRequest.EscapeURL(SpeakerName, Encoding.UTF8)}";
@@ -80,7 +84,7 @@ namespace ChatdollKit.Extension.StyleBertVits2
                 url += $"&assist_text={AssistText}";
                 url += $"&assist_text_weight={AssistTextWeight}";
             }
-            url += $"&style={Style}";
+            url += $"&style={UnityWebRequest.EscapeURL(Style, Encoding.UTF8)}";
             url += $"&style_weight={StyleWeight}";
             if (!string.IsNullOrEmpty(ReferenceAudioPath))
             {
