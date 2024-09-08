@@ -166,6 +166,7 @@ namespace ChatdollKit
                 {
                     // Change to idle mode immediately
                     Mode = AvatarMode.Idle;
+                    modeTimer = idleTimeout;
 
                     if (!token.IsCancellationRequested)
                     {
@@ -382,6 +383,7 @@ namespace ChatdollKit
                 {
                     DialogProcessor.StopDialog();
                     Mode = AvatarMode.Idle;
+                    modeTimer = idleTimeout;
                     return;
                 }
             }
