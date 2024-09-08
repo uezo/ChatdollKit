@@ -109,6 +109,7 @@ namespace ChatdollKit.LLM
                                 var avreq = new AnimatedVoiceRequest(startIdlingOnEnd: isFirstAnimatedVoice);
                                 isFirstAnimatedVoice = false;
                                 var textToSay = text;
+                                var ttsConfig = new TTSConfiguration();
 
                                 // Parse face tags and remove it from text to say
                                 var faceMatches = Regex.Matches(textToSay, facePattern);
@@ -132,6 +133,9 @@ namespace ChatdollKit.LLM
                                     var face = faceMatches[0].Groups[1].Value;
                                     avreq.AddFace(face, duration: 7.0f);
                                     logMessage = $"[face:{face}]" + logMessage;
+                                    // Set face as style parameter to voice
+                                    ttsConfig.Params["style"] = face;                                   
+                                    avreq.AnimatedVoices.Last().Voices.Last().TTSConfig = ttsConfig;
                                 }
 
                                 if (animMatches.Count > 0)
@@ -156,7 +160,7 @@ namespace ChatdollKit.LLM
                                 responseAnimations.Add(avreq);
 
                                 // Prefetch the voice from TTS service
-                                _ = modelController.TextToSpeechFunc.Invoke(new Voice(string.Empty, 0.0f, 0.0f, textToSay, string.Empty, null, VoiceSource.TTS, true, string.Empty), token);
+                                _ = modelController.TextToSpeechFunc.Invoke(new Voice(string.Empty, 0.0f, 0.0f, textToSay, string.Empty, ttsConfig, VoiceSource.TTS, true, string.Empty), token);
                             }
                         }
                     }
