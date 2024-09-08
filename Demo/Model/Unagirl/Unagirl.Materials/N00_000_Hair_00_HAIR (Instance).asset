@@ -9,7 +9,11 @@ Material:
   m_PrefabAsset: {fileID: 0}
   m_Name: N00_000_Hair_00_HAIR (Instance)
   m_Shader: {fileID: 4800000, guid: 1a97144e4ad27a04aafd70f7b915cedb, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
+  - MTOON_OUTLINE_COLOR_MIXED
+  - MTOON_OUTLINE_WIDTH_WORLD
   - _ALPHATEST_ON
   - _NORMALMAP
   m_InvalidKeywords: []
@@ -20,6 +24,7 @@ Material:
   stringTagMap:
     RenderType: TransparentCutout
   disabledShaderPasses: []
+  m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -65,7 +70,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _AlphaToMask: 0
+    - _AlphaToMask: 1
     - _BlendMode: 1
     - _BumpScale: 1
     - _CullMode: 0
@@ -79,8 +84,8 @@ Material:
     - _OutlineCullMode: 1
     - _OutlineLightingMix: 1
     - _OutlineScaledMaxDistance: 4.34
-    - _OutlineWidth: 0
-    - _OutlineWidthMode: 0
+    - _OutlineWidth: 0.037
+    - _OutlineWidthMode: 1
     - _ReceiveShadowRate: 1
     - _RimFresnelPower: 100
     - _RimLift: 0.1

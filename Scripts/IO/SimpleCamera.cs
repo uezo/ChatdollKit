@@ -41,7 +41,6 @@ namespace ChatdollKit.IO
         public bool IsCameraEnabled { get; private set; } = false;
         public bool IsAlreadyStarted { get; private set; } = false;
         private WebCamTexture webCamTexture;
-        private bool isStillImageAnimating;
 
         private void Awake()
         {
@@ -410,8 +409,6 @@ namespace ChatdollKit.IO
 
         private IEnumerator StillButtonFadeEffect()
         {
-            isStillImageAnimating = true;
-
             float originalAlpha = stillFadeImage.color.a;
 
             stillFadeImage.color = new Color(stillFadeImage.color.r, stillFadeImage.color.g, stillFadeImage.color.b, 0.7f);
@@ -430,7 +427,6 @@ namespace ChatdollKit.IO
 
             stillFadeImage.color = new Color(stillFadeImage.color.r, stillFadeImage.color.g, stillFadeImage.color.b, originalAlpha);
             stillFadeImage.gameObject.SetActive(false);
-            isStillImageAnimating = false;
         }
     }
 }
