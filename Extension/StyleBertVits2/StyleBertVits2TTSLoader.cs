@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using UnityEngine;
@@ -51,6 +52,7 @@ namespace ChatdollKit.Extension.StyleBertVits2
         public string AssistText;
         public float AssistTextWeight;
         public string ReferenceAudioPath;
+        public List<VoiceStyle> VoiceStyles;
 
         public void Configure(string endpointUrl, bool overwrite = false)
         {
@@ -64,8 +66,22 @@ namespace ChatdollKit.Extension.StyleBertVits2
             if (token.IsCancellationRequested) { return null; };
 
             var textToSpeech = voice.Text.Replace(" ", "").Replace("\n", "").Trim();
+            if (string.IsNullOrEmpty(textToSpeech) || textToSpeech == "」") return null;
 
-            if (string.IsNullOrEmpty(textToSpeech)) return null;
+            // Apply style
+            var voiceStyle = voice.GetTTSParam("style") as string;
+            var inlineStyle = Style;
+            if (!string.IsNullOrEmpty(voiceStyle))
+            {
+                foreach (var style in VoiceStyles)
+                {
+                    if (style.VoiceStyleValue == voiceStyle)
+                    {
+                        inlineStyle = style.StyleBertVITSStyle;
+                        break;
+                    }
+                }
+            }
 
             // Make query
             var url = EndpointUrl + $"/voice?text={UnityWebRequest.EscapeURL(textToSpeech, Encoding.UTF8)}";
@@ -84,7 +100,7 @@ namespace ChatdollKit.Extension.StyleBertVits2
                 url += $"&assist_text={AssistText}";
                 url += $"&assist_text_weight={AssistTextWeight}";
             }
-            url += $"&style={UnityWebRequest.EscapeURL(Style, Encoding.UTF8)}";
+            url += $"&style={UnityWebRequest.EscapeURL(inlineStyle, Encoding.UTF8)}";
             url += $"&style_weight={StyleWeight}";
             if (!string.IsNullOrEmpty(ReferenceAudioPath))
             {
@@ -124,6 +140,13 @@ namespace ChatdollKit.Extension.StyleBertVits2
         {
             var audioResp = await client.GetAsync(url, cancellationToken: token);
             return AudioConverter.PCMToAudioClip(audioResp.Data);
+        }
+
+        [Serializable]
+        public class VoiceStyle
+        {
+            public string VoiceStyleValue;
+            public string StyleBertVITSStyle;
         }
     }
 }

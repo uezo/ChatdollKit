@@ -23,7 +23,25 @@ namespace ChatdollKit.Model
         {
             get
             {
-                return Source == VoiceSource.Web ? Url : Text;
+                if (Source == VoiceSource.Web)
+                {
+                    return Url;
+                }
+                else if (Source == VoiceSource.TTS)
+                {
+                    if (GetTTSParam("style") != null)
+                    {
+                        return $"[{GetTTSParam("style")}]{Text}";
+                    }
+                    else
+                    {
+                        return Text;
+                    }
+                }
+                else
+                {
+                    return Text;
+                }
             }
         }
 
