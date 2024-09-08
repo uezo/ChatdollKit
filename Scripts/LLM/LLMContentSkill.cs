@@ -13,6 +13,12 @@ namespace ChatdollKit.LLM
 {
     public class LLMContentSkill : SkillBase
     {
+        [Header("Response stream settings")]
+        public List<string> SplitChars = new List<string>() { "。", "！", "？", ".", "!", "?" };
+        private List<string> splitCharsWithNewLine;
+        public List<string> OptionalSplitChars = new List<string>() { "、", "," };
+        public int MaxLengthBeforeOptionalSplit = 0;
+
         protected ILLMService llmService { get; set; }
         protected List<AnimatedVoiceRequest> responseAnimations { get; set; } = new List<AnimatedVoiceRequest>();
         protected Dictionary<string, Model.Animation> animationsToPerform { get; set; } = new Dictionary<string, Model.Animation>();
@@ -71,6 +77,9 @@ namespace ChatdollKit.LLM
         {
             IsParsing = true;
 
+            // Split current buffer with the marks that represents the end of a sentence
+            splitCharsWithNewLine = new List<string>(SplitChars) { "\n" };
+
             try
             {
                 var facePattern = @"\[face:(.+?)\]";
@@ -81,9 +90,9 @@ namespace ChatdollKit.LLM
                 while (!token.IsCancellationRequested)
                 {
                     // Split current buffer with the marks that represents the end of a sentence
-                    var splittedBuffer = llmSession.StreamBuffer.Replace("。", "。|").Replace("、", "、|").Replace("！", "！|").Replace("？", "？|").Replace(". ", ". |").Replace(", ", ", |").Replace("\n", "").Split('|');
+                    var splittedBuffer = SplitString(llmSession.StreamBuffer);
 
-                    if (llmSession.IsResponseDone && splitIndex == splittedBuffer.Length)
+                    if (llmSession.IsResponseDone && splitIndex == splittedBuffer.Count)
                     {
                         // Exit while loop when stream response ends and all sentences has been processed
                         break;
@@ -92,7 +101,7 @@ namespace ChatdollKit.LLM
                     if (splittedBuffer.Count() > splitIndex + 1 || llmSession.IsResponseDone)
                     {
                         // Process each splitted unprocessed sentence
-                        foreach (var text in splittedBuffer.Skip(splitIndex).Take(llmSession.IsResponseDone ? splittedBuffer.Length - splitIndex : 1))
+                        foreach (var text in splittedBuffer.Skip(splitIndex).Take(llmSession.IsResponseDone ? splittedBuffer.Count - splitIndex : 1))
                         {
                             splitIndex += 1;
                             if (!string.IsNullOrEmpty(text.Trim()))
@@ -164,6 +173,62 @@ namespace ChatdollKit.LLM
             {
                 IsParsing = false;
             }
+        }
+
+        private List<string> SplitString(string input)
+        {
+            var result = new List<string>();
+            var tempBuffer = "";
+
+            for (int i = 0; i < input.Length; i++)
+            {
+                tempBuffer += input[i];
+
+                if (IsSplitChar(input[i].ToString()))
+                {
+                    result.Add(tempBuffer);
+                    tempBuffer = "";
+                }
+                else if (IsOptionalSplitChar(input[i].ToString()))
+                {
+                    if (tempBuffer.Length >= MaxLengthBeforeOptionalSplit)
+                    {
+                        result.Add(tempBuffer);
+                        tempBuffer = "";
+                    }
+                }
+            }
+
+            if (!string.IsNullOrEmpty(tempBuffer))
+            {
+                result.Add(tempBuffer);
+            }
+
+            return result;
+        }
+
+        private bool IsSplitChar(string character)
+        {
+            foreach (var splitChar in splitCharsWithNewLine)
+            {
+                if (character == splitChar)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private bool IsOptionalSplitChar(string character)
+        {
+            foreach (var splitChar in OptionalSplitChars)
+            {
+                if (character == splitChar)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         protected virtual async UniTask PerformAnimatedVoiceAsync(ILLMSession llmSession, CancellationToken token)
