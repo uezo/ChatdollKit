@@ -18,11 +18,30 @@
 ... and more! See [ChatdollKit Documentation](Documents/manual.md) to learn details.
 
 
+## 💎 What's New in Version 0.8 Beta
+
+- **⚡ Optimized AI Dialog Processing**: We've boosted response speed with parallel processing and made it easier for you to customize behavior with your own code. Enjoy faster, more flexible AI conversations!
+- **🥰 Emotionally Rich Speech**: Adjusts vocal tone dynamically to match the conversation, delivering more engaging and natural interactions.
+- **🎤 Enhanced Microphone Control**: Microphone control is now more flexible than ever! Easily start/stop devices, mute/unmute, and adjust voice recognition thresholds independently.
+
+
 ## 🚀 Quick start
 
 You can learn how to setup ChatdollKit by watching this video that runs the demo scene(including chat with ChatGPT): https://www.youtube.com/watch?v=rRtm18QSJtc
 
 [![](https://img.youtube.com/vi/rRtm18QSJtc/0.jpg)](https://www.youtube.com/watch?v=rRtm18QSJtc)
+
+To run the demo for version 0.8, please follow the steps below after importing the dependencies:
+
+- Open scene `Demo/Demo08`.
+- Select `AIAvatarVRM` object in scene.
+- Set OpenAI API key to following components on inspector:
+  - ChatGPTService
+  - OpenAITTSLoader
+  - OpenAISpeechListener
+- Run on Unity Editor.
+- Say "こんにちは" or word longer than 3 characters.
+
 
 ### 📦 Import packages
 
