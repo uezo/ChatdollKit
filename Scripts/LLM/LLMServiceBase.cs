@@ -37,6 +37,7 @@ namespace ChatdollKit.LLM
         public int HistoryTurns = 10;
 
         public Action OnEnabled { get; set; }
+        public Action <Dictionary<string, string>, ILLMSession> HandleExtractedTags;
 
         public Func<ILLMSession, CancellationToken, UniTask> OnStreamingEnd { get; set; }
 
