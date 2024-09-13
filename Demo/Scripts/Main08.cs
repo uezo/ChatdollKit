@@ -76,6 +76,36 @@ namespace ChatdollKit.Demo
             var faceOnStart = new List<FaceExpression>();
             faceOnStart.Add(new FaceExpression("Joy", 3.0f));
             modelController.SetFace(faceOnStart);
+
+            // User defined tag example: Dynamic multi language switching
+            // Insert following instruction to ChatGPTService.
+            // ----
+            // If you want change current language, insert language tag like [language:en-US].
+            //
+            // Example:
+            // [language:en-US]From now on, let's talk in English.
+            // ----
+            // var chatGPTService = gameObject.GetComponent<ChatGPTService>();
+            // chatGPTService.HandleExtractedTags = (tags, session) =>
+            // {
+            //     if (tags.ContainsKey("language"))
+            //     {
+            //         var language = tags["language"].Contains("-") ? tags["language"].Split('-')[0] : tags["language"];
+            //         if (language != "ja")
+            //         {
+            //             var openAITTS = gameObject.GetComponent<OpenAITTSLoader>();
+            //             modelController.RegisterTTSFunction(openAITTS.Name, openAITTS.GetAudioClipAsync, true);
+            //         }
+            //         else
+            //         {
+            //             var voicevoxTTS = gameObject.GetComponent<VoicevoxTTSLoader>();
+            //             modelController.RegisterTTSFunction(voicevoxTTS.Name, voicevoxTTS.GetAudioClipAsync, true);
+            //         }
+            //         var openAIListener = gameObject.GetComponent<OpenAISpeechListener>();
+            //         openAIListener.Language = language;
+            //         Debug.Log($"Set language to {language}");
+            //     }
+            // };
         }
 
         private void Update()

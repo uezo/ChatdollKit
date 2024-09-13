@@ -19,6 +19,8 @@ namespace ChatdollKit.LLM
         public List<string> OptionalSplitChars = new List<string>() { "、", "," };
         public int MaxLengthBeforeOptionalSplit = 0;
 
+        public Action<string, AnimatedVoiceRequest> HandleSplittedText;
+
         protected ILLMService llmService { get; set; }
         protected List<AnimatedVoiceRequest> responseAnimations { get; set; } = new List<AnimatedVoiceRequest>();
         protected Dictionary<string, Model.Animation> animationsToPerform { get; set; } = new Dictionary<string, Model.Animation>();
@@ -153,6 +155,8 @@ namespace ChatdollKit.LLM
                                         Debug.LogWarning($"Animation {anim} is not registered.");
                                     }
                                 }
+
+                                HandleSplittedText?.Invoke(text, avreq);
 
                                 Debug.Log($"Assistant: {logMessage}");
 
