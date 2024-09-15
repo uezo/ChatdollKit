@@ -299,6 +299,12 @@ namespace ChatdollKit.LLM.CommandR
                 Debug.LogWarning($"Messages are not added to histories for response type is not success: {commandRSession.ResponseType}");
             }
 
+            // Ends with error
+            if (commandRSession.ResponseType == ResponseType.Error)
+            {
+                throw new Exception($"command R ends with error ({streamRequest.result}): {streamRequest.error}");
+            }
+
             commandRSession.IsResponseDone = true;
 
             if (DebugMode)

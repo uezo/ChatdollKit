@@ -160,6 +160,12 @@ namespace ChatdollKit.LLM.Claude
                 Debug.LogWarning($"Messages are not added to histories for response type is not success: {claudeSession.ResponseType}");
             }
 
+            // Ends with error
+            if (claudeSession.ResponseType == ResponseType.Error)
+            {
+                throw new Exception($"Claude ends with error");
+            }
+
             var extractedTags = ExtractTags(claudeSession.CurrentStreamBuffer);
 
             if (CaptureImage != null && extractedTags.ContainsKey("vision") && claudeSession.IsVisionAvailable)

@@ -281,6 +281,12 @@ namespace ChatdollKit.LLM.Gemini
                 Debug.LogWarning($"Messages are not added to histories for response type is not success: {geminiSession.ResponseType}");
             }
 
+            // Ends with error
+            if (geminiSession.ResponseType == ResponseType.Error)
+            {
+                throw new Exception($"Gemini ends with error ({streamRequest.result}): {streamRequest.error}");
+            }
+
             var extractedTags = ExtractTags(geminiSession.CurrentStreamBuffer);
 
             if (CaptureImage != null && extractedTags.ContainsKey("vision") && geminiSession.IsVisionAvailable)

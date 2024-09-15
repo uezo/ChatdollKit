@@ -170,6 +170,12 @@ namespace ChatdollKit.LLM.ChatGPT
                 Debug.LogWarning($"Messages are not added to histories for response type is not success: {chatGPTSession.ResponseType}");
             }
 
+            // Ends with error
+            if (chatGPTSession.ResponseType == ResponseType.Error)
+            {
+                throw new Exception($"ChatGPT ends with error");
+            }
+
             var extractedTags = ExtractTags(chatGPTSession.CurrentStreamBuffer);
 
             if (CaptureImage != null && extractedTags.ContainsKey("vision") && chatGPTSession.IsVisionAvailable)

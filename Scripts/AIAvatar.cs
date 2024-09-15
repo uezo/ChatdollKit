@@ -365,7 +365,7 @@ namespace ChatdollKit
             }
             if (!string.IsNullOrEmpty(ErrorFace))
             {
-                errorAnimatedVoiceRequest.AddFace(ErrorFace);
+                errorAnimatedVoiceRequest.AddFace(ErrorFace, 5.0f);
             }
             if (!string.IsNullOrEmpty(ErrorAnimationParamKey))
             {
