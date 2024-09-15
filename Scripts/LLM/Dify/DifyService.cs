@@ -220,6 +220,12 @@ namespace ChatdollKit.LLM.Dify
                 Debug.LogWarning($"Messages are not added to histories for response type is not success: {difySession.ResponseType}");
             }
 
+            // Ends with error
+            if (difySession.ResponseType == ResponseType.Error)
+            {
+                throw new Exception($"Dify ends with error ({streamRequest.result}): {streamRequest.error}");
+            }
+
             var extractedTags = ExtractTags(difySession.CurrentStreamBuffer);
 
             if (CaptureImage != null && extractedTags.ContainsKey("vision") && difySession.IsVisionAvailable)

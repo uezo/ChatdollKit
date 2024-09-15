@@ -173,6 +173,10 @@ namespace ChatdollKit.LLM
                     await UniTask.Delay(100, cancellationToken: token);
                 }
             }
+            catch (OperationCanceledException)
+            {
+                Debug.Log($"ParseAnimatedVoiceAsync was cancelled");
+            }
             catch (Exception ex)
             {
                 Debug.LogError($"Error at ParseAnimatedVoiceAsync: {ex.Message}\n{ex.StackTrace}");
