@@ -119,7 +119,7 @@ namespace ChatdollKit
                 }
 
                 // Show user message
-                if (!string.IsNullOrEmpty(text))
+                if (UserMessageWindow != null && !string.IsNullOrEmpty(text))
                 {
                     await UserMessageWindow.ShowMessageAsync(text, token);
                 }
@@ -216,7 +216,7 @@ namespace ChatdollKit
                             minRecordingDuration: conversationMinRecordingDuration,
                             maxRecordingDuration: conversationMaxRecordingDuration
                         );
-                        UserMessageWindow.Show("Listening...");                        
+                        UserMessageWindow?.Show("Listening...");    
                     }
                 }
                 else
@@ -228,7 +228,7 @@ namespace ChatdollKit
                             minRecordingDuration: idleMinRecordingDuration,
                             maxRecordingDuration: idleMaxRecordingDuration
                         );
-                        UserMessageWindow.Hide();
+                        UserMessageWindow?.Hide();
                     }
                 }
             }
