@@ -168,6 +168,11 @@ namespace ChatdollKit.LLM.Claude
 
             var extractedTags = ExtractTags(claudeSession.CurrentStreamBuffer);
 
+            if (extractedTags.Count > 0 && HandleExtractedTags != null)
+            {
+                HandleExtractedTags(extractedTags, claudeSession);
+            }
+
             if (CaptureImage != null && extractedTags.ContainsKey("vision") && claudeSession.IsVisionAvailable)
             {
                 // Prevent infinit loop
