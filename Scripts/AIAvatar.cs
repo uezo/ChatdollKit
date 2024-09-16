@@ -11,6 +11,8 @@ namespace ChatdollKit
 {
     public class AIAvatar : MonoBehaviour
     {
+        public static string VERSION = "0.8.1";
+
         [Header("Avatar lifecycle settings")]
         [SerializeField]
         private float conversationTimeout = 10.0f;

@@ -18,7 +18,14 @@
 ... and more! See [ChatdollKit Documentation](Documents/manual.md) to learn details.
 
 
-## 💎 What's New in Version 0.8 Beta
+## 💎 What's New in Version 0.8.1
+
+- **🏷️ User-Defined Tags Support**: You can now include custom tags in AI responses, enabling dynamic actions. For instance, embed language codes in replies to switch between multiple languages on the fly during conversations.
+- **🌐 External Control via Socket**: Now supports external commands through Socket communication. Direct conversation flow, trigger specific phrases, or control expressions and gestures, unlocking new use cases like AI Vtubers and remote customer service. Check out the client-side demo here: https://gist.github.com/uezo/9e56a828bb5ea0387f90cc07f82b4c15
+
+---
+
+### Previous Updates (0.8.0 Beta)
 
 - **⚡ Optimized AI Dialog Processing**: We've boosted response speed with parallel processing and made it easier for you to customize behavior with your own code. Enjoy faster, more flexible AI conversations!
 - **🥰 Emotionally Rich Speech**: Adjusts vocal tone dynamically to match the conversation, delivering more engaging and natural interactions.
@@ -94,21 +101,21 @@ Lastly, set the value to `Idle Animation Value` on the inspector of ModelControl
 <img src="Documents/Images/idleanimation02.png" width="640">
 
 
-### 🦜 DialogController
+### 🦜 DialogController　(<= v0.7.x)
 
 On the inspector of `DialogController`, set `Wake Word` to start conversation (e.g. hello / こんにちは🇯🇵), `Cancel Word` to stop comversation (e.g. end / おしまい🇯🇵), `Prompt Voice` to require voice request from user (e.g. what's up? / どうしたの？🇯🇵).
 
 <img src="Documents/Images/dialogcontroller.png" width="640">
 
 
-### 🍣 ChatdollKit
+### 🍣 ChatdollKit　(<= v0.7.x)
 
 Select the speech service (OpenAI/Azure/Google/Watson) you use and set API key and some properties like Region and BaseUrl on inspector of ChatdollKit.
 
 <img src="Documents/Images/chatdollkit.png" width="640">
 
 
-### 🍳 Skill
+### 🍳 Skill　(<= v0.7.x)
 
 Attach the common components to use LLM:
 
@@ -161,7 +168,7 @@ format: https://{your-resource-name}.openai.azure.com/openai/deployments/{deploy
 NOTE: `Model` on inspector is ignored. Engine in url is used.
 
 
-## 👷‍♀️ Build your own app
+## 👷‍♀️ Build your own app　(<= v0.7.x)
 
 See the `MultiSkills` example. That is more rich application including:
 
