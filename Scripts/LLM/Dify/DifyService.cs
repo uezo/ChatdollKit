@@ -228,6 +228,11 @@ namespace ChatdollKit.LLM.Dify
 
             var extractedTags = ExtractTags(difySession.CurrentStreamBuffer);
 
+            if (extractedTags.Count > 0 && HandleExtractedTags != null)
+            {
+                HandleExtractedTags(extractedTags, difySession);
+            }
+
             if (CaptureImage != null && extractedTags.ContainsKey("vision") && difySession.IsVisionAvailable)
             {
                 // Prevent infinit loop

@@ -178,6 +178,11 @@ namespace ChatdollKit.LLM.ChatGPT
 
             var extractedTags = ExtractTags(chatGPTSession.CurrentStreamBuffer);
 
+            if (extractedTags.Count > 0 && HandleExtractedTags != null)
+            {
+                HandleExtractedTags(extractedTags, chatGPTSession);
+            }
+
             if (CaptureImage != null && extractedTags.ContainsKey("vision") && chatGPTSession.IsVisionAvailable)
             {
                 // Prevent infinit loop

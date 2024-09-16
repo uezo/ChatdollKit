@@ -289,6 +289,11 @@ namespace ChatdollKit.LLM.Gemini
 
             var extractedTags = ExtractTags(geminiSession.CurrentStreamBuffer);
 
+            if (extractedTags.Count > 0 && HandleExtractedTags != null)
+            {
+                HandleExtractedTags(extractedTags, geminiSession);
+            }
+
             if (CaptureImage != null && extractedTags.ContainsKey("vision") && geminiSession.IsVisionAvailable)
             {
                 // Prevent infinit loop
