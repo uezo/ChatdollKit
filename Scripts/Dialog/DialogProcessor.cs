@@ -21,6 +21,7 @@ namespace ChatdollKit.Dialog
             Error
         }
         public DialogStatus Status { get; private set; }
+        private string processingId { get; set; }
         private ISkillRouter skillRouter { get; set; }
         private IStateStore stateStore { get; set; }
         private CancellationTokenSource dialogTokenSource { get; set; }
@@ -60,9 +61,12 @@ namespace ChatdollKit.Dialog
             }
 
             Status = DialogStatus.Initializing;
+            processingId = Guid.NewGuid().ToString();
+            var currentProcessingId = processingId;
 
             // Stop running dialog and get cancellation token
-            StopDialog(true);
+            await StopDialog(true);
+
             var token = GetDialogToken();
             var endConversation = false;
 
@@ -129,7 +133,7 @@ namespace ChatdollKit.Dialog
 
                     Debug.LogError($"Error at StartDialogAsync: {ex.Message}\n{ex.StackTrace}");
                     // Stop running animation and voice then get new token to say error
-                    StopDialog(true);
+                    await StopDialog(true);
                     token = GetDialogToken();
                     if (OnErrorAsync != null)
                     {
@@ -153,12 +157,16 @@ namespace ChatdollKit.Dialog
                     }
                 }
 
-                Status = DialogStatus.Idling;
+                if (currentProcessingId == processingId)
+                {
+                    // Reset status when another dialog is not started
+                    Status = DialogStatus.Idling;
+                }
             }
         }
 
         // Stop chat
-        public async void StopDialog(bool forSuccessiveDialog = false)
+        public async UniTask StopDialog(bool forSuccessiveDialog = false)
         {
             // Cancel the tasks and dispose the token source
             if (dialogTokenSource != null)

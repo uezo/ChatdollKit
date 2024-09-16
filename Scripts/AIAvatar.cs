@@ -343,7 +343,7 @@ namespace ChatdollKit
 
         public void StopChat()
         {
-            DialogProcessor.StopDialog();
+            _ = DialogProcessor.StopDialog();
         }
 
         public void AddProcessingPresentaion(List<Model.Animation> animations, List<FaceExpression> faces)
@@ -381,7 +381,7 @@ namespace ChatdollKit
             {
                 if (!string.IsNullOrEmpty(ExtractCancelWord(text)))
                 {
-                    DialogProcessor.StopDialog();
+                    await DialogProcessor.StopDialog();
                     Mode = AvatarMode.Idle;
                     modeTimer = idleTimeout;
                     return;
