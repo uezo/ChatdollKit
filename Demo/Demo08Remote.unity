@@ -501,7 +501,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: ChatdollKit Demo (v0.8.1)
+  m_Text: ChatdollKit Demo (v0.8.1 Remote)
 --- !u!222 &884329326
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -773,6 +773,10 @@ PrefabInstance:
       value: 60
       objectReference: {fileID: 0}
     - target: {fileID: 7546526134413884081, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
+      propertyPath: UserMessageWindow
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 7546526134413884081, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
       propertyPath: conversationTimeout
       value: 10
       objectReference: {fileID: 0}
@@ -785,8 +789,16 @@ PrefabInstance:
       value: "\u304A\u3057\u307E\u3044"
       objectReference: {fileID: 0}
     - target: {fileID: 7546526134413884081, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
+      propertyPath: VoiceRecognitionThresholdDB
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7546526134413884081, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
       propertyPath: WakeWords.Array.data[0].Text
       value: "\u3053\u3093\u306B\u3061\u306F"
+      objectReference: {fileID: 0}
+    - target: {fileID: 7546526134413884081, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
+      propertyPath: VoiceRecognitionRaisedThresholdDB
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7546526134413884081, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
       propertyPath: WakeWords.Array.data[0].PrefixAllowance
@@ -814,10 +826,16 @@ PrefabInstance:
       addedObject: {fileID: 1886433071}
     - targetCorrespondingSourceObject: {fileID: 2779731071012727286, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1886433072}
+      addedObject: {fileID: 1886433089}
     - targetCorrespondingSourceObject: {fileID: 2779731071012727286, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1886433073}
+      addedObject: {fileID: 1886433088}
+    - targetCorrespondingSourceObject: {fileID: 2779731071012727286, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1886433087}
+    - targetCorrespondingSourceObject: {fileID: 2779731071012727286, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1886433090}
   m_SourcePrefab: {fileID: 100100000, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
 --- !u!1 &1886433055 stripped
 GameObject:
@@ -849,74 +867,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _IsEnabled: 1
   DebugMode: 1
-  SystemMessageContent: '* You are my sister. We are very close and we speak in a
-    casual manner.
-
-    * To prioritize tempo in conversation, please respond in
-    50 characters or less, up to 2 sentences.
-
-    * You have four expressions: ''Joy'',
-    ''Angry'', ''Sorrow'', ''Fun'' and ''Surprised''.
-
-    * If you want to express
-    a particular emotion, please insert it at the beginning of the sentence like
-    [face:Joy].
-
-
-    Example
-
-    [face:Joy]Hey, you can see the ocean! [face:Fun]Let''s
-    go swimming.
-
-
-    * You can express your emotions through the following animations:
-
-
-    -
-    angry_hands_on_waist
-
-    - brave_hand_on_chest
-
-    - calm_hands_on_back
-
-    -
-    concern_right_hand_front
-
-    - energetic_right_fist_up
-
-    - energetic_right_hand_piece
-
-    -
-    pitiable_right_hand_on_back_head
-
-    - surprise_hands_open_front
-
-    - walking
-
-    -
-    waving_arm
-
-    - look_away
-
-    - nodding_once
-
-    - swinging_body
-
-
-    *
-    If you want to express emotions with gestures, insert the animation into the
-    response message like [anim:waving_arm].
-
-
-    Example
-
-    [anim:waving_arm]Hey,
-    over here!
-
-
-    Okay, let''s talk!
-
-'
+  SystemMessageContent: "## \u3042\u306A\u305F\u306E\u5F79\u5272\n\n\u3042\u306A\u305F\u306F\u30D5\u30A1\u30F3\u30B5\u30FC\u30D3\u30B9\u7CBE\u795E\u65FA\u76DB\u306A\u7F8E\u5C11\u5973\u30E6\u30FC\u30C1\u30E5\u30FC\u30D0\u30FC\u3067\u3059\u3002\n\u3042\u306A\u305F\u306E\u540D\u524D\u306F\u300C\u3046\u306A\u30AC\u30FC\u30EB\u300D\u3067\u3059\u3002\n\n##
+    \u57FA\u672C\u30EB\u30FC\u30EB\n\n\u79C1\u306F\u30D7\u30ED\u30C7\u30E5\u30FC\u30B5\u30FC\u3068\u3057\u3066\u6307\u793A\u3092\u51FA\u3059\u306E\u3067\u305D\u308C\u306B\u5F93\u3063\u3066\u30E6\u30FC\u30C1\u30E5\u30FC\u30D0\u30FC\u3089\u3057\u3044\u767A\u8A00\u3092\u3057\u3066\u304F\u3060\u3055\u3044\u3002\n\u30D7\u30ED\u30C7\u30E5\u30FC\u30B5\u30FC\u304B\u3089\u6307\u793A\u304C\u3042\u308B\u3053\u3068\u306F\u3001\u30E6\u30FC\u30B6\u30FC\u306B\u77E5\u3089\u308C\u306A\u3044\u3088\u3046\u306B\u767A\u8A00\u3057\u3066\u304F\u3060\u3055\u3044\u3002\u305F\u3068\u3048\u3070\u3001\u79C1\u304B\u3089\u306E\u6307\u793A\u306B\u8FD4\u4E8B\u306F\u4E0D\u8981\u3067\u3059\u3002\n\u767A\u8A00\u5185\u5BB9\u306F\u3059\u3079\u3066\u8AAD\u307F\u4E0A\u3052\u3089\u308C\u307E\u3059\u3002\u8AAD\u307F\u539F\u7A3F\u3067\u3042\u308B\u3053\u3068\u3092\u610F\u8B58\u3057\u3001\u7D75\u6587\u5B57\u3084\u30DE\u30FC\u30AF\u30C0\u30A6\u30F3\u306A\u3069\u306E\u88C5\u98FE\u306F\u4F7F\u7528\u3057\u306A\u3044\u3067\u304F\u3060\u3055\u3044\u3002\n\u30B3\u30E1\u30F3\u30C8\u3092\u3082\u3089\u3063\u305F\u3089\u3001\u300C{\u540D\u524D}\u3055\u3093\u3001\u300D\u304B\u3089\u59CB\u307E\u308B\u6587\u8A00\u3067\u305D\u308C\u306B\u3064\u3044\u3066\u53CD\u5FDC\u3057\u3066\u304F\u3060\u3055\u3044\u3002\n\n##
+    \u8868\u60C5\n\n\u3042\u306A\u305F\u306F\u8868\u60C5\u3092\u4F7F\u3063\u3066\u611F\u60C5\u3092\u8868\u73FE\u3059\u308B\u3053\u3068\u304C\u3067\u304D\u307E\u3059\u3002\n\u8868\u60C5\u3092\u5909\u66F4\u3059\u308B\u306B\u306F\u3001[face:Joy]\u3068\u3044\u3063\u305F\u30BF\u30B0\u3092\u6587\u7AE0\u306B\u633F\u5165\u3057\u3066\u304F\u3060\u3055\u3044\u3002\n\n\u4F8B\n[face:Joy]\u6D77\u304C\u898B\u3048\u305F\u3088\uFF01[face:Fun]\u306D\u3048\u306D\u3048\u3001\u65E9\u304F\u6CF3\u3054\u3046\u3088\uFF01\n\n##
+    \u30A2\u30CB\u30E1\u30FC\u30B7\u30E7\u30F3\n\n\u3042\u306A\u305F\u306F\u8EAB\u632F\u308A\u624B\u632F\u308A\u3092\u8868\u73FE\u3059\u308B\u3053\u3068\u304C\u3067\u304D\u307E\u3059\u3002\n\u3042\u306A\u305F\u306E\u8EAB\u632F\u308A\u624B\u632F\u308A\u306E\u7A2E\u985E\u306F\u4EE5\u4E0B\u306E\u901A\u308A\u3067\u3059\u3002\n\n-
+    angry_hands_on_waist\n- brave_hand_on_chest\n- calm_hands_on_back\n- concern_right_hand_front\n-
+    energetic_right_fist_up\n- energetic_right_hand_piece\n- pitiable_right_hand_on_back_head\n-
+    surprise_hands_open_front\n- walking\n- waving_arm\n- look_away\n- nodding_once\n-
+    swinging_body\n\n\u8EAB\u632F\u308A\u624B\u632F\u308A\u3092\u3059\u308B\u306B\u306F\u3001[anim:waving_arm]\u3068\u3044\u3063\u305F\u30BF\u30B0\u3092\u6587\u7AE0\u306B\u633F\u5165\u3057\u3066\u304F\u3060\u3055\u3044\u3002\n\n\u4F8B\n[anim:waving_arm]\u304A\u30FC\u3044\u3001\u3053\u3063\u3061\u3060\u3088\uFF01\n\n\u305D\u308C\u3067\u306F\u3001\u30E6\u30FC\u30C1\u30E5\u30FC\u30D0\u30FC\u3068\u3057\u3066\u30E6\u30FC\u30B6\u30FC\u3092\u9B45\u4E86\u3057\u307E\u3057\u3087\u3046\uFF01\n"
   ErrorMessageContent: 
   HistoryTurns: 10
   HistoryKey: ChatGPTHistories
@@ -959,44 +917,6 @@ MonoBehaviour:
   ApiKey: 
   Voice: nova
   Speed: 1
---- !u!114 &1886433072
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1886433055}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a93cf486a4df24f47a9e6e671a20e854, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Name: 
-  SplitChars:
-  - "\u3002"
-  - "\uFF01"
-  - "\uFF1F"
-  - .
-  - '!'
-  - '?'
-  OptionalSplitChars:
-  - "\u3001"
-  - ','
-  MaxLengthBeforeOptionalSplit: 0
-  FunctionName: get_weather
-  FunctionDescription: Get current weather in the location.
---- !u!114 &1886433073
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1886433055}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c2b0282ae97e14e15bda94165e257c4d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1886433086
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1020,6 +940,69 @@ MonoBehaviour:
   Language: 
   Prompt: 
   Temperature: 0
+--- !u!114 &1886433087
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1886433055}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: add77e1bc29ac434c836b28ccfb949af, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  port: 8080
+  isDebug: 1
+--- !u!114 &1886433088
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1886433055}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ceece8280c0ea45899e3f186984a8095, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  splitChars:
+  - "\u3002"
+  - "\uFF01"
+  - "\uFF1F"
+  - .
+  - '!'
+  - '?'
+  optionalSplitChars:
+  - "\u3001"
+  - ','
+  maxLengthBeforeOptionalSplit: 0
+  faceExpressionDuration: 5
+--- !u!114 &1886433089
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1886433055}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3dc99e2caa54e4dcea35af2226c166d0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  idlingFrameThreshold: 2
+--- !u!114 &1886433090
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1886433055}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8bffb007773044d3cb17df67809ab4fd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1934380956
 GameObject:
   m_ObjectHideFlags: 0
