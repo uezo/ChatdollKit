@@ -183,8 +183,18 @@ namespace ChatdollKit.Model
 
                 if (IsSplitChar(input[i].ToString()))
                 {
-                    result.Add(tempBuffer);
-                    tempBuffer = "";
+                    // Check if the next character is also a split character
+                    if (i + 1 < input.Length && IsSplitChar(input[i + 1].ToString()))
+                    {
+                        // Continue the buffer if the next character is also a split character
+                        continue;
+                    }
+                    else
+                    {
+                        // Add to result if it's the end of the sequence of split characters
+                        result.Add(tempBuffer);
+                        tempBuffer = "";
+                    }
                 }
                 else if (IsOptionalSplitChar(input[i].ToString()))
                 {
