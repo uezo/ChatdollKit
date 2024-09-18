@@ -1,173 +1,567 @@
 ﻿# ChatdollKit
-ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャットボットを作るためのフレームワークです。 [🇬🇧README in English is here](https://github.com/uezo/ChatdollKit/blob/master/README.ja.md)
+ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャットボットを作るためのフレームワークです。 [🇬🇧README in English is here](https://github.com/uezo/ChatdollKit/blob/master/README.md)
 
 - [🍎 iOS App: おしゃべりAI](https://apps.apple.com/ja/app/oshaberiai/id6446883638) プロンプトでキャラメイク×VRMでお好みの3Dモデル×VOICEVOXでお好みの声でおしゃべりできるバーチャルエージェントアプリ。ChatdollKitで開発。
 - [🇯🇵 Live demo in Japanese](https://unagiken.com/chatdollkit/playground/index.html) OpenAI API Keyをご用意ください。「こんにちは」と話しかけると会話がスタートします。
 - [🇬🇧 Live demo English](https://uezo.blob.core.windows.net/github/chatdollkit/demo_en/index.html) Say "Hello" to start conversation. This demo just returns what you say (echo).
 
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit-overview.png" width="720">
+<img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit-overview-080beta.png" width="720">
 
-# ✨ 主な特長
+## ✨ 主な特長
 
-- モデル制御
-    - 発話とアニメーションの同期実行
-    - 表情の制御
-    - まばたきと口パク
+- **生成AI対応**: ChatGPT、Anthropic Claude、Google Gemini Pro、Difyなど、複数のLLMをサポートし、ファンクションコーリング（ChatGPT/Gemini）やマルチモーダル機能にも対応
+- **3Dモデル表現**: 発話とモーションの同期、表情やアニメーションの自律制御、瞬きや口の動きの同期をサポート
+- **対話制御**: 音声認識と音声合成（OpenAI、Azure、Google、Watson、VOICEVOX、VOICEROIDなど）の統合、対話状態（コンテキスト）の管理、意図抽出とトピックのルーティング、ウェイクワード検出をサポート
+- **マルチプラットフォーム**: Windows、Mac、Linux、iOS、Android、およびその他のUnityサポートプラットフォーム（VR、AR、WebGLを含む）に対応
 
-- Generative AI
-    - マルチLLM: ChatGPT / Azure OpenAI Service, Anthropic Claude, Google Gemini Pro and others
-    - Agents: Function Calling (ChatGPT / Gemini) or your prompt engineering
-    - マルチモーダル: GPT-4V and Gemini-Pro-Visionに対応
-    - 感情表現: Autonomous face expression and animation
 
-- 対話制御
-    - 音声認識・テキスト読み上げ（OpenAI、Azure、Google、Watson、VOICEROID、VOICEVOX等）
-    - 対話の文脈・ステート管理（生成AIではコンテキスト、メモリー管理も含む）
-    - 発話意図の抽出と対話トピックのルーティング
+## 💎 バージョン0.8.1の新機能
 
-- 入出力
-    - ウェイクワードによる起動
-    - カメラとQRコードリーダー
+- **🏷️ ユーザー定義タグのサポート**: AIの応答にカスタムタグを含めることができるようになり、動的なアクションが可能になりました。例えば、会話中に複数の言語を切り替えるために、応答に言語コードを埋め込むことができます。
+- **🌐 ソケットを介した外部制御**: ソケット通信を通じた外部コマンドをサポートするようになりました。会話の流れを指示したり、特定のフレーズをトリガーしたり、表情やジェスチャーを制御したりすることができ、AI Vtuberやリモートカスタマーサービスなどの新しいユースケースが可能になります。クライアント側のデモはこちら：https://gist.github.com/uezo/9e56a828bb5ea0387f90cc07f82b4c15
 
-- プラットフォーム
-    - Windows / Mac / Linux / iOS / Android and anywhere Unity supports
-    - VR / AR / WebGL / Gatebox
+---
 
-... などなど！
-本READMEのほか、[ChatdollKit マニュアル](Documents/manual.ja.md)に各機能の網羅的な説明がありますので参照ください。
+### 以前の更新内容（0.8.0 Beta）
 
-# 🚀 クイックスタート
+- **⚡ AI対話処理の最適化**: 並列処理によってレスポンス速度を向上させ、独自のコードでの動作のカスタマイズも容易になりました。より高速で柔軟なAI会話をお楽しみください！
+- **🥰 感情豊かな発話**: 会話に合わせて声のトーンを動的に調整し、よりエンゲージングで自然な対話を実現します。
+- **🎤 マイク制御の強化**: マイク制御がこれまで以上に柔軟になりました！デバイスの開始/停止、ミュート/アンミュート、音声認識のしきい値調整を個別に簡単に行えます。
+
+
+## 🚀 クイックスタート
 
 セットアップ手順についてはこちらの動画をご覧いただくとより簡単に理解できます。ChatGPTと会話するデモシーンを動かせるまでの手順です: https://www.youtube.com/watch?v=rRtm18QSJtc
 
 [![](https://img.youtube.com/vi/rRtm18QSJtc/0.jpg)](https://www.youtube.com/watch?v=rRtm18QSJtc)
 
-## 📦 パッケージのインポート
+バージョン0.8のデモを実行するには、依存関係をインポートした後、以下の手順に従ってください：
 
-最新版の [ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases) をダウンロードして、任意のUnityプロジェクトにインポートしてください。また、以下の依存ライブラリもインポートが必要です。
+- シーン `Demo/Demo08` を開きます。
+- シーン内の `AIAvatarVRM` オブジェクトを選択します。
+- インスペクタで以下のコンポーネントにOpenAI APIキーを設定します：
+  - ChatGPTService
+  - OpenAITTSLoader
+  - OpenAISpeechListener
+- Unityエディタで実行します。
+- 「こんにちは」または3文字以上の単語を話しかけます。
 
-- `Burst` from Unity Package Manager (Window > Package Manager)
-- [UniTask](https://github.com/Cysharp/UniTask)(Ver.2.3.1)
-- [uLipSync](https://github.com/hecomi/uLipSync)(v2.6.1)
-- For VRM model: [UniVRM](https://github.com/vrm-c/UniVRM/releases/tag/v0.89.0)(v0.89.0) and [VRM Extension](https://github.com/uezo/ChatdollKit/releases)
-- JSON.NET: プロジェクトにない場合は Package Manager > [+] > Add package from git URL... > com.unity.nuget.newtonsoft-json から追加
-- [Azure Speech SDK](https://learn.microsoft.com/ja-jp/azure/ai-services/speech-service/quickstarts/setup-platform?pivots=programming-language-csharp&tabs=macos%2Cubuntu%2Cdotnetcli%2Cunity%2Cjre%2Cmaven%2Cnodejs%2Cmac%2Cpypi#install-the-speech-sdk-for-unity): (Optional) ストリームによるリアルタイム音声認識を行う場合には必要
+
+## 🔖 もくじ
+
+- [📦 新規プロジェクトのセットアップ](#-新規プロジェクトのセットアップ)
+  - [依存関係のインポート](#依存関係のインポート)
+  - [リソースの準備](#リソースの準備)
+  - [AIAvatarVRMプレハブ](#aiavatarvrmプレハブ)
+  - [ModelController](#modelcontroller)
+  - [Animator](#animator)
+  - [AIAvatar](#aiavatar)
+  - [LLMサービス](#llmサービス)
+  - [音声サービス](#音声サービス)
+  - [マイクコントローラー](#マイクコントローラー)
+  - [実行](#実行)
+- [🎓 LLM Service](#-llm-service)
+  - [基本設定](#基本設定)
+  - [表情](#表情)
+  - [アニメーション](#アニメーション)
+  - [User Defined Tag](#user-defined-tag)
+  - [Multi Modal](#multi-modal)
+- [🗣️ Speech Synthesizer (Text-to-Speech)](#-speech-synthesizer-text-to-speech)
+  - [Make custom TTSLoader](#make-custom-ttsloader)
+  - [Performance and Quality Tuning](#performance-and-quality-tuning)
+- [🎧 Speech Listener (Speech-to-Text)](#-speech-listener-speech-to-text)
+  - [Settings on AIAvatar Inspector](#settings-on-aiavatar-inspector)
+- [⏰ Wake Word Detection](#-wake-word-detection)
+  - [Wake Words](#wake-words)
+  - [Cancel Words](#cancel-words)
+  - [Ignore Words](#ignore-words)
+  - [Wake Length](#wake-length)
+- [⚡️ AI Agent (Tool Call)](#-ai-agent-tool-call)
+- [🎙️ Devices](#-devices)
+  - [Microphone](#microphone)
+  - [Camera](#camera)
+- [💃 ３D Model Control](#-３d-model-control)
+  - [Idle Animations](#idle-animations)
+  - [Control by Script](#control-by-script)
+- [🎚️ UI Components](#-ui-components)
+- [🛜 Remote Access](#-remote-access)
+  - [ChatdollKit Remote Client](#chatdollkit-remote-client)
+- [🌐 WebGLでの実行](#-webglでの実行)
+- [❤️ 謝辞](#-謝辞)
+
+
+## 📦 新規プロジェクトのセットアップ
+
+VRMモデルを使用したセットアップの手順は以下の通りです。VRChatのモデルを使用する場合の手順は、[README v0.7.7](https://github.com/uezo/ChatdollKit/blob/v0.7.7/README.md#-modelcontroller)を参照してください。
+
+### 依存関係のインポート
+
+最新版の[ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases)をダウンロードし、以下の依存関係をインポートした後、Unityプロジェクトにインポートしてください：
+
+- Unity Package Manager（ウィンドウ > パッケージマネージャー）から `Burst`
+- [UniTask](https://github.com/Cysharp/UniTask)（Ver.2.5.4でテスト済み）
+- [uLipSync](https://github.com/hecomi/uLipSync)（v3.1.0でテスト済み）
+- [UniVRM](https://github.com/vrm-c/UniVRM/releases/tag/v0.89.0)（v0.89.0）
+- [ChatdollKit VRM Extension](https://github.com/uezo/ChatdollKit/releases)
+- JSON.NET: プロジェクトにJSON.NETがない場合、パッケージマネージャーから[+] > gitのURLからパッケージを追加... > com.unity.nuget.newtonsoft-jsonを追加してください
+- [Azure Speech SDK](https://learn.microsoft.com/ja-jp/azure/ai-services/speech-service/quickstarts/setup-platform?pivots=programming-language-csharp&tabs=macos%2Cubuntu%2Cdotnetcli%2Cunity%2Cjre%2Cmaven%2Cnodejs%2Cmac%2Cpypi#install-the-speech-sdk-for-unity): （オプション）ストリームを使用したリアルタイム音声認識に必要です
 
 <img src="Documents/Images/burst.png" width="640">
 
+### リソースの準備
 
-## 🐟 リソースの準備
+3Dモデルをシーンに追加し、好みに合わせて調整します。また、シェーダーなど、3Dモデルに必要なリソースをインストールします。
 
-お好みの3Dモデルをシーンに配置してください。シェーダーやダイナミックボーンなど必要に応じてセットアップしておいてください。なおこの手順で使っているモデルはシグネットちゃんです。とてもかわいいですね。 https://booth.pm/ja/items/1870320
+そして、アニメーションクリップをインポートします。このREADMEでは、デモでも使用されている[Anime Girls Idle Animations Free](https://assetstore.unity.com/packages/3d/animations/anime-girl-idle-animations-free-150406)を使用します。プロ版の購入をおすすめします👍
 
-ここでアニメーションクリップを配置しておきましょう。この手順では[Anime Girls Idle Animations Free](https://assetstore.unity.com/packages/3d/animations/anime-girl-idle-animations-free-150406)というモーション集を利用しています。大変使い勝手が良いので気に入ったら有償版の購入をオススメします。
+### AIAvatarVRMプレハブ
 
+`ChatdollKit/Prefabs/AIAvatarVRM`プレハブをシーンに追加します。また、UIコンポーネントを使用するためにEventSystemを作成します。
 
-## 🎁 ChatdollKitプレファブの配置
+<img src="Documents/Images/readme081/01_aiavatar_prefab.png" width="640">
 
-ChatdollKit/Prefabs/ChatdollKit` または `ChatdollKit/Prefabs/ChatdollKitVRM` をシーンに配置します。また、UI操作のための EventSystem もあわせて追加してください。
+### ModelController
 
-<img src="Documents/Images/chatdollkit_to_scene.png" width="640">
+ModelControllerのコンテキストメニューから`Setup ModelController`を選択します。
 
+<img src="Documents/Images/readme081/02_setup_modelcontroller.png" width="640">
 
-## 🐈 ModelController
+### Animator
 
-ModelControllerのコンテキストメニューから `Setup ModelController` を選択してください。VRM*以外の*モデルを使用している場合、選択後にまばたき用のシェイプキーが `Blink Blend Shape Name` に設定されているか確認しましょう。誤っていたり設定されていない場合は手動で設定してください。
+ModelControllerのコンテキストメニューから`Setup Animator`を選択し、アニメーションクリップを含むフォルダまたはその親フォルダを選択します。この場合、`01_Idles`と`03_Others`のアニメーションクリップをオーバーライドブレンディング用に`Base Layer`に、`02_Layers`をアディティブブレンディング用に`Additive Layer`に配置します。
 
-<img src="Documents/Images/modelcontroller.png" width="640">
+<img src="Documents/Images/readme081/03_cdk_setup_animator.gif" width="640">
 
+次に、選択したフォルダに新しく作成されたAnimatorControllerの`Base Layer`を確認します。アイドルアニメーションとして設定したい状態への遷移の値を確認します。
 
-## 💃 Animator
+<img src="Documents/Images/readme081/04_check_idle_animation.png" width="640">
 
-ModelControllerのコンテキストメニューから `Setup Animator` を選択してください。ダイアログが表示されたら、アニメーションクリップの保存先またはその親フォルダを選択します。この動画の例では、`01_Idles` と `03_Others` をメインの `Base Layer` に、 `02_Layers` を合成用の `Additive Layer` に配置しています。
+最後に、ModelControllerのインスペクタで`Idle Animation Value`にその値を設定します。
 
-<img src="Documents/Images/animator.gif" width="640">
+<img src="Documents/Images/readme081/05_set_idle_animation_param.png" width="640">
 
-続いて、新たに作成されたAnimatorControllerを開いて `Base Layer` の中からアイドル時の動作に使用したいアニメーションを選びます。また、AnyStateからそのアニメーションに遷移する条件となるパラメーターの値を調べます。
+### AIAvatar
 
-<img src="Documents/Images/idleanimation01.png" width="640">
+`AIAvatar`のインスペクタで、会話を開始するための`Wake Word`（例：hello / こんにちは🇯🇵）、会話を停止するための`Cancel Word`（例：stop / おしまい🇯🇵）、エラー発生時に表示される`Error Voice`と`Error Face`（例：Something wrong / 調子が悪いみたい🇯🇵）を設定します。
 
-最後に、控えた値をModelControllerのインスペクターにある `Idle Animation Value` に設定します。
+`Prefix / Suffix Allowance`は、ウェイクワードの前後に許容される追加文字の長さです。例えば、ウェイクワードが"Hello"で、許容値が4文字の場合、"Ah, Hello!"という語句もウェイクワードとして検出されます。
 
-<img src="Documents/Images/idleanimation02.png" width="640">
+<img src="Documents/Images/readme081/06_setup_ai_avatar.png" width="640">
 
+### LLMサービス
 
-## 🦜 DialogController
+`ChatdollKit/Scripts/LLM`から対応するLLMサービスのコンポーネントをアタッチし、APIキーやシステムプロンプトなどの必要なフィールドを設定します。この例ではChatGPTを使用していますが、フレームワークはClaude、Gemini、Difyもサポートしています。
 
-`DialogController`のインスペクターで、会話を開始する合図となる `Wake Word` (e.g. こんにちは)、会話を終了する合図となる `Cancel Word` (e.g. おしまい)、ユーザーからのリクエストを受け付けるための `Prompt Voice` (e.g. どうしたの？) を設定します。
+<img src="Documents/Images/readme081/07_setup_chatgpt.png" width="640">
 
-<img src="Documents/Images/dialogcontroller.png" width="640">
+### 音声サービス
 
+音声認識用に`ChatdollKit/Scripts/SpeechListener`から`SpeechListener`コンポーネントを、音声合成用に`ChatdollKit/Extension`から`TTSLoader`コンポーネントをアタッチします。APIキーや言語コードなどの必要なフィールドを設定します。SpeechListenerの設定で`PrintResult`を有効にすると、認識された音声がログに出力され、デバッグに役立ちます。
 
-## 🍣 ChatdollKit
+<img src="Documents/Images/readme081/08_setup_speech.png" width="640">
 
-`ChatdollKit`のインスペクター上で音声認識・読み上げサービス（OpenAI/Azure/Google/Watson）を選択し、APIキーなど必要な情報を入力してください。
+### マイクコントローラー
 
-<img src="Documents/Images/chatdollkit.png" width="640">
+`ChatdollKit/Prefabs/Runtime/MicrophoneController`をシーンに追加します。これにより、音声認識の最小音量を調整するUIが提供されます。周囲が騒がしい場合、スライダーを左にスライドさせることで騒音をフィルタリングできます。
 
+<img src="Documents/Images/readme081/09_add_microphone_controller.png" width="640">
 
-## 🍳 Skill
+### 実行
 
-`ChatdollKit` におうむ返しスキルの `Examples/Echo/Skills/EchoSkill` を追加します。または、もしAIとの会話を今すぐ楽しみたいときは、以下のコンポーネントを追加して `ChatGPTService` にOpenAI API Keyを設定しましょう。
+Unityエディタの再生ボタンを押します。キャラクターが待機アニメーションと瞬きを開始するのが確認できます。
 
-- ChatdollKit/Scripts/LLM/ChatGPT/ChatGPTService
-- ChatdollKit/Scripts/LLM/LLMRouter
-- ChatdollKit/Scripts/LLM/LLMContentSkill
+- 必要に応じてマイクの音量スライダーを調整します。
+- インスペクタで設定した`Wake Word`を話します（例：hello / こんにちは🇯🇵）。
+- キャラクターが "こんにちは！元気？" などと返事してくれます。
 
-<img src="Documents/Images/skill.png" width="640">
+<img src="Documents/Images/readme081/10_run.png" width="640">
 
-
-## 🤗 Face Expression (VRM*以外*の場合のみ)
-
-VRC FaceExpression Proxyのコンテキストメニューから `Setup VRC FaceExpression Proxy` を選択します。表情シェイプキーのすべての値がゼロのNeutral, Joy, Angry, Sorrow, Funと、まばたき用のシェイプキーの値のみ100が設定されたBlinkが表情として登録されます。
-
-<img src="Documents/Images/faceexpression.png" width="640">
-
-表情はFace Clip Configurationを直接編集することもできますし、VRCFaceExpressionProxyのインスペクターで現在の表情（シェイプキーを操作して作り込んだもの）をキャプチャーすることもできます。
-
-<img src="Documents/Images/faceexpressionedit.png" width="640">
+Enjoy👍
 
 
-## 🥳 動作確認
+## 🎓 LLM Service
 
-UnityのPlayボタンを押します。3Dモデルがまばたきをしながらアイドル時のアニメーションを行っていることが確認できたら、以下のように会話をしてみましょう。
+### 基本設定
 
-- `Wake Word`に設定した文言を話しかける（例：こんにちは）
-- `Prompt Voice`に設定した文言で応答（例：どうしたの？）
-- 話しかけたい言葉をしゃべる（例：これはテストです）
-- 話しかけた言葉と同じ内容を応答
+テキスト生成AIサービスとして、ChatGPT、Claude、Gemini、そしてDifyをサポートしています。試験的にCommand Rにも対応していますが、動作が安定しません。
+LLMサービスを使用するには、`ChatdollKit/Scripts/LLM`から該当するLLMServiceコンポーネントをAIAvatarオブジェクトにアタッチして、`IsEnabled`にチェックを入れてください。すでに他のLLMServiceがアタッチされている場合、使用しないLLMServiceの`IsEnabled`はチェックを外す必要がある点に注意してください。
 
-<img src="Documents/Images/run.png" width="640">
+アタッチしたLLMServiceには、APIキーやシステムプロンプトをはじめとして、その他パラメーターをインスペクター上で設定することができます。これらのパラメーターの意味や設定すべき値等についてはLLMのAPIリファレンスを参照してください。
 
 
-# 🌊 Use Azure OpenAI Service
+### 表情
 
-Azure OpenAI Serviceを利用するには、ChatGPTServiceコンポーネントのインスペクター上で以下の通り設定してください。
+会話の内容に合わせて、自律的に表情をコントロールすることができます。
+表情をコントロールするには、AIからの応答に`[face:表情名]`といったタグを含ませる必要があり、システムプロンプト等にその指示を含むことで実現することができます。以下はそのシステムプロンプトの例です。
 
-1. 設定情報を含むエンドポイントURLを`Chat Completion Url`に設定
 ```
-format: https://{your-resource-name}.openai.azure.com/openai/deployments/{deployment-id}/chat/completions?api-version={api-version}
+You have four expressions: 'Joy', 'Angry', 'Sorrow', 'Fun' and 'Surprised'.
+If you want to express a particular emotion, please insert it at the beginning of the sentence like [face:Joy].
+
+Example
+[face:Joy]Hey, you can see the ocean! [face:Fun]Let's go swimming.
 ```
 
-2. API Keyを`Api Key`に設定
-
-3. `Is Azure`にチェックを入れる
-
-NOTE: インスペクターで設定した`Model`は無視され、URLに含まれているモデルが使用されます。
+表情の名前は、AIがそれからどのような表情なのか理解できる必要があります。
+また、VRMモデルに定義された表情をそのまま操作しますので、大文字小文字の違いも含めて一致させるようにしてください。
 
 
+### アニメーション
 
-# 👷‍♀️ カスタムアプリケーションの作り方
+会話の内容に合わせて、自律的に身振り手振り（以降、アニメーションといいます）をコントロールすることができます。
+アニメーションをコントロールするには、AIからの応答に`[anim:アニメーション名]`といったタグを含ませる必要があり、システムプロンプト等にその指示を含むことで実現することができます。以下はそのシステムプロンプトの例です。
 
-Examplesに同梱の`MultiSkills`の実装サンプルを参考にしてください。
+```
+You can express your emotions through the following animations:
 
-- 対話のルーティング：`Router`には、発話内容からユーザーが話したいトピックを選択するロジックの例が実装されています
-- 対話の処理：`TranslateDialog`をみると、リクエスト文言を利用して翻訳APIを叩き、結果を応答する一連の例が実装されています
+- angry_hands_on_waist
+- brave_hand_on_chest
+- calm_hands_on_back
+- concern_right_hand_front
+- energetic_right_fist_up
+- energetic_right_hand_piece
+- pitiable_right_hand_on_back_head
+- surprise_hands_open_front
+- walking
+- waving_arm
+- look_away
+- nodding_once
+- swinging_body
 
-ChatdollKitを利用した複雑で実用的なバーチャルアシスタントの開発方法については、現在コンテンツを準備中です。
+If you want to express emotions with gestures, insert the animation into the response message like [anim:waving_arm].
+
+Example
+[anim:waving_arm]Hey, over here!
+```
+
+アニメーションの名前は、AIがそれからどのような身振り手振りなのか理解できる必要があります。
+また、指定されたアニメーション名と`Animator Controller`に定義されたアニメーションを紐づけるため、以下の通り任意の箇所でコードベースで`LLMContentSkill`に登録する必要があります。
+
+```csharp
+// Base
+llmContentSkill.RegisterAnimation("angry_hands_on_waist", new Model.Animation("BaseParam", 0, 3.0f));
+llmContentSkill.RegisterAnimation("brave_hand_on_chest", new Model.Animation("BaseParam", 1, 3.0f));
+llmContentSkill.RegisterAnimation("calm_hands_on_back", new Model.Animation("BaseParam", 2, 3.0f));
+llmContentSkill.RegisterAnimation("concern_right_hand_front", new Model.Animation("BaseParam", 3, 3.0f));
+llmContentSkill.RegisterAnimation("energetic_right_fist_up", new Model.Animation("BaseParam", 4, 3.0f));
+llmContentSkill.RegisterAnimation("energetic_right_hand_piece", new Model.Animation("BaseParam", 5, 3.0f));
+llmContentSkill.RegisterAnimation("pitiable_right_hand_on_back_head", new Model.Animation("BaseParam", 7, 3.0f));
+llmContentSkill.RegisterAnimation("surprise_hands_open_front", new Model.Animation("BaseParam", 8, 3.0f));
+llmContentSkill.RegisterAnimation("walking", new Model.Animation("BaseParam", 9, 3.0f));
+llmContentSkill.RegisterAnimation("waving_arm", new Model.Animation("BaseParam", 10, 3.0f));
+// Additive
+llmContentSkill.RegisterAnimation("look_away", new Model.Animation("BaseParam", 6, 3.0f, "AGIA_Layer_look_away_01", "Additive Layer"));
+llmContentSkill.RegisterAnimation("nodding_once", new Model.Animation("BaseParam", 6, 3.0f, "AGIA_Layer_nodding_once_01", "Additive Layer"));
+llmContentSkill.RegisterAnimation("swinging_body", new Model.Animation("BaseParam", 6, 3.0f, "AGIA_Layer_swinging_body_01", "Additive Layer"));
+```
 
 
-# 🌐 WebGLでの実行
+### User Defined Tag
+
+表情やアニメーション以外に、開発者が定義したタグに応じた処理を実行することができます。
+システムプロンプトで応答にタグを含ませるための指示をするとともに、任意の箇所に`HandleExtractedTags`を実装します。
+
+以下は、会話の内容に合わせて言語を自動的に切り替える場合の例です。
+
+
+```
+If you want change current language, insert language tag like [language:en-US].
+
+Example:
+[language:en-US]From now on, let's talk in English.
+```
+
+```csharp
+chatGPTService.HandleExtractedTags = (tags, session) =>
+{
+    if (tags.ContainsKey("language"))
+    {
+        // Get language code
+        var language = tags["language"].Contains("-") ? tags["language"].Split('-')[0] : tags["language"];
+
+        if (language != "ja")
+        {
+            // Use OpenAI TTS for non-Japanese languages
+            var openAITTS = gameObject.GetComponent<OpenAITTSLoader>();
+            modelController.RegisterTTSFunction(openAITTS.Name, openAITTS.GetAudioClipAsync, true);
+        }
+        else
+        {
+            // Use VOICEVOX for Japanese
+            var voicevoxTTS = gameObject.GetComponent<VoicevoxTTSLoader>();
+            modelController.RegisterTTSFunction(voicevoxTTS.Name, voicevoxTTS.GetAudioClipAsync, true);
+        }
+
+        // Change speech listener's language
+        var openAIListener = gameObject.GetComponent<OpenAISpeechListener>();
+        openAIListener.Language = language;
+
+        Debug.Log($"Set language to {language}");
+    }
+};
+```
+
+
+### Multi Modal
+
+LLMへのリクエストにカメラやファイル等から取得した画像を含むことができます。
+`DialogProcessor.StartDialogAsync`の第二引数として`payloads`の中に`imageBytes`というキーで画像のバイナリーデータを含むようにしてください。
+
+また、ユーザーの発話内容を処理するための画像が必要なときに自律的に画像を取得するようにすることができます。
+AIからの応答に[vision:camera]というタグを含ませるようにシステムプロンプトに設定するとともに、このタグを受け取った際に呼び出される画像取得処理をLLM Serviceに実装してください。
+
+```
+You can use camera to get what you see.
+When the user wants to you to see something, insert [vision:camera] into your response message.
+
+Example
+user: Look! I bought this today.
+assistant: [vision:camera]Let me see.
+```
+
+```csharp
+gameObject.GetComponent<ChatGPTService>().CaptureImage = async (source) =>
+{
+    if (simpleCamera != null)
+    {
+        try
+        {
+            return await simpleCamera.CaptureImageAsync();
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Error at CaptureImageAsync: {ex.Message}\n{ex.StackTrace}");
+        }
+    }
+
+    return null;
+};
+```
+
+
+## 🗣️ Speech Synthesizer (Text-to-Speech)
+
+音声合成サービスとしてクラウドサービスとして提供されるGoogle、Azure、OpenAI、Watsonをサポートするほか、キャラクターとしてより魅力的な音声を提供するVOICEVOX、VOICEROID、Style-Bert-VITS2をサポートします。
+音声合成サービスを使用するには、`ChatdollKit/Extension`の各サービスや製品のパッケージに含まれる`TTSLoader`をAIAvatarオブジェクトにアタッチして、`IsDefault`にチェックを入れてください。すでに他のTTSLoaderがアタッチされている場合、使用しないTTSLoaderの`IsDefault`はチェックを外す必要がある点に注意してください。
+
+アタッチしたTTSLoaderには、APIキーやエンドポイントなどのパラメーターをインスペクター上で設定することができます。これらのパラメーターの意味や設定すべき値等については各TTSサービス・製品のAPIリファレンスを参照してください。
+
+
+### Make custom TTSLoader
+
+お好みの音声合成サービスを利用するために、カスタムのTTSLoaderを簡単に作成・利用することができます。
+`ChatdollKit.Model.WebVoiceLoaderBase`を継承したクラスを作成し、発話文言等を含む`Voice`オブジェクトと引数にとり、Unityで再生可能な`AudioClip`オブジェクトを返す非同期メソッド`DownloadAudioClipAsync`を実装してください。
+
+```csharp
+UniTask<AudioClip> DownloadAudioClipAsync(Voice voice, CancellationToken token)
+```
+
+なおWebGLでは圧縮音源の再生をサポートしないため、必要ならばプラットフォームに応じて処理を分岐するなど対応するようにしましょう。
+
+
+### Performance and Quality Tuning
+
+高速なレスポンスを実現するため、AIからの応答メッセージ全体を音声合成するのではなく、文章を句読点等で区切って順次音声合成・発話しています。
+これは応答パフォーマンスを大幅に改善する一方で、特にStyle-Bert-VITS2などのAI音声合成を利用する場合、あまり細かく分割すると話し方やトーンの品質が犠牲になってしまいます。
+このパフォーマンスと品質のバランスを両立するために、音声合成の区切り方を`LLMContentSkill`コンポーネントインスペクター上で設定することができます。
+
+|項目|説明|
+|----|----|
+|**Split Chars**|区切文字。この文字で必ず区切って音声合成処理を行います。|
+|**Optional Split Chars**|オプション区切り文字。原則として区切りませんが、文章の長さが次の`Max Length Before Optional Split`よりも長い場合に区切ります。|
+|**Max Length Before Optional Split**|オプション区切り文字を区切り文字として使用する長さの閾値。|
+
+
+
+## 🎧 Speech Listener (Speech-to-Text)
+
+音声認識サービスとしてクラウドサービスとして提供されるGoogle、Azure、OpenAIをサポートしています。
+音声認識サービスを使用するには、`ChatdollKit/Scripts/SpeechListener`に含まれる各サービス名を冠した`SpeechListener`をAIAvatarオブジェクトにアタッチしてください。複数のSpeechListenerをアタッチした場合、複数のSpeechListenerが並行して動作してしまいますのでご注意ください。
+
+アタッチしたSpeechListnerには、APIキーやエンドポイントなどのパラメーターをインスペクター上で設定することができます。これらのパラメーターの意味や設定すべき値等については各TTSサービス・製品のAPIリファレンスを参照してください。
+
+`Voice Recorder Settings`の各設定項目は、後述する`AIAvatar`コンポーネントから制御されるため、以下を除いてインスペクター上での設定は無視されます。
+
+|項目|説明|
+|----|----|
+|**Auto Start**|オンにすると、アプリケーションの起動時に音声認識を開始します|
+|**Print Result**|オンにすると、認識した音声を文字起こししたものをコンソールに出力します|
+
+
+### Settings on AIAvatar Inspector
+
+SpeechListnerに関連する設定の多くは、`AIAvatar`コンポーネントのインスペクター上で設定します。
+
+|項目|説明|
+|---|---|
+|**Conversation Timeout**|会話の終了とみなすまでの待機時間（秒）。この時間を過ぎるとIdleモードに移行し、メッセージウィンドウが非表示になります。再び会話するにはウェイクワードの認識が必要です|
+|**Idle Timeout**|アイドル状態を終了してスリープモードに入るまでの待機時間（秒）。デフォルトではアイドルモードとスリープモードに違いはありませんが、音声認識の方式やアイドルアニメーションなどをユーザー実装で切り替えるのに利用することができます|
+|**Voice Recognition Threshold DB**|音声認識のしきい値（デシベル）。この値以下の音声は認識されません|
+|**Voice Recognition Raised Threshold DB**|音声認識の強化されたしきい値（デシベル）。より高い音量での発話を認識するためのしきい値です。これは後述する`Microphone Mute By`の値を`Threshold`にした場合に利用されます|
+|**Conversation Silence Duration Threshold**|指定した時間以上の無音が検出されると録音が終了し、その時点で音声認識が実行されます|
+|**Conversation Min Recording Duration**|録音された音声が指定した時間以上の場合にのみ音声認識を実行します。これにより、短い物音などを無視して、誤認識を防ぎます|
+|**Conversation Max Recording Duration**|録音された音声が指定した時間を超えると音声認識を行わず、録音を無視します。これにより、長すぎる音声が音声認識に負担をかけることを防止します|
+|**Idle Silence Duration Threshold**|アイドルモード時の録音終了までの無音時間（秒）。ウェイクワードの待ち受け状態では、短い無音をスムーズに識別するため小さな値を設定します|
+|**Idle Min Recording Duration**|アイドルモード時の最低録音時間。短いフレーズをスムーズに識別できるように、会話中よりも小さな値を設定します|
+|**Idle Max Recording Duration**|アイドルモード時の最長録音時間。ウェイクワードは通常短いため、会話中よりも短い値を設定します|
+|**Microphone Mute By**|発話中にアバターの発話内容を音声認識させないための方式です。<br><br>- None: 何もしません<br>- Threshold: 音声認識の閾値を`Voice Recognition Raised Threshold DB`まで上昇させます<br>- Mute: マイクからの入力音声を無視します<br>- Stop Device: マイクデバイスを停止します|
+
+
+## ⏰ Wake Word Detection
+
+会話の開始トリガーとして、ウェイクワードを検知することができます。
+また、会話の終了トリガーとなるキャンセルワードや、フレーズではなく認識した音声の長さをトリガーにする設定など、AIAvatarコンポーネントのインスペクターで設定することができます。
+
+### Wake Words
+
+このフレーズを認識したときに会話を開始します。複数のウェイクワードを登録することができます。以下の項目以外は、v0.8以降では無視されます。
+
+|項目|説明|
+|---|---|
+|**Text**|会話を開始するトリガーとなる文言|
+|**Prefix / Suffix Allowance**|ウェイクワードの前後に許容される追加文字の長さ。例えば、ウェイクワードが"こんにちは"で、許容値が4文字の場合、"やあ、こんにちは！"という語句もウェイクワードとして検出されます。|
+
+### Cancel Words
+
+このフレーズを認識したときに会話を終了します。複数のキャンセルワードを登録することができます。
+
+### Ignore Words
+
+認識した音声がウェイクワードやキャンセルワードかどうかの判定をする際に無視する文字列を登録します。たとえば句読点の有無を意識したくないときに利用します。
+
+### Wake Length
+
+特定の文言ではなく、認識した文字列の長さで会話を開始することができます。値が`0`のときこの機能は無効です。
+たとえば、アイドルモードではウェイクワードではなく文字列長で会話を再開し、スリープモードではウェイクワードで会話を再開することで、断続的に会話が続く場合に煩わしさを解決することができます。
+
+
+## ⚡️ AI Agent (Tool Call)
+
+LLMでTool Call（Function Calling）がサポートされている場合、その機能を利用して呼び出す処理を定義・実装することができます。
+`LLMFunctionSkillBase`を継承したコンポーネントを作成してAIAvatarオブジェクトにアタッチすることで、自動的にツールとして識別され、必要に応じて実行されるようになります。
+
+独自のスキルを作成するには、`FunctionName`、`FunctionDescription`を定義し、Functionの定義を返す`GetToolSpec`メソッド、Functionの処理そのものである`ExecuteFunction`メソッドを実装します。詳細は`ChatdollKit/Examples/WeatherSkill`を参考にしてください。
+
+
+## 🎙️ Devices
+
+デバイス制御の仕組みを提供します。現時点ではマイクとカメラのみです。
+
+### Microphone
+
+マイクから音声を取得し、取得した音声の波形データを他のコンポーネントから利用するための`MicrophoneManager`コンポーネントを提供します。
+基本的にはSpeechListenerからの利用を想定していますが、任意のユーザー実装プログラムからでも`StartRecordingSession`を使用して録音セッションを登録し、利用することができます。
+
+インスペクターで設定できる項目は以下の通りです。
+
+|項目|説明|
+|----|----|
+|**Sample Rate**|サンプリングレートです。WebGLで使用する場合は44100としてください|
+|**Noise Gate Threshold DB**|ノイズゲートです。デシベルで指定します。AIAvatarコンポーネントと合わせて使用する場合は、AIAvatarコンポーネントからこの値を制御します|
+|**Auto Start**|アプリケーションの開始時にマイクからの音声取得をスタートします|
+|**Is Debug**|マイクの開始・終了やミュート・ミュート解除の際にログ出力します|
+
+
+### Camera
+
+カメラからの画像取得やプレビューの表示、カメラの切り替えなどをパッケージ化した`SimpleCamera`プレファブを提供します。
+デバイスによるカメラの仕様の吸収の仕方が完璧ではなく、試験的な提供となります。詳細は当該プレファブやアタッチされているスクリプトを参照してください。
+
+
+## 💃 ３D Model Control
+
+3Dモデルの身振り手振りや表情、発話を制御する`ModelController`コンポーネントを提供します。
+`AIAvatar`コンポーネントや`LLMContentSkill`でもこれを利用しています。また、`TTSLoader`は`ModelController`から利用されています。
+
+### Idle Animations
+
+待機中に相応しいモーションをループ実行します。実行したいモーションはAnimator Controllerのステートマシーンに登録して、`ModelController`のインスペクター上でその遷移の条件となるパラメーター名を`Idle Animation Key`、その値を`Idle Animation Value`として登録する方法が最も簡単です。
+
+複数のモーションを登録し、一定間隔でランダムに切り替えて実行するには、以下の通り任意の箇所でコードベースで`AddIdleAnimation`メソッドを使って登録してください。第一引数は実行する`Animation`オブジェクト、`weight`は出現確率の倍数、`mode`は特定のモデルの状態に表示させたい場合にのみ指定します。また、`Animation`のコンストラクターの第一引数はパラメーター名、第二引数が値、第三引数が継続時間（秒）です。
+
+```csharp
+modelController.AddIdleAnimation(new Animation("BaseParam", 2, 5f));
+modelController.AddIdleAnimation(new Animation("BaseParam", 6, 5f), weight: 2);
+modelController.AddIdleAnimation(new Animation("BaseParam", 99, 5f), mode: "sleep");
+```
+
+### Control by Script
+
+作成中です。基本的には`AnimatedVoiceRequest`オブジェクトを作成して、`ModelController.AnimatedSay`を呼び出します。
+`LLMContentSkill`の内部でアニメーション、表情、発話を組み合わせた要求をしていますので、参考にしてみて下さい。
+
+
+## 🎚️ UI Components
+
+音声対話型AIキャラクターアプリケーションでよく使用するUI部品をプレファブとして提供します。いずれもシーンに追加すれば使用できるようになります。設定項目等はデモを参考にしてください。
+
+- FPSManager: 現在のフレームレートを表示します。また、このコンポーネントでターゲットとするフレームレートを設定することもできます。
+- MicrophoneController: マイクのノイズゲートを設定するためのスライダーです。
+- RequestInput: リクエストを入力するテキストボックスです。ファイルシステムからの画像取得や、カメラの起動ボタンも提供します。
+- SimpleCamera: カメラからの画像取得やプレビュー画面などをまとめたものです。プレビュー非表示で画像取得することもできます。
+
+
+## 🛜 Remote Access
+
+外部プログラムからソケット通信を使用してChatdollKitアプリケーションにリクエストを送信することができます。
+これにより、AI Vtuberの配信やリモートでのアバター接客、AIと人とのハイブリッドなキャラクター運用など新たなユースケースに活用することができます。`ChatdollKit/Scripts/Network/SocketServer`をAIAvatarオブジェクトにアタッチして任意のポート番号（8080等）を設定してください。
+
+また、ネットワーク経由で対話リクエストを処理するには`ChatdollKit/Scripts/Dialog/DialogPriorityManager`を、AIによる応答の代わりに人が作成した任意の身振り手振り・表情・発話をキャラクターに実行させるためのリクエストを処理するには`ChatdollKit/Scripts/Model/ModelRequestBroker`をAIAvatarオブジェクトにアタッチしてください。
+
+以下は、上記の両方を使用するために任意の箇所に追加するコードベースの例です。
+
+
+```csharp
+// Configure ModelRequestBroker for remote control
+var modelRequestBroker = gameObject.GetComponent<ModelRequestBroker>();
+modelRequestBroker.RegisterAnimation("angry_hands_on_waist", new Model.Animation("BaseParam", 0, 3.0f));
+modelRequestBroker.RegisterAnimation("brave_hand_on_chest", new Model.Animation("BaseParam", 1, 3.0f));
+modelRequestBroker.RegisterAnimation("calm_hands_on_back", new Model.Animation("BaseParam", 2, 3.0f));
+modelRequestBroker.RegisterAnimation("concern_right_hand_front", new Model.Animation("BaseParam", 3, 3.0f));
+modelRequestBroker.RegisterAnimation("energetic_right_fist_up", new Model.Animation("BaseParam", 4, 3.0f));
+modelRequestBroker.RegisterAnimation("energetic_right_hand_piece", new Model.Animation("BaseParam", 5, 3.0f));
+modelRequestBroker.RegisterAnimation("pitiable_right_hand_on_back_head", new Model.Animation("BaseParam", 7, 3.0f));
+modelRequestBroker.RegisterAnimation("surprise_hands_open_front", new Model.Animation("BaseParam", 8, 3.0f));
+modelRequestBroker.RegisterAnimation("walking", new Model.Animation("BaseParam", 9, 3.0f));
+modelRequestBroker.RegisterAnimation("waving_arm", new Model.Animation("BaseParam", 10, 3.0f));
+modelRequestBroker.RegisterAnimation("look_away", new Model.Animation("BaseParam", 6, 3.0f, "AGIA_Layer_look_away_01", "Additive Layer"));
+modelRequestBroker.RegisterAnimation("nodding_once", new Model.Animation("BaseParam", 6, 3.0f, "AGIA_Layer_nodding_once_01", "Additive Layer"));
+modelRequestBroker.RegisterAnimation("swinging_body", new Model.Animation("BaseParam", 6, 3.0f, "AGIA_Layer_swinging_body_01", "Additive Layer"));
+
+// Get DialogPriorityManager for remote control
+var dialogPriorityManager = gameObject.GetComponent<DialogPriorityManager>();
+
+// Configure SocketServer for remote control
+gameObject.GetComponent<SocketServer>().OnDataReceived = (request) =>
+{
+    // Assign actions based on the request's Endpoint and Operation
+    if (request.Endpoint == "dialog")
+    {
+        if (request.Operation == "start")
+        {
+            dialogPriorityManager.SetRequest(request.Text, request.Payloads, request.Priority);
+        }
+        else if (request.Operation == "clear")
+        {
+            dialogPriorityManager.ClearDialogRequestQueue(request.Priority);
+        }
+    }
+    else if (request.Endpoint == "model")
+    {
+        modelRequestBroker.SetRequest(request.Text);
+    }
+};
+```
+
+### ChatdollKit Remote Client
+
+`SocketServer`はソケット通信で任意の情報を受け取るようになっているだけで、公式としてサポートするクライアントプログラムは提供していませんが、Pythonのサンプルコードを提供しています。
+以下を参考に必要に応じて別の言語に読み替えたり他のプラットフォームに移植してみてください。
+
+https://gist.github.com/uezo/9e56a828bb5ea0387f90cc07f82b4c15
+
+
+## 🌐 WebGLでの実行
 
 さしあたっては以下のTipsを参考にしてください。加えてWebGL用のデモを公開予定です。
 
@@ -186,3 +580,5 @@ ChatdollKitを利用した複雑で実用的なバーチャルアシスタント
 ChatdollKitでは以下のすばらしい素材・ツールを利用させていただいており、心から感謝申し上げます。
 
 - [uLipSync](https://github.com/hecomi/uLipSync) (LipSync) (c)[hecomi](https://twitter.com/hecomi)
+- [UniTask](https://github.com/Cysharp/UniTask) (async/await integration) (c)[neuecc](https://x.com/neuecc)
+- [UniVRM](https://github.com/vrm-c/UniVRM/releases/tag/v0.89.0) (VRM) (c)[VRM Consortium](https://x.com/vrm_pr) / (c)[Masataka SUMI](https://x.com/santarh) for MToon
