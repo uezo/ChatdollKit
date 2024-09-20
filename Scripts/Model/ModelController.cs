@@ -19,6 +19,7 @@ namespace ChatdollKit.Model
         private Dictionary<string, AudioClip> voiceAudioClips = new Dictionary<string, AudioClip>();
         public Func<Voice, CancellationToken, UniTask<AudioClip>> VoiceDownloadFunc;
         public Func<Voice, CancellationToken, UniTask<AudioClip>> TextToSpeechFunc;
+        public Func<string, Dictionary<string, object>, CancellationToken, UniTask<AudioClip>> SpeechSynthesizerFunc;
         public Action<string, CancellationToken> OnSayStart;
         public Action OnSayEnd;
         public Dictionary<string, Func<Voice, CancellationToken, UniTask<AudioClip>>> TextToSpeechFunctions = new Dictionary<string, Func<Voice, CancellationToken, UniTask<AudioClip>>>();
@@ -279,14 +280,22 @@ namespace ChatdollKit.Model
                         }
                         else if (v.Source == VoiceSource.TTS)
                         {
-                            var ttsFunc = GetTTSFunction(v.GetTTSFunctionName());
-                            if (ttsFunc != null)
+                            if (SpeechSynthesizerFunc != null)
                             {
-                                clip = await ttsFunc(v, token);
+                                var parameters = v.TTSConfig != null ? v.TTSConfig.Params : new Dictionary<string, object>();
+                                clip = await SpeechSynthesizerFunc(v.Text, parameters, token);
                             }
                             else
                             {
-                                Debug.LogError($"TTS function not found: {v.GetTTSFunctionName()}");
+                                var ttsFunc = GetTTSFunction(v.GetTTSFunctionName());
+                                if (ttsFunc != null)
+                                {
+                                    clip = await ttsFunc(v, token);
+                                }
+                                else
+                                {
+                                    Debug.LogError($"TTS function not found: {v.GetTTSFunctionName()}");
+                                }
                             }
                         }
 
@@ -351,7 +360,7 @@ namespace ChatdollKit.Model
         }
 
         // Start downloading voices from web/TTS
-        private void PrefetchVoices(List<Voice> voices, CancellationToken token)
+        public void PrefetchVoices(List<Voice> voices, CancellationToken token)
         {
             foreach (var voice in voices)
             {
@@ -361,8 +370,16 @@ namespace ChatdollKit.Model
                 }
                 else if (voice.Source == VoiceSource.TTS)
                 {
-                    var ttsFunc = GetTTSFunction(voice.GetTTSFunctionName());
-                    ttsFunc?.Invoke(voice, token);
+                    if (SpeechSynthesizerFunc != null)
+                    {
+                        var parameters = voice.TTSConfig != null ? voice.TTSConfig.Params : new Dictionary<string, object>();
+                        SpeechSynthesizerFunc(voice.Text, parameters, token);
+                    }
+                    else
+                    {
+                        var ttsFunc = GetTTSFunction(voice.GetTTSFunctionName());
+                        ttsFunc?.Invoke(voice, token);
+                    }
                 }
             }
         }
