@@ -6,6 +6,7 @@ using Cysharp.Threading.Tasks;
 using ChatdollKit.Dialog;
 using ChatdollKit.Model;
 using ChatdollKit.SpeechListener;
+using ChatdollKit.SpeechSynthesizer;
 
 namespace ChatdollKit
 {
@@ -201,6 +202,16 @@ namespace ChatdollKit
                 minRecordingDuration: idleMinRecordingDuration,
                 maxRecordingDuration: idleMaxRecordingDuration
             );
+
+            // Setup SpeechSynthesizer
+            foreach (var speechSynthesizer in gameObject.GetComponents<ISpeechSynthesizer>())
+            {
+                if (speechSynthesizer.IsEnabled)
+                {
+                    ModelController.SpeechSynthesizerFunc = speechSynthesizer.GetAudioClipAsync;
+                    break;
+                }
+            }
         }
 
         private void Update()
