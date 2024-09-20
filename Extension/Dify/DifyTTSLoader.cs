@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -75,18 +76,17 @@ namespace ChatdollKit.Extension.Dify
 
                 www.uploadHandler = new UploadHandlerRaw(data);
 
-                await www.SendWebRequest().ToUniTask();
-
-                if (www.result == UnityWebRequest.Result.ConnectionError || www.result == UnityWebRequest.Result.ProtocolError)
+                try
                 {
-                    Debug.LogError($"Error occured while processing text-to-speech voice: {www.error}");
+                    await www.SendWebRequest().ToUniTask(cancellationToken: token);
                 }
-                else if (www.isDone)
+                catch (Exception ex)
                 {
-                    return DownloadHandlerAudioClip.GetContent(www);
+                    Debug.LogError($"Error occured while processing Dify text-to-speech: {ex}");
+                    return null;
                 }
+                return DownloadHandlerAudioClip.GetContent(www);
             }
-            return null;
         }
     }
 }

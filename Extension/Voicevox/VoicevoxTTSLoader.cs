@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using UnityEngine;
@@ -100,18 +101,18 @@ namespace ChatdollKit.Extension.Voicevox
                 www.uploadHandler = new UploadHandlerRaw(data);
 
                 // Send request
-                await www.SendWebRequest();
+                try
+                {
+                    await www.SendWebRequest().ToUniTask(cancellationToken: token);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"Error occured while processing VOICEVOX text-to-speech: {ex}");
+                    return null;
+                }
 
-                if (www.result == UnityWebRequest.Result.ConnectionError || www.result == UnityWebRequest.Result.ProtocolError)
-                {
-                    Debug.LogError($"Error occured while processing voicevox text-to-speech: {www.error}");
-                }
-                else if (www.isDone)
-                {
-                    return DownloadHandlerAudioClip.GetContent(www);
-                }
+                return DownloadHandlerAudioClip.GetContent(www);
             }
-            return null;
         }
 
         protected async UniTask<AudioClip> DownloadAudioClipWebGLAsync(string url, byte[] data, Dictionary<string, string> headers, CancellationToken token)

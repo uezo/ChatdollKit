@@ -45,6 +45,7 @@ namespace ChatdollKit.Extension.Google
             SpeakerName = string.IsNullOrEmpty(SpeakerName) || overwrite ? speakerName : SpeakerName;
         }
 
+        // See https://cloud.google.com/text-to-speech/docs/voices
         protected override async UniTask<AudioClip> DownloadAudioClipAsync(Voice voice, CancellationToken token)
         {
             if (token.IsCancellationRequested) { return null; };
