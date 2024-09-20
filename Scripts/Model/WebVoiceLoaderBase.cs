@@ -29,6 +29,11 @@ namespace ChatdollKit.Model
 
         public async UniTask<AudioClip> GetAudioClipAsync(Voice voice, CancellationToken cancellationToken)
         {
+            if (string.IsNullOrEmpty(voice.Text.Trim()))
+            {
+                return null;
+            }
+
             if (IsLoading(voice))
             {
                 // Wait for cache is ready or task is canceled

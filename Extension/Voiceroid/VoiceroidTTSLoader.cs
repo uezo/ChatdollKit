@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -99,18 +100,18 @@ namespace ChatdollKit.Extension
                 www.SetRequestHeader("Content-Type", headers["Content-Type"]);
                 www.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(request)));
 
-                await www.SendWebRequest().ToUniTask();
+                try
+                {
+                    await www.SendWebRequest().ToUniTask(cancellationToken: token);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"Error occured while processing VOICEROID text-to-speech: {ex}");
+                    return null;
+                }
 
-                if (www.result == UnityWebRequest.Result.ConnectionError || www.result == UnityWebRequest.Result.ProtocolError)
-                {
-                    Debug.LogError($"Error occured while processing voiceroid text-to-speech: {www.error}");
-                }
-                else if (www.isDone)
-                {
-                    return DownloadHandlerAudioClip.GetContent(www);
-                }
+                return DownloadHandlerAudioClip.GetContent(www);
             }
-            return null;
         }
 
         private async UniTask<AudioClip> DownloadAudioClipWebGLAsync(VoiceroidRequest request, Dictionary<string, string> headers, CancellationToken token)
