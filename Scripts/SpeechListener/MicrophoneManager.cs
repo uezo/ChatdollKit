@@ -37,6 +37,7 @@ namespace ChatdollKit.SpeechListener
         private void Start()
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
+            SampleRate = 44100;
             InitWebGLMicrophone(gameObject.name);
 #endif
             UpdateLinearVolumes();

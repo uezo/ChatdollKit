@@ -69,7 +69,7 @@ namespace ChatdollKit.SpeechSynthesizer
         }
 
 #if UNITY_WEBGL && !UNITY_EDITOR
-        protected async UniTask<AudioClip> DownloadAudioClipWebGLAsync(string url, byte[] data, Dictionary<string, string> headers, CancellationToken token)
+        protected async UniTask<AudioClip> DownloadAudioClipAsync(string url, byte[] data, Dictionary<string, string> headers, CancellationToken token)
         {
             Debug.LogWarning("Unity doesn't support playback MP3 on WebGL.");
 

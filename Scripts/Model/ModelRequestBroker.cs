@@ -160,7 +160,9 @@ namespace ChatdollKit.Model
                         animatedVoiceRequests.Add(avreq);
 
                         // Prefetch the voice from TTS service
-                        _ = modelController.TextToSpeechFunc.Invoke(new Voice(string.Empty, 0.0f, 0.0f, textToSay, string.Empty, ttsConfig, VoiceSource.TTS, true, string.Empty), modelTokenSource.Token);
+                        modelController.PrefetchVoices(new List<Voice>() {new Voice(
+                            string.Empty, 0.0f, 0.0f, textToSay, string.Empty, ttsConfig, VoiceSource.TTS, true, string.Empty
+                        )}, modelTokenSource.Token);
                     }
                 }
             }
