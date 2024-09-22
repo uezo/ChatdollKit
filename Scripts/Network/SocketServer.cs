@@ -7,22 +7,24 @@ using System.Text;
 using System.Threading;
 using UnityEngine;
 using Newtonsoft.Json;
+using ChatdollKit.IO;
+using Cysharp.Threading.Tasks;
 
 namespace ChatdollKit.Network
 {
-#if !UNITY_WEBGL
-    public class SocketServer : MonoBehaviour
+    public class SocketServer : MonoBehaviour, IExternalInboundMessageHandler
     {
+        public Func<ExternalInboundMessage, UniTask> OnDataReceived { get; set; }
+
+#if !UNITY_WEBGL
         [SerializeField]
         private int port;
         [SerializeField]
         private bool isDebug = false;
 
-        public Action<SocketServerRequest> OnDataReceived;
-
         private TcpListener server;
         private Thread serverThread;
-        private Queue<SocketServerRequest> messageQueue = new Queue<SocketServerRequest>();
+        private Queue<ExternalInboundMessage> messageQueue = new Queue<ExternalInboundMessage>();
         private object queueLock = new object();
         public bool IsRunning { get; private set; }
 
@@ -97,10 +99,9 @@ namespace ChatdollKit.Network
                         Debug.Log($"Received from client: {message}");
                     }
 
-                    SocketServerRequest request;
                     try
                     {
-                        request = JsonConvert.DeserializeObject<SocketServerRequest>(message);
+                        var request = JsonConvert.DeserializeObject<ExternalInboundMessage>(message);
                         lock (queueLock)
                         {
                             // Just enqueue to process OnDataReceived in main thread
@@ -135,15 +136,6 @@ namespace ChatdollKit.Network
                 serverThread.Abort();
             }
         }
-    }
 #endif
-
-    public class SocketServerRequest
-    {
-        public string Endpoint { get; set; }
-        public string Operation { get; set; }
-        public int Priority { get; set; }
-        public string Text { get; set; }
-        public Dictionary<string, object> Payloads { get; set; }
     }
 }
