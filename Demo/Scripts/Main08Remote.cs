@@ -1,4 +1,4 @@
-// Client example: https://gist.github.com/uezo/9e56a828bb5ea0387f90cc07f82b4c15
+// Socker Client example: https://gist.github.com/uezo/9e56a828bb5ea0387f90cc07f82b4c15
 
 using System;
 using UnityEngine;
@@ -16,12 +16,16 @@ namespace ChatdollKit.Demo
     {
         // ChatdollKit components
         private ModelController modelController;
+        private ModelRequestBroker modelRequestBroker;
+        private DialogPriorityManager dialogPriorityManager;
         private SimpleCamera simpleCamera;
 
         private void Start()
         {
             // Get ChatdollKit components
             modelController = gameObject.GetComponent<ModelController>();
+            modelRequestBroker = gameObject.GetComponent<ModelRequestBroker>();
+            dialogPriorityManager = gameObject.GetComponent<DialogPriorityManager>();
 
             // Image capture for ChatGPT vision
             if (simpleCamera == null)
@@ -62,7 +66,6 @@ namespace ChatdollKit.Demo
 
             // Configure ModelRequestBroker for remote control
             // TODO: Simplify this part as it's redundant with other sections
-            var modelRequestBroker = gameObject.GetComponent<ModelRequestBroker>();
             modelRequestBroker.RegisterAnimation("angry_hands_on_waist", new Model.Animation("BaseParam", 0, 3.0f));
             modelRequestBroker.RegisterAnimation("brave_hand_on_chest", new Model.Animation("BaseParam", 1, 3.0f));
             modelRequestBroker.RegisterAnimation("calm_hands_on_back", new Model.Animation("BaseParam", 2, 3.0f));
@@ -77,29 +80,47 @@ namespace ChatdollKit.Demo
             modelRequestBroker.RegisterAnimation("nodding_once", new Model.Animation("BaseParam", 6, 3.0f, "AGIA_Layer_nodding_once_01", "Additive Layer"));
             modelRequestBroker.RegisterAnimation("swinging_body", new Model.Animation("BaseParam", 6, 3.0f, "AGIA_Layer_swinging_body_01", "Additive Layer"));
 
-            // Get DialogPriorityManager for remote control
-            var dialogPriorityManager = gameObject.GetComponent<DialogPriorityManager>();
-
-            // Configure SocketServer for remote control
-            gameObject.GetComponent<SocketServer>().OnDataReceived = (request) =>
+            // Configure message handler for remote control
+#pragma warning disable CS1998
+#if UNITY_WEBGL && !UNITY_EDITOR
+            gameObject.GetComponent<JavaScriptMessageHandler>().OnDataReceived = async (message) =>
             {
-                // Assign actions based on the request's Endpoint and Operation
-                if (request.Endpoint == "dialog")
-                {
-                    if (request.Operation == "start")
-                    {
-                        dialogPriorityManager.SetRequest(request.Text, request.Payloads, request.Priority);
-                    }
-                    else if (request.Operation == "clear")
-                    {
-                        dialogPriorityManager.ClearDialogRequestQueue(request.Priority);
-                    }
-                }
-                else if (request.Endpoint == "model")
-                {
-                    modelRequestBroker.SetRequest(request.Text);
-                }
+                HandleExternalMessage(message, "JavaScript");
             };
+#else
+            gameObject.GetComponent<SocketServer>().OnDataReceived = async (message) =>
+            {
+                HandleExternalMessage(message, "SocketServer");
+            };
+#endif
+#pragma warning restore CS1998
+        }
+
+        private void HandleExternalMessage(ExternalInboundMessage message, string source)
+        {
+            // Assign actions based on the request's Endpoint and Operation
+            if (message.Endpoint == "dialog")
+            {
+                if (message.Operation == "start")
+                {
+                    if (source == "JavaScript")
+                    {
+                        dialogPriorityManager.SetRequest(message.Text, message.Payloads, 0);
+                    }
+                    else
+                    {
+                        dialogPriorityManager.SetRequest(message.Text, message.Payloads, message.Priority);
+                    }
+                }
+                else if (message.Operation == "clear")
+                {
+                    dialogPriorityManager.ClearDialogRequestQueue(message.Priority);
+                }
+            }
+            else if (message.Endpoint == "model")
+            {
+                modelRequestBroker.SetRequest(message.Text);
+            }            
         }
 
         private async UniTask<byte[]> CaptureImageAsync(string source)

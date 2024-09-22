@@ -6,6 +6,8 @@ using ChatdollKit.IO;
 using ChatdollKit.LLM;
 using ChatdollKit.LLM.ChatGPT;
 using ChatdollKit.Model;
+// using ChatdollKit.SpeechListener;
+// using ChatdollKit.SpeechSynthesizer;
 
 namespace ChatdollKit.Demo
 {
@@ -93,13 +95,13 @@ namespace ChatdollKit.Demo
             //         var language = tags["language"].Contains("-") ? tags["language"].Split('-')[0] : tags["language"];
             //         if (language != "ja")
             //         {
-            //             var openAITTS = gameObject.GetComponent<OpenAITTSLoader>();
-            //             modelController.RegisterTTSFunction(openAITTS.Name, openAITTS.GetAudioClipAsync, true);
+            //             var openAISpeechSynthesizer = gameObject.GetComponent<OpenAISpeechSynthesizer>();
+            //             modelController.SpeechSynthesizerFunc = openAISpeechSynthesizer.GetAudioClipAsync;
             //         }
             //         else
             //         {
-            //             var voicevoxTTS = gameObject.GetComponent<VoicevoxTTSLoader>();
-            //             modelController.RegisterTTSFunction(voicevoxTTS.Name, voicevoxTTS.GetAudioClipAsync, true);
+            //             var voicevoxSpeechSynthesizer = gameObject.GetComponent<VoicevoxSpeechSynthesizer>();
+            //             modelController.SpeechSynthesizerFunc = voicevoxSpeechSynthesizer.GetAudioClipAsync;
             //         }
             //         var openAIListener = gameObject.GetComponent<OpenAISpeechListener>();
             //         openAIListener.Language = language;

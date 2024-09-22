@@ -501,7 +501,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: ChatdollKit Demo (v0.8.1 Remote)
+  m_Text: ChatdollKit Demo (v0.8.2 Remote)
 --- !u!222 &884329326
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -823,7 +823,7 @@ PrefabInstance:
       addedObject: {fileID: 1886433086}
     - targetCorrespondingSourceObject: {fileID: 2779731071012727286, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1886433071}
+      addedObject: {fileID: 1886433091}
     - targetCorrespondingSourceObject: {fileID: 2779731071012727286, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1886433089}
@@ -898,25 +898,6 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 6245294213465494609, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
   m_PrefabInstance: {fileID: 1886433054}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1886433071
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1886433055}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2f9ddc79bad1e48e58ab63dcb3343871, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Timeout: 10
-  isDebug: 0
-  _Name: OpenAI
-  _IsDefault: 1
-  ApiKey: 
-  Voice: nova
-  Speed: 1
 --- !u!114 &1886433086
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1003,6 +984,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8bffb007773044d3cb17df67809ab4fd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1886433091
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1886433055}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbdf9600eeac14bdf9d7400840bf5c7d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Timeout: 10
+  isDebug: 0
+  _IsEnabled: 1
+  ApiKey: 
+  Voice: nova
+  Speed: 1
 --- !u!1 &1934380956
 GameObject:
   m_ObjectHideFlags: 0
