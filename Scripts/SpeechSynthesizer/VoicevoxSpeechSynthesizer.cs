@@ -36,9 +36,9 @@ namespace ChatdollKit.SpeechSynthesizer
 
         private void Start()
         {
+            client = new ChatdollHttp(Timeout);
             if (printSupportedSpeakers)
             {
-                client = new ChatdollHttp(Timeout);
                 _ = ListSpeakersAsync(CancellationToken.None);
             }
         }
