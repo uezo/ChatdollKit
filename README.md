@@ -16,14 +16,21 @@
 - **Multi platforms**: Compatible with Windows, Mac, Linux, iOS, Android, and other Unity-supported platforms, including VR, AR, and WebGL.
 
 
-## 💎 What's New in Version 0.8.1
+## 💎 What's New in Version 0.8.2
+
+- **🌐 Control WebGL Character from JavaScript**: We’ve added the ability to control the ChatdollKit Unity application from JavaScript when running in WebGL builds. This allows for more seamless interactions between the Unity app and web-based systems.
+- **🗣️ Speech Synthesizer**: A new `SpeechSynthesizer` component has been introduced to streamline text-to-speech (TTS) operations. This component is reusable across projects without `Model` package, simplifying maintenance and reusability. 
+
+---
+
+### Previous Updates
+
+#### 0.8.1
 
 - **🏷️ User-Defined Tags Support**: You can now include custom tags in AI responses, enabling dynamic actions. For instance, embed language codes in replies to switch between multiple languages on the fly during conversations.
 - **🌐 External Control via Socket**: Now supports external commands through Socket communication. Direct conversation flow, trigger specific phrases, or control expressions and gestures, unlocking new use cases like AI Vtubers and remote customer service. Check out the client-side demo here: https://gist.github.com/uezo/9e56a828bb5ea0387f90cc07f82b4c15
 
----
-
-### Previous Updates (0.8.0 Beta)
+#### 0.8 Beta
 
 - **⚡ Optimized AI Dialog Processing**: We've boosted response speed with parallel processing and made it easier for you to customize behavior with your own code. Enjoy faster, more flexible AI conversations!
 - **🥰 Emotionally Rich Speech**: Adjusts vocal tone dynamically to match the conversation, delivering more engaging and natural interactions.
@@ -42,7 +49,7 @@ To run the demo for version 0.8, please follow the steps below after importing t
 - Select `AIAvatarVRM` object in scene.
 - Set OpenAI API key to following components on inspector:
   - ChatGPTService
-  - OpenAITTSLoader
+  - OpenSpeechSynthesizer
   - OpenAISpeechListener
 - Run on Unity Editor.
 - Say "こんにちは" or word longer than 3 characters.
@@ -61,14 +68,14 @@ To run the demo for version 0.8, please follow the steps below after importing t
   - [Speech Service](#speech-service)
   - [Microphone Controller](#microphone-controller)
   - [Run](#run)
-- [🎓 LLM Service](#-llm-service-1)
+- [🎓 LLM Service](#-llm-service)
   - [Basic Settings](#basic-settings)
   - [Facial Expressions](#facial-expressions)
   - [Animations](#animations)
   - [User Defined Tag](#user-defined-tag)
   - [Multi Modal](#multi-modal)
-- [🗣️ Speech Synthesizer (Text-to-Speech)](#-speech-synthesizer-text-to-speech)
-  - [Make custom TTSLoader](#make-custom-ttsloader)
+- [🗣️ Speech Synthesizer (Text-to-Speech)](#%EF%B8%8F-speech-synthesizer-text-to-speech)
+  - [Make custom SpeechSynthesizer](#make-custom-speechsynthesizer)
   - [Performance and Quality Tuning](#performance-and-quality-tuning)
 - [🎧 Speech Listener (Speech-to-Text)](#-speech-listener-speech-to-text)
   - [Settings on AIAvatar Inspector](#settings-on-aiavatar-inspector)
@@ -77,18 +84,18 @@ To run the demo for version 0.8, please follow the steps below after importing t
   - [Cancel Words](#cancel-words)
   - [Ignore Words](#ignore-words)
   - [Wake Length](#wake-length)
-- [⚡️ AI Agent (Tool Call)](#-ai-agent-tool-call)
-- [🎙️ Devices](#-devices)
+- [⚡️ AI Agent (Tool Call)](#%EF%B8%8F-ai-agent-tool-call)
+- [🎙️ Devices](#%EF%B8%8F-devices)
   - [Microphone](#microphone)
   - [Camera](#camera)
 - [🥰 3D Model Control](#-3d-model-control)
   - [Idle Animations](#idle-animations)
   - [Control by Script](#control-by-script)
-- [🎚️ UI Components](#-ui-components)
-- [🛜 Remote Access](#-remote-access)
+- [🎚️ UI Components](#%EF%B8%8F-ui-components)
+- [🎮 Control from External Programs](#-control-from-external-programs)
   - [ChatdollKit Remote Client](#chatdollkit-remote-client)
 - [🌐 Run on WebGL](#-run-on-webgl)
-- [❤️ Thanks](#-thanks)
+- [❤️ Thanks](#%EF%B8%8F-thanks)
 
 
 ## 📦 Setup New Project
@@ -164,7 +171,7 @@ Attach the component corresponding to the LLM service from `ChatdollKit/Scripts/
 
 ### Speech Service
 
-Attach the `SpeechListener` component from `ChatdollKit/Scripts/SpeechListener` for speech recognition and the `TTSLoader` component from `ChatdollKit/Extension` for speech synthesis. Configure the necessary fields like API keys and language codes. Enabling `PrintResult` in the SpeechListener settings will output recognized speech to the log, useful for debugging.
+Attach the `SpeechListener` component from `ChatdollKit/Scripts/SpeechListener` for speech recognition and the `SpeechSynthesizer` component from `ChatdollKit/Scripts/SpeechSynthesizer` for speech synthesis. Configure the necessary fields like API keys and language codes. Enabling `PrintResult` in the SpeechListener settings will output recognized speech to the log, useful for debugging.
 
 <img src="Documents/Images/readme081/08_setup_speech.png" width="640">
 
@@ -285,26 +292,19 @@ chatGPTService.HandleExtractedTags = (tags, session) =>
 {
     if (tags.ContainsKey("language"))
     {
-        // Get language code
         var language = tags["language"].Contains("-") ? tags["language"].Split('-')[0] : tags["language"];
-
         if (language != "ja")
         {
-            // Use OpenAI TTS for non-Japanese languages
-            var openAITTS = gameObject.GetComponent<OpenAITTSLoader>();
-            modelController.RegisterTTSFunction(openAITTS.Name, openAITTS.GetAudioClipAsync, true);
+            var openAISpeechSynthesizer = gameObject.GetComponent<OpenAISpeechSynthesizer>();
+            modelController.SpeechSynthesizerFunc = openAISpeechSynthesizer.GetAudioClipAsync;
         }
         else
         {
-            // Use VOICEVOX for Japanese
-            var voicevoxTTS = gameObject.GetComponent<VoicevoxTTSLoader>();
-            modelController.RegisterTTSFunction(voicevoxTTS.Name, voicevoxTTS.GetAudioClipAsync, true);
+            var voicevoxSpeechSynthesizer = gameObject.GetComponent<VoicevoxSpeechSynthesizer>();
+            modelController.SpeechSynthesizerFunc = voicevoxSpeechSynthesizer.GetAudioClipAsync;
         }
-
-        // Change speech listener's language
         var openAIListener = gameObject.GetComponent<OpenAISpeechListener>();
         openAIListener.Language = language;
-
         Debug.Log($"Set language to {language}");
     }
 };
@@ -348,16 +348,16 @@ gameObject.GetComponent<ChatGPTService>().CaptureImage = async (source) =>
 
 ## 🗣️ Speech Synthesizer (Text-to-Speech)
 
-We support cloud-based speech synthesis services such as Google, Azure, OpenAI, and Watson, in addition to VOICEVOX, VOICEROID, and Style-Bert-VITS2 for more characterful and engaging voices. To use a speech synthesis service, attach `TTSLoader` from `ChatdollKit/Extension` to the AIAvatar object and check the `IsDefault` box. If other `TTSLoader` components are attached, make sure to uncheck the `IsDefault` box for those not in use.
+We support cloud-based speech synthesis services such as Google, Azure, OpenAI, and Watson, in addition to VOICEVOX, VOICEROID, and Style-Bert-VITS2 for more characterful and engaging voices. To use a speech synthesis service, attach `SpeechSynthesizer` from `ChatdollKit/Scripts/SpeechListener` to the AIAvatar object and check the `IsEnabled` box. If other `SpeechSynthesizer` components are attached, make sure to uncheck the `IsEnabled` box for those not in use.
 
-You can configure parameters like API keys and endpoints on the attached `TTSLoader` in the inspector. For more details of these parameters, refer to the API references of TTS services.
+You can configure parameters like API keys and endpoints on the attached `SpeechSynthesizer` in the inspector. For more details of these parameters, refer to the API references of TTS services.
 
-### Make custom TTSLoader
+### Make custom SpeechSynthesizer
 
-You can easily create and use a custom `TTSLoader` for your preferred text-to-speech service. Create a class that inherits from `ChatdollKit.Model.WebVoiceLoaderBase`, and implement the asynchronous method `DownloadAudioClipAsync` that takes a `Voice` object and returns an `AudioClip` object playable in Unity.
+You can easily create and use a custom `SpeechSynthesizer` for your preferred text-to-speech service. Create a class that inherits from `ChatdollKit.SpeechSynthesizer.SpeechSynthesizerBase`, and implement the asynchronous method `DownloadAudioClipAsync` that takes a `string text` and `Dictionary<string, object> parameters`, and returns an `AudioClip` object playable in Unity.
 
 ```csharp
-UniTask<AudioClip> DownloadAudioClipAsync(Voice voice, CancellationToken token)
+UniTask<AudioClip> DownloadAudioClipAsync(string text, Dictionary<string, object> parameters, CancellationToken cancellationToken)
 ```
 
 Note that WebGL does not support compressed audio playback, so make sure to handle this by adjusting your code depending on the platform.
@@ -380,7 +380,7 @@ You can balance performance and speech quality by adjusting how the text is spli
 
 We support cloud-based speech recognition services such as Google, Azure, and OpenAI. To use these services, attach the `SpeechListener` component from `ChatdollKit/Scripts/SpeechListener` to the AIAvatar object. Be aware that if multiple SpeechListeners are attached, they will run in parallel, so ensure that only the one you want is active.
 
-You can configure parameters such as API keys and endpoints on the attached SpeechListener in the inspector. For details of these parameters, please refer to the API references of the respective TTS services and products.
+You can configure parameters such as API keys and endpoints on the attached SpeechListener in the inspector. For details of these parameters, please refer to the API references of the respective STT services and products.
 
 Most of the `Voice Recorder Settings` are controlled by the `AIAvatar` component, described later, so any settings in the inspector, except for those listed below, will be ignored.
 
@@ -496,9 +496,10 @@ We provide UI component prefabs commonly used in voice-interactive AI character 
 - **SimpleCamera**: A component that handles image capture and preview display from the camera. You can also capture images without showing the preview.
 
 
-## 🛜 Remote Access
+## 🎮 Control from External Programs
 
-You can send requests to the ChatdollKit application from external programs using socket communication. This feature enables new use cases such as AI Vtuber streaming, remote avatar customer service, and hybrid character operations combining AI and human interaction. Attach the `ChatdollKit/Scripts/Network/SocketServer` to the AIAvatar object and set the port number (e.g., 8080).
+You can send requests to the ChatdollKit application from external programs using socket communication or from JavaScript. This feature enables new use cases such as AI Vtuber streaming, remote avatar customer service, and hybrid character operations combining AI and human interaction.
+Attach `ChatdollKit/Scripts/Network/SocketServer` to the AIAvatar object and set the port number (e.g., 8080) to control using socket communication, or, attach `ChatdollKit/Scripts/IO/JavaScriptMessageHandler` to control from JavaScript.
 
 Additionally, to handle dialog requests over the network, attach the `ChatdollKit/Scripts/Dialog/DialogPriorityManager` to the AIAvatar object. To process requests that make the character perform gestures, facial expressions, or speech created by humans instead of AI responses, attach the `ChatdollKit/Scripts/Model/ModelRequestBroker` to the AIAvatar object.
 
@@ -506,7 +507,6 @@ Below is a code example for using both of the above components.
 
 ```csharp
 // Configure ModelRequestBroker for remote control
-var modelRequestBroker = gameObject.GetComponent<ModelRequestBroker>();
 modelRequestBroker.RegisterAnimation("angry_hands_on_waist", new Model.Animation("BaseParam", 0, 3.0f));
 modelRequestBroker.RegisterAnimation("brave_hand_on_chest", new Model.Animation("BaseParam", 1, 3.0f));
 modelRequestBroker.RegisterAnimation("calm_hands_on_back", new Model.Animation("BaseParam", 2, 3.0f));
@@ -521,29 +521,49 @@ modelRequestBroker.RegisterAnimation("look_away", new Model.Animation("BaseParam
 modelRequestBroker.RegisterAnimation("nodding_once", new Model.Animation("BaseParam", 6, 3.0f, "AGIA_Layer_nodding_once_01", "Additive Layer"));
 modelRequestBroker.RegisterAnimation("swinging_body", new Model.Animation("BaseParam", 6, 3.0f, "AGIA_Layer_swinging_body_01", "Additive Layer"));
 
-// Get DialogPriorityManager for remote control
-var dialogPriorityManager = gameObject.GetComponent<DialogPriorityManager>();
+// Configure message handler for remote control
+#pragma warning disable CS1998
+#if UNITY_WEBGL && !UNITY_EDITOR
+gameObject.GetComponent<JavaScriptMessageHandler>().OnDataReceived = async (message) =>
+{
+    HandleExternalMessage(message, "JavaScript");
+};
+#else
+gameObject.GetComponent<SocketServer>().OnDataReceived = async (message) =>
+{
+    HandleExternalMessage(message, "SocketServer");
+};
+#endif
+#pragma warning restore CS1998
+```
 
-// Configure SocketServer for remote control
-gameObject.GetComponent<SocketServer>().OnDataReceived = (request) =>
+```csharp
+private void HandleExternalMessage(ExternalInboundMessage message, string source)
 {
     // Assign actions based on the request's Endpoint and Operation
-    if (request.Endpoint == "dialog")
+    if (message.Endpoint == "dialog")
     {
-        if (request.Operation == "start")
+        if (message.Operation == "start")
         {
-            dialogPriorityManager.SetRequest(request.Text, request.Payloads, request.Priority);
+            if (source == "JavaScript")
+            {
+                dialogPriorityManager.SetRequest(message.Text, message.Payloads, 0);
+            }
+            else
+            {
+                dialogPriorityManager.SetRequest(message.Text, message.Payloads, message.Priority);
+            }
         }
-        else if (request.Operation == "clear")
+        else if (message.Operation == "clear")
         {
-            dialogPriorityManager.ClearDialogRequestQueue(request.Priority);
+            dialogPriorityManager.ClearDialogRequestQueue(message.Priority);
         }
     }
-    else if (request.Endpoint == "model")
+    else if (message.Endpoint == "model")
     {
-        modelRequestBroker.SetRequest(request.Text);
-    }
-};
+        modelRequestBroker.SetRequest(message.Text);
+    }            
+}
 ```
 
 ### ChatdollKit Remote Client
@@ -562,7 +582,7 @@ Refer to the following tips for now. We are preparing demo for WebGL.
 - Built-in Async/Await doesn't work (app stops at `await`) because JavaScript doesn't support threading. Use [UniTask](https://github.com/Cysharp/UniTask) instead.
 - CORS required for HTTP requests.
 - Microphone is not supported. Use `ChatdollMicrophone` that is compatible with WebGL.
-- Compressed audio formats like MP3 are not supported. Use WAV in TTS Loaders.
+- Compressed audio formats like MP3 are not supported. Use WAV in SpeechSynthesizer.
 - OVRLipSync is not supported. Use [uLipSync](https://github.com/hecomi/uLipSync) and [uLipSyncWebGL](https://github.com/uezo/uLipSyncWebGL) instead.
 - If you want to show multibyte characters in message window put the font that includes multibyte characters to your project and set it to message windows.
 
