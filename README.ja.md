@@ -1,9 +1,8 @@
 ﻿# ChatdollKit
 ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャットボットを作るためのフレームワークです。 [🇬🇧README in English is here](https://github.com/uezo/ChatdollKit/blob/master/README.md)
 
+- [🐈 Live demo](https://unagiken.blob.core.windows.net/chatdollkit/ChatdollKitDemoWebGL/index.html) WebGLのデモです。「こんにちは」と話しかけると会話がスタートします。マルチリンガルなので、言語を切り替えたいときは「英語で話そう」といったようにリクエストしてみてください。
 - [🍎 iOS App: おしゃべりAI](https://apps.apple.com/ja/app/oshaberiai/id6446883638) プロンプトでキャラメイク×VRMでお好みの3Dモデル×VOICEVOXでお好みの声でおしゃべりできるバーチャルエージェントアプリ。ChatdollKitで開発。
-- [🇯🇵 Live demo in Japanese](https://unagiken.com/chatdollkit/playground/index.html) OpenAI API Keyをご用意ください。「こんにちは」と話しかけると会話がスタートします。
-- [🇬🇧 Live demo English](https://uezo.blob.core.windows.net/github/chatdollkit/demo_en/index.html) Say "Hello" to start conversation. This demo just returns what you say (echo).
 
 <img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit-overview-080beta.png" width="720">
 
