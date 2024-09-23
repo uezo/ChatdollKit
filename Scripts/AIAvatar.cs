@@ -112,6 +112,20 @@ namespace ChatdollKit
             var neutralFaceRequest = new List<FaceExpression>() { new FaceExpression("Neutral") };
             DialogProcessor.OnRequestRecievedAsync = async (text, payloads, token) =>
             {
+                // Control microphone at first before AI's speech
+                if (MicrophoneMuteBy == MicrophoneMuteStrategy.StopDevice)
+                {
+                    MicrophoneManager.StopMicrophone();
+                }
+                else if (MicrophoneMuteBy == MicrophoneMuteStrategy.Mute)
+                {
+                    MicrophoneManager.MuteMicrophone(true);
+                }
+                else if (MicrophoneMuteBy == MicrophoneMuteStrategy.Threshold)
+                {
+                    MicrophoneManager.SetNoiseGateThresholdDb(VoiceRecognitionRaisedThresholdDB);
+                }
+
                 // Presentation
                 if (ProcessingPresentations.Count > 0)
                 {
@@ -125,20 +139,6 @@ namespace ChatdollKit
                 if (UserMessageWindow != null && !string.IsNullOrEmpty(text))
                 {
                     await UserMessageWindow.ShowMessageAsync(text, token);
-                }
-
-                // Control microphone before speech
-                if (MicrophoneMuteBy == MicrophoneMuteStrategy.StopDevice)
-                {
-                    MicrophoneManager.StopMicrophone();
-                }
-                else if (MicrophoneMuteBy == MicrophoneMuteStrategy.Mute)
-                {
-                    MicrophoneManager.MuteMicrophone(true);
-                }
-                else if (MicrophoneMuteBy == MicrophoneMuteStrategy.Threshold)
-                {
-                    MicrophoneManager.SetNoiseGateThresholdDb(VoiceRecognitionRaisedThresholdDB);
                 }
 
                 // Restore face to neutral
