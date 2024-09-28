@@ -46,13 +46,16 @@ namespace ChatdollKit
         private float idleMinRecordingDuration = 0.2f;
         [SerializeField]
         private float idleMaxRecordingDuration = 3.0f;
+        [SerializeField]
+        private bool showMessageWindowOnWake = true;
 
         public enum MicrophoneMuteStrategy
         {
             None,
             Threshold,
             Mute,
-            StopDevice
+            StopDevice,
+            StopListener
         }
         public MicrophoneMuteStrategy MicrophoneMuteBy = MicrophoneMuteStrategy.Mute;
 
@@ -117,6 +120,10 @@ namespace ChatdollKit
                 {
                     MicrophoneManager.StopMicrophone();
                 }
+                else if (MicrophoneMuteBy == MicrophoneMuteStrategy.StopListener)
+                {
+                    SpeechListener.StopListening();
+                }
                 else if (MicrophoneMuteBy == MicrophoneMuteStrategy.Mute)
                 {
                     MicrophoneManager.MuteMicrophone(true);
@@ -138,7 +145,14 @@ namespace ChatdollKit
                 // Show user message
                 if (UserMessageWindow != null && !string.IsNullOrEmpty(text))
                 {
-                    await UserMessageWindow.ShowMessageAsync(text, token);
+                    if (!showMessageWindowOnWake && payloads != null && payloads.ContainsKey("IsWakeword") && (bool)payloads["IsWakeword"])
+                    {
+                        // Don't show message window on wakeword
+                    }
+                    else
+                    {
+                        await UserMessageWindow.ShowMessageAsync(text, token);
+                    }
                 }
 
                 // Restore face to neutral
@@ -152,6 +166,10 @@ namespace ChatdollKit
                 if (MicrophoneMuteBy == MicrophoneMuteStrategy.StopDevice)
                 {
                     MicrophoneManager.StartMicrophone();
+                }
+                else if (MicrophoneMuteBy == MicrophoneMuteStrategy.StopListener)
+                {
+                    SpeechListener.StartListening();
                 }
                 else if (MicrophoneMuteBy == MicrophoneMuteStrategy.Mute)
                 {
@@ -202,6 +220,7 @@ namespace ChatdollKit
                 minRecordingDuration: idleMinRecordingDuration,
                 maxRecordingDuration: idleMaxRecordingDuration
             );
+            SpeechListener.StartListening();
 
             // Setup SpeechSynthesizer
             foreach (var speechSynthesizer in gameObject.GetComponents<ISpeechSynthesizer>())
@@ -415,7 +434,7 @@ namespace ChatdollKit
                     {
                         await OnWakeAsync(text);
                     }
-                    _ = DialogProcessor.StartDialogAsync(text);
+                    _ = DialogProcessor.StartDialogAsync(text, new Dictionary<string, object>() { {"IsWakeword", true} });
                 }
             }
         }

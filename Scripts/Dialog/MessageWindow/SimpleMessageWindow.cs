@@ -16,6 +16,8 @@ namespace ChatdollKit.Dialog
         [SerializeField]
         private bool autoHide = true;
         private string CurrentMessageId;
+        [SerializeField]
+        private bool isTextAnimated = true;
 
         public override void Show(string prompt = null)
         {
@@ -123,14 +125,17 @@ namespace ChatdollKit.Dialog
                 }
 
                 await UniTask.Delay((int)(PreGap * 1000), cancellationToken: token);
-                for (var i = 0; i < message.Length; i++)
+                if (isTextAnimated)
                 {
-                    if (token.IsCancellationRequested)
+                    for (var i = 0; i < message.Length; i++)
                     {
-                        return;
+                        if (token.IsCancellationRequested)
+                        {
+                            return;
+                        }
+                        messageText.text = message.Substring(0, i + 1);
+                        await UniTask.Delay((int)(MessageSpeed * 1000), cancellationToken: token);
                     }
-                    messageText.text = message.Substring(0, i + 1);
-                    await UniTask.Delay((int)(MessageSpeed * 1000), cancellationToken: token);
                 }
                 messageText.text = message;
                 await UniTask.Delay((int)(PostGap * 1000), cancellationToken: token);
