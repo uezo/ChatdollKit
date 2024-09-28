@@ -24,7 +24,6 @@ namespace ChatdollKit.Model
 
         private ModelController modelController;
         private Queue<AnimatedVoiceRequest> modelRequestQueue = new Queue<AnimatedVoiceRequest>();
-        private Dictionary<string, Animation> animationsToPerform { get; set; } = new Dictionary<string, Animation>();
 
         private bool isCancelled = false;
         
@@ -140,9 +139,9 @@ namespace ChatdollKit.Model
                         {
                             // Add animation if anim tag included
                             var anim = animMatches[0].Groups[1].Value;
-                            if (animationsToPerform.ContainsKey(anim))
+                            if (modelController.IsAnimationRegistered(anim))
                             {
-                                var a = animationsToPerform[anim];
+                                var a = modelController.GetRegisteredAnimation(anim);
                                 avreq.AddAnimation(a.ParameterKey, a.ParameterValue, a.Duration, a.LayeredAnimationName, a.LayeredAnimationLayerName);
                                 logMessage = $"[anim:{anim}]" + logMessage;
                             }
@@ -238,11 +237,6 @@ namespace ChatdollKit.Model
                 }
             }
             return false;
-        }
-
-        public void RegisterAnimation(string name, Animation animation)
-        {
-            animationsToPerform.Add(name, animation);
         }
     }
 }

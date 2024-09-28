@@ -48,6 +48,7 @@ namespace ChatdollKit.Model
         public string IdlingMode { get; private set; } = "normal";
         public DateTime IdlingModeStartAt { get; private set; } = DateTime.UtcNow;
         private Func<Animation> GetAnimation;
+        private Dictionary<string, Animation> registeredAnimations { get; set; } = new Dictionary<string, Animation>();
 
         // Face Expression
         [Header("Face")]
@@ -530,6 +531,21 @@ namespace ChatdollKit.Model
             {
                 return default;
             }
+        }
+
+        public void RegisterAnimation(string name, Animation animation)
+        {
+            registeredAnimations[name] = animation;
+        }
+
+        public Animation GetRegisteredAnimation(string name)
+        {
+            return registeredAnimations[name];
+        }
+
+        public bool IsAnimationRegistered(string name)
+        {
+            return registeredAnimations.ContainsKey(name);
         }
 #endregion
 

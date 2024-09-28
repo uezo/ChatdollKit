@@ -23,7 +23,6 @@ namespace ChatdollKit.LLM
 
         protected ILLMService llmService { get; set; }
         protected List<AnimatedVoiceRequest> responseAnimations { get; set; } = new List<AnimatedVoiceRequest>();
-        protected Dictionary<string, Model.Animation> animationsToPerform { get; set; } = new Dictionary<string, Model.Animation>();
         public bool IsParsing { get; protected set; } = false;
 
         public void SetLLMService(ILLMService llmService)
@@ -33,7 +32,8 @@ namespace ChatdollKit.LLM
 
         public void RegisterAnimation(string name, Model.Animation animation)
         {
-            animationsToPerform.Add(name, animation);
+            Debug.LogWarning("LLMContentSkill.RegisterAnimation is deprecated. Use ModelController.RegisterAnimation.");
+            modelController.RegisterAnimation(name, animation);
         }
 
 #pragma warning disable CS1998
@@ -144,9 +144,9 @@ namespace ChatdollKit.LLM
                                 {
                                     // Add animation if anim tag included
                                     var anim = animMatches[0].Groups[1].Value;
-                                    if (animationsToPerform.ContainsKey(anim))
+                                    if (modelController.IsAnimationRegistered(anim))
                                     {
-                                        var a = animationsToPerform[anim];
+                                        var a = modelController.GetRegisteredAnimation(anim);
                                         avreq.AddAnimation(a.ParameterKey, a.ParameterValue, a.Duration, a.LayeredAnimationName, a.LayeredAnimationLayerName);
                                         logMessage = $"[anim:{anim}]" + logMessage;
                                     }
