@@ -16,6 +16,7 @@ mergeInto(LibraryManager.library, {
                 "anthropic-version": "2023-06-01",
                 "anthropic-beta": "messages-2023-12-15",
                 "Content-Type": "application/json",
+                "anthropic-dangerous-direct-browser-access": "true",
                 "x-api-key": `${apiKey}`
             },
             method: "POST",

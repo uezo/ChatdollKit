@@ -32,22 +32,13 @@ namespace ChatdollKit.LLM.Claude
         protected bool isChatCompletionJSDone { get; set; } = false;
         protected Dictionary<string, ClaudeSession> sessions { get; set; } = new Dictionary<string, ClaudeSession>();
 
-        public override async UniTask StartStreamingAsync(ClaudeSession claudeSession, Dictionary<string, object> stateData, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
+        public override async UniTask StartStreamingAsync(ClaudeSession claudeSession, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
         {
             claudeSession.CurrentStreamBuffer = string.Empty;
 
-            string sessionId;
-            if (stateData.ContainsKey("chatGPTSessionId"))
-            {
-                // Use existing session id for callback
-                sessionId = (string)stateData["chatGPTSessionId"];
-            }
-            else
-            {
-                // Add session for callback
-                sessionId = Guid.NewGuid().ToString();
-                sessions.Add(sessionId, claudeSession);
-            }
+            // Store session with id to receive streaming data from JavaScript
+            var sessionId = Guid.NewGuid().ToString();
+            sessions.Add(sessionId, claudeSession);
 
             // Make request data
             var data = new Dictionary<string, object>()
@@ -81,7 +72,7 @@ namespace ChatdollKit.LLM.Claude
             }
 
             // TODO: Support custom headers later...
-            if (customHeaders.Count >= 0)
+            if (customHeaders.Count > 0)
             {
                 Debug.LogWarning("Custom headers for Claude on WebGL is not supported for now.");
             }
@@ -143,17 +134,10 @@ namespace ChatdollKit.LLM.Claude
                 await UniTask.Delay(10);
             }
 
-            // Remove non-text parts to keep context light
-            var lastUserMessage = claudeSession.Contexts.Last() as ClaudeMessage;
-            if (lastUserMessage != null)
-            {
-                lastUserMessage.content.RemoveAll(c => c.type == "image");
-            }
-
             // Update histories
             if (claudeSession.ResponseType != ResponseType.Error && claudeSession.ResponseType != ResponseType.Timeout)
             {
-                await AddHistoriesAsync(claudeSession, stateData, token);
+                UpdateContext(claudeSession);
             }
             else
             {
@@ -166,8 +150,8 @@ namespace ChatdollKit.LLM.Claude
                 throw new Exception($"Claude ends with error");
             }
 
+            // Process tags
             var extractedTags = ExtractTags(claudeSession.CurrentStreamBuffer);
-
             if (extractedTags.Count > 0 && HandleExtractedTags != null)
             {
                 HandleExtractedTags(extractedTags, claudeSession);
@@ -179,16 +163,16 @@ namespace ChatdollKit.LLM.Claude
                 claudeSession.IsVisionAvailable = false;
 
                 // Get image
-                var imageBytes = await CaptureImage(extractedTags["vision"]);
+                var imageSource = extractedTags["vision"];
+                var imageBytes = await CaptureImage(imageSource);
 
                 // Make contexts
-                var lastUserContentText = lastUserMessage.content.Where(c => !string.IsNullOrEmpty(c.text)).First().text;
                 if (imageBytes != null)
                 {
                     claudeSession.Contexts.Add(new ClaudeMessage("assistant", claudeSession.StreamBuffer));
                     // Image -> Text get the better accuracy
                     var userMessageWithVision = new ClaudeMessage("user", mediaType: "image/jpeg", data: imageBytes);
-                    userMessageWithVision.content.Add(new ClaudeContent(lastUserContentText));
+                    userMessageWithVision.content.Add(new ClaudeContent($"This is the image you captured. (source: {imageSource})"));
                     claudeSession.Contexts.Add(userMessageWithVision);
                 }
                 else
@@ -197,7 +181,7 @@ namespace ChatdollKit.LLM.Claude
                 }
 
                 // Call recursively with image
-                await StartStreamingAsync(claudeSession, stateData, customParameters, customHeaders, useFunctions, token);
+                await StartStreamingAsync(claudeSession, customParameters, customHeaders, useFunctions, token);
             }
             else
             {

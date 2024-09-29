@@ -23,7 +23,6 @@ namespace ChatdollKit.Dialog
         public DialogStatus Status { get; private set; }
         private string processingId { get; set; }
         private ISkillRouter skillRouter { get; set; }
-        private IStateStore stateStore { get; set; }
         private CancellationTokenSource dialogTokenSource { get; set; }
 
         // Actions for each status
@@ -37,7 +36,6 @@ namespace ChatdollKit.Dialog
         private void Awake()
         {
             // Get components
-            stateStore = gameObject.GetComponent<IStateStore>() ?? new MemoryStateStore();
             skillRouter = gameObject.GetComponent<ISkillRouter>();
             skillRouter.RegisterSkills();
 
@@ -84,14 +82,13 @@ namespace ChatdollKit.Dialog
                     OnRequestRecievedTask = UniTask.Delay(1);
                 }
 
-                var state = await stateStore.GetStateAsync("_");
                 var request = new Request(RequestType.Voice, text);
                 request.Payloads = payloads ?? new Dictionary<string, object>();
 
                 Status = DialogStatus.Routing;
 
                 // Extract intent for routing
-                var intentExtractionResult = await skillRouter.ExtractIntentAsync(request, state, token);
+                var intentExtractionResult = await skillRouter.ExtractIntentAsync(request, null, token);
                 if (intentExtractionResult != null)
                 {
                     request.Intent = intentExtractionResult.Intent;
@@ -100,12 +97,12 @@ namespace ChatdollKit.Dialog
                 if (token.IsCancellationRequested) { return; }
 
                 // Get skill to process intent / topic
-                var skill = skillRouter.Route(request, state, token);
+                var skill = skillRouter.Route(request, null, token);
                 if (token.IsCancellationRequested) { return; }
 
                 // Process skill
                 Status = DialogStatus.Processing;
-                var skillResponse = await skill.ProcessAsync(request, state, null, token);
+                var skillResponse = await skill.ProcessAsync(request, null, null, token);
                 if (token.IsCancellationRequested) { return; }
 
                 // Await before showing response
@@ -113,15 +110,13 @@ namespace ChatdollKit.Dialog
 
                 // Show response
                 Status = DialogStatus.Responding;
-                await skill.ShowResponseAsync(skillResponse, request, state, token);
+                await skill.ShowResponseAsync(skillResponse, request, null, token);
                 if (token.IsCancellationRequested) { return; }
 
                 if (OnResponseShownAsync != null)
                 {
                     await OnResponseShownAsync(skillResponse, token);
                 }
-
-                await stateStore.SaveStateAsync(state);
 
                 endConversation = skillResponse.EndConversation;
             }
@@ -188,11 +183,6 @@ namespace ChatdollKit.Dialog
             // Create new TokenSource and return its token
             dialogTokenSource = new CancellationTokenSource();
             return dialogTokenSource.Token;
-        }
-
-        public async UniTask ClearStateAsync(string userId = null)
-        {
-            await stateStore.DeleteStateAsync("_"); // "_" is the default user id of legacy ChatdollKit
         }
     }
 }

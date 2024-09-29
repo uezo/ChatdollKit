@@ -32,7 +32,7 @@ namespace ChatdollKit.LLM.CommandR
         protected bool isChatCompletionJSDone { get; set; } = false;
         protected Dictionary<string, CommandRSession> sessions { get; set; } = new Dictionary<string, CommandRSession>();
 
-        public override async UniTask StartStreamingAsync(string inputText, List<CommandRToolResult> toolResults, CommandRSession commandRSession, Dictionary<string, object> stateData, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
+        public override async UniTask StartStreamingAsync(string inputText, List<CommandRToolResult> toolResults, CommandRSession commandRSession, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
         {
             commandRSession.CurrentStreamBuffer = string.Empty;
             commandRSession.PartialStreamEndChunk = string.Empty;
@@ -95,7 +95,7 @@ namespace ChatdollKit.LLM.CommandR
             }
 
             // TODO: Support custom headers later...
-            if (customHeaders.Count >= 0)
+            if (customHeaders.Count > 0)
             {
                 Debug.LogWarning("Custom headers for Command R on WebGL is not supported for now.");
             }
@@ -160,7 +160,7 @@ namespace ChatdollKit.LLM.CommandR
             // Update histories
             if (commandRSession.ResponseType != ResponseType.Error && commandRSession.ResponseType != ResponseType.Timeout)
             {
-                await AddHistoriesAsync(commandRSession, stateData, token);
+                UpdateContext(commandRSession);
             }
             else
             {

@@ -31,24 +31,15 @@ namespace ChatdollKit.LLM.Dify
         protected bool isChatCompletionJSDone { get; set; } = false;
         protected Dictionary<string, DifySession> sessions { get; set; } = new Dictionary<string, DifySession>();
 
-        public override async UniTask StartStreamingAsync(DifySession difySession, Dictionary<string, object> stateData, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
+        public override async UniTask StartStreamingAsync(DifySession difySession, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
         {
             difySession.CurrentStreamBuffer = string.Empty;
 
             var difyRequest = (DifyRequestMessage)difySession.Contexts[0];
 
-            string sessionId;
-            if (stateData.ContainsKey("difySessionId"))
-            {
-                // Use existing session id for callback
-                sessionId = (string)stateData["difySessionId"];
-            }
-            else
-            {
-                // Add session for callback
-                sessionId = Guid.NewGuid().ToString();
-                sessions.Add(sessionId, difySession);
-            }
+            // Store session with id to receive streaming data from JavaScript
+            var sessionId = Guid.NewGuid().ToString();
+            sessions.Add(sessionId, difySession);
 
             // Make request data
             var data = new Dictionary<string, object>()
@@ -84,7 +75,7 @@ namespace ChatdollKit.LLM.Dify
             }
 
             // TODO: Support custom headers later...
-            if (customHeaders.Count >= 0)
+            if (customHeaders.Count > 0)
             {
                 Debug.LogWarning("Custom headers for Dify on WebGL is not supported for now.");
             }
@@ -150,7 +141,7 @@ namespace ChatdollKit.LLM.Dify
             // Update histories (put ConversationId to state)
             if (difySession.ResponseType != ResponseType.Error && difySession.ResponseType != ResponseType.Timeout)
             {
-                await AddHistoriesAsync(difySession, stateData, token);
+                UpdateContext(difySession);
             }
             else
             {
@@ -163,8 +154,8 @@ namespace ChatdollKit.LLM.Dify
                 throw new Exception($"Dify ends with error");
             }
 
+            // Process tags
             var extractedTags = ExtractTags(difySession.CurrentStreamBuffer);
-
             if (extractedTags.Count > 0 && HandleExtractedTags != null)
             {
                 HandleExtractedTags(extractedTags, difySession);
@@ -176,7 +167,8 @@ namespace ChatdollKit.LLM.Dify
                 difySession.IsVisionAvailable = false;
 
                 // Get image
-                var imageBytes = await CaptureImage(extractedTags["vision"]);
+                var imageSource = extractedTags["vision"];
+                var imageBytes = await CaptureImage(imageSource);
 
                 // Make contexts
                 if (imageBytes != null)
@@ -190,6 +182,7 @@ namespace ChatdollKit.LLM.Dify
                     else
                     {
                         difyRequest.uploaded_file_id = uploadedImageId;
+                        difyRequest.query = $"This is the image you captured. (source: {imageSource})";
                     }
                 }
                 else
@@ -198,7 +191,7 @@ namespace ChatdollKit.LLM.Dify
                 }
 
                 // Call recursively with image
-                await StartStreamingAsync(difySession, stateData, customParameters, customHeaders, useFunctions, token);
+                await StartStreamingAsync(difySession, customParameters, customHeaders, useFunctions, token);
             }
             else
             {

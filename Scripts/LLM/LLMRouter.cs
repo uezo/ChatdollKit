@@ -107,13 +107,12 @@ namespace ChatdollKit.LLM
             return llmFunctionSkills;
         }
 
-        public override async UniTask<IntentExtractionResult> ExtractIntentAsync(Request request, State state, CancellationToken token)
+        public override async UniTask<IntentExtractionResult> ExtractIntentAsync(Request request, State _, CancellationToken token)
         {
             var payloads = new Dictionary<string, object>();
             payloads.Add("RequestPayloads", request.Payloads);
-            payloads.Add("StateData", state.Data);
 
-            var messages = await llmService.MakePromptAsync(state.UserId, request.Text, payloads, token);
+            var messages = await llmService.MakePromptAsync("_", request.Text, payloads, token);
 
             var llmSession = await llmService.GenerateContentAsync(messages, payloads, token: token);
             llmSession.OnStreamingEnd = async () =>
@@ -134,6 +133,11 @@ namespace ChatdollKit.LLM
             }
 
             return new IntentExtractionResult(contentSkillName.ToLower(), Priority.Normal);
+        }
+
+        public override ISkill Route(Request request, State _, CancellationToken token)
+        {
+            return topicResolver[request.Intent.Name];
         }
     }
 }

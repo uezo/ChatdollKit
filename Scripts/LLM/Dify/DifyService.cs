@@ -10,9 +10,7 @@ namespace ChatdollKit.LLM.Dify
 {
     public class DifyService : LLMServiceBase
     {
-        public string ConversationIdKey = "DifyConversationId";
-        public string CustomParameterKey = "DifyParameters";
-        public string CustomHeaderKey = "DifyHeaders";
+        public string ConversationIdKey { get; } = "DifyConversationId";
 
         [Header("API configuration")]
         public string ApiKey;
@@ -25,14 +23,28 @@ namespace ChatdollKit.LLM.Dify
         [SerializeField]
         protected float noDataResponseTimeoutSec = 10.0f;
 
+        protected string currentConversationId;
+        protected string conversationIdKey = "DifyConversationId";
         public Func<string, UniTask<byte[]>> CaptureImage = null;
 
-#pragma warning disable CS1998
-        public async UniTask AddHistoriesAsync(ILLMSession llmSession, Dictionary<string, object> dataStore, CancellationToken token = default)
+        public string GetConversationId()
         {
-            dataStore[ConversationIdKey] = ((DifySession)llmSession).ConversationId;
+            if (Time.time - contextUpdatedAt > contextTimeout)
+            {
+                currentConversationId = string.Empty;
+            }
+
+            return currentConversationId;
         }
 
+        protected override void UpdateContext(LLMSession llmSession)
+        {
+            currentConversationId = ((DifySession)llmSession).ConversationId;
+
+            contextUpdatedAt = Time.time;
+        }
+
+#pragma warning disable CS1998
         public override async UniTask<List<ILLMMessage>> MakePromptAsync(string userId, string inputText, Dictionary<string, object> payloads, CancellationToken token = default)
         {
             var messages = new List<ILLMMessage>();
@@ -57,25 +69,24 @@ namespace ChatdollKit.LLM.Dify
         public override async UniTask<ILLMSession> GenerateContentAsync(List<ILLMMessage> messages, Dictionary<string, object> payloads, bool useFunctions = true, int retryCounter = 1, CancellationToken token = default)
         {
             // Custom parameters and headers
-            var stateData = (Dictionary<string, object>)payloads["StateData"];
-            var customParameters = stateData.ContainsKey(CustomParameterKey) ? (Dictionary<string, string>)stateData[CustomParameterKey] : new Dictionary<string, string>();
-            var customHeaders = stateData.ContainsKey(CustomHeaderKey) ? (Dictionary<string, string>)stateData[CustomHeaderKey] : new Dictionary<string, string>();
+            var requestPayloads = (Dictionary<string, object>)payloads["RequestPayloads"];
+            var customParameters = requestPayloads.ContainsKey(CustomParameterKey) ? (Dictionary<string, string>)requestPayloads[CustomParameterKey] : new Dictionary<string, string>();
+            var customHeaders = requestPayloads.ContainsKey(CustomHeaderKey) ? (Dictionary<string, string>)requestPayloads[CustomHeaderKey] : new Dictionary<string, string>();
 
             // Start streaming session
             var difySession = new DifySession();
             difySession.Contexts = messages;
 
-            var requestPayloads = (Dictionary<string, object>)payloads["RequestPayloads"];
             if (requestPayloads.ContainsKey(ConversationIdKey) && !string.IsNullOrEmpty((string)requestPayloads[ConversationIdKey]))
             {
                 difySession.ConversationId = requestPayloads[ConversationIdKey] as string;
             }
-            else if (stateData.ContainsKey(ConversationIdKey) && !string.IsNullOrEmpty((string)stateData[ConversationIdKey]))
+            else if (!string.IsNullOrEmpty(GetConversationId()))
             {
-                difySession.ConversationId = stateData[ConversationIdKey] as string;
+                difySession.ConversationId = GetConversationId();
             }
 
-            difySession.StreamingTask = StartStreamingAsync(difySession, stateData, customParameters, customHeaders, useFunctions, token);
+            difySession.StreamingTask = StartStreamingAsync(difySession, customParameters, customHeaders, useFunctions, token);
 
             // Retry
             if (difySession.ResponseType == ResponseType.Timeout)
@@ -96,7 +107,7 @@ namespace ChatdollKit.LLM.Dify
             return difySession;
         }
 
-        public virtual async UniTask StartStreamingAsync(DifySession difySession, Dictionary<string, object> stateData, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
+        public virtual async UniTask StartStreamingAsync(DifySession difySession, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
         {
             difySession.CurrentStreamBuffer = string.Empty;
 
@@ -213,7 +224,7 @@ namespace ChatdollKit.LLM.Dify
             // Update histories (put ConversationId to state)
             if (difySession.ResponseType != ResponseType.Error && difySession.ResponseType != ResponseType.Timeout)
             {
-                await AddHistoriesAsync(difySession, stateData, token);
+                UpdateContext(difySession);
             }
             else
             {
@@ -226,8 +237,8 @@ namespace ChatdollKit.LLM.Dify
                 throw new Exception($"Dify ends with error ({streamRequest.result}): {streamRequest.error}");
             }
 
+            // Process tags
             var extractedTags = ExtractTags(difySession.CurrentStreamBuffer);
-
             if (extractedTags.Count > 0 && HandleExtractedTags != null)
             {
                 HandleExtractedTags(extractedTags, difySession);
@@ -239,7 +250,8 @@ namespace ChatdollKit.LLM.Dify
                 difySession.IsVisionAvailable = false;
 
                 // Get image
-                var imageBytes = await CaptureImage(extractedTags["vision"]);
+                var imageSource = extractedTags["vision"];
+                var imageBytes = await CaptureImage(imageSource);
 
                 // Make contexts
                 if (imageBytes != null)
@@ -253,6 +265,7 @@ namespace ChatdollKit.LLM.Dify
                     else
                     {
                         difyRequest.uploaded_file_id = uploadedImageId;
+                        difyRequest.query = $"This is the image you captured. (source: {imageSource})";
                     }
                 }
                 else
@@ -261,7 +274,7 @@ namespace ChatdollKit.LLM.Dify
                 }
 
                 // Call recursively with image
-                await StartStreamingAsync(difySession, stateData, customParameters, customHeaders, useFunctions, token);
+                await StartStreamingAsync(difySession, customParameters, customHeaders, useFunctions, token);
             }
             else
             {
