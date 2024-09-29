@@ -12,10 +12,6 @@ namespace ChatdollKit.LLM.CommandR
 {
     public class CommandRService : LLMServiceBase
     {
-        public string HistoryKey = "CommandRHistories";
-        public string CustomParameterKey = "CommandRParameters";
-        public string CustomHeaderKey = "CommandRHeaders";
-
         [Header("API configuration")]
         public string ApiKey;
         public string Model = "command-r-08-2024";
@@ -66,29 +62,13 @@ namespace ChatdollKit.LLM.CommandR
             }
         }
 
-        protected List<CommandRMessage> GetHistoriesFromStateData(Dictionary<string, object> stateData)
+        protected override void UpdateContext(LLMSession llmSession)
         {
-            // Add histories to state if not exists
-            if (!stateData.ContainsKey(HistoryKey) || stateData[HistoryKey] == null)
-            {
-                stateData[HistoryKey] = new List<CommandRMessage>();
-            }
-
-            // Restore type from stored session data
-            if (stateData[HistoryKey] is JContainer)
-            {
-                stateData[HistoryKey] = ((JContainer)stateData[HistoryKey]).ToObject<List<CommandRMessage>>();
-            }
-
-            return (List<CommandRMessage>)stateData[HistoryKey];
+            context = ((CommandRSession)llmSession).ChatHistories.Cast<ILLMMessage>().ToList();
+            contextUpdatedAt = Time.time;
         }
 
 #pragma warning disable CS1998
-        public async UniTask AddHistoriesAsync(ILLMSession llmSession, Dictionary<string, object> dataStore, CancellationToken token = default)
-        {
-            dataStore[HistoryKey] = ((CommandRSession)llmSession).ChatHistories;
-        }
-
         public override async UniTask<List<ILLMMessage>> MakePromptAsync(string userId, string inputText, Dictionary<string, object> payloads, CancellationToken token = default)
         {
             var messages = new List<ILLMMessage>();
@@ -100,8 +80,7 @@ namespace ChatdollKit.LLM.CommandR
             }
 
             // Histories
-            var histories = GetHistoriesFromStateData((Dictionary<string, object>)payloads["StateData"]);
-            messages.AddRange(histories.Skip(histories.Count - HistoryTurns * 2).ToList());
+            messages.AddRange(GetContext(historyTurns));
 
             // Text message (This message will be removed before sending request)
             messages.Add(new CommandRMessage("USER", inputText));
@@ -113,9 +92,9 @@ namespace ChatdollKit.LLM.CommandR
         public override async UniTask<ILLMSession> GenerateContentAsync(List<ILLMMessage> messages, Dictionary<string, object> payloads, bool useFunctions = true, int retryCounter = 1, CancellationToken token = default)
         {
             // Custom parameters and headers
-            var stateData = (Dictionary<string, object>)payloads["StateData"];
-            var customParameters = stateData.ContainsKey(CustomParameterKey) ? (Dictionary<string, string>)stateData[CustomParameterKey] : new Dictionary<string, string>();
-            var customHeaders = stateData.ContainsKey(CustomHeaderKey) ? (Dictionary<string, string>)stateData[CustomHeaderKey] : new Dictionary<string, string>();
+            var requestPayloads = (Dictionary<string, object>)payloads["RequestPayloads"];
+            var customParameters = requestPayloads.ContainsKey(CustomParameterKey) ? (Dictionary<string, string>)requestPayloads[CustomParameterKey] : new Dictionary<string, string>();
+            var customHeaders = requestPayloads.ContainsKey(CustomHeaderKey) ? (Dictionary<string, string>)requestPayloads[CustomHeaderKey] : new Dictionary<string, string>();
 
             // Split input text / tool result from messages
             var userMessage = (CommandRMessage)messages.Last();
@@ -126,7 +105,7 @@ namespace ChatdollKit.LLM.CommandR
             // Start streaming session
             var commandRSession = new CommandRSession();
             commandRSession.Contexts = messages;
-            commandRSession.StreamingTask = StartStreamingAsync(inputText, toolResults, commandRSession, stateData, customParameters, customHeaders, useFunctions, token);
+            commandRSession.StreamingTask = StartStreamingAsync(inputText, toolResults, commandRSession, customParameters, customHeaders, useFunctions, token);
             await WaitForResponseType(commandRSession, token);
 
             // Retry
@@ -148,7 +127,7 @@ namespace ChatdollKit.LLM.CommandR
             return commandRSession;
         }
 
-        public virtual async UniTask StartStreamingAsync(string inputText, List<CommandRToolResult> toolResults, CommandRSession commandRSession, Dictionary<string, object> stateData, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
+        public virtual async UniTask StartStreamingAsync(string inputText, List<CommandRToolResult> toolResults, CommandRSession commandRSession, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
         {
             commandRSession.CurrentStreamBuffer = string.Empty;
 
@@ -292,7 +271,7 @@ namespace ChatdollKit.LLM.CommandR
             // Update histories
             if (commandRSession.ResponseType != ResponseType.Error && commandRSession.ResponseType != ResponseType.Timeout)
             {
-                await AddHistoriesAsync(commandRSession, stateData, token);
+                UpdateContext(commandRSession);
             }
             else
             {

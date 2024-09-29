@@ -32,22 +32,13 @@ namespace ChatdollKit.LLM.Gemini
         protected bool isChatCompletionJSDone { get; set; } = false;
         protected Dictionary<string, GeminiSession> sessions { get; set; } = new Dictionary<string, GeminiSession>();
 
-        public override async UniTask StartStreamingAsync(GeminiSession geminiSession, Dictionary<string, object> stateData, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
+        public override async UniTask StartStreamingAsync(GeminiSession geminiSession, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
         {
             geminiSession.CurrentStreamBuffer = string.Empty;
 
-            string sessionId;
-            if (stateData.ContainsKey("chatGPTSessionId"))
-            {
-                // Use existing session id for callback
-                sessionId = (string)stateData["chatGPTSessionId"];
-            }
-            else
-            {
-                // Add session for callback
-                sessionId = Guid.NewGuid().ToString();
-                sessions.Add(sessionId, geminiSession);
-            }
+            // Store session with id to receive streaming data from JavaScript
+            var sessionId = Guid.NewGuid().ToString();
+            sessions.Add(sessionId, geminiSession);
 
             // GenerationConfig
             var generationConfig = new GeminiGenerationConfig()
@@ -71,7 +62,7 @@ namespace ChatdollKit.LLM.Gemini
             }
 
             // TODO: Support custom headers later...
-            if (customHeaders.Count >= 0)
+            if (customHeaders.Count > 0)
             {
                 Debug.LogWarning("Custom headers for Gemini on WebGL is not supported for now.");
             }
@@ -142,18 +133,10 @@ namespace ChatdollKit.LLM.Gemini
                 await UniTask.Delay(10);
             }
 
-            // Remove non-text parts to keep context light
-            var lastUserMessage = geminiSession.Contexts.Last() as GeminiMessage;
-            if (lastUserMessage != null)
-            {
-                lastUserMessage.parts.RemoveAll(p => p.inlineData != null);
-                lastUserMessage.parts.RemoveAll(p => p.fileData != null);
-            }
-
             // Update histories
             if (geminiSession.ResponseType != ResponseType.Error && geminiSession.ResponseType != ResponseType.Timeout)
             {
-                await AddHistoriesAsync(geminiSession, stateData, token);
+                UpdateContext(geminiSession);
             }
             else
             {
@@ -166,8 +149,8 @@ namespace ChatdollKit.LLM.Gemini
                 throw new Exception($"Gemini ends with error");
             }
 
+            // Process tags
             var extractedTags = ExtractTags(geminiSession.CurrentStreamBuffer);
-
             if (extractedTags.Count > 0 && HandleExtractedTags != null)
             {
                 HandleExtractedTags(extractedTags, geminiSession);
@@ -179,16 +162,16 @@ namespace ChatdollKit.LLM.Gemini
                 geminiSession.IsVisionAvailable = false;
 
                 // Get image
-                var imageBytes = await CaptureImage(extractedTags["vision"]);
+                var imageSource = extractedTags["vision"];
+                var imageBytes = await CaptureImage(imageSource);
 
                 // Make contexts
-                var lastUserContentText = lastUserMessage.parts.Where(p => !string.IsNullOrEmpty(p.text)).First().text;
                 if (imageBytes != null)
                 {
                     geminiSession.Contexts.Add(new GeminiMessage("model", geminiSession.StreamBuffer));
                     // Image -> Text to get the better accuracy
                     var userMessageWithVision = new GeminiMessage("user", inlineData: new GeminiInlineData("image/jpeg", imageBytes));
-                    userMessageWithVision.parts.Add(new GeminiPart(text: lastUserContentText));
+                    userMessageWithVision.parts.Add(new GeminiPart(text: $"This is the image you captured. (source: {imageSource})"));
                     geminiSession.Contexts.Add(userMessageWithVision);
                 }
                 else
@@ -197,7 +180,7 @@ namespace ChatdollKit.LLM.Gemini
                 }
 
                 // Call recursively with image
-                await StartStreamingAsync(geminiSession, stateData, customParameters, customHeaders, useFunctions, token);
+                await StartStreamingAsync(geminiSession, customParameters, customHeaders, useFunctions, token);
             }
             else
             {

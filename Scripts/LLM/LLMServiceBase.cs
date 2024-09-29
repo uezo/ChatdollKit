@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using UnityEngine;
@@ -27,6 +28,10 @@ namespace ChatdollKit.LLM
                 }
             }
         }
+
+        public string CustomParameterKey { get; } = "CustomParameters";
+        public string CustomHeaderKey { get; } = "CustomHeaders";
+
         [Header("Debug")]
         public bool DebugMode = false;
 
@@ -34,7 +39,12 @@ namespace ChatdollKit.LLM
         [TextArea(1, 6)]
         public string SystemMessageContent;
         public string ErrorMessageContent;
-        public int HistoryTurns = 10;
+        [SerializeField]
+        protected int historyTurns = 10;
+        [SerializeField]
+        protected int contextTimeout = 600;    // 10 min
+        protected float contextUpdatedAt;
+        protected List<ILLMMessage> context = new List<ILLMMessage>();
 
         public Action OnEnabled { get; set; }
         public Action <Dictionary<string, string>, ILLMSession> HandleExtractedTags;
@@ -42,6 +52,33 @@ namespace ChatdollKit.LLM
         public Func<ILLMSession, CancellationToken, UniTask> OnStreamingEnd { get; set; }
 
         protected List<ILLMTool> llmTools = new List<ILLMTool>();
+
+        public virtual List<ILLMMessage> GetContext(int count)
+        {
+            if (Time.time - contextUpdatedAt > contextTimeout)
+            {
+                ClearContext();
+            }
+
+            // Return copy not to update context directly
+            return context.Skip(context.Count - count * 2).ToList();
+        }
+
+        public virtual List<ILLMMessage> GetContextRaw()
+        {
+            return context;
+        }
+
+        protected virtual void UpdateContext(LLMSession llmSession)
+        {
+            Debug.LogWarning("Override this method to update context. Nothing is done at the base class.");
+        }
+
+        public virtual void ClearContext()
+        {
+            context.Clear();
+            contextUpdatedAt = Time.time;
+        }
 
         public virtual void AddTool(ILLMTool tool)
         {

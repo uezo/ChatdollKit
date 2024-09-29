@@ -6,16 +6,11 @@ using UnityEngine;
 using UnityEngine.Networking;
 using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace ChatdollKit.LLM.Gemini
 {
     public class GeminiService : LLMServiceBase
     {
-        public string HistoryKey = "GeminiHistories";
-        public string CustomParameterKey = "GeminiParameters";
-        public string CustomHeaderKey = "GeminiHeaders";
-
         [Header("API configuration")]
         public string ApiKey;
         public string Model = "gemini-1.5-flash-latest";
@@ -45,49 +40,36 @@ namespace ChatdollKit.LLM.Gemini
             );
         }
 
-        protected List<GeminiMessage> GetHistoriesFromStateData(Dictionary<string, object> stateData)
+        protected override void UpdateContext(LLMSession llmSession)
         {
-            // Add histories to state if not exists
-            if (!stateData.ContainsKey(HistoryKey) || stateData[HistoryKey] == null)
-            {
-                stateData[HistoryKey] = new List<GeminiMessage>();
-            }
+            // User message
+            var lastUserMessage = llmSession.Contexts.Last() as GeminiMessage;
+            // Remove non-text content to keep context light
+            lastUserMessage.parts.RemoveAll(p => p.inlineData != null);
+            lastUserMessage.parts.RemoveAll(p => p.fileData != null);
+            context.Add(lastUserMessage);
 
-            // Restore type from stored session data
-            if (stateData[HistoryKey] is JContainer)
-            {
-                stateData[HistoryKey] = ((JContainer)stateData[HistoryKey]).ToObject<List<GeminiMessage>>();
-            }
-
-            return (List<GeminiMessage>)stateData[HistoryKey];
-        }
-
-#pragma warning disable CS1998
-        public async UniTask AddHistoriesAsync(ILLMSession llmSession, Dictionary<string, object> dataStore, CancellationToken token = default)
-        {
-            var histories = GetHistoriesFromStateData(dataStore);
-            var userMessage = (GeminiMessage)llmSession.Contexts.Last();
-            userMessage.parts.RemoveAll(p => p.inlineData != null);
-            userMessage.parts.RemoveAll(p => p.fileData != null);
-            histories.Add(userMessage);
-
+            // Assistant message
             if (llmSession.ResponseType == ResponseType.FunctionCalling)
             {
                 var functionCallMessage = new GeminiMessage("model", functionCall: new GeminiFunctionCall() {
                     name = llmSession.FunctionName,
                     args = JsonConvert.DeserializeObject<Dictionary<string, object>>(llmSession.StreamBuffer)
                 });
-                histories.Add(functionCallMessage);
+                context.Add(functionCallMessage);
 
                 // Add also to contexts for using this message in this turn
                 llmSession.Contexts.Add(functionCallMessage);
             }
             else
             {
-                histories.Add(new GeminiMessage("model", llmSession.StreamBuffer));
+                context.Add(new GeminiMessage("model", llmSession.StreamBuffer));
             }
+
+            contextUpdatedAt = Time.time;
         }
 
+#pragma warning disable CS1998
         public override async UniTask<List<ILLMMessage>> MakePromptAsync(string userId, string inputText, Dictionary<string, object> payloads, CancellationToken token = default)
         {
             var messages = new List<ILLMMessage>();
@@ -100,8 +82,7 @@ namespace ChatdollKit.LLM.Gemini
             }
 
             // Histories
-            var histories = GetHistoriesFromStateData((Dictionary<string, object>)payloads["StateData"]);
-            messages.AddRange(histories.Skip(histories.Count - HistoryTurns * 2).ToList());
+            messages.AddRange(GetContext(historyTurns));
 
             // User (current input)
             if (((Dictionary<string, object>)payloads["RequestPayloads"]).ContainsKey("imageBytes"))
@@ -121,14 +102,14 @@ namespace ChatdollKit.LLM.Gemini
         public override async UniTask<ILLMSession> GenerateContentAsync(List<ILLMMessage> messages, Dictionary<string, object> payloads, bool useFunctions = true, int retryCounter = 1, CancellationToken token = default)
         {
             // Custom parameters and headers
-            var stateData = (Dictionary<string, object>)payloads["StateData"];
-            var customParameters = stateData.ContainsKey(CustomParameterKey) ? (Dictionary<string, string>)stateData[CustomParameterKey] : new Dictionary<string, string>();
-            var customHeaders = stateData.ContainsKey(CustomHeaderKey) ? (Dictionary<string, string>)stateData[CustomHeaderKey] : new Dictionary<string, string>();
+            var requestPayloads = (Dictionary<string, object>)payloads["RequestPayloads"];
+            var customParameters = requestPayloads.ContainsKey(CustomParameterKey) ? (Dictionary<string, string>)requestPayloads[CustomParameterKey] : new Dictionary<string, string>();
+            var customHeaders = requestPayloads.ContainsKey(CustomHeaderKey) ? (Dictionary<string, string>)requestPayloads[CustomHeaderKey] : new Dictionary<string, string>();
 
             // Start streaming session
             var geminiSession = new GeminiSession();
             geminiSession.Contexts = messages;
-            geminiSession.StreamingTask = StartStreamingAsync(geminiSession, stateData, customParameters, customHeaders, useFunctions, token);
+            geminiSession.StreamingTask = StartStreamingAsync(geminiSession, customParameters, customHeaders, useFunctions, token);
             await WaitForResponseType(geminiSession, token);
 
             if (geminiSession.ResponseType == ResponseType.Timeout)
@@ -149,7 +130,7 @@ namespace ChatdollKit.LLM.Gemini
             return geminiSession;
         }
 
-        public virtual async UniTask StartStreamingAsync(GeminiSession geminiSession, Dictionary<string, object> stateData, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
+        public virtual async UniTask StartStreamingAsync(GeminiSession geminiSession, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
         {
             // Clear current stream buffer here
             geminiSession.CurrentStreamBuffer = string.Empty;
@@ -263,18 +244,10 @@ namespace ChatdollKit.LLM.Gemini
                 await UniTask.Delay(10);
             }
 
-            // Remove non-text parts to keep context light
-            var lastUserMessage = geminiSession.Contexts.Last() as GeminiMessage;
-            if (lastUserMessage != null)
-            {
-                lastUserMessage.parts.RemoveAll(p => p.inlineData != null);
-                lastUserMessage.parts.RemoveAll(p => p.fileData != null);
-            }
-
             // Update histories
             if (geminiSession.ResponseType != ResponseType.Error && geminiSession.ResponseType != ResponseType.Timeout)
             {
-                await AddHistoriesAsync(geminiSession, stateData, token);
+                UpdateContext(geminiSession);
             }
             else
             {
@@ -287,8 +260,8 @@ namespace ChatdollKit.LLM.Gemini
                 throw new Exception($"Gemini ends with error ({streamRequest.result}): {streamRequest.error}");
             }
 
+            // Process tags
             var extractedTags = ExtractTags(geminiSession.CurrentStreamBuffer);
-
             if (extractedTags.Count > 0 && HandleExtractedTags != null)
             {
                 HandleExtractedTags(extractedTags, geminiSession);
@@ -300,16 +273,16 @@ namespace ChatdollKit.LLM.Gemini
                 geminiSession.IsVisionAvailable = false;
 
                 // Get image
-                var imageBytes = await CaptureImage(extractedTags["vision"]);
+                var imageSource = extractedTags["vision"];
+                var imageBytes = await CaptureImage(imageSource);
 
                 // Make contexts
-                var lastUserContentText = lastUserMessage.parts.Where(p => !string.IsNullOrEmpty(p.text)).First().text;
                 if (imageBytes != null)
                 {
                     geminiSession.Contexts.Add(new GeminiMessage("model", geminiSession.StreamBuffer));
                     // Image -> Text to get the better accuracy
                     var userMessageWithVision = new GeminiMessage("user", inlineData: new GeminiInlineData("image/jpeg", imageBytes));
-                    userMessageWithVision.parts.Add(new GeminiPart(text: lastUserContentText));
+                    userMessageWithVision.parts.Add(new GeminiPart(text: $"This is the image you captured. (source: {imageSource})"));
                     geminiSession.Contexts.Add(userMessageWithVision);
                 }
                 else
@@ -318,7 +291,7 @@ namespace ChatdollKit.LLM.Gemini
                 }
 
                 // Call recursively with image
-                await StartStreamingAsync(geminiSession, stateData, customParameters, customHeaders, useFunctions, token);
+                await StartStreamingAsync(geminiSession, customParameters, customHeaders, useFunctions, token);
             }
             else
             {

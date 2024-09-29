@@ -6,16 +6,11 @@ using UnityEngine;
 using UnityEngine.Networking;
 using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace ChatdollKit.LLM.ChatGPT
 {
     public class ChatGPTService : LLMServiceBase
     {
-        public string HistoryKey = "ChatGPTHistories";
-        public string CustomParameterKey = "ChatGPTParameters";
-        public string CustomHeaderKey = "ChatGPTHeaders";
-
         [Header("API configuration")]
         public string ApiKey;
         public string Model = "gpt-4o-mini";
@@ -54,40 +49,18 @@ namespace ChatdollKit.LLM.ChatGPT
             }
         }
 
-        protected List<ILLMMessage> GetHistoriesFromStateData(Dictionary<string, object> stateData, int count)
+        protected override void UpdateContext(LLMSession llmSession)
         {
-            var messages = new List<ILLMMessage>();
-
-            // Add histories to state if not exists
-            if (!stateData.ContainsKey(HistoryKey) || stateData[HistoryKey] == null)
+            // User message
+            var lastUserMessage = llmSession.Contexts.Last();
+            if (lastUserMessage is ChatGPTUserMessage chatGPTUserMessage)
             {
-                stateData[HistoryKey] = new JArray();
-                return messages;
+                // Remove non-text content to keep context light
+                chatGPTUserMessage.content.RemoveAll(part => !(part is TextContentPart));
             }
+            context.Add(lastUserMessage);
 
-            // Get JToken array from state
-            var serializedMessagesAll = (JArray)stateData[HistoryKey];
-            var serializedMessages = serializedMessagesAll.Skip(serializedMessagesAll.Count - count * 2).ToList();
-            for (var i = 0; i < serializedMessages.Count; i++)
-            {
-                // JToken -> string -> Restore object
-                messages.Add(JsonConvert.DeserializeObject<ILLMMessage>(serializedMessages[i].ToString(), messageSerializationSettings));
-            }
-
-            return messages;
-        }
-
-#pragma warning disable CS1998
-        public async UniTask AddHistoriesAsync(ILLMSession llmSession, Dictionary<string, object> dataStore, CancellationToken token = default)
-        {
-            // Prepare state store
-            var serializedMessages = (JArray)dataStore[HistoryKey];
-
-            // Add user message
-            var serializedUserMessage = JsonConvert.SerializeObject(llmSession.Contexts.Last(), messageSerializationSettings);
-            serializedMessages.Add(serializedUserMessage);
-
-            // Add assistant message
+            // Assistant message
             if (llmSession.ResponseType == ResponseType.FunctionCalling)
             {
                 var functionCallMessage = new ChatGPTAssistantMessage(tool_calls: new List<Dictionary<string, object>>() {
@@ -101,7 +74,7 @@ namespace ChatdollKit.LLM.ChatGPT
                         }},
                     }
                 });
-                serializedMessages.Add(JsonConvert.SerializeObject(functionCallMessage, messageSerializationSettings));
+                context.Add(functionCallMessage);
 
                 // Add also to contexts for using this message in this turn
                 llmSession.Contexts.Add(functionCallMessage);
@@ -109,10 +82,13 @@ namespace ChatdollKit.LLM.ChatGPT
             else
             {
                 var assistantMessage = new ChatGPTAssistantMessage(llmSession.StreamBuffer);
-                serializedMessages.Add(JsonConvert.SerializeObject(assistantMessage, messageSerializationSettings));
+                context.Add(assistantMessage);
             }
+
+            contextUpdatedAt = Time.time;
         }
 
+#pragma warning disable CS1998
         public override async UniTask<List<ILLMMessage>> MakePromptAsync(string userId, string inputText, Dictionary<string, object> payloads, CancellationToken token = default)
         {
             var messages = new List<ILLMMessage>();
@@ -124,8 +100,7 @@ namespace ChatdollKit.LLM.ChatGPT
             }
 
             // Histories
-            var histories = GetHistoriesFromStateData((Dictionary<string, object>)payloads["StateData"], HistoryTurns);
-            messages.AddRange(histories);
+            messages.AddRange(GetContext(historyTurns));
 
             // User (current input)
             if (((Dictionary<string, object>)payloads["RequestPayloads"]).ContainsKey("imageBytes"))
@@ -153,14 +128,14 @@ namespace ChatdollKit.LLM.ChatGPT
         public override async UniTask<ILLMSession> GenerateContentAsync(List<ILLMMessage> messages, Dictionary<string, object> payloads, bool useFunctions = true, int retryCounter = 1, CancellationToken token = default)
         {
             // Custom parameters and headers
-            var stateData = (Dictionary<string, object>)payloads["StateData"];
-            var customParameters = stateData.ContainsKey(CustomParameterKey) ? (Dictionary<string, string>)stateData[CustomParameterKey] : new Dictionary<string, string>();
-            var customHeaders = stateData.ContainsKey(CustomHeaderKey) ? (Dictionary<string, string>)stateData[CustomHeaderKey] : new Dictionary<string, string>();
+            var requestPayloads = (Dictionary<string, object>)payloads["RequestPayloads"];
+            var customParameters = requestPayloads.ContainsKey(CustomParameterKey) ? (Dictionary<string, string>)requestPayloads[CustomParameterKey] : new Dictionary<string, string>();
+            var customHeaders = requestPayloads.ContainsKey(CustomHeaderKey) ? (Dictionary<string, string>)requestPayloads[CustomHeaderKey] : new Dictionary<string, string>();
 
             // Start streaming session
             var chatGPTSession = new ChatGPTSession();
             chatGPTSession.Contexts = messages;
-            chatGPTSession.StreamingTask = StartStreamingAsync(chatGPTSession, stateData, customParameters, customHeaders, useFunctions, token);
+            chatGPTSession.StreamingTask = StartStreamingAsync(chatGPTSession, customParameters, customHeaders, useFunctions, token);
             await WaitForFunctionInfo(chatGPTSession, token);
 
             // Retry
@@ -182,7 +157,7 @@ namespace ChatdollKit.LLM.ChatGPT
             return chatGPTSession;
         }
 
-        public virtual async UniTask StartStreamingAsync(ChatGPTSession chatGPTSession, Dictionary<string, object> stateData, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
+        public virtual async UniTask StartStreamingAsync(ChatGPTSession chatGPTSession, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
         {
             chatGPTSession.CurrentStreamBuffer = string.Empty;
 
@@ -323,21 +298,14 @@ namespace ChatdollKit.LLM.ChatGPT
                 await UniTask.Delay(10);
             }
 
-            // Remove non-text content to keep context light
-            var lastUserMessage = chatGPTSession.Contexts.Last() as ChatGPTUserMessage;
-            if (lastUserMessage != null)
-            {
-                lastUserMessage.content.RemoveAll(part => !(part is TextContentPart));
-            }
-
-            // Update histories
+            // Update context
             if (chatGPTSession.ResponseType != ResponseType.Error && chatGPTSession.ResponseType != ResponseType.Timeout)
             {
-                await AddHistoriesAsync(chatGPTSession, stateData, token);
+                UpdateContext(chatGPTSession);
             }
             else
             {
-                Debug.LogWarning($"Messages are not added to histories for response type is not success: {chatGPTSession.ResponseType}");
+                Debug.LogWarning($"Messages are not added to context for response type is not success: {chatGPTSession.ResponseType}");
             }
 
             // Ends with error
@@ -346,8 +314,8 @@ namespace ChatdollKit.LLM.ChatGPT
                 throw new Exception($"ChatGPT ends with error ({streamRequest.result}): {streamRequest.error}");
             }
 
+            // Process tags
             var extractedTags = ExtractTags(chatGPTSession.CurrentStreamBuffer);
-
             if (extractedTags.Count > 0 && HandleExtractedTags != null)
             {
                 HandleExtractedTags(extractedTags, chatGPTSession);
@@ -359,17 +327,17 @@ namespace ChatdollKit.LLM.ChatGPT
                 chatGPTSession.IsVisionAvailable = false;
 
                 // Get image
-                var imageBytes = await CaptureImage(extractedTags["vision"]);
+                var imageSource = extractedTags["vision"];
+                var imageBytes = await CaptureImage(imageSource);
 
                 // Make contexts
-                var lastUserContentText = ((TextContentPart)lastUserMessage.content[0]).text;
                 if (imageBytes != null)
                 {
                     chatGPTSession.Contexts.Add(new ChatGPTAssistantMessage(chatGPTSession.StreamBuffer));
                     // Image -> Text to get the better accuracy
                     chatGPTSession.Contexts.Add(new ChatGPTUserMessage(new List<IContentPart>() {
                         new ImageUrlContentPart("data:image/jpeg;base64," + Convert.ToBase64String(imageBytes)),
-                        new TextContentPart(lastUserContentText)
+                        new TextContentPart($"This is the image you captured. (source: {imageSource})")
                     }));
                 }
                 else
@@ -378,7 +346,7 @@ namespace ChatdollKit.LLM.ChatGPT
                 }
 
                 // Call recursively with image
-                await StartStreamingAsync(chatGPTSession, stateData, customParameters, customHeaders, useFunctions, token);
+                await StartStreamingAsync(chatGPTSession, customParameters, customHeaders, useFunctions, token);
             }
             else
             {

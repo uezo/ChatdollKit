@@ -32,22 +32,13 @@ namespace ChatdollKit.LLM.ChatGPT
         protected bool isChatCompletionJSDone { get; set; } = false;
         protected Dictionary<string, ChatGPTSession> sessions { get; set; } = new Dictionary<string, ChatGPTSession>();
 
-        public override async UniTask StartStreamingAsync(ChatGPTSession chatGPTSession, Dictionary<string, object> stateData, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
+        public override async UniTask StartStreamingAsync(ChatGPTSession chatGPTSession, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
         {
             chatGPTSession.CurrentStreamBuffer = string.Empty;
 
-            string sessionId;
-            if (stateData.ContainsKey("chatGPTSessionId"))
-            {
-                // Use existing session id for callback
-                sessionId = (string)stateData["chatGPTSessionId"];
-            }
-            else
-            {
-                // Add session for callback
-                sessionId = Guid.NewGuid().ToString();
-                sessions.Add(sessionId, chatGPTSession);
-            }
+            // Store session with id to receive streaming data from JavaScript
+            var sessionId = Guid.NewGuid().ToString();
+            sessions.Add(sessionId, chatGPTSession);
 
             // Make request data
             var data = new Dictionary<string, object>()
@@ -91,7 +82,7 @@ namespace ChatdollKit.LLM.ChatGPT
             }
 
             // TODO: Support custom headers later...
-            if (customHeaders.Count >= 0)
+            if (customHeaders.Count > 0)
             {
                 Debug.LogWarning("Custom headers for ChatGPT on WebGL is not supported for now.");
             }
@@ -153,17 +144,10 @@ namespace ChatdollKit.LLM.ChatGPT
                 await UniTask.Delay(10);
             }
 
-            // Remove non-text content to keep context light
-            var lastUserMessage = chatGPTSession.Contexts.Last() as ChatGPTUserMessage;
-            if (lastUserMessage != null)
-            {
-                lastUserMessage.content.RemoveAll(part => !(part is TextContentPart));
-            }
-
             // Update histories
             if (chatGPTSession.ResponseType != ResponseType.Error && chatGPTSession.ResponseType != ResponseType.Timeout)
             {
-                await AddHistoriesAsync(chatGPTSession, stateData, token);
+                UpdateContext(chatGPTSession);
             }
             else
             {
@@ -176,8 +160,8 @@ namespace ChatdollKit.LLM.ChatGPT
                 throw new Exception($"ChatGPT ends with error");
             }
 
+            // Process tags
             var extractedTags = ExtractTags(chatGPTSession.CurrentStreamBuffer);
-
             if (extractedTags.Count > 0 && HandleExtractedTags != null)
             {
                 HandleExtractedTags(extractedTags, chatGPTSession);
@@ -189,17 +173,17 @@ namespace ChatdollKit.LLM.ChatGPT
                 chatGPTSession.IsVisionAvailable = false;
 
                 // Get image
-                var imageBytes = await CaptureImage(extractedTags["vision"]);
+                var imageSource = extractedTags["vision"];
+                var imageBytes = await CaptureImage(imageSource);
 
                 // Make contexts
-                var lastUserContentText = ((TextContentPart)lastUserMessage.content[0]).text;
                 if (imageBytes != null)
                 {
                     chatGPTSession.Contexts.Add(new ChatGPTAssistantMessage(chatGPTSession.StreamBuffer));
                     // Image -> Text to get the better accuracy
                     chatGPTSession.Contexts.Add(new ChatGPTUserMessage(new List<IContentPart>() {
                         new ImageUrlContentPart("data:image/jpeg;base64," + Convert.ToBase64String(imageBytes)),
-                        new TextContentPart(lastUserContentText)
+                        new TextContentPart($"This is the image you captured. (source: {imageSource})")
                     }));
                 }
                 else
@@ -208,7 +192,7 @@ namespace ChatdollKit.LLM.ChatGPT
                 }
 
                 // Call recursively with image
-                await StartStreamingAsync(chatGPTSession, stateData, customParameters, customHeaders, useFunctions, token);
+                await StartStreamingAsync(chatGPTSession, customParameters, customHeaders, useFunctions, token);
             }
             else
             {
