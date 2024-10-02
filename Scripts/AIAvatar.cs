@@ -160,9 +160,10 @@ namespace ChatdollKit
             };
 
 #pragma warning disable CS1998
-            DialogProcessor.OnResponseShownAsync = async (response, token) =>
+
+            DialogProcessor.OnEndAsync = async (endConversation, token) =>
             {
-                // Control microphone after speech
+                // Control microphone after response / error shown
                 if (MicrophoneMuteBy == MicrophoneMuteStrategy.StopDevice)
                 {
                     MicrophoneManager.StartMicrophone();
@@ -179,10 +180,7 @@ namespace ChatdollKit
                 {
                     MicrophoneManager.SetNoiseGateThresholdDb(VoiceRecognitionThresholdDB);
                 }
-            };
 
-            DialogProcessor.OnEndAsync = async (endConversation, token) =>
-            {
                 if (endConversation)
                 {
                     // Change to idle mode immediately
@@ -220,7 +218,6 @@ namespace ChatdollKit
                 minRecordingDuration: idleMinRecordingDuration,
                 maxRecordingDuration: idleMaxRecordingDuration
             );
-            SpeechListener.StartListening();
 
             // Setup SpeechSynthesizer
             foreach (var speechSynthesizer in gameObject.GetComponents<ISpeechSynthesizer>())
