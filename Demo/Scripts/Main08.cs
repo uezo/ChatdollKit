@@ -14,14 +14,17 @@ namespace ChatdollKit.Demo
     public class Main08 : MonoBehaviour
     {
         // ChatdollKit components
-        private AIAvatar aiAvatar;
         private ModelController modelController;
         private SimpleCamera simpleCamera;
+
+        [SerializeField]
+        private AGIARegistry.AnimationCollection animationCollectionKey = AGIARegistry.AnimationCollection.AGIAFree;
+        [SerializeField]
+        private bool ListRegisteredAnimationsOnStart = false;
 
         private void Start()
         {
             // Get ChatdollKit components
-            aiAvatar = gameObject.GetComponent<AIAvatar>();
             modelController = gameObject.GetComponent<ModelController>();
 
             // Image capture for ChatGPT vision
@@ -35,37 +38,31 @@ namespace ChatdollKit.Demo
             }
             gameObject.GetComponent<ChatGPTService>().CaptureImage = CaptureImageAsync;
 
+            // Register animations
+            modelController.RegisterAnimations(AGIARegistry.GetAnimations(animationCollectionKey));
+            if (ListRegisteredAnimationsOnStart)
+            {
+                var animationsList = modelController.ListRegisteredAnimations();
+                Debug.Log($"=== Registered Animations ===\n{animationsList}");
+            }
+
             // Animation and face expression for idling
-            modelController.AddIdleAnimation(new Model.Animation("BaseParam", 6, 5f));
-            modelController.AddIdleAnimation(new Model.Animation("BaseParam", 2, 5f));
+            modelController.AddIdleAnimation("generic", 10.0f);
+            modelController.AddIdleAnimation("calm_hands_on_back", 5.0f);
 
-            // // Animation and face expression for processing
-            // var processingAnimation = new List<Model.Animation>();
-            // processingAnimation.Add(new Model.Animation("BaseParam", 3, 0.3f));
-            // processingAnimation.Add(new Model.Animation("BaseParam", 3, 20.0f, "AGIA_Layer_nodding_once_01", "Additive Layer"));
-            // var processingFace = new List<FaceExpression>();
-            // processingFace.Add(new FaceExpression("Blink", 3.0f));
-            // GetComponent<Orchestrator>().AddProcessingPresentaion(processingAnimation, processingFace);
-
-            // Animations used in conversation
-            modelController.RegisterAnimation("angry_hands_on_waist", new Model.Animation("BaseParam", 0, 3.0f));
-            modelController.RegisterAnimation("brave_hand_on_chest", new Model.Animation("BaseParam", 1, 3.0f));
-            modelController.RegisterAnimation("calm_hands_on_back", new Model.Animation("BaseParam", 2, 3.0f));
-            modelController.RegisterAnimation("concern_right_hand_front", new Model.Animation("BaseParam", 3, 3.0f));
-            modelController.RegisterAnimation("energetic_right_fist_up", new Model.Animation("BaseParam", 4, 3.0f));
-            modelController.RegisterAnimation("energetic_right_hand_piece", new Model.Animation("BaseParam", 5, 3.0f));
-            modelController.RegisterAnimation("pitiable_right_hand_on_back_head", new Model.Animation("BaseParam", 7, 3.0f));
-            modelController.RegisterAnimation("surprise_hands_open_front", new Model.Animation("BaseParam", 8, 3.0f));
-            modelController.RegisterAnimation("walking", new Model.Animation("BaseParam", 9, 3.0f));
-            modelController.RegisterAnimation("waving_arm", new Model.Animation("BaseParam", 10, 3.0f));
-            modelController.RegisterAnimation("look_away", new Model.Animation("BaseParam", 6, 3.0f, "AGIA_Layer_look_away_01", "Additive Layer"));
-            modelController.RegisterAnimation("nodding_once", new Model.Animation("BaseParam", 6, 3.0f, "AGIA_Layer_nodding_once_01", "Additive Layer"));
-            modelController.RegisterAnimation("swinging_body", new Model.Animation("BaseParam", 6, 3.0f, "AGIA_Layer_swinging_body_01", "Additive Layer"));
+            // Animation and face expression for processing
+            var processingAnimation = new List<Model.Animation>();
+            processingAnimation.Add(modelController.GetRegisteredAnimation("concern_right_hand_front", 0.3f));
+            processingAnimation.Add(modelController.GetRegisteredAnimation("concern_right_hand_front", 20.0f, "AGIA_Layer_nodding_once_01", "Additive Layer"));
+            var processingFace = new List<FaceExpression>();
+            processingFace.Add(new FaceExpression("Blink", 3.0f));
+            gameObject.GetComponent<AIAvatar>().AddProcessingPresentaion(processingAnimation, processingFace);
 
             // Animation and face expression for start up
             var animationOnStart = new List<Model.Animation>();
-            animationOnStart.Add(new Model.Animation("BaseParam", 6, 0.5f));
-            animationOnStart.Add(new Model.Animation("BaseParam", 10, 3.0f));
+            animationOnStart.Add(modelController.GetRegisteredAnimation("generic", 0.5f));
+            animationOnStart.Add(modelController.GetRegisteredAnimation("waving_arm", 3.0f));
+
             modelController.Animate(animationOnStart);
 
             var faceOnStart = new List<FaceExpression>();
