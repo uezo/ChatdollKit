@@ -150,11 +150,11 @@ namespace ChatdollKit.Dialog
                 Debug.LogWarning("CharacterMessageWindow is not set.");
             }
             // Synchronize speech and character message window
-            modelController.OnSayStart = (text, token) =>
+            modelController.OnSayStart = (voice, token) =>
             {
-                if (!string.IsNullOrEmpty(text))
+                if (!string.IsNullOrEmpty(voice.Text))
                 {
-                    _ = CharacterMessageWindow?.ShowMessageAsync(text, token);
+                    _ = CharacterMessageWindow?.ShowMessageAsync(voice.Text, token);
                 }
             };
             modelController.OnSayEnd = () =>
