@@ -100,11 +100,18 @@ namespace ChatdollKit
             MicrophoneManager.SetNoiseGateThresholdDb(VoiceRecognitionThresholdDB);
 
             // Setup ModelController
-            ModelController.OnSayStart = (text, token) =>
+            ModelController.OnSayStart = async (voice, token) =>
             {
-                if (!string.IsNullOrEmpty(text))
+                if (!string.IsNullOrEmpty(voice.Text))
                 {
-                    _ = CharacterMessageWindow?.ShowMessageAsync(text, token);
+                    if (CharacterMessageWindow != null)
+                    {
+                        if (voice.PreGap > 0)
+                        {
+                            await UniTask.Delay((int)(voice.PreGap * 1000));
+                        }
+                        _ = CharacterMessageWindow.ShowMessageAsync(voice.Text, token);
+                    }
                 }
             };
             ModelController.OnSayEnd = () =>

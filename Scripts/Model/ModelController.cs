@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
@@ -20,7 +21,7 @@ namespace ChatdollKit.Model
         public Func<Voice, CancellationToken, UniTask<AudioClip>> VoiceDownloadFunc;
         public Func<Voice, CancellationToken, UniTask<AudioClip>> TextToSpeechFunc;
         public Func<string, Dictionary<string, object>, CancellationToken, UniTask<AudioClip>> SpeechSynthesizerFunc;
-        public Action<string, CancellationToken> OnSayStart;
+        public Action<Voice, CancellationToken> OnSayStart;
         public Action OnSayEnd;
         public Dictionary<string, Func<Voice, CancellationToken, UniTask<AudioClip>>> TextToSpeechFunctions = new Dictionary<string, Func<Voice, CancellationToken, UniTask<AudioClip>>>();
         public bool UsePrefetch = true;
@@ -53,6 +54,8 @@ namespace ChatdollKit.Model
         // Face Expression
         [Header("Face")]
         public SkinnedMeshRenderer SkinnedMeshRenderer;
+        [SerializeField]
+        private float defaultFaceExpressionDuration = 7.0f;
         private IFaceExpressionProxy faceExpressionProxy;
         private List<FaceExpression> faceQueue = new List<FaceExpression>();
         private float faceStartAt { get; set; }
@@ -228,6 +231,59 @@ namespace ChatdollKit.Model
             }
         }
 
+        public AnimatedVoiceRequest ToAnimatedVoiceRequest(string inputText)
+        {
+            var avreq = new AnimatedVoiceRequest();
+            var preGap = 0f;
+            var ttsConfig = new TTSConfiguration();
+
+            var pattern = @"(\[.*?\])|([^[]+)";
+            foreach (Match match in Regex.Matches(inputText, pattern))
+            {
+                var parsedText = match.Value.Trim();
+
+                if (parsedText.StartsWith("[face:"))
+                {
+                    var face = parsedText.Substring(6, parsedText.Length - 7);
+                    avreq.AddFace(face, duration: defaultFaceExpressionDuration);
+                    ttsConfig.Params["style"] = face;
+                }
+                else if (parsedText.StartsWith("[anim:"))
+                {
+                    var anim = parsedText.Substring(6, parsedText.Length - 7);
+                    if (IsAnimationRegistered(anim))
+                    {
+                        var a = GetRegisteredAnimation(anim);
+                        avreq.AddAnimation(a.ParameterKey, a.ParameterValue, a.Duration, a.LayeredAnimationName, a.LayeredAnimationLayerName);
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"Animation {anim} is not registered.");
+                    }
+                }
+                else if (parsedText.StartsWith("[pause:"))
+                {
+                    var pauseValue = parsedText.Substring(7, parsedText.Length - 8);
+                    if (float.TryParse(pauseValue, out float gap))
+                    {
+                        preGap = gap;
+                    }
+                }
+                else if (parsedText.StartsWith("["))
+                {
+                    continue;
+                }
+                else
+                {
+                    avreq.AddVoiceTTS(parsedText, preGap, parsedText.EndsWith("。") ? 0 : 0.3f, ttsConfig: ttsConfig);
+                    // Reset preGap. Do not reset ttsConfig to continue the style of voice.
+                    preGap = 0f;
+                }
+            }
+
+            return avreq;
+        }
+
 #region Speech
         // Speak
         public async UniTask Say(List<Voice> voices, CancellationToken token)
@@ -249,7 +305,7 @@ namespace ChatdollKit.Model
                     return;
                 }
 
-                OnSayStart?.Invoke(v.Text, token);
+                OnSayStart?.Invoke(v, token);
 
                 try
                 {

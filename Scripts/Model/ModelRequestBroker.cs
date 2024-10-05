@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
@@ -12,16 +10,12 @@ namespace ChatdollKit.Model
     {
         [Header("Performance settings")]
         [SerializeField]
-        private List<string> splitChars = new List<string>() { "。", "！", "？", ".", "!", "?" };
+        private List<string> splitChars = new List<string>() { "。", "！", "？", ". ", "!", "?" };
         private List<string> splitCharsWithNewLine;
         [SerializeField]
-        private List<string> optionalSplitChars = new List<string>() { "、", "," };
+        private List<string> optionalSplitChars = new List<string>() { "、", ", " };
         [SerializeField]
         private int maxLengthBeforeOptionalSplit = 0;
-        [Header("Face Expression")]
-        [SerializeField]
-        private float faceExpressionDuration = 5.0f;
-
         private ModelController modelController;
         private Queue<AnimatedVoiceRequest> modelRequestQueue = new Queue<AnimatedVoiceRequest>();
 
@@ -87,8 +81,6 @@ namespace ChatdollKit.Model
         private List<AnimatedVoiceRequest> ToAnimatedVoiceRequests(string taggedText)
         {
             var animatedVoiceRequests = new List<AnimatedVoiceRequest>();
-            var facePattern = @"\[face:(.+?)\]";
-            var animPattern = @"\[anim:(.+?)\]";
             var isFirstAnimatedVoice = true;
 
             try
@@ -99,69 +91,27 @@ namespace ChatdollKit.Model
                 {
                     if (!string.IsNullOrEmpty(text.Trim()))
                     {
-                        var avreq = new AnimatedVoiceRequest(startIdlingOnEnd: isFirstAnimatedVoice);
-                        var textToSay = text;
-                        var ttsConfig = new TTSConfiguration();
-
-                        // Parse face tags and remove it from text to say
-                        var faceMatches = Regex.Matches(textToSay, facePattern);
-                        textToSay = Regex.Replace(textToSay, facePattern, "");
-
-                        // Parse animation tags and remove it from text to say
-                        var animMatches = Regex.Matches(textToSay, animPattern);
-                        textToSay = Regex.Replace(textToSay, animPattern, "");
-
-                        // Remove other tags (sometimes invalid format like `[smile]` remains)
-                        textToSay = Regex.Replace(textToSay, @"\[(.+?)\]", "");
-
-                        // Add voice
-                        avreq.AddVoiceTTS(textToSay, postGap: textToSay.EndsWith("。") ? 0 : 0.3f);
-
-                        var logMessage = textToSay;
-
-                        if (faceMatches.Count > 0)
-                        {
-                            // Add face if face tag included
-                            var face = faceMatches[0].Groups[1].Value;
-                            avreq.AddFace(face, duration: faceExpressionDuration);
-                            logMessage = $"[face:{face}]" + logMessage;
-                            // Set face as style parameter to voice
-                            ttsConfig.Params["style"] = face;                                   
-                            avreq.AnimatedVoices.Last().Voices.Last().TTSConfig = ttsConfig;
-                        }
-                        else if (isFirstAnimatedVoice)
-                        {
-                            // Reset face expression at the beginning of animated voice
-                            avreq.AddFace("Neutral");
-                        }
-
-                        if (animMatches.Count > 0)
-                        {
-                            // Add animation if anim tag included
-                            var anim = animMatches[0].Groups[1].Value;
-                            if (modelController.IsAnimationRegistered(anim))
-                            {
-                                var a = modelController.GetRegisteredAnimation(anim);
-                                avreq.AddAnimation(a.ParameterKey, a.ParameterValue, a.Duration, a.LayeredAnimationName, a.LayeredAnimationLayerName);
-                                logMessage = $"[anim:{anim}]" + logMessage;
-                            }
-                            else
-                            {
-                                Debug.LogWarning($"Animation {anim} is not registered.");
-                            }
-                        }
-
-                        Debug.Log($"ModelRequestBroker: {logMessage}");
-
+                        var avreq = modelController.ToAnimatedVoiceRequest(text);
+                        avreq.StartIdlingOnEnd = isFirstAnimatedVoice;
                         isFirstAnimatedVoice = false;
+
+                        Debug.Log($"ModelRequestBroker: {text}");
 
                         // Set AnimatedVoiceRequest to queue
                         animatedVoiceRequests.Add(avreq);
 
                         // Prefetch the voice from TTS service
-                        modelController.PrefetchVoices(new List<Voice>() {new Voice(
-                            string.Empty, 0.0f, 0.0f, textToSay, string.Empty, ttsConfig, VoiceSource.TTS, true, string.Empty
-                        )}, modelTokenSource.Token);
+                        foreach (var av in avreq.AnimatedVoices)
+                        {
+                            foreach (var v in av.Voices)
+                            {
+                                if (v.Text.Trim() == string.Empty) continue;
+
+                                modelController.PrefetchVoices(new List<Voice>(){new Voice(
+                                    string.Empty, 0.0f, 0.0f, v.Text, string.Empty, v.TTSConfig, VoiceSource.TTS, true, string.Empty
+                                )}, modelTokenSource.Token);
+                            }
+                        }
                     }
                 }
             }
