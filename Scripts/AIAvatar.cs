@@ -62,6 +62,7 @@ namespace ChatdollKit
         [Header("WakeWord settings")]
         public List<WakeWord> WakeWords;
         public List<string> CancelWords;
+        public List<WordWithAllowance> InterruptWords;
         public List<string> IgnoreWords = new List<string>() { "。", "、", "？", "！" };
         public int WakeLength;
 
@@ -352,6 +353,32 @@ namespace ChatdollKit
             return string.Empty;
         }
 
+        private string ExtractInterruptWord(string text)
+        {
+            var textLower = text.ToLower();
+            foreach (var iw in IgnoreWords)
+            {
+                textLower = textLower.Replace(iw.ToLower(), string.Empty);
+            }
+
+            foreach (var w in InterruptWords)
+            {
+                var itrwText = w.Text.ToLower();
+                if (textLower.Contains(itrwText))
+                {
+                    var prefix = textLower.Substring(0, textLower.IndexOf(itrwText));
+                    var suffix = textLower.Substring(textLower.IndexOf(itrwText) + itrwText.Length);
+
+                    if (prefix.Length <= w.PrefixAllowance && suffix.Length <= w.SuffixAllowance)
+                    {
+                        return text;
+                    }
+                }
+            }
+
+            return string.Empty;
+        }
+
         public void Chat(string text = null, Dictionary<string, object> payloads = null)
         {
             if (string.IsNullOrEmpty(text.Trim()))
@@ -415,6 +442,13 @@ namespace ChatdollKit
                     modeTimer = idleTimeout;
                     return;
                 }
+
+                if (!string.IsNullOrEmpty(ExtractInterruptWord(text)))
+                {
+                    await DialogProcessor.StopDialog();
+                    Mode = AvatarMode.Conversation;
+                    return;
+                }
             }
 
             if (Mode >= AvatarMode.Conversation)
@@ -447,6 +481,14 @@ namespace ChatdollKit
         {
             public List<Model.Animation> Animations { get; set; } = new List<Model.Animation>();
             public List<FaceExpression> Faces { get; set; }
+        }
+
+        [Serializable]
+        public class WordWithAllowance
+        {
+            public string Text;
+            public int PrefixAllowance = 4;
+            public int SuffixAllowance = 4;
         }
     }
 }
