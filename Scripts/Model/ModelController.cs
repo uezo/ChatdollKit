@@ -154,6 +154,11 @@ namespace ChatdollKit.Model
             }
         }
 
+        public void AddIdleAnimation(string name, float duration, int weight = 1, string mode = "normal")
+        {
+            AddIdleAnimation(GetRegisteredAnimation(name, duration), weight, mode);
+        }
+
         // Register idling face expression for mode
         public void AddIdleFace(string mode, string name)
         {
@@ -533,19 +538,44 @@ namespace ChatdollKit.Model
             }
         }
 
+        public void RegisterAnimations(Dictionary<string, Animation> animations)
+        {
+            foreach (var animation in animations)
+            {
+                RegisterAnimation(animation.Key, animation.Value);
+            }
+        }
+
         public void RegisterAnimation(string name, Animation animation)
         {
             registeredAnimations[name] = animation;
         }
 
-        public Animation GetRegisteredAnimation(string name)
+        public Animation GetRegisteredAnimation(string name, float duration = 0.0f, string layeredAnimationName = null, string layeredAnimationLayerName = null)
         {
-            return registeredAnimations[name];
+            return new Animation(
+                registeredAnimations[name].ParameterKey,
+                registeredAnimations[name].ParameterValue,
+                duration == 0.0f ? registeredAnimations[name].Duration : duration,
+                layeredAnimationName ?? registeredAnimations[name].LayeredAnimationName,
+                layeredAnimationLayerName ?? registeredAnimations[name].LayeredAnimationLayerName
+            );
         }
 
         public bool IsAnimationRegistered(string name)
         {
             return registeredAnimations.ContainsKey(name);
+        }
+
+        public string ListRegisteredAnimations(string itemTemplate = null)
+        {
+            var template = (itemTemplate == null ? "- {0}" : itemTemplate) + "\n";
+            var list = "";
+            foreach (var item in registeredAnimations.Keys)
+            {
+                list += string.Format(template, item);
+            }
+            return list;
         }
 #endregion
 
