@@ -12,6 +12,7 @@ namespace ChatdollKit.SpeechListener
         [Header("Voice Recorder Settings")]
         public float SilenceDurationThreshold = 0.3f;
         public float ListeningTimeout = 30.0f;  // Session timeout. Start new recognition session after silence for ListeningTimeout.
+        public bool AutoStart = true;
         public bool PrintResult = false;
 
         [Header("Azure Settings")]
@@ -56,6 +57,14 @@ namespace ChatdollKit.SpeechListener
                     recognizedTextQueue.Enqueue(e.Result.Text);
                 }
             };
+        }
+
+        private void Start()
+        {
+            if (AutoStart)
+            {
+                StartListening();
+            }
         }
 
         private void Update()
