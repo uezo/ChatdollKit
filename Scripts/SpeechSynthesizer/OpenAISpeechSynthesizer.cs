@@ -57,11 +57,16 @@ namespace ChatdollKit.SpeechSynthesizer
                 { "Content-Type", "application/json" }
             };
 
+#if UNITY_WEBGL && !UNITY_EDITOR
+            var format = "pcm";
+#else
+            var format = "mp3";
+#endif
             var data = System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new Dictionary<string, object>() {
                 { "model", "tts-1" },
                 { "input", text },
                 { "voice", Voice },
-                { "response_format", "mp3" },   // opus, aac and flac is not supported by Unity
+                { "response_format", format },
                 { "speed", Speed }
             }));
 
@@ -71,10 +76,9 @@ namespace ChatdollKit.SpeechSynthesizer
 #if UNITY_WEBGL && !UNITY_EDITOR
         protected async UniTask<AudioClip> DownloadAudioClipAsync(string url, byte[] data, Dictionary<string, string> headers, CancellationToken token)
         {
-            Debug.LogWarning("Unity doesn't support playback MP3 on WebGL.");
-
+            // https://platform.openai.com/docs/guides/text-to-speech/supported-output-formats
             var resp = await client.PostBytesAsync(url, data, headers, cancellationToken: token);
-            return AudioConverter.PCMToAudioClip(resp.Data, 1, 8000);
+            return AudioConverter.PCMToAudioClip(resp.Data, 1, 24000);
         }
 #else
         protected async UniTask<AudioClip> DownloadAudioClipAsync(string url, byte[] data, Dictionary<string, string> headers, CancellationToken token)
