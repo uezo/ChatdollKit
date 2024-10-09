@@ -22,7 +22,7 @@ namespace ChatdollKit.LLM
             await llmSession.StreamingTask;
 
             // Execute function
-            var responseForRequest = await ExecuteFunction(llmSession.StreamBuffer, request, state, user, token);
+            var responseForRequest = await ExecuteFunction(llmSession.StreamBuffer, request, null, user, token);
 
             // Add human message for next request
             var humanFriendlyAnswerRequestMessage = llmService.CreateMessageAfterFunction(responseForRequest.Role, responseForRequest.Body, llmSession: llmSession);
@@ -31,7 +31,6 @@ namespace ChatdollKit.LLM
             // Call LLM to get human-friendly response
             var payloads = new Dictionary<string, object>();
             payloads.Add("RequestPayloads", request.Payloads);
-            payloads.Add("StateData", state.Data);
             var llmSessionForHuman = await llmService.GenerateContentAsync(llmSession.Contexts, payloads, false, token: token);
             llmSessionForHuman.OnStreamingEnd = llmSession.OnStreamingEnd;
 
