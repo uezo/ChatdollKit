@@ -40,6 +40,26 @@ namespace ChatdollKit.LLM.Gemini
             );
         }
 
+        public override List<ILLMMessage> GetContext(int count)
+        {
+            if (Time.time - contextUpdatedAt > contextTimeout)
+            {
+                ClearContext();
+            }
+
+            var histories = context.Skip(Math.Max(0, context.Count - count)).ToList();
+
+            // Context must start from user message
+            var index = context.Count - count - 1;
+            while (index >= 0 && histories.FirstOrDefault() != null && ((GeminiMessage)histories[0]).role != "user")
+            {
+                histories.Insert(0, context[index]);
+                index--;
+            }
+
+            return histories;
+        }
+
         protected override void UpdateContext(LLMSession llmSession)
         {
             // User message
@@ -82,7 +102,7 @@ namespace ChatdollKit.LLM.Gemini
             }
 
             // Histories
-            messages.AddRange(GetContext(historyTurns));
+            messages.AddRange(GetContext(historyTurns * 2));
 
             // User (current input)
             if (((Dictionary<string, object>)payloads["RequestPayloads"]).ContainsKey("imageBytes"))
