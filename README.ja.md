@@ -70,6 +70,7 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
   - [基本設定](#基本設定)
   - [表情](#表情)
   - [アニメーション](#アニメーション)
+  - [Pause in Speech](#pause-in-speech)
   - [User Defined Tag](#user-defined-tag)
   - [Multi Modal](#multi-modal)
 - [🗣️ Speech Synthesizer (Text-to-Speech)](#-speech-synthesizer-text-to-speech)
@@ -77,9 +78,11 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
   - [Performance and Quality Tuning](#performance-and-quality-tuning)
 - [🎧 Speech Listener (Speech-to-Text)](#-speech-listener-speech-to-text)
   - [Settings on AIAvatar Inspector](#settings-on-aiavatar-inspector)
+  - [Using AzureStreamSpeechListener](#using-azurestreamspeechlistener)
 - [⏰ Wake Word Detection](#-wake-word-detection)
   - [Wake Words](#wake-words)
   - [Cancel Words](#cancel-words)
+  - [Interrupt Words](#interrupt-words)
   - [Ignore Words](#ignore-words)
   - [Wake Length](#wake-length)
 - [⚡️ AI Agent (Tool Call)](#-ai-agent-tool-call)
@@ -110,7 +113,7 @@ VRMモデルを使用したセットアップの手順は以下の通りです�
 - [UniVRM](https://github.com/vrm-c/UniVRM/releases/tag/v0.89.0)（v0.89.0）
 - [ChatdollKit VRM Extension](https://github.com/uezo/ChatdollKit/releases)
 - JSON.NET: プロジェクトにJSON.NETがない場合、パッケージマネージャーから[+] > gitのURLからパッケージを追加... > com.unity.nuget.newtonsoft-jsonを追加してください
-- [Azure Speech SDK](https://learn.microsoft.com/ja-jp/azure/ai-services/speech-service/quickstarts/setup-platform?pivots=programming-language-csharp&tabs=macos%2Cubuntu%2Cdotnetcli%2Cunity%2Cjre%2Cmaven%2Cnodejs%2Cmac%2Cpypi#install-the-speech-sdk-for-unity): （オプション）ストリームを使用したリアルタイム音声認識に必要です
+- [Azure Speech SDK](https://learn.microsoft.com/ja-jp/azure/ai-services/speech-service/quickstarts/setup-platform?pivots=programming-language-csharp&tabs=macos%2Cubuntu%2Cdotnetcli%2Cunity%2Cjre%2Cmaven%2Cnodejs%2Cmac%2Cpypi#install-the-speech-sdk-for-unity): （オプション）ストリームを使用したリアルタイム音声認識（`AzureStreamSpeechListener`）に必要です
 
 <img src="Documents/Images/burst.png" width="640">
 
@@ -241,24 +244,44 @@ Example
 ```
 
 アニメーションの名前は、AIがそれからどのような身振り手振りなのか理解できる必要があります。
-また、指定されたアニメーション名と`Animator Controller`に定義されたアニメーションを紐づけるため、以下の通り任意の箇所でコードベースで`LLMContentSkill`に登録する必要があります。
+また、指定されたアニメーション名と`Animator Controller`に定義されたアニメーションを紐づけるため、以下の通り任意の箇所でコードベースで`ModelController`に登録する必要があります。
 
 ```csharp
 // Base
-llmContentSkill.RegisterAnimation("angry_hands_on_waist", new Model.Animation("BaseParam", 0, 3.0f));
-llmContentSkill.RegisterAnimation("brave_hand_on_chest", new Model.Animation("BaseParam", 1, 3.0f));
-llmContentSkill.RegisterAnimation("calm_hands_on_back", new Model.Animation("BaseParam", 2, 3.0f));
-llmContentSkill.RegisterAnimation("concern_right_hand_front", new Model.Animation("BaseParam", 3, 3.0f));
-llmContentSkill.RegisterAnimation("energetic_right_fist_up", new Model.Animation("BaseParam", 4, 3.0f));
-llmContentSkill.RegisterAnimation("energetic_right_hand_piece", new Model.Animation("BaseParam", 5, 3.0f));
-llmContentSkill.RegisterAnimation("pitiable_right_hand_on_back_head", new Model.Animation("BaseParam", 7, 3.0f));
-llmContentSkill.RegisterAnimation("surprise_hands_open_front", new Model.Animation("BaseParam", 8, 3.0f));
-llmContentSkill.RegisterAnimation("walking", new Model.Animation("BaseParam", 9, 3.0f));
-llmContentSkill.RegisterAnimation("waving_arm", new Model.Animation("BaseParam", 10, 3.0f));
+modelController.RegisterAnimation("angry_hands_on_waist", new Model.Animation("BaseParam", 0, 3.0f));
+modelController.RegisterAnimation("brave_hand_on_chest", new Model.Animation("BaseParam", 1, 3.0f));
+modelController.RegisterAnimation("calm_hands_on_back", new Model.Animation("BaseParam", 2, 3.0f));
+modelController.RegisterAnimation("concern_right_hand_front", new Model.Animation("BaseParam", 3, 3.0f));
+modelController.RegisterAnimation("energetic_right_fist_up", new Model.Animation("BaseParam", 4, 3.0f));
+modelController.RegisterAnimation("energetic_right_hand_piece", new Model.Animation("BaseParam", 5, 3.0f));
+modelController.RegisterAnimation("pitiable_right_hand_on_back_head", new Model.Animation("BaseParam", 7, 3.0f));
+modelController.RegisterAnimation("surprise_hands_open_front", new Model.Animation("BaseParam", 8, 3.0f));
+modelController.RegisterAnimation("walking", new Model.Animation("BaseParam", 9, 3.0f));
+modelController.RegisterAnimation("waving_arm", new Model.Animation("BaseParam", 10, 3.0f));
 // Additive
-llmContentSkill.RegisterAnimation("look_away", new Model.Animation("BaseParam", 6, 3.0f, "AGIA_Layer_look_away_01", "Additive Layer"));
-llmContentSkill.RegisterAnimation("nodding_once", new Model.Animation("BaseParam", 6, 3.0f, "AGIA_Layer_nodding_once_01", "Additive Layer"));
-llmContentSkill.RegisterAnimation("swinging_body", new Model.Animation("BaseParam", 6, 3.0f, "AGIA_Layer_swinging_body_01", "Additive Layer"));
+modelController.RegisterAnimation("look_away", new Model.Animation("BaseParam", 6, 3.0f, "AGIA_Layer_look_away_01", "Additive Layer"));
+modelController.RegisterAnimation("nodding_once", new Model.Animation("BaseParam", 6, 3.0f, "AGIA_Layer_nodding_once_01", "Additive Layer"));
+modelController.RegisterAnimation("swinging_body", new Model.Animation("BaseParam", 6, 3.0f, "AGIA_Layer_swinging_body_01", "Additive Layer"));
+```
+
+Animation Girl Idle Animationsまたはその無償版を利用している場合、以下のように簡単に登録することもできます。
+
+```csharp
+modelController.RegisterAnimations(AGIARegistry.GetAnimations(animationCollectionKey));
+```
+
+
+### Pause in Speech
+
+キャラクターの発話に「間」を挿入することで、会話をより自然で人間らしくすることができます。
+
+「間」の長さを制御するために、システムプロンプトを通じてAIの応答に [pause:秒数] タグを含めます。秒数はfloat値を指定することができ、そのポイントでの間の長さを正確に制御することができます。以下はシステムプロンプトの例です。
+
+```
+You can insert pauses in the character's speech to make conversations feel more natural and human-like.
+
+Example:
+Hey, it's a beautiful day outside! [pause:1.5] What do you think we should do?
 ```
 
 
@@ -403,7 +426,26 @@ SpeechListnerに関連する設定の多くは、`AIAvatar`コンポーネント
 |**Idle Silence Duration Threshold**|アイドルモード時の録音終了までの無音時間（秒）。ウェイクワードの待ち受け状態では、短い無音をスムーズに識別するため小さな値を設定します|
 |**Idle Min Recording Duration**|アイドルモード時の最低録音時間。短いフレーズをスムーズに識別できるように、会話中よりも小さな値を設定します|
 |**Idle Max Recording Duration**|アイドルモード時の最長録音時間。ウェイクワードは通常短いため、会話中よりも短い値を設定します|
-|**Microphone Mute By**|発話中にアバターの発話内容を音声認識させないための方式です。<br><br>- None: 何もしません<br>- Threshold: 音声認識の閾値を`Voice Recognition Raised Threshold DB`まで上昇させます<br>- Mute: マイクからの入力音声を無視します<br>- Stop Device: マイクデバイスを停止します|
+|**Microphone Mute By**|発話中にアバターの発話内容を音声認識させないための方式です。<br><br>- None: 何もしません<br>- Threshold: 音声認識の閾値を`Voice Recognition Raised Threshold DB`まで上昇させます<br>- Mute: マイクからの入力音声を無視します<br>- Stop Device: マイクデバイスを停止します<br>- Stop Listener: リスナーを停止します。**AzureStreamSpeechListenerを使用する場合はこれを選択してください**|
+
+
+### Using AzureStreamSpeechListener
+
+`AzureStreamSpeechListener`を使用する場合は、他のSpeechListenerとは一部設定が異なります。これは`AzureStreamSpeechListener`がSDK内部でマイクを制御していることや、文字起こしが逐次行われることに起因します。
+
+1. **Microphone Mute Byの設定**: `Stop Listener`を選択してください。そうしないと、発話内容を聞き取ってしまい、会話が成立しません。
+1. **User Message Windowの設定**: `Is Text Animated`のチェックを外し、`Pre Gap`を`0`、`Post Gap`を`0.2`程度にしてください。
+1. **メインロジックのUpdate処理**: 認識した文言を逐次表示させるため、以下のようなコードを`Update()`の中に追加してください。
+
+```csharp
+if (aiAvatar.Mode == AIAvatar.AvatarMode.Conversation)
+{
+    if (!string.IsNullOrEmpty(azureStreamSpeechListener.RecognizedTextBuffer))
+    {
+        aiAvatar.UserMessageWindow.Show(azureStreamSpeechListener.RecognizedTextBuffer);
+    }
+}
+```
 
 
 ## ⏰ Wake Word Detection
@@ -423,6 +465,12 @@ SpeechListnerに関連する設定の多くは、`AIAvatar`コンポーネント
 ### Cancel Words
 
 このフレーズを認識したときに会話を終了します。複数のキャンセルワードを登録することができます。
+
+### Interrupt Words
+
+キャラクターが発話を停止し、ユーザーのリクエストを聞き始めます。複数の割り込みワードを登録することができます。（例：「待って」）
+
+**NOTE:** この機能を使用するには、AIAvatarのインスペクターで `Microphone Mute By` の項目から `Threshold` を選択してください。キャラクターが話している間もChatdollKitがあなたの声を聞けるようになります。
 
 ### Ignore Words
 
@@ -511,21 +559,6 @@ modelController.AddIdleAnimation(new Animation("BaseParam", 99, 5f), mode: "slee
 
 
 ```csharp
-// Configure ModelRequestBroker for remote control
-modelRequestBroker.RegisterAnimation("angry_hands_on_waist", new Model.Animation("BaseParam", 0, 3.0f));
-modelRequestBroker.RegisterAnimation("brave_hand_on_chest", new Model.Animation("BaseParam", 1, 3.0f));
-modelRequestBroker.RegisterAnimation("calm_hands_on_back", new Model.Animation("BaseParam", 2, 3.0f));
-modelRequestBroker.RegisterAnimation("concern_right_hand_front", new Model.Animation("BaseParam", 3, 3.0f));
-modelRequestBroker.RegisterAnimation("energetic_right_fist_up", new Model.Animation("BaseParam", 4, 3.0f));
-modelRequestBroker.RegisterAnimation("energetic_right_hand_piece", new Model.Animation("BaseParam", 5, 3.0f));
-modelRequestBroker.RegisterAnimation("pitiable_right_hand_on_back_head", new Model.Animation("BaseParam", 7, 3.0f));
-modelRequestBroker.RegisterAnimation("surprise_hands_open_front", new Model.Animation("BaseParam", 8, 3.0f));
-modelRequestBroker.RegisterAnimation("walking", new Model.Animation("BaseParam", 9, 3.0f));
-modelRequestBroker.RegisterAnimation("waving_arm", new Model.Animation("BaseParam", 10, 3.0f));
-modelRequestBroker.RegisterAnimation("look_away", new Model.Animation("BaseParam", 6, 3.0f, "AGIA_Layer_look_away_01", "Additive Layer"));
-modelRequestBroker.RegisterAnimation("nodding_once", new Model.Animation("BaseParam", 6, 3.0f, "AGIA_Layer_nodding_once_01", "Additive Layer"));
-modelRequestBroker.RegisterAnimation("swinging_body", new Model.Animation("BaseParam", 6, 3.0f, "AGIA_Layer_swinging_body_01", "Additive Layer"));
-
 // Configure message handler for remote control
 #pragma warning disable CS1998
 #if UNITY_WEBGL && !UNITY_EDITOR

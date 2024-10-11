@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
 using ChatdollKit.IO;
-using ChatdollKit.LLM;
 using ChatdollKit.LLM.ChatGPT;
 using ChatdollKit.Model;
 // using ChatdollKit.SpeechListener;
@@ -50,13 +49,13 @@ namespace ChatdollKit.Demo
             modelController.AddIdleAnimation("generic", 10.0f);
             modelController.AddIdleAnimation("calm_hands_on_back", 5.0f);
 
-            // Animation and face expression for processing
-            var processingAnimation = new List<Model.Animation>();
-            processingAnimation.Add(modelController.GetRegisteredAnimation("concern_right_hand_front", 0.3f));
-            processingAnimation.Add(modelController.GetRegisteredAnimation("concern_right_hand_front", 20.0f, "AGIA_Layer_nodding_once_01", "Additive Layer"));
-            var processingFace = new List<FaceExpression>();
-            processingFace.Add(new FaceExpression("Blink", 3.0f));
-            gameObject.GetComponent<AIAvatar>().AddProcessingPresentaion(processingAnimation, processingFace);
+            // // Animation and face expression for processing (Use when the response takes a long time)
+            // var processingAnimation = new List<Model.Animation>();
+            // processingAnimation.Add(modelController.GetRegisteredAnimation("concern_right_hand_front", 0.3f));
+            // processingAnimation.Add(modelController.GetRegisteredAnimation("concern_right_hand_front", 20.0f, "AGIA_Layer_nodding_once_01", "Additive Layer"));
+            // var processingFace = new List<FaceExpression>();
+            // processingFace.Add(new FaceExpression("Blink", 3.0f));
+            // gameObject.GetComponent<AIAvatar>().AddProcessingPresentaion(processingAnimation, processingFace);
 
             // Animation and face expression for start up
             var animationOnStart = new List<Model.Animation>();
@@ -112,6 +111,15 @@ namespace ChatdollKit.Demo
             // else if (aiAvatar.Mode == AIAvatar.AvatarMode.Sleep)
             // {
             //     aiAvatar.WakeLength = 0;
+            // }
+
+            // // Uncomment to use AzureStreamSpeechListener
+            // if (aiAvatar.Mode == AIAvatar.AvatarMode.Conversation)
+            // {
+            //     if (!string.IsNullOrEmpty(azureStreamSpeechListener.RecognizedTextBuffer))
+            //     {
+            //         aiAvatar.UserMessageWindow.Show(azureStreamSpeechListener.RecognizedTextBuffer);
+            //     }
             // }
         }
 

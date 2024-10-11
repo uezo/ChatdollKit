@@ -71,6 +71,7 @@ To run the demo for version 0.8, please follow the steps below after importing t
   - [Basic Settings](#basic-settings)
   - [Facial Expressions](#facial-expressions)
   - [Animations](#animations)
+  - [Pause in Speech](#pause-in-speech)
   - [User Defined Tag](#user-defined-tag)
   - [Multi Modal](#multi-modal)
 - [🗣️ Speech Synthesizer (Text-to-Speech)](#%EF%B8%8F-speech-synthesizer-text-to-speech)
@@ -78,9 +79,11 @@ To run the demo for version 0.8, please follow the steps below after importing t
   - [Performance and Quality Tuning](#performance-and-quality-tuning)
 - [🎧 Speech Listener (Speech-to-Text)](#-speech-listener-speech-to-text)
   - [Settings on AIAvatar Inspector](#settings-on-aiavatar-inspector)
+  - [Using AzureStreamSpeechListener](#using-azurestreamspeechlistener)
 - [⏰ Wake Word Detection](#-wake-word-detection)
   - [Wake Words](#wake-words)
   - [Cancel Words](#cancel-words)
+  - [Interrupt Words](#interrupt-words)
   - [Ignore Words](#ignore-words)
   - [Wake Length](#wake-length)
 - [⚡️ AI Agent (Tool Call)](#%EF%B8%8F-ai-agent-tool-call)
@@ -111,7 +114,7 @@ Download the latest version of [ChatdollKit.unitypackage](https://github.com/uez
 - [UniVRM](https://github.com/vrm-c/UniVRM/releases/tag/v0.89.0)(v0.89.0)
 - [ChatdollKit VRM Extension](https://github.com/uezo/ChatdollKit/releases)
 - JSON.NET: If your project doesn't have JSON.NET, add it from Package Manager > [+] > Add package from git URL... > com.unity.nuget.newtonsoft-json
-- [Azure Speech SDK](https://learn.microsoft.com/ja-jp/azure/ai-services/speech-service/quickstarts/setup-platform?pivots=programming-language-csharp&tabs=macos%2Cubuntu%2Cdotnetcli%2Cunity%2Cjre%2Cmaven%2Cnodejs%2Cmac%2Cpypi#install-the-speech-sdk-for-unity): (Option) Required for real-time speech recognition using a stream.
+- [Azure Speech SDK](https://learn.microsoft.com/ja-jp/azure/ai-services/speech-service/quickstarts/setup-platform?pivots=programming-language-csharp&tabs=macos%2Cubuntu%2Cdotnetcli%2Cunity%2Cjre%2Cmaven%2Cnodejs%2Cmac%2Cpypi#install-the-speech-sdk-for-unity): (Option) Required for `AzureStreamSpeechListener`: real-time speech recognition using a stream.
 
 <img src="Documents/Images/burst.png" width="640">
 
@@ -251,24 +254,44 @@ Example
 
 The animation names must be clear to the AI for it to understand the intended gesture.
 
-To link the specified animation name to the animation defined in the `Animator Controller`, register them in `LLMContentSkill` through code as shown below:
+To link the specified animation name to the animation defined in the `Animator Controller`, register them in `ModelController` through code as shown below:
 
 ```csharp
 // Base
-llmContentSkill.RegisterAnimation("angry_hands_on_waist", new Model.Animation("BaseParam", 0, 3.0f));
-llmContentSkill.RegisterAnimation("brave_hand_on_chest", new Model.Animation("BaseParam", 1, 3.0f));
-llmContentSkill.RegisterAnimation("calm_hands_on_back", new Model.Animation("BaseParam", 2, 3.0f));
-llmContentSkill.RegisterAnimation("concern_right_hand_front", new Model.Animation("BaseParam", 3, 3.0f));
-llmContentSkill.RegisterAnimation("energetic_right_fist_up", new Model.Animation("BaseParam", 4, 3.0f));
-llmContentSkill.RegisterAnimation("energetic_right_hand_piece", new Model.Animation("BaseParam", 5, 3.0f));
-llmContentSkill.RegisterAnimation("pitiable_right_hand_on_back_head", new Model.Animation("BaseParam", 7, 3.0f));
-llmContentSkill.RegisterAnimation("surprise_hands_open_front", new Model.Animation("BaseParam", 8, 3.0f));
-llmContentSkill.RegisterAnimation("walking", new Model.Animation("BaseParam", 9, 3.0f));
-llmContentSkill.RegisterAnimation("waving_arm", new Model.Animation("BaseParam", 10, 3.0f));
+modelController.RegisterAnimation("angry_hands_on_waist", new Model.Animation("BaseParam", 0, 3.0f));
+modelController.RegisterAnimation("brave_hand_on_chest", new Model.Animation("BaseParam", 1, 3.0f));
+modelController.RegisterAnimation("calm_hands_on_back", new Model.Animation("BaseParam", 2, 3.0f));
+modelController.RegisterAnimation("concern_right_hand_front", new Model.Animation("BaseParam", 3, 3.0f));
+modelController.RegisterAnimation("energetic_right_fist_up", new Model.Animation("BaseParam", 4, 3.0f));
+modelController.RegisterAnimation("energetic_right_hand_piece", new Model.Animation("BaseParam", 5, 3.0f));
+modelController.RegisterAnimation("pitiable_right_hand_on_back_head", new Model.Animation("BaseParam", 7, 3.0f));
+modelController.RegisterAnimation("surprise_hands_open_front", new Model.Animation("BaseParam", 8, 3.0f));
+modelController.RegisterAnimation("walking", new Model.Animation("BaseParam", 9, 3.0f));
+modelController.RegisterAnimation("waving_arm", new Model.Animation("BaseParam", 10, 3.0f));
 // Additive
-llmContentSkill.RegisterAnimation("look_away", new Model.Animation("BaseParam", 6, 3.0f, "AGIA_Layer_look_away_01", "Additive Layer"));
-llmContentSkill.RegisterAnimation("nodding_once", new Model.Animation("BaseParam", 6, 3.0f, "AGIA_Layer_nodding_once_01", "Additive Layer"));
-llmContentSkill.RegisterAnimation("swinging_body", new Model.Animation("BaseParam", 6, 3.0f, "AGIA_Layer_swinging_body_01", "Additive Layer"));
+modelController.RegisterAnimation("look_away", new Model.Animation("BaseParam", 6, 3.0f, "AGIA_Layer_look_away_01", "Additive Layer"));
+modelController.RegisterAnimation("nodding_once", new Model.Animation("BaseParam", 6, 3.0f, "AGIA_Layer_nodding_once_01", "Additive Layer"));
+modelController.RegisterAnimation("swinging_body", new Model.Animation("BaseParam", 6, 3.0f, "AGIA_Layer_swinging_body_01", "Additive Layer"));
+```
+
+If you use Animation Girl Idle Animations or its free edition, you can register animations easily:
+
+```csharp
+modelController.RegisterAnimations(AGIARegistry.GetAnimations(animationCollectionKey));
+```
+
+
+### Pause in Speech
+
+You can insert pauses in the character's speech to make conversations feel more natural and human-like.
+
+To control the length of pauses, include tags like `[pause:seconds]` in the AI responses, which can be set through system prompts. The specified number of seconds can be a float value, allowing precise control of the pause duration at that point in the dialogue. Here's an example of a system prompt:
+
+```
+You can insert pauses in the character's speech to make conversations feel more natural and human-like.
+
+Example:
+Hey, it's a beautiful day outside! [pause:1.5] What do you think we should do?
 ```
 
 
@@ -405,7 +428,36 @@ Most of the settings related to the SpeechListener are configured in the inspect
 |**Idle Silence Duration Threshold**|The amount of silence (seconds) required to stop recording during Idle mode. A smaller value is set to smoothly detect short periods of silence when waiting for the wake word.|
 |**Idle Min Recording Duration**|The minimum recording duration during Idle mode. A smaller value is set compared to conversation mode to smoothly detect short phrases.|
 |**Idle Max Recording Duration**|The maximum recording duration during Idle mode. Since wake words are usually short, a shorter value is set compared to conversation mode.|
-|**Microphone Mute By**|The method used to prevent the avatar's speech from being recognized during speech. <br><br>- None: Does nothing.<br>- Threshold: Raises the voice recognition threshold to `Voice Recognition Raised Threshold DB`.<br>- Mute: Ignores input sound from the microphone.<br>- Stop Device: Stops the microphone device.|
+|**Microphone Mute By**|The method used to prevent the avatar's speech from being recognized during speech. <br><br>- None: Does nothing.<br>- Threshold: Raises the voice recognition threshold to `Voice Recognition Raised Threshold DB`.<br>- Mute: Ignores input sound from the microphone.<br>- Stop Device: Stops the microphone device.<br>- Stop Listener: Stops the listener. **Select this when you use AzureStreamSpeechListener**|
+
+
+**NOTE: **`AzureStreamSpeechListener` doesn't have some properties above because that control microphone by SDK DLL internally.
+
+
+### Using AzureStreamSpeechListener
+
+`AzureStreamSpeechListener`を使用する場合は、他のSpeechListenerとは一部設定が異なります。これは`AzureStreamSpeechListener`がSDK内部でマイクを制御していることや、文字起こしが逐次行われることに起因します。
+
+1. **Microphone Mute Byの設定**: `Stop Listener`を選択してください。そうしないと、発話内容を聞き取ってしまい、会話が成立しません。
+1. **User Message Windowの設定**: `Is Text Animated`のチェックを外し、`Pre Gap`を`0`、`Post Gap`を`0.2`程度にしてください。
+1. **メインロジックのUpdate処理**: 認識した文言を逐次表示させるため、以下のようなコードを`Update()`の中に追加してください。
+
+To use `AzureStreamSpeechListener`, some settings differ from other SpeechListeners. This is because `AzureStreamSpeechListener` controls the microphone internally through the SDK and performs transcription incrementally.
+
+**Microphone Mute By**: Select `Stop Listener`. If this is not set, the character will listen to its own speech, disrupting the conversation.
+**User Message Window**: Uncheck `Is Text Animated`, and set `Pre Gap` to `0` and `Post Gap` to around `0.2`.
+**Update()**: To display the recognized text incrementally, add the following code inside the Update() method:
+
+
+```csharp
+if (aiAvatar.Mode == AIAvatar.AvatarMode.Conversation)
+{
+    if (!string.IsNullOrEmpty(azureStreamSpeechListener.RecognizedTextBuffer))
+    {
+        aiAvatar.UserMessageWindow.Show(azureStreamSpeechListener.RecognizedTextBuffer);
+    }
+}
+```
 
 
 ## ⏰ Wake Word Detection
@@ -424,6 +476,12 @@ The conversation starts when this phrase is recognized. You can register multipl
 ### Cancel Words
 
 The conversation ends when this phrase is recognized. You can register multiple cancel words.
+
+### Interrupt Words
+
+The character stop speaking and start listening user's request. You can register multiple interrupt words. (e.g. "Wait")
+
+**NOTE:** In the AIAvatar's inspector, select `Threshold` under `Microphone Mute By` to allow ChatdollKit to listen your voice while the character is speaking.
 
 ### Ignore Words
 
@@ -505,21 +563,6 @@ Additionally, to handle dialog requests over the network, attach the `ChatdollKi
 Below is a code example for using both of the above components.
 
 ```csharp
-// Configure ModelRequestBroker for remote control
-modelRequestBroker.RegisterAnimation("angry_hands_on_waist", new Model.Animation("BaseParam", 0, 3.0f));
-modelRequestBroker.RegisterAnimation("brave_hand_on_chest", new Model.Animation("BaseParam", 1, 3.0f));
-modelRequestBroker.RegisterAnimation("calm_hands_on_back", new Model.Animation("BaseParam", 2, 3.0f));
-modelRequestBroker.RegisterAnimation("concern_right_hand_front", new Model.Animation("BaseParam", 3, 3.0f));
-modelRequestBroker.RegisterAnimation("energetic_right_fist_up", new Model.Animation("BaseParam", 4, 3.0f));
-modelRequestBroker.RegisterAnimation("energetic_right_hand_piece", new Model.Animation("BaseParam", 5, 3.0f));
-modelRequestBroker.RegisterAnimation("pitiable_right_hand_on_back_head", new Model.Animation("BaseParam", 7, 3.0f));
-modelRequestBroker.RegisterAnimation("surprise_hands_open_front", new Model.Animation("BaseParam", 8, 3.0f));
-modelRequestBroker.RegisterAnimation("walking", new Model.Animation("BaseParam", 9, 3.0f));
-modelRequestBroker.RegisterAnimation("waving_arm", new Model.Animation("BaseParam", 10, 3.0f));
-modelRequestBroker.RegisterAnimation("look_away", new Model.Animation("BaseParam", 6, 3.0f, "AGIA_Layer_look_away_01", "Additive Layer"));
-modelRequestBroker.RegisterAnimation("nodding_once", new Model.Animation("BaseParam", 6, 3.0f, "AGIA_Layer_nodding_once_01", "Additive Layer"));
-modelRequestBroker.RegisterAnimation("swinging_body", new Model.Animation("BaseParam", 6, 3.0f, "AGIA_Layer_swinging_body_01", "Additive Layer"));
-
 // Configure message handler for remote control
 #pragma warning disable CS1998
 #if UNITY_WEBGL && !UNITY_EDITOR

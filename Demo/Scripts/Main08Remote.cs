@@ -7,7 +7,6 @@ using ChatdollKit.Dialog;
 using ChatdollKit.IO;
 using ChatdollKit.Model;
 using ChatdollKit.Network;
-using ChatdollKit.LLM;
 using ChatdollKit.LLM.ChatGPT;
 
 namespace ChatdollKit.Demo
