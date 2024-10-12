@@ -15,14 +15,22 @@
 - **Multi platforms**: Compatible with Windows, Mac, Linux, iOS, Android, and other Unity-supported platforms, including VR, AR, and WebGL.
 
 
-## 💎 What's New in Version 0.8.2
+## 💎 What's New in Version 0.8.3
 
-- **🌐 Control WebGL Character from JavaScript**: We’ve added the ability to control the ChatdollKit Unity application from JavaScript when running in WebGL builds. This allows for more seamless interactions between the Unity app and web-based systems.
-- **🗣️ Speech Synthesizer**: A new `SpeechSynthesizer` component has been introduced to streamline text-to-speech (TTS) operations. This component is reusable across projects without `Model` package, simplifying maintenance and reusability. 
+- **🎧 Stream Speech Listener**: We’ve added `AzureStreamSpeechListener` for smoother conversations by recognizing speech as it’s spoken.
+- **🗣️ Improved Conversation**: Interrupt characters to take your turn, and enjoy more expressive conversations with natural pauses—enhancing the overall experience.
+- **💃 Easier Animation Registration**: We’ve simplified the process of registering animations for your character, making your code cleaner and easier to manage.
+
 
 ---
 
 ### Previous Updates
+
+#### 0.8.2
+
+- **🌐 Control WebGL Character from JavaScript**: We’ve added the ability to control the ChatdollKit Unity application from JavaScript when running in WebGL builds. This allows for more seamless interactions between the Unity app and web-based systems.
+- **🗣️ Speech Synthesizer**: A new `SpeechSynthesizer` component has been introduced to streamline text-to-speech (TTS) operations. This component is reusable across projects without `Model` package, simplifying maintenance and reusability. 
+
 
 #### 0.8.1
 

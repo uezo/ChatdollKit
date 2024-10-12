@@ -14,14 +14,22 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 - **マルチプラットフォーム**: Windows、Mac、Linux、iOS、Android、およびその他のUnityサポートプラットフォーム（VR、AR、WebGLを含む）に対応
 
 
-## 💎 バージョン0.8.2の新機能
+## 💎 バージョン0.8.3の新機能
 
-- **🌐 JavaScriptによるWebGLキャラクター制御**: WebGLビルドで実行されるChatdollKit UnityアプリケーションをJavaScriptから制御できるようになりました。これにより、Unityアプリとウェブベースのシステム間でよりシームレスな連携が可能になります。
-- **🗣️ SpeechSynthesizerの導入**: テキスト読み上げ（TTS）のための新しい`SpeechSynthesizer`コンポーネントが導入されました。このコンポーネントは`Model`パッケージに依存せず、プロジェクト間で再利用可能なため、キャラクター対話以外のあらゆるユースケースで利用することができます。
+- **🎧 Stream Speech Listener**: 音声を逐次認識する`AzureStreamSpeechLister`を追加し、会話をよりスムーズなものにしました。
+- **🗣️ Improved Conversation**: キャラクターの発話を停止するInterrupt Wordsや会話に「間」を挿入する機構を追加し、会話体験をより自然で豊かなものにしました。
+- **💃 Easier Animation Registration**: キャラクターが利用するアニメーションの登録方法を簡易化し、ユーザーコードをより簡潔にできるようにしました。
+
 
 ---
 
 ### 以前の更新内容
+
+#### 0.8.2
+
+- **🌐 JavaScriptによるWebGLキャラクター制御**: WebGLビルドで実行されるChatdollKit UnityアプリケーションをJavaScriptから制御できるようになりました。これにより、Unityアプリとウェブベースのシステム間でよりシームレスな連携が可能になります。
+- **🗣️ SpeechSynthesizerの導入**: テキスト読み上げ（TTS）のための新しい`SpeechSynthesizer`コンポーネントが導入されました。このコンポーネントは`Model`パッケージに依存せず、プロジェクト間で再利用可能なため、キャラクター対話以外のあらゆるユースケースで利用することができます。
+
 
 #### 0.8.1
 
