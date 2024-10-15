@@ -60,7 +60,7 @@ namespace ChatdollKit
         public MicrophoneMuteStrategy MicrophoneMuteBy = MicrophoneMuteStrategy.Mute;
 
         [Header("WakeWord settings")]
-        public List<WakeWord> WakeWords;
+        public List<WordWithAllowance> WakeWords;
         public List<string> CancelWords;
         public List<WordWithAllowance> InterruptWords;
         public List<string> IgnoreWords = new List<string>() { "。", "、", "？", "！" };
