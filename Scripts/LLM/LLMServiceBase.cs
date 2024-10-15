@@ -80,9 +80,17 @@ namespace ChatdollKit.LLM
             contextUpdatedAt = Time.time;
         }
 
-        public virtual void AddTool(ILLMTool tool)
+        public virtual bool AddTool(ILLMTool tool)
         {
-            llmTools.Add(tool);
+            if (llmTools.Contains(tool))
+            {
+                return false;
+            }
+            else
+            {
+                llmTools.Add(tool);
+                return true;
+            }
         }
 
 #pragma warning disable CS1998
