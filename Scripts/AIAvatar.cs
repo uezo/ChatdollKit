@@ -4,6 +4,7 @@ using System.Threading;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
 using ChatdollKit.Dialog;
+using ChatdollKit.LLM;
 using ChatdollKit.Model;
 using ChatdollKit.SpeechListener;
 using ChatdollKit.SpeechSynthesizer;
@@ -69,6 +70,7 @@ namespace ChatdollKit
         [Header("ChatdollKit components")]
         public ModelController ModelController;
         public DialogProcessor DialogProcessor;
+        public LLMContentProcessor LLMContentProcessor;
         public MicrophoneManager MicrophoneManager;
         public ISpeechListener SpeechListener;
         public MessageWindowBase UserMessageWindow;
@@ -94,6 +96,7 @@ namespace ChatdollKit
             MicrophoneManager = MicrophoneManager ?? gameObject.GetComponent<MicrophoneManager>();
             ModelController = ModelController ?? gameObject.GetComponent<ModelController>();
             DialogProcessor = DialogProcessor ?? gameObject.GetComponent<DialogProcessor>();
+            LLMContentProcessor = LLMContentProcessor ?? gameObject.GetComponent<LLMContentProcessor>();
             SpeechListener = gameObject.GetComponent<ISpeechListener>();
 
             // Setup MicrophoneManager
@@ -168,7 +171,6 @@ namespace ChatdollKit
             };
 
 #pragma warning disable CS1998
-
             DialogProcessor.OnEndAsync = async (endConversation, token) =>
             {
                 // Control microphone after response / error shown
@@ -218,6 +220,52 @@ namespace ChatdollKit
 #pragma warning restore CS1998
 
             DialogProcessor.OnErrorAsync = OnErrorAsyncDefault;
+
+            // Setup LLM ContentProcessor
+            LLMContentProcessor.HandleSplittedText = (contentItem) =>
+            {
+                // Convert to AnimatedVoiceRequest
+                var avreq = ModelController.ToAnimatedVoiceRequest(contentItem.Text);
+                avreq.StartIdlingOnEnd = contentItem.IsFirstItem;
+                if (contentItem.IsFirstItem)
+                {
+                    if (avreq.AnimatedVoices[0].Faces.Count == 0)
+                    {
+                        // Reset face expression at the beginning of animated voice
+                        avreq.AddFace("Neutral");
+                    }
+                }
+                contentItem.Data = avreq;
+            };
+
+#pragma warning disable CS1998
+            LLMContentProcessor.ProcessContentItemAsync = async (contentItem, token) =>
+            {
+                if (contentItem.Data is AnimatedVoiceRequest avreq)
+                {
+                    // Prefetch the voice from TTS service
+                    foreach (var av in avreq.AnimatedVoices)
+                    {
+                        foreach (var v in av.Voices)
+                        {
+                            if (v.Text.Trim() == string.Empty) continue;
+
+                            ModelController.PrefetchVoices(new List<Voice>(){new Voice(
+                                string.Empty, 0.0f, 0.0f, v.Text, string.Empty, v.TTSConfig, VoiceSource.TTS, true, string.Empty
+                            )}, token);
+                        }
+                    }
+                }
+            };
+#pragma warning restore CS1998
+
+            LLMContentProcessor.ShowContentItemAsync = async (contentItem, cancellationToken) =>
+            {
+                if (contentItem.Data is AnimatedVoiceRequest avreq)
+                {
+                    await ModelController.AnimatedSay(avreq, cancellationToken);
+                }
+            };
 
             // Setup SpeechListner
             SpeechListener.OnRecognized = OnSpeechListenerRecognized;

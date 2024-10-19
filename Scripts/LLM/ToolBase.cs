@@ -27,7 +27,6 @@ namespace ChatdollKit.LLM
 
             // Call LLM to get human-friendly response
             var llmSessionForHuman = await llmService.GenerateContentAsync(llmSession.Contexts, payloads, false, token: token);
-            llmSessionForHuman.OnStreamingEnd = llmSession.OnStreamingEnd;
 
             return llmSessionForHuman;
         }

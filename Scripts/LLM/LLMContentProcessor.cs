@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
-using ChatdollKit.Model;
 
 namespace ChatdollKit.LLM
 {
@@ -15,39 +14,20 @@ namespace ChatdollKit.LLM
         private List<string> splitCharsWithNewLine;
         public List<string> OptionalSplitChars = new List<string>() { "、", ", " };
         public int MaxLengthBeforeOptionalSplit = 0;
-
-        public Action<string, AnimatedVoiceRequest> HandleSplittedText;
-
-        protected List<AnimatedVoiceRequest> responseAnimations { get; set; } = new List<AnimatedVoiceRequest>();
+        private Queue<LLMContentItem> llmContentQueue = new Queue<LLMContentItem>();
+        public Action<LLMContentItem> HandleSplittedText;
+        public Func<LLMContentItem, CancellationToken, UniTask> ProcessContentItemAsync;
+        public Func<LLMContentItem, CancellationToken, UniTask> ShowContentItemAsync;
         public bool IsParsing { get; protected set; } = false;
 
-        private ModelController modelController;
+        [Header("Debug")]
+        [SerializeField]
+        private bool debugMode = false;
 
-        private void Awake()
+        public async UniTask ProcessContentStreamAsync(ILLMSession llmSession, CancellationToken token)
         {
-            modelController = gameObject.GetComponent<ModelController>();
-        }
+            llmContentQueue.Clear();
 
-        public async UniTask ShowResponseAsync(ILLMSession llmSession, CancellationToken token)
-        {
-            // Clear responseAnimations before parsing and performing
-            responseAnimations.Clear();
-
-            // Start parsing voices, faces and animations and performing them concurrently
-            var parseTask = ParseAnimatedVoiceAsync(llmSession, token);
-            var performTask = PerformAnimatedVoiceAsync(llmSession, token);
-
-            // Wait API stream ends
-            await llmSession.StreamingTask;
-            await llmSession.OnStreamingEnd();
-
-            // Wait parsing and performance
-            await parseTask;
-            await performTask;
-        }
-
-        protected virtual async UniTask ParseAnimatedVoiceAsync(ILLMSession llmSession, CancellationToken token)
-        {
             IsParsing = true;
 
             // Split current buffer with the marks that represents the end of a sentence
@@ -56,7 +36,7 @@ namespace ChatdollKit.LLM
             try
             {
                 var splitIndex = 0;
-                var isFirstAnimatedVoice = true;
+                var isFirstWord = true;
 
                 while (!token.IsCancellationRequested)
                 {
@@ -77,35 +57,28 @@ namespace ChatdollKit.LLM
                             splitIndex += 1;
                             if (!string.IsNullOrEmpty(text.Trim()))
                             {
-                                var avreq = modelController.ToAnimatedVoiceRequest(text);
-                                avreq.StartIdlingOnEnd = isFirstAnimatedVoice;
-                                isFirstAnimatedVoice = false;
-
-                                HandleSplittedText?.Invoke(text, avreq);
-
-                                Debug.Log($"Assistant: {text}");
-
-                                // Set AnimatedVoiceRequest to queue
-                                responseAnimations.Add(avreq);
-
-                                // Prefetch the voice from TTS service
-                                foreach (var av in avreq.AnimatedVoices)
+                                if (debugMode)
                                 {
-                                    foreach (var v in av.Voices)
-                                    {
-                                        if (v.Text.Trim() == string.Empty) continue;
-
-                                        modelController.PrefetchVoices(new List<Voice>(){new Voice(
-                                            string.Empty, 0.0f, 0.0f, v.Text, string.Empty, v.TTSConfig, VoiceSource.TTS, true, string.Empty
-                                        )}, token);
-                                    }
+                                    Debug.Log($"Content stream: {text} (isFirst={isFirstWord})");
                                 }
+
+                                var contentItem = new LLMContentItem(text, isFirstWord);          
+                                HandleSplittedText?.Invoke(contentItem);
+                                if (contentItem != null)
+                                {
+                                    if (ProcessContentItemAsync != null)
+                                    {
+                                        await ProcessContentItemAsync(contentItem, token);
+                                    }
+                                    llmContentQueue.Enqueue(contentItem);
+                                }
+                                isFirstWord = false;
                             }
                         }
                     }
 
                     // Wait for a bit before processing buffer next time
-                    await UniTask.Delay(100, cancellationToken: token);
+                    await UniTask.Delay(10, cancellationToken: token);
                 }
             }
             catch (OperationCanceledException)
@@ -188,39 +161,44 @@ namespace ChatdollKit.LLM
             return false;
         }
 
-        protected virtual async UniTask PerformAnimatedVoiceAsync(ILLMSession llmSession, CancellationToken token)
+        public virtual async UniTask ShowContentAsync(ILLMSession llmSession, CancellationToken token)
         {
-            var isFirstVoice = true;
             while (!token.IsCancellationRequested)
             {
                 // Performance ends when streaming response and parsing ends and all response animated voices are done
-                if (llmSession.IsResponseDone && !IsParsing && responseAnimations.Count == 0) break;
+                if (llmSession.IsResponseDone && !IsParsing && llmContentQueue.Count == 0) break;
 
-                if (responseAnimations.Count > 0)
+                if (llmContentQueue.Count > 0)
                 {
-                    // Retrive AnimatedVoice from queue
-                    var req = responseAnimations[0];
-                    responseAnimations.RemoveAt(0);
-
-                    if (isFirstVoice)
-                    {
-                        if (req.AnimatedVoices[0].Faces.Count == 0)
-                        {
-                            // Reset face expression at the beginning of animated voice
-                            req.AddFace("Neutral");
-                        }
-                        isFirstVoice = false;
-                    }
+                    // Retrive content from queue
+                    var contentItem = llmContentQueue.Dequeue();
 
                     // Perform
-                    await modelController.AnimatedSay(req, token);
+                    if (ShowContentItemAsync != null)
+                    {
+                        await ShowContentItemAsync(contentItem, token);
+                    }
                 }
                 else
                 {
                     // Do nothing (just wait a bit) when no AnimatedVoice in the queue while receiving data
-                    await UniTask.Delay(100, cancellationToken: token);
+                    await UniTask.Delay(10, cancellationToken: token);
                 }
             }
+        }
+    }
+
+    public class LLMContentItem
+    {
+        public string Text { get; set; }
+        public bool IsFirstItem { get; set; }
+        public object Data { get; set; }
+
+        public LLMContentItem(string text, bool isFirstItem, object data = null)
+        {
+            Text = text;
+            IsFirstItem = isFirstItem;
+            Data = data;
         }
     }
 }

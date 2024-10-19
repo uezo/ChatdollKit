@@ -122,13 +122,6 @@ namespace ChatdollKit.Dialog
                 // Call LLM
                 var messages = await llmService.MakePromptAsync("_", text, llmPayloads, token);
                 var llmSession = await llmService.GenerateContentAsync(messages, llmPayloads, token: token);
-                llmSession.OnStreamingEnd = async () =>
-                {
-                    if (llmService.OnStreamingEnd != null)
-                    {
-                        await llmService.OnStreamingEnd(llmSession, token);
-                    }
-                };
 
                 // Tool call
                 Status = DialogStatus.Routing;
@@ -143,12 +136,27 @@ namespace ChatdollKit.Dialog
                     }
                 }
 
+                // Start parsing voices, faces and animations
+                var processContentStreamTask = llmContentProcessor.ProcessContentStreamAsync(llmSession, token);
+
                 // Await thinking performance before showing response
                 await OnRequestRecievedTask;
 
                 // Show response
                 Status = DialogStatus.Responding;
-                await llmContentProcessor.ShowResponseAsync(llmSession, token);
+                var showContentTask = llmContentProcessor.ShowContentAsync(llmSession, token);
+
+                // Wait for API stream ends
+                await llmSession.StreamingTask;
+                if (llmService.OnStreamingEnd != null)
+                {
+                    await llmService.OnStreamingEnd(llmSession, token);
+                }
+
+                // Wait parsing and performance
+                await processContentStreamTask;
+                await showContentTask;
+
                 if (token.IsCancellationRequested) { return; }
 
                 if (OnResponseShownAsync != null)
