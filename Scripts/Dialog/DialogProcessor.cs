@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
-using ChatdollKit.Dialog.Processor;
+using ChatdollKit.LLM;
 
 namespace ChatdollKit.Dialog
 {
@@ -22,22 +22,35 @@ namespace ChatdollKit.Dialog
         }
         public DialogStatus Status { get; private set; }
         private string processingId { get; set; }
-        private ISkillRouter skillRouter { get; set; }
         private CancellationTokenSource dialogTokenSource { get; set; }
 
         // Actions for each status
         public Func<string, Dictionary<string, object>, CancellationToken, UniTask> OnStartAsync { get; set; }
         public Func<string, Dictionary<string, object>, CancellationToken, UniTask> OnRequestRecievedAsync { get; set; }
-        public Func<Response, CancellationToken, UniTask> OnResponseShownAsync { get; set; }
+        public Func<string, Dictionary<string, object>, ILLMSession, CancellationToken, UniTask> OnResponseShownAsync { get; set; }
         public Func<bool, CancellationToken, UniTask> OnEndAsync { get; set; }
         public Func<bool, UniTask> OnStopAsync { get; set; }
         public Func<string, Dictionary<string, object>, Exception, CancellationToken, UniTask> OnErrorAsync { get; set; }
 
+        // LLM
+        private ILLMService llmService;
+        private LLMContentProcessor llmContentProcessor;
+        private Dictionary<string, ITool> toolResolver { get; set; } = new Dictionary<string, ITool>();
+
         private void Awake()
         {
-            // Get components
-            skillRouter = gameObject.GetComponent<ISkillRouter>();
-            skillRouter.RegisterSkills();
+            // LLM Components
+            llmService = GetComponent<ILLMService>();
+            llmContentProcessor = GetComponent<LLMContentProcessor>();
+
+            // Register tool spec to toolResolver
+            foreach (var tool in gameObject.GetComponents<ITool>())
+            {
+                var toolSpec = tool.GetToolSpec();
+                toolResolver.Add(toolSpec.name, tool);
+            }
+
+            SetLLMService(llmService);
 
             Status = DialogStatus.Idling;
         }
@@ -48,6 +61,25 @@ namespace ChatdollKit.Dialog
             dialogTokenSource?.Cancel();
             dialogTokenSource?.Dispose();
             dialogTokenSource = null;
+        }
+
+        public void SetLLMService(ILLMService llmService)
+        {
+            this.llmService = llmService;
+
+            // Register tool spec to LLMService
+            foreach (var tool in gameObject.GetComponents<ITool>())
+            {
+                var toolSpec = tool.GetToolSpec();
+                if (this.llmService.AddTool(toolSpec))
+                {
+                    Debug.Log($"Tool registered: {toolSpec.name}");
+                }
+                else
+                {
+                    Debug.Log($"Tool {toolSpec.name} is already registered.");
+                }
+            }
         }
 
         // Start dialog
@@ -66,7 +98,6 @@ namespace ChatdollKit.Dialog
             await StopDialog(true);
 
             var token = GetDialogToken();
-            var endConversation = false;
 
             try
             {
@@ -82,43 +113,56 @@ namespace ChatdollKit.Dialog
                     OnRequestRecievedTask = UniTask.Delay(1);
                 }
 
-                var request = new Request(RequestType.Voice, text);
-                request.Payloads = payloads ?? new Dictionary<string, object>();
-
-                Status = DialogStatus.Routing;
-
-                // Extract intent for routing
-                var intentExtractionResult = await skillRouter.ExtractIntentAsync(request, null, token);
-                if (intentExtractionResult != null)
+                // A little complex to keep compatibility with v0.7.x
+                var llmPayloads = new Dictionary<string, object>()
                 {
-                    request.Intent = intentExtractionResult.Intent;
-                    request.Entities = intentExtractionResult.Entities;
+                    {"RequestPayloads", payloads ?? new Dictionary<string, object>()}
+                };
+
+                // Call LLM
+                var messages = await llmService.MakePromptAsync("_", text, llmPayloads, token);
+                var llmSession = await llmService.GenerateContentAsync(messages, llmPayloads, token: token);
+
+                // Tool call
+                Status = DialogStatus.Routing;
+                if (!string.IsNullOrEmpty(llmSession.FunctionName))
+                {
+                    if (toolResolver.ContainsKey(llmSession.FunctionName))
+                    {
+                        var tool = toolResolver[llmSession.FunctionName];
+                        Status = DialogStatus.Processing;
+                        llmSession = await tool.ProcessAsync(llmService, llmSession, llmPayloads, token);
+                        if (token.IsCancellationRequested) { return; }
+                    }
                 }
-                if (token.IsCancellationRequested) { return; }
 
-                // Get skill to process intent / topic
-                var skill = skillRouter.Route(request, null, token);
-                if (token.IsCancellationRequested) { return; }
+                // Start parsing voices, faces and animations
+                var processContentStreamTask = llmContentProcessor.ProcessContentStreamAsync(llmSession, token);
 
-                // Process skill
-                Status = DialogStatus.Processing;
-                var skillResponse = await skill.ProcessAsync(request, null, null, token);
-                if (token.IsCancellationRequested) { return; }
-
-                // Await before showing response
+                // Await thinking performance before showing response
                 await OnRequestRecievedTask;
 
                 // Show response
                 Status = DialogStatus.Responding;
-                await skill.ShowResponseAsync(skillResponse, request, null, token);
+                var showContentTask = llmContentProcessor.ShowContentAsync(llmSession, token);
+
+                // Wait for API stream ends
+                await llmSession.StreamingTask;
+                if (llmService.OnStreamingEnd != null)
+                {
+                    await llmService.OnStreamingEnd(llmSession, token);
+                }
+
+                // Wait parsing and performance
+                await processContentStreamTask;
+                await showContentTask;
+
                 if (token.IsCancellationRequested) { return; }
 
                 if (OnResponseShownAsync != null)
                 {
-                    await OnResponseShownAsync(skillResponse, token);
+                    await OnResponseShownAsync(text, payloads, llmSession, token);
                 }
-
-                endConversation = skillResponse.EndConversation;
             }
             catch (Exception ex)
             {
@@ -144,7 +188,7 @@ namespace ChatdollKit.Dialog
                 {
                     try
                     {
-                        await OnEndAsync(endConversation, token);
+                        await OnEndAsync(false, token);
                     }
                     catch (Exception fex)
                     {

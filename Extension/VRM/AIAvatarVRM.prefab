@@ -91,9 +91,8 @@ GameObject:
   - component: {fileID: 7546526134413884081}
   - component: {fileID: 3082384663952346143}
   - component: {fileID: 8527211872230696717}
+  - component: {fileID: 3322979063469237806}
   - component: {fileID: 6103327943189844944}
-  - component: {fileID: 3670123063161948580}
-  - component: {fileID: 6504098870723182269}
   - component: {fileID: 3492972881459660374}
   - component: {fileID: 207892964508209147}
   - component: {fileID: 4654341697911893551}
@@ -151,19 +150,9 @@ MonoBehaviour:
   - Text: "\u3053\u3093\u306B\u3061\u306F"
     PrefixAllowance: 4
     SuffixAllowance: 4
-    Intent: 
-    IntentPriority: 0
-    RequestType: 0
-    InlineRequestMinimumLength: 0
-    SkipPrompt: 0
   - Text: Hello
     PrefixAllowance: 4
     SuffixAllowance: 4
-    Intent: 
-    IntentPriority: 0
-    RequestType: 0
-    InlineRequestMinimumLength: 0
-    SkipPrompt: 0
   CancelWords:
   - 
   InterruptWords: []
@@ -216,6 +205,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c0f7c0517dde5488a8a605e633795e31, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &3322979063469237806
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2779731071012727286}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f078c0ec5acf347409801f746ed4645f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SplitChars:
+  - "\u3002"
+  - "\uFF01"
+  - "\uFF1F"
+  - '. '
+  - '!'
+  - '?'
+  OptionalSplitChars:
+  - "\u3001"
+  - ', '
+  MaxLengthBeforeOptionalSplit: 0
 --- !u!114 &6103327943189844944
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -233,43 +245,6 @@ MonoBehaviour:
   NoiseGateThresholdDb: -50
   AutoStart: 1
   IsDebug: 1
---- !u!114 &3670123063161948580
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2779731071012727286}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dca3ada52baa2497793834a3a1ded6b8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Name: 
-  SplitChars:
-  - "\u3002"
-  - "\uFF01"
-  - "\uFF1F"
-  - '. '
-  - '!'
-  - '?'
-  OptionalSplitChars:
-  - "\u3001"
-  - ', '
-  MaxLengthBeforeOptionalSplit: 0
---- !u!114 &6504098870723182269
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2779731071012727286}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 26abceb55bcd6405fb061c37b9693223, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  contentSkillName: LLMContent
 --- !u!82 &3492972881459660374
 AudioSource:
   m_ObjectHideFlags: 0

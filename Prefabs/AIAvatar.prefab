@@ -12,9 +12,8 @@ GameObject:
   - component: {fileID: 580097151081313993}
   - component: {fileID: 9064564424377879766}
   - component: {fileID: 3573099332671133356}
+  - component: {fileID: 277623319411621424}
   - component: {fileID: 6056985643406791538}
-  - component: {fileID: 8387521636907808619}
-  - component: {fileID: 4649794537600287902}
   - component: {fileID: 5450990503545936203}
   - component: {fileID: 469800510340621865}
   - component: {fileID: 6021774497732151160}
@@ -66,9 +65,11 @@ MonoBehaviour:
   idleSilenceDurationThreshold: 0.3
   idleMinRecordingDuration: 0.2
   idleMaxRecordingDuration: 3
+  showMessageWindowOnWake: 1
   MicrophoneMuteBy: 2
   WakeWords: []
   CancelWords: []
+  InterruptWords: []
   IgnoreWords:
   - "\u3002"
   - "\u3001"
@@ -105,6 +106,7 @@ MonoBehaviour:
   layeredAnimationDefaultState: Default
   AnimationFadeLength: 0.5
   SkinnedMeshRenderer: {fileID: 0}
+  defaultFaceExpressionDuration: 7
 --- !u!114 &3573099332671133356
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -117,6 +119,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c0f7c0517dde5488a8a605e633795e31, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &277623319411621424
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3429620897720333282}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f078c0ec5acf347409801f746ed4645f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SplitChars:
+  - "\u3002"
+  - "\uFF01"
+  - "\uFF1F"
+  - '. '
+  - '!'
+  - '?'
+  OptionalSplitChars:
+  - "\u3001"
+  - ', '
+  MaxLengthBeforeOptionalSplit: 0
 --- !u!114 &6056985643406791538
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -132,35 +157,8 @@ MonoBehaviour:
   MicrophoneDevice: 
   SampleRate: 44100
   NoiseGateThresholdDb: -50
-  MasterVolumeDb: 0
   AutoStart: 1
   IsDebug: 0
---- !u!114 &8387521636907808619
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3429620897720333282}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dca3ada52baa2497793834a3a1ded6b8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Name: 
---- !u!114 &4649794537600287902
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3429620897720333282}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 26abceb55bcd6405fb061c37b9693223, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  contentSkillName: LLMContent
 --- !u!82 &5450990503545936203
 AudioSource:
   m_ObjectHideFlags: 0
@@ -448,6 +446,7 @@ MonoBehaviour:
   PreGap: 0.1
   PostGap: 0.7
   autoHide: 0
+  isTextAnimated: 1
 --- !u!1 &6913102872196139015
 GameObject:
   m_ObjectHideFlags: 0
@@ -646,6 +645,7 @@ MonoBehaviour:
   PreGap: 0.1
   PostGap: 0.7
   autoHide: 1
+  isTextAnimated: 1
 --- !u!1 &7110852688282348833
 GameObject:
   m_ObjectHideFlags: 0

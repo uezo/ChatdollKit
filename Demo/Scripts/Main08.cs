@@ -5,8 +5,6 @@ using Cysharp.Threading.Tasks;
 using ChatdollKit.IO;
 using ChatdollKit.LLM.ChatGPT;
 using ChatdollKit.Model;
-// using ChatdollKit.SpeechListener;
-// using ChatdollKit.SpeechSynthesizer;
 
 namespace ChatdollKit.Demo
 {
@@ -76,13 +74,22 @@ namespace ChatdollKit.Demo
             // Example:
             // [language:en-US]From now on, let's talk in English.
             // ----
-            // var chatGPTService = gameObject.GetComponent<ChatGPTService>();
-            // chatGPTService.HandleExtractedTags = (tags, session) =>
+            // var contentProcessor = gameObject.GetComponent<LLMContentProcessor>();
+            // contentProcessor.HandleSplittedText += (contentItem) =>
             // {
-            //     if (tags.ContainsKey("language"))
+            //     if (contentItem.Text.StartsWith("[language:"))
             //     {
-            //         var language = tags["language"].Contains("-") ? tags["language"].Split('-')[0] : tags["language"];
-            //         if (language != "ja")
+            //         var languageCode = string.Empty;
+            //         var match = Regex.Match(contentItem.Text, @"\[language:(.*?)\]");
+            //         if (match.Success)
+            //         {
+            //             languageCode = match.Groups[1].Value;
+            //             // OpenAI TTS requires ISO-639-1 format
+            //             languageCode = languageCode.Contains("-") ? languageCode.Split('-')[0] : languageCode;
+            //         }
+
+            //         // Apply language to SpeechSynthesizer
+            //         if (languageCode != "ja" && !string.IsNullOrEmpty(languageCode))
             //         {
             //             var openAISpeechSynthesizer = gameObject.GetComponent<OpenAISpeechSynthesizer>();
             //             modelController.SpeechSynthesizerFunc = openAISpeechSynthesizer.GetAudioClipAsync;
@@ -92,9 +99,12 @@ namespace ChatdollKit.Demo
             //             var voicevoxSpeechSynthesizer = gameObject.GetComponent<VoicevoxSpeechSynthesizer>();
             //             modelController.SpeechSynthesizerFunc = voicevoxSpeechSynthesizer.GetAudioClipAsync;
             //         }
+
+            //         // Apply language to SpeechListener
             //         var openAIListener = gameObject.GetComponent<OpenAISpeechListener>();
-            //         openAIListener.Language = language;
-            //         Debug.Log($"Set language to {language}");
+            //         openAIListener.Language = languageCode;
+
+            //         Debug.Log($"Set language to {languageCode}");
             //     }
             // };
         }

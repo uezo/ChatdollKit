@@ -80,9 +80,17 @@ namespace ChatdollKit.LLM
             contextUpdatedAt = Time.time;
         }
 
-        public virtual void AddTool(ILLMTool tool)
+        public virtual bool AddTool(ILLMTool tool)
         {
-            llmTools.Add(tool);
+            if (llmTools.Contains(tool))
+            {
+                return false;
+            }
+            else
+            {
+                llmTools.Add(tool);
+                return true;
+            }
         }
 
 #pragma warning disable CS1998
@@ -130,7 +138,7 @@ namespace ChatdollKit.LLM
         public bool IsVisionAvailable { get; set; } = true;
         public ResponseType ResponseType { get; set; } = ResponseType.None;
         public UniTask StreamingTask { get; set; }
-        public Func<UniTask> OnStreamingEnd { get; set; }
+        public Func<UniTask> OnStreamingEnd { get; set; }   // No longer used in v0.8.4
         public string FunctionName { get; set; }
         public List<ILLMMessage> Contexts { get; set; }
 
