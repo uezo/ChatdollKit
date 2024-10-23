@@ -205,7 +205,7 @@ namespace ChatdollKit.Dialog
         }
 
         // Stop chat
-        public async UniTask StopDialog(bool forSuccessiveDialog = false)
+        public async UniTask StopDialog(bool forSuccessiveDialog = false, bool waitForIdling = false)
         {
             // Cancel the tasks and dispose the token source
             if (dialogTokenSource != null)
@@ -213,6 +213,20 @@ namespace ChatdollKit.Dialog
                 dialogTokenSource.Cancel();
                 dialogTokenSource.Dispose();
                 dialogTokenSource = null;
+            }
+
+            if (waitForIdling)
+            {
+                var startTime = Time.time;
+                while (Status != DialogStatus.Idling)
+                {
+                    if (Time.time - startTime > 1.0f)
+                    {
+                        Debug.LogWarning($"Dialog status doesn't change to idling in 1 second. (Status: {Status})");
+                        break;
+                    }
+                    await UniTask.Delay(10);
+                }
             }
 
             if (OnStopAsync != null)

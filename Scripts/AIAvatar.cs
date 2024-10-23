@@ -452,9 +452,26 @@ namespace ChatdollKit
             _ = DialogProcessor.StartDialogAsync(text, payloads);
         }
 
-        public void StopChat()
+        public void StopChat(bool continueDialog = false)
         {
-            _ = DialogProcessor.StopDialog();
+            _ = StopChatAsync();
+        }
+
+        public async UniTask StopChatAsync(bool continueDialog = false)
+        {
+            if (continueDialog)
+            {
+                // Just stop current AI's turn
+                await DialogProcessor.StopDialog();
+            }
+            else
+            {
+                // Stop AI's turn and wait for idling status
+                await DialogProcessor.StopDialog(waitForIdling: true);
+                // Change AvatarMode to Idle not to show user message window
+                Mode = AvatarMode.Idle;
+                modeTimer = idleTimeout;
+            }
         }
 
         public void AddProcessingPresentaion(List<Model.Animation> animations, List<FaceExpression> faces)
@@ -492,16 +509,13 @@ namespace ChatdollKit
             {
                 if (!string.IsNullOrEmpty(ExtractCancelWord(text)))
                 {
-                    await DialogProcessor.StopDialog();
-                    Mode = AvatarMode.Idle;
-                    modeTimer = idleTimeout;
+                    await StopChatAsync();
                     return;
                 }
 
                 if (!string.IsNullOrEmpty(ExtractInterruptWord(text)))
                 {
-                    await DialogProcessor.StopDialog();
-                    Mode = AvatarMode.Conversation;
+                    await StopChatAsync(continueDialog: true);
                     return;
                 }
             }
