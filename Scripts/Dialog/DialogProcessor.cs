@@ -40,7 +40,28 @@ namespace ChatdollKit.Dialog
         private void Awake()
         {
             // LLM Components
-            llmService = GetComponent<ILLMService>();
+            foreach (var llms in GetComponents<ILLMService>())
+            {
+                if (llms.IsEnabled)
+                {
+                    llmService = llms;
+                    Debug.Log($"LLMService: {llms}");
+                    break;
+                }
+            }
+            if (llmService == null)
+            {
+                llmService = GetComponent<ILLMService>();
+                if (llmService == null)
+                {
+                    Debug.LogError($"No LLMServices found");
+                }
+                else
+                {
+                    Debug.LogWarning($"No enabled LLMServices found. Use {llmService} for LLMService");
+                }
+            }
+
             llmContentProcessor = GetComponent<LLMContentProcessor>();
 
             // Register tool spec to toolResolver
