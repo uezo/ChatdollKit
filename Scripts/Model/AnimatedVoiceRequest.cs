@@ -19,31 +19,13 @@ namespace ChatdollKit.Model
             StopIdlingOnStart = stopIdlingOnStart;
         }
 
-        public void AddVoice(string name, float preGap = 0.0f, float postGap = 0.0f, string description = null, bool asNewFrame = false)
+        public void AddVoice(string text, float preGap = 0.0f, float postGap = 0.0f, TTSConfiguration ttsConfig = null, string description = null, bool asNewFrame = false)
         {
             if (asNewFrame || AnimatedVoices.Count == 0)
             {
                 CreateNewFrame();
             }
-            AnimatedVoices.Last().AddVoice(name, preGap, postGap, description: description);
-        }
-
-        public void AddVoiceWeb(string url, float preGap = 0.0f, float postGap = 0.0f, string name = null, string text = null, string description = null, bool asNewFrame = false)
-        {
-            if (asNewFrame || AnimatedVoices.Count == 0)
-            {
-                CreateNewFrame();
-            }
-            AnimatedVoices.Last().AddVoiceWeb(url, preGap, postGap, name, text, description: description);
-        }
-
-        public void AddVoiceTTS(string text, float preGap = 0.0f, float postGap = 0.0f, string name = null, TTSConfiguration ttsConfig = null, string description = null, bool asNewFrame = false)
-        {
-            if (asNewFrame || AnimatedVoices.Count == 0)
-            {
-                CreateNewFrame();
-            }
-            AnimatedVoices.Last().AddVoiceTTS(text, preGap, postGap, name, ttsConfig, description: description);
+            AnimatedVoices.Last().AddVoice(text, preGap, postGap, ttsConfig, description: description);
         }
 
         public void AddAnimation(string paramKey, int paramValue, float duration = 0.0f, string layeredAnimation = null, string layeredAnimationLayer = null, bool asNewFrame = false)

@@ -17,13 +17,9 @@ namespace ChatdollKit.Model
         // Audio
         [Header("Voice")]
         public AudioSource AudioSource;
-        private Dictionary<string, AudioClip> voiceAudioClips = new Dictionary<string, AudioClip>();
-        public Func<Voice, CancellationToken, UniTask<AudioClip>> VoiceDownloadFunc;
-        public Func<Voice, CancellationToken, UniTask<AudioClip>> TextToSpeechFunc;
         public Func<string, Dictionary<string, object>, CancellationToken, UniTask<AudioClip>> SpeechSynthesizerFunc;
         public Action<Voice, CancellationToken> OnSayStart;
         public Action OnSayEnd;
-        public Dictionary<string, Func<Voice, CancellationToken, UniTask<AudioClip>>> TextToSpeechFunctions = new Dictionary<string, Func<Voice, CancellationToken, UniTask<AudioClip>>>();
         public bool UsePrefetch = true;
         private ILipSyncHelper lipSyncHelper;
 
@@ -35,7 +31,6 @@ namespace ChatdollKit.Model
         private string IdleAnimationKey = "BaseParam";
         [SerializeField]
         private int IdleAnimationValue;
-        public Func<CancellationToken, UniTask> IdleFunc;
         [SerializeField]
         private string layeredAnimationDefaultState = "Default";
         public float AnimationFadeLength = 0.5f;
@@ -68,24 +63,6 @@ namespace ChatdollKit.Model
         {
             animator = AvatarModel.gameObject.GetComponent<Animator>();
             GetAnimation = GetIdleAnimation;
-
-            // Web and TTS voice loaders
-            foreach (var loader in gameObject.GetComponents<WebVoiceLoaderBase>())
-            {
-                if (!loader.enabled)
-                {
-                    continue;
-                }
-
-                if (loader.Type == VoiceLoaderType.Web)
-                {
-                    VoiceDownloadFunc = loader.GetAudioClipAsync;
-                }
-                else if (loader.Type == VoiceLoaderType.TTS)
-                {
-                    RegisterTTSFunction(loader.Name, loader.GetAudioClipAsync, loader.IsDefault);
-                }
-            }
 
             // Get lipSyncHelper
             lipSyncHelper = gameObject.GetComponent<ILipSyncHelper>();
@@ -275,7 +252,7 @@ namespace ChatdollKit.Model
                 }
                 else
                 {
-                    avreq.AddVoiceTTS(parsedText, preGap, parsedText.EndsWith("。") ? 0 : 0.3f, ttsConfig: ttsConfig);
+                    avreq.AddVoice(parsedText, preGap, parsedText.EndsWith("。") ? 0 : 0.3f, ttsConfig: ttsConfig);
                     // Reset preGap. Do not reset ttsConfig to continue the style of voice.
                     preGap = 0f;
                 }
@@ -309,81 +286,35 @@ namespace ChatdollKit.Model
 
                 try
                 {
-                    if (v.Source == VoiceSource.Local)
-                    {
-                        if (voiceAudioClips.ContainsKey(v.Name))
-                        {
-                            // Wait for PreGap
-                            await UniTask.Delay((int)(v.PreGap * 1000), cancellationToken: token);
-                            // Play audio
-                            History?.Add(v);
-                            AudioSource.PlayOneShot(voiceAudioClips[v.Name]);
-                        }
-                        else
-                        {
-                            Debug.LogWarning($"Voice not found: {v.Name}");
-                        }
-                    }
-                    else
-                    {
-                        // Download voice from web or TTS service
-                        var downloadStartTime = Time.time;
-                        AudioClip clip = null;
-                        if (v.Source == VoiceSource.Web)
-                        {
-                            if (VoiceDownloadFunc != null)
-                            {
-                                clip = await VoiceDownloadFunc(v, token);
-                            }
-                            else
-                            {
-                                Debug.LogError("Voice download function not found");
-                            }
-                        }
-                        else if (v.Source == VoiceSource.TTS)
-                        {
-                            if (SpeechSynthesizerFunc != null)
-                            {
-                                var parameters = v.TTSConfig != null ? v.TTSConfig.Params : new Dictionary<string, object>();
-                                clip = await SpeechSynthesizerFunc(v.Text, parameters, token);
-                            }
-                            else
-                            {
-                                var ttsFunc = GetTTSFunction(v.GetTTSFunctionName());
-                                if (ttsFunc != null)
-                                {
-                                    clip = await ttsFunc(v, token);
-                                }
-                                else
-                                {
-                                    Debug.LogError($"TTS function not found: {v.GetTTSFunctionName()}");
-                                }
-                            }
-                        }
+                    // Download voice from web or TTS service
+                    var downloadStartTime = Time.time;
+                    AudioClip clip = null;
 
-                        if (clip != null)
+                    var parameters = v.TTSConfig != null ? v.TTSConfig.Params : new Dictionary<string, object>();
+                    clip = await SpeechSynthesizerFunc(v.Text, parameters, token);
+
+                    if (clip != null)
+                    {
+                        // Wait for PreGap remains after download
+                        var preGap = v.PreGap - (Time.time - downloadStartTime);
+                        if (preGap > 0)
                         {
-                            // Wait for PreGap remains after download
-                            var preGap = v.PreGap - (Time.time - downloadStartTime);
-                            if (preGap > 0)
+                            if (!token.IsCancellationRequested)
                             {
-                                if (!token.IsCancellationRequested)
+                                try
                                 {
-                                    try
-                                    {
-                                        await UniTask.Delay((int)(preGap * 1000), cancellationToken: token);
-                                    }
-                                    catch (OperationCanceledException)
-                                    {
-                                        // OperationCanceledException raises
-                                        Debug.Log("Task canceled in waiting PreGap");
-                                    }
+                                    await UniTask.Delay((int)(preGap * 1000), cancellationToken: token);
+                                }
+                                catch (OperationCanceledException)
+                                {
+                                    // OperationCanceledException raises
+                                    Debug.Log("Task canceled in waiting PreGap");
                                 }
                             }
-                            // Play audio
-                            History?.Add(v);
-                            AudioSource.PlayOneShot(clip);
                         }
+                        // Play audio
+                        History?.Add(v);
+                        AudioSource.PlayOneShot(clip);
                     }
 
                     // Wait while voice playing
@@ -426,23 +357,8 @@ namespace ChatdollKit.Model
         {
             foreach (var voice in voices)
             {
-                if (voice.Source == VoiceSource.Web)
-                {
-                    VoiceDownloadFunc?.Invoke(voice, token);
-                }
-                else if (voice.Source == VoiceSource.TTS)
-                {
-                    if (SpeechSynthesizerFunc != null)
-                    {
-                        var parameters = voice.TTSConfig != null ? voice.TTSConfig.Params : new Dictionary<string, object>();
-                        SpeechSynthesizerFunc(voice.Text, parameters, token);
-                    }
-                    else
-                    {
-                        var ttsFunc = GetTTSFunction(voice.GetTTSFunctionName());
-                        ttsFunc?.Invoke(voice, token);
-                    }
-                }
+                var parameters = voice.TTSConfig != null ? voice.TTSConfig.Params : new Dictionary<string, object>();
+                SpeechSynthesizerFunc(voice.Text, parameters, token);
             }
         }
 
@@ -451,61 +367,6 @@ namespace ChatdollKit.Model
         {
             History?.Add("Stop speech");
             AudioSource.Stop();
-        }
-
-        // Register voice with its name
-        public void AddVoice(string name, AudioClip audioClip)
-        {
-            voiceAudioClips[ReplaceDakuten(name)] = audioClip;
-        }
-
-        // Get registered TTS Function by name
-        private Func<Voice, CancellationToken, UniTask<AudioClip>> GetTTSFunction(string name)
-        {
-            if (!string.IsNullOrEmpty(name) && TextToSpeechFunctions.ContainsKey(name))
-            {
-                return TextToSpeechFunctions[name];
-            }
-            return TextToSpeechFunc;
-        }
-
-        // Register TTS Function with name
-        public void RegisterTTSFunction(string name, Func<Voice, CancellationToken, UniTask<AudioClip>> func, bool asDefault = false)
-        {
-            TextToSpeechFunctions[name] = func;
-            if (asDefault)
-            {
-                TextToSpeechFunc = func;
-            }
-        }
-
-        // Replace Japanese Dakuten from resource files
-        private string ReplaceDakuten(string value)
-        {
-            var ret = value;
-            var dt = "゙";
-            var hdt = "゚";
-
-            if (value.Contains(dt))
-            {
-                // Hiragana
-                ret = ret.Replace($"か{dt}", "が").Replace($"き{dt}", "ぎ").Replace($"く{dt}", "ぐ").Replace($"け{dt}", "げ").Replace($"こ{dt}", "ご");
-                ret = ret.Replace($"さ{dt}", "ざ").Replace($"し{dt}", "じ").Replace($"す{dt}", "ず").Replace($"せ{dt}", "ぜ").Replace($"そ{dt}", "ぞ");
-                ret = ret.Replace($"た{dt}", "だ").Replace($"ち{dt}", "ぢ").Replace($"つ{dt}", "づ").Replace($"て{dt}", "で").Replace($"と{dt}", "ど");
-                ret = ret.Replace($"は{dt}", "ば").Replace($"ひ{dt}", "び").Replace($"ふ{dt}", "ぶ").Replace($"へ{dt}", "べ").Replace($"ほ{dt}", "ぼ");
-                // Katakana
-                ret = ret.Replace($"カ{dt}", "ガ").Replace($"キ{dt}", "ギ").Replace($"ク{dt}", "グ").Replace($"け{dt}", "げ").Replace($"こ{dt}", "ご");
-                ret = ret.Replace($"サ{dt}", "ザ").Replace($"シ{dt}", "ジ").Replace($"ス{dt}", "ズ").Replace($"せ{dt}", "ぜ").Replace($"そ{dt}", "ぞ");
-                ret = ret.Replace($"タ{dt}", "ダ").Replace($"チ{dt}", "ヂ").Replace($"ツ{dt}", "ヅ").Replace($"て{dt}", "で").Replace($"と{dt}", "ど");
-                ret = ret.Replace($"ハ{dt}", "バ").Replace($"ヒ{dt}", "ビ").Replace($"フ{dt}", "ブ").Replace($"へ{dt}", "べ").Replace($"ほ{dt}", "ぼ");
-
-            }
-            if (value.Contains(hdt))
-            {
-                ret = ret.Replace($"は{hdt}", "ぱ").Replace($"ひ{hdt}", "ぴ").Replace($"ふ{hdt}", "ぷ").Replace($"へ{hdt}", "ぺ").Replace($"ほ{hdt}", "ぽ");
-            }
-
-            return ret;
         }
 #endregion
 

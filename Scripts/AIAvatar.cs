@@ -251,7 +251,7 @@ namespace ChatdollKit
                             if (v.Text.Trim() == string.Empty) continue;
 
                             ModelController.PrefetchVoices(new List<Voice>(){new Voice(
-                                string.Empty, 0.0f, 0.0f, v.Text, string.Empty, v.TTSConfig, VoiceSource.TTS, true, string.Empty
+                                v.Text, 0.0f, 0.0f, v.TTSConfig, true, string.Empty
                             )}, token);
                         }
                     }
@@ -489,7 +489,7 @@ namespace ChatdollKit
 
             if (!string.IsNullOrEmpty(ErrorVoice))
             {
-                errorAnimatedVoiceRequest.AddVoiceTTS(ErrorVoice);
+                errorAnimatedVoiceRequest.AddVoice(ErrorVoice);
             }
             if (!string.IsNullOrEmpty(ErrorFace))
             {

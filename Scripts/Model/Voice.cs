@@ -2,41 +2,22 @@
 
 namespace ChatdollKit.Model
 {
-    public enum VoiceSource
-    {
-        Local, Web, TTS
-    }
-
     // Voice
     public class Voice
     {
-        public string Name { get; set; }
+        public string Text { get; set; }
         public float PreGap { get; set; }
         public float PostGap { get; set; }
-        public string Text { get; set; }
-        public string Url { get; set; }
         public TTSConfiguration TTSConfig { get; set; }
-        public VoiceSource Source { get; set; }
         public bool UseCache { get; set; }
         public string Description { get; set; }
         public string CacheKey
         {
             get
             {
-                if (Source == VoiceSource.Web)
+                if (GetTTSParam("style") != null)
                 {
-                    return Url;
-                }
-                else if (Source == VoiceSource.TTS)
-                {
-                    if (GetTTSParam("style") != null)
-                    {
-                        return $"[{GetTTSParam("style")}]{Text}";
-                    }
-                    else
-                    {
-                        return Text;
-                    }
+                    return $"[{GetTTSParam("style")}]{Text}";
                 }
                 else
                 {
@@ -45,15 +26,12 @@ namespace ChatdollKit.Model
             }
         }
 
-        public Voice(string name, float preGap, float postGap, string text, string url, TTSConfiguration ttsConfig, VoiceSource source, bool useCache, string description)
+        public Voice(string text, float preGap, float postGap, TTSConfiguration ttsConfig, bool useCache, string description)
         {
-            Name = name;
             PreGap = preGap;
             PostGap = postGap;
             Text = text;
-            Url = url;
             TTSConfig = ttsConfig;
-            Source = source;
             UseCache = useCache;
             Description = description;
         }
@@ -87,12 +65,6 @@ namespace ChatdollKit.Model
 
         public TTSConfiguration()
         {
-            Params = new Dictionary<string, object>();
-        }
-
-        public TTSConfiguration(string ttsFunctionName = null)
-        {
-            TTSFunctionName = ttsFunctionName ?? string.Empty;
             Params = new Dictionary<string, object>();
         }
 
