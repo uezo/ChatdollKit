@@ -16,19 +16,9 @@ namespace ChatdollKit.Model
             Faces = faces ?? new List<FaceExpression>();
         }
 
-        public void AddVoice(string name, float preGap = 0.0f, float postGap = 0.0f, string text = null, string url = null, TTSConfiguration ttsConfig = null, VoiceSource source = VoiceSource.Local, string description = null)
+        public void AddVoice(string text, float preGap = 0.0f, float postGap = 0.0f, TTSConfiguration ttsConfig = null, bool useCache = true, string description = null)
         {
-            Voices.Add(new Voice(name, preGap, postGap, text, url, ttsConfig, source, false, description));
-        }
-
-        public void AddVoiceWeb(string url, float preGap = 0.0f, float postGap = 0.0f, string name = null, string text = null, bool useCache = true, string description = null)
-        {
-            Voices.Add(new Voice(name ?? string.Empty, preGap, postGap, text, url, null, VoiceSource.Web, useCache, description));
-        }
-
-        public void AddVoiceTTS(string text, float preGap = 0.0f, float postGap = 0.0f, string name = null, TTSConfiguration ttsConfig = null, bool useCache = true, string description = null)
-        {
-            Voices.Add(new Voice(name ?? string.Empty, preGap, postGap, text, string.Empty, ttsConfig, VoiceSource.TTS, useCache, description));
+            Voices.Add(new Voice(text, preGap, postGap, ttsConfig, useCache, description));
         }
 
         public void AddAnimation(string paramKey, int paramValue, float duration = 0.0f, string layeredAnimation = null, string layeredAnimationLayer = null)

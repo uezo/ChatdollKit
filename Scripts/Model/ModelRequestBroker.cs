@@ -108,7 +108,7 @@ namespace ChatdollKit.Model
                                 if (v.Text.Trim() == string.Empty) continue;
 
                                 modelController.PrefetchVoices(new List<Voice>(){new Voice(
-                                    string.Empty, 0.0f, 0.0f, v.Text, string.Empty, v.TTSConfig, VoiceSource.TTS, true, string.Empty
+                                    v.Text, 0.0f, 0.0f, v.TTSConfig, true, string.Empty
                                 )}, modelTokenSource.Token);
                             }
                         }
