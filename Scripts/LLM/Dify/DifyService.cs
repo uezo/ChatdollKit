@@ -25,7 +25,6 @@ namespace ChatdollKit.LLM.Dify
 
         protected string currentConversationId;
         protected string conversationIdKey = "DifyConversationId";
-        public Func<string, UniTask<byte[]>> CaptureImage = null;
 
         public string GetConversationId()
         {

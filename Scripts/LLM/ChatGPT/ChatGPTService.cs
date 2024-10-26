@@ -30,8 +30,6 @@ namespace ChatdollKit.LLM.ChatGPT
         [SerializeField]
         protected float noDataResponseTimeoutSec = 5.0f;
 
-        public Func<string, UniTask<byte[]>> CaptureImage = null;
-
         protected JsonSerializerSettings messageSerializationSettings = new JsonSerializerSettings
         {
             TypeNameHandling = TypeNameHandling.All
@@ -176,10 +174,10 @@ namespace ChatdollKit.LLM.ChatGPT
             {
                 data.Add("max_tokens", MaxTokens);
             }
-            if (useFunctions && llmTools.Count > 0 && !Model.ToLower().Contains("vision"))
+            if (useFunctions && Tools.Count > 0 && !Model.ToLower().Contains("vision"))
             {
                 var tools = new List<Dictionary<string, object>>();
-                foreach (var tool in llmTools)
+                foreach (var tool in Tools)
                 {
                     tools.Add(new Dictionary<string, object>()
                     {

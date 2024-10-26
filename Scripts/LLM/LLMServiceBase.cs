@@ -47,11 +47,10 @@ namespace ChatdollKit.LLM
         protected List<ILLMMessage> context = new List<ILLMMessage>();
 
         public Action OnEnabled { get; set; }
-        public Action <Dictionary<string, string>, ILLMSession> HandleExtractedTags;
-
+        public Action <Dictionary<string, string>, ILLMSession> HandleExtractedTags { get; set; }
+        public Func<string, UniTask<byte[]>> CaptureImage { get; set; }
         public Func<ILLMSession, CancellationToken, UniTask> OnStreamingEnd { get; set; }
-
-        protected List<ILLMTool> llmTools = new List<ILLMTool>();
+        public List<ILLMTool> Tools { get; set; } = new List<ILLMTool>();
 
         public virtual List<ILLMMessage> GetContext(int count)
         {
@@ -78,19 +77,6 @@ namespace ChatdollKit.LLM
         {
             context.Clear();
             contextUpdatedAt = Time.time;
-        }
-
-        public virtual bool AddTool(ILLMTool tool)
-        {
-            if (llmTools.Contains(tool))
-            {
-                return false;
-            }
-            else
-            {
-                llmTools.Add(tool);
-                return true;
-            }
         }
 
 #pragma warning disable CS1998

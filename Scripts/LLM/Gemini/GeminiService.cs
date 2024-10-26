@@ -27,8 +27,6 @@ namespace ChatdollKit.LLM.Gemini
         [SerializeField]
         protected float noDataResponseTimeoutSec = 10.0f;   // Some requests like multi-modal takes time longer
 
-        public Func<string, UniTask<byte[]>> CaptureImage = null;
-
         public override ILLMMessage CreateMessageAfterFunction(string role = null, string content = null, ILLMSession llmSession = null, Dictionary<string, object> arguments = null)
         {
             return new GeminiMessage(
@@ -177,11 +175,11 @@ namespace ChatdollKit.LLM.Gemini
             }
 
             // Set tools. Multimodal model doesn't support function calling for now (2023.12.29)
-            if (useFunctions && llmTools.Count > 0 && !Model.ToLower().Contains("vision"))
+            if (useFunctions && Tools.Count > 0 && !Model.ToLower().Contains("vision"))
             {
                  data.Add("tools", new List<Dictionary<string, object>>(){
                      new Dictionary<string, object> {
-                         { "function_declarations", llmTools }
+                         { "function_declarations", Tools }
                      }
                  });
             }

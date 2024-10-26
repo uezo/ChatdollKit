@@ -27,8 +27,6 @@ namespace ChatdollKit.LLM.Claude
         [SerializeField]
         protected float noDataResponseTimeoutSec = 5.0f;
 
-        public Func<string, UniTask<byte[]>> CaptureImage = null;
-
         public override ILLMMessage CreateMessageAfterFunction(string role = null, string content = null, ILLMSession llmSession = null, Dictionary<string, object> arguments = null)
         {
             if (role == "user")
@@ -146,10 +144,10 @@ namespace ChatdollKit.LLM.Claude
                 { "stream", true },
             };
 
-            if (llmTools.Count > 0) // tools must be included when tool_result
+            if (Tools.Count > 0) // tools must be included when tool_result
             {
                 var claudeTools = new List<ClaudeTool>();
-                foreach (var tool in llmTools)
+                foreach (var tool in Tools)
                 {
                     claudeTools.Add(new ClaudeTool(tool));
                 }

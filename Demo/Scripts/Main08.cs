@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using Cysharp.Threading.Tasks;
+using ChatdollKit.Dialog;
 using ChatdollKit.IO;
-using ChatdollKit.LLM.ChatGPT;
 using ChatdollKit.Model;
 
 namespace ChatdollKit.Demo
@@ -12,6 +11,7 @@ namespace ChatdollKit.Demo
     {
         // ChatdollKit components
         private ModelController modelController;
+        private DialogProcessor dialogProcessor;
         private SimpleCamera simpleCamera;
 
         [SerializeField]
@@ -23,8 +23,9 @@ namespace ChatdollKit.Demo
         {
             // Get ChatdollKit components
             modelController = gameObject.GetComponent<ModelController>();
+            dialogProcessor = gameObject.GetComponent<DialogProcessor>();
 
-            // Image capture for ChatGPT vision
+            // Image capture for vision
             if (simpleCamera == null)
             {
                 simpleCamera = FindObjectOfType<SimpleCamera>();
@@ -32,8 +33,22 @@ namespace ChatdollKit.Demo
                 {
                     Debug.LogWarning("SimpleCamera is not found in this scene.");
                 }
+                else
+                {
+                    dialogProcessor.LLMServiceExtensions.CaptureImage = async (source) =>
+                    {
+                        try
+                        {
+                            return await simpleCamera.CaptureImageAsync();
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.LogError($"Error at CaptureImage: {ex.Message}\n{ex.StackTrace}");
+                        }
+                        return null;
+                    };
+                }
             }
-            gameObject.GetComponent<ChatGPTService>().CaptureImage = CaptureImageAsync;
 
             // Register animations
             modelController.RegisterAnimations(AGIARegistry.GetAnimations(animationCollectionKey));
@@ -131,23 +146,6 @@ namespace ChatdollKit.Demo
             //         aiAvatar.UserMessageWindow.Show(azureStreamSpeechListener.RecognizedTextBuffer);
             //     }
             // }
-        }
-
-        private async UniTask<byte[]> CaptureImageAsync(string source)
-        {
-            if (simpleCamera != null)
-            {
-                try
-                {
-                    return await simpleCamera.CaptureImageAsync();
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogError($"Error at CaptureImageAsync: {ex.Message}\n{ex.StackTrace}");
-                }
-            }
-
-            return null;
         }
     }
 }
