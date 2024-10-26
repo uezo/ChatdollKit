@@ -33,45 +33,22 @@ namespace ChatdollKit.Dialog
         public Func<string, Dictionary<string, object>, Exception, CancellationToken, UniTask> OnErrorAsync { get; set; }
 
         // LLM
-        private ILLMService llmService;
-        private LLMContentProcessor llmContentProcessor;
+        private ILLMService llmService { get; set; }
+        private LLMContentProcessor llmContentProcessor { get; set; }
         private Dictionary<string, ITool> toolResolver { get; set; } = new Dictionary<string, ITool>();
+        private List<ILLMTool> toolSpecs { get; set; } = new List<ILLMTool>();
+        public LLMServiceExtensions LLMServiceExtensions { get; } = new LLMServiceExtensions();
 
         private void Awake()
         {
-            // LLM Components
-            foreach (var llms in GetComponents<ILLMService>())
-            {
-                if (llms.IsEnabled)
-                {
-                    llmService = llms;
-                    Debug.Log($"LLMService: {llms}");
-                    break;
-                }
-            }
-            if (llmService == null)
-            {
-                llmService = GetComponent<ILLMService>();
-                if (llmService == null)
-                {
-                    Debug.LogError($"No LLMServices found");
-                }
-                else
-                {
-                    Debug.LogWarning($"No enabled LLMServices found. Use {llmService} for LLMService");
-                }
-            }
+            // Select enabled LLMService
+            SelectLLMService();
+            Debug.Log($"LLMService: {llmService}");
 
             llmContentProcessor = GetComponent<LLMContentProcessor>();
 
-            // Register tool spec to toolResolver
-            foreach (var tool in gameObject.GetComponents<ITool>())
-            {
-                var toolSpec = tool.GetToolSpec();
-                toolResolver.Add(toolSpec.name, tool);
-            }
-
-            SetLLMService(llmService);
+            // Register tool to toolResolver and its spec to toolSpecs
+            LoadLLMTools();
 
             Status = DialogStatus.Idling;
         }
@@ -84,23 +61,50 @@ namespace ChatdollKit.Dialog
             dialogTokenSource = null;
         }
 
-        public void SetLLMService(ILLMService llmService)
+        public void SelectLLMService(ILLMService llmService = null)
         {
-            this.llmService = llmService;
+            var llmServices = gameObject.GetComponents<ILLMService>();
 
-            // Register tool spec to LLMService
+            if (llmService != null)
+            {
+                this.llmService = llmService;
+                foreach (var llms in llmServices)
+                {
+                    llms.IsEnabled = llms == llmService;
+                }
+                return;
+            }
+
+            if (llmServices.Length == 0)
+            {
+                Debug.LogError($"No LLMServices found");
+                return;
+            }
+
+            foreach (var llms in llmServices)
+            {
+                if (llms.IsEnabled)
+                {
+                    this.llmService = llms;
+                    return;
+                }
+            }
+
+            Debug.LogWarning($"No enabled LLMServices found. Enable {llmServices[0]} to use.");
+            llmServices[0].IsEnabled = true;
+            this.llmService = llmServices[0];
+        }
+
+        public void LoadLLMTools()
+        {
+            toolResolver.Clear();
+            toolSpecs.Clear();
             foreach (var tool in gameObject.GetComponents<ITool>())
             {
                 var toolSpec = tool.GetToolSpec();
-                if (this.llmService.AddTool(toolSpec))
-                {
-                    Debug.Log($"Tool registered: {toolSpec.name}");
-                }
-                else
-                {
-                    Debug.Log($"Tool {toolSpec.name} is already registered.");
-                }
-            }
+                toolResolver.Add(toolSpec.name, tool);
+                toolSpecs.Add(toolSpec);
+            }            
         }
 
         // Start dialog
@@ -139,6 +143,10 @@ namespace ChatdollKit.Dialog
                 {
                     {"RequestPayloads", payloads ?? new Dictionary<string, object>()}
                 };
+
+                // Configure LLMService
+                llmService.Tools = toolSpecs;
+                LLMServiceExtensions.SetExtentions(llmService);
 
                 // Call LLM
                 var messages = await llmService.MakePromptAsync("_", text, llmPayloads, token);
@@ -262,6 +270,20 @@ namespace ChatdollKit.Dialog
             // Create new TokenSource and return its token
             dialogTokenSource = new CancellationTokenSource();
             return dialogTokenSource.Token;
+        }
+    }
+
+    public class LLMServiceExtensions
+    {
+        public Action <Dictionary<string, string>, ILLMSession> HandleExtractedTags { get; set; }
+        public Func<string, UniTask<byte[]>> CaptureImage { get; set; }
+        public Func<ILLMSession, CancellationToken, UniTask> OnStreamingEnd { get; set; }
+
+        public void SetExtentions(ILLMService llmService)
+        {
+            llmService.HandleExtractedTags = HandleExtractedTags;
+            llmService.CaptureImage = CaptureImage;
+            llmService.OnStreamingEnd = OnStreamingEnd;
         }
     }
 }

@@ -2,12 +2,10 @@
 
 using System;
 using UnityEngine;
-using Cysharp.Threading.Tasks;
 using ChatdollKit.Dialog;
 using ChatdollKit.IO;
 using ChatdollKit.Model;
 using ChatdollKit.Network;
-using ChatdollKit.LLM.ChatGPT;
 
 namespace ChatdollKit.Demo
 {
@@ -16,6 +14,7 @@ namespace ChatdollKit.Demo
         // ChatdollKit components
         private ModelController modelController;
         private ModelRequestBroker modelRequestBroker;
+        private DialogProcessor dialogProcessor;
         private DialogPriorityManager dialogPriorityManager;
         private SimpleCamera simpleCamera;
 
@@ -29,9 +28,10 @@ namespace ChatdollKit.Demo
             // Get ChatdollKit components
             modelController = gameObject.GetComponent<ModelController>();
             modelRequestBroker = gameObject.GetComponent<ModelRequestBroker>();
+            dialogProcessor = gameObject.GetComponent<DialogProcessor>();
             dialogPriorityManager = gameObject.GetComponent<DialogPriorityManager>();
 
-            // Image capture for ChatGPT vision
+            // Image capture for vision
             if (simpleCamera == null)
             {
                 simpleCamera = FindObjectOfType<SimpleCamera>();
@@ -39,8 +39,22 @@ namespace ChatdollKit.Demo
                 {
                     Debug.LogWarning("SimpleCamera is not found in this scene.");
                 }
+                else
+                {
+                    dialogProcessor.LLMServiceExtensions.CaptureImage = async (source) =>
+                    {
+                        try
+                        {
+                            return await simpleCamera.CaptureImageAsync();
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.LogError($"Error at CaptureImage: {ex.Message}\n{ex.StackTrace}");
+                        }
+                        return null;
+                    };
+                }
             }
-            gameObject.GetComponent<ChatGPTService>().CaptureImage = CaptureImageAsync;
 
             // Register animations
             modelController.RegisterAnimations(AGIARegistry.GetAnimations(animationCollectionKey));
@@ -95,23 +109,6 @@ namespace ChatdollKit.Demo
             {
                 modelRequestBroker.SetRequest(message.Text);
             }            
-        }
-
-        private async UniTask<byte[]> CaptureImageAsync(string source)
-        {
-            if (simpleCamera != null)
-            {
-                try
-                {
-                    return await simpleCamera.CaptureImageAsync();
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogError($"Error at CaptureImageAsync: {ex.Message}\n{ex.StackTrace}");
-                }
-            }
-
-            return null;
         }
     }
 }
