@@ -78,7 +78,7 @@ namespace ChatdollKit.LLM.CommandR
             }
 
             // Histories
-            messages.AddRange(GetContext(historyTurns));
+            messages.AddRange(GetContext(historyTurns * 2));
 
             // Text message (This message will be removed before sending request)
             messages.Add(new CommandRMessage("USER", inputText));
