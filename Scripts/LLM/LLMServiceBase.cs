@@ -60,7 +60,7 @@ namespace ChatdollKit.LLM
             }
 
             // Return copy not to update context directly
-            return context.Skip(context.Count - count * 2).ToList();
+            return context.Skip(context.Count - count).ToList();
         }
 
         public virtual List<ILLMMessage> GetContextRaw()

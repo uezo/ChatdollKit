@@ -264,6 +264,17 @@ namespace ChatdollKit.Dialog
             }
         }
 
+        // LLM Context management
+        public List<ILLMMessage> GetContext(int count)
+        {
+            return llmService?.GetContext(count);
+        }
+
+        public void ClearContext()
+        {
+            llmService?.ClearContext();
+        }
+
         // Get cancellation token for tasks invoked in chat
         public CancellationToken GetDialogToken()
         {

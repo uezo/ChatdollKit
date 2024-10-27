@@ -78,7 +78,7 @@ namespace ChatdollKit.LLM.Claude
             // System - Claude takes system message outside of message parameter
 
             // Histories
-            messages.AddRange(GetContext(historyTurns));
+            messages.AddRange(GetContext(historyTurns * 2));
 
             if (((Dictionary<string, object>)payloads["RequestPayloads"]).ContainsKey("imageBytes"))
             {

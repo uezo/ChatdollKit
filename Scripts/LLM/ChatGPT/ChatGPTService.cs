@@ -98,7 +98,7 @@ namespace ChatdollKit.LLM.ChatGPT
             }
 
             // Histories
-            messages.AddRange(GetContext(historyTurns));
+            messages.AddRange(GetContext(historyTurns * 2));
 
             // User (current input)
             if (((Dictionary<string, object>)payloads["RequestPayloads"]).ContainsKey("imageBytes"))
