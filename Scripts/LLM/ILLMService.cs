@@ -10,6 +10,8 @@ namespace ChatdollKit.LLM
         bool IsEnabled { get; set; }
         Action OnEnabled { get; set; }
         List<ILLMTool> Tools { get; set; }
+        List<ILLMMessage> GetContext(int count);
+        void ClearContext();
         UniTask<List<ILLMMessage>> MakePromptAsync(string userId, string inputText, Dictionary<string, object> payloads, CancellationToken token = default);
         UniTask<ILLMSession> GenerateContentAsync(List<ILLMMessage> messages, Dictionary<string, object> payloads = null, bool useFunctions = true, int retryCounter = 1, CancellationToken token = default);
         ILLMMessage CreateMessageAfterFunction(string role = null, string content = null, ILLMSession llmSession = null, Dictionary<string, object> arguments = null);
