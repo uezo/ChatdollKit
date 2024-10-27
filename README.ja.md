@@ -16,14 +16,20 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 
 ## 💎 バージョン0.8.3の新機能
 
-- **🎧 Stream Speech Listener**: 音声を逐次認識する`AzureStreamSpeechLister`を追加し、会話をよりスムーズなものにしました。
-- **🗣️ Improved Conversation**: キャラクターの発話を停止するInterrupt Wordsや会話に「間」を挿入する機構を追加し、会話体験をより自然で豊かなものにしました。
-- **💃 Easier Animation Registration**: キャラクターが利用するアニメーションの登録方法を簡易化し、ユーザーコードをより簡潔にできるようにしました。
+- **🧩 モジュール化による再利用性と保守性の向上**: 主要なコンポーネントをリファクタリングしました。モジュラー化によりユーザーによるカスタマイズ性が向上したほか、コードの再利用性も高まりました。詳細はデモをご確認ください。
+- **🧹 レガシーコンポーネントの削除**: v0.7.x以前で使用していたコンポーネントを削除し、全体がシンプルになりました。v0.7.xからアップデートする場合は[🔄 Migration from 0.7.x](#-migration-from-07x)をご参照ください。
 
 
 ---
 
 ### 以前の更新内容
+
+#### 0.8.3
+
+- **🎧 Stream Speech Listener**: 音声を逐次認識する`AzureStreamSpeechLister`を追加し、会話をよりスムーズなものにしました。
+- **🗣️ Improved Conversation**: キャラクターの発話を停止するInterrupt Wordsや会話に「間」を挿入する機構を追加し、会話体験をより自然で豊かなものにしました。
+- **💃 Easier Animation Registration**: キャラクターが利用するアニメーションの登録方法を簡易化し、ユーザーコードをより簡潔にできるようにしました。
+
 
 #### 0.8.2
 
@@ -104,6 +110,7 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 - [🎮 Control from External Programs](#-control-from-external-programs)
   - [ChatdollKit Remote Client](#chatdollkit-remote-client)
 - [🌐 WebGLでの実行](#-webglでの実行)
+- [🔄 Migration from 0.7.x](#-migration-from-07x)
 - [❤️ 謝辞](#-謝辞)
 
 
@@ -296,37 +303,38 @@ Hey, it's a beautiful day outside! [pause:1.5] What do you think we should do?
 ### User Defined Tag
 
 表情やアニメーション以外に、開発者が定義したタグに応じた処理を実行することができます。
-システムプロンプトで応答にタグを含ませるための指示をするとともに、任意の箇所に`HandleExtractedTags`を実装します。
+システムプロンプトで応答にタグを含ませるための指示をするとともに、`HandleExtractedTags`を実装します。
 
-以下は、会話の内容に合わせて言語を自動的に切り替える場合の例です。
+以下は、会話の内容に合わせて部屋の照明を操作する例です。
 
 
 ```
-If you want change current language, insert language tag like [language:en-US].
+If you want switch room light on or off, insert language tag like [light:on].
 
 Example:
-[language:en-US]From now on, let's talk in English.
+[light:off]OK, I will turn off the light. Good night.
 ```
 
 ```csharp
-chatGPTService.HandleExtractedTags = (tags, session) =>
+dialogProcessor.LLMServiceExtensions.HandleExtractedTags = (tags, session) =>
 {
-    if (tags.ContainsKey("language"))
+    if (tags.ContainsKey("light"))
     {
-        var language = tags["language"].Contains("-") ? tags["language"].Split('-')[0] : tags["language"];
-        if (language != "ja")
+        var lightCommand = tags["light"];
+        if (lightCommand.lower() == "on")
         {
-            var openAISpeechSynthesizer = gameObject.GetComponent<OpenAISpeechSynthesizer>();
-            modelController.SpeechSynthesizerFunc = openAISpeechSynthesizer.GetAudioClipAsync;
+            // Turn on the light
+            Debug.Log($"Turn on the light");
+        }
+        else if (lightCommand.lower() == "off")
+        {
+            // Turn off the light
+            Debug.Log($"Turn off the light");
         }
         else
         {
-            var voicevoxSpeechSynthesizer = gameObject.GetComponent<VoicevoxSpeechSynthesizer>();
-            modelController.SpeechSynthesizerFunc = voicevoxSpeechSynthesizer.GetAudioClipAsync;
+            Debug.LogWarning($"Unknown command for light: {lightCommand}");
         }
-        var openAIListener = gameObject.GetComponent<OpenAISpeechListener>();
-        openAIListener.Language = language;
-        Debug.Log($"Set language to {language}");
     }
 };
 ```
@@ -393,7 +401,7 @@ UniTask<AudioClip> DownloadAudioClipAsync(string text, Dictionary<string, object
 
 高速なレスポンスを実現するため、AIからの応答メッセージ全体を音声合成するのではなく、文章を句読点等で区切って順次音声合成・発話しています。
 これは応答パフォーマンスを大幅に改善する一方で、特にStyle-Bert-VITS2などのAI音声合成を利用する場合、あまり細かく分割すると話し方やトーンの品質が犠牲になってしまいます。
-このパフォーマンスと品質のバランスを両立するために、音声合成の区切り方を`LLMContentSkill`コンポーネントインスペクター上で設定することができます。
+このパフォーマンスと品質のバランスを両立するために、音声合成の区切り方を`LLMContentProcessor`コンポーネントインスペクター上で設定することができます。
 
 |項目|説明|
 |----|----|
@@ -493,9 +501,11 @@ if (aiAvatar.Mode == AIAvatar.AvatarMode.Conversation)
 ## ⚡️ AI Agent (Tool Call)
 
 LLMでTool Call（Function Calling）がサポートされている場合、その機能を利用して呼び出す処理を定義・実装することができます。
-`LLMFunctionSkillBase`を継承したコンポーネントを作成してAIAvatarオブジェクトにアタッチすることで、自動的にツールとして識別され、必要に応じて実行されるようになります。
+`ITool`を実装または`ToolBase`を継承したコンポーネントを作成してAIAvatarオブジェクトにアタッチすることで、自動的にツールとして識別され、必要に応じて実行されるようになります。
 
-独自のスキルを作成するには、`FunctionName`、`FunctionDescription`を定義し、Functionの定義を返す`GetToolSpec`メソッド、Functionの処理そのものである`ExecuteFunction`メソッドを実装します。詳細は`ChatdollKit/Examples/WeatherSkill`を参考にしてください。
+独自のスキルを作成するには、`FunctionName`、`FunctionDescription`を定義し、Functionの定義を返す`GetToolSpec`メソッド、Functionの処理そのものである`ExecuteFunction`メソッドを実装します。詳細は`ChatdollKit/Examples/WeatherTool`を参考にしてください。
+
+**NOTE**: プロジェクトにLLMFunctionSkillを使用している場合、[Migration from FunctionSkill to Tool](#migration-from-functionskill-to-tool)も参照してください。
 
 
 ## 🎙️ Devices
@@ -526,7 +536,6 @@ LLMでTool Call（Function Calling）がサポートされている場合、そ�
 ## 💃 ３D Model Control
 
 3Dモデルの身振り手振りや表情、発話を制御する`ModelController`コンポーネントを提供します。
-`AIAvatar`コンポーネントや`LLMContentSkill`でもこれを利用しています。また、`SpeechSynthesizer`は`ModelController`から利用されています。
 
 ### Idle Animations
 
@@ -543,7 +552,7 @@ modelController.AddIdleAnimation(new Animation("BaseParam", 99, 5f), mode: "slee
 ### Control by Script
 
 作成中です。基本的には`AnimatedVoiceRequest`オブジェクトを作成して、`ModelController.AnimatedSay`を呼び出します。
-`LLMContentSkill`の内部でアニメーション、表情、発話を組み合わせた要求をしていますので、参考にしてみて下さい。
+`AIAvatar`の内部でアニメーション、表情、発話を組み合わせた要求をしていますので、参考にしてみて下さい。
 
 
 ## 🎚️ UI Components
@@ -632,6 +641,59 @@ https://gist.github.com/uezo/9e56a828bb5ea0387f90cc07f82b4c15
 - MP3などの圧縮音源の再生ができない。SpeechSynthesizerのフォーマットをWaveにしましょう
 - OVRLipSyncが動作しない。かわりに [uLipSync](https://github.com/hecomi/uLipSync) と [uLipSyncWebGL](https://github.com/uezo/uLipSyncWebGL) との組み合わせを使いましょう
 - 日本語等のマルチバイト文字を表示したいとき、それが含まれるフォントをプロジェクトに同梱する必要がある。メッセージウィンドウが標準でArialなので、これをM+など別のものに変更しましょう
+
+
+## 🔄 Migration from 0.7.x
+
+最も簡単な移行方法は、`Assets/ChatdollKit`をすべて削除して新たに最新のChatdollKitのunitypackageをインポートし直すことです。しかしながら何らかの事情でそれができない場合、以下の手順によりエラーを解消することができます。
+
+1. 最新のChatdollKitを上書きインポートします。この時点で、いくつかのエラーがコンソールに表示されます。
+
+1. ChatdollKit_0.7to084Migration.unitypackageをインポートします。
+
+1. `partial`キーワードを`ModelController`、`AnimatedVoiceRequest`、`Voice`のクラス宣言に追加します。
+
+1. `DialogController`に含まれる`OnSayStart`を`OnSayStartMigration`に置換します。
+
+**⚠️Note**: この手順は単にエラーを解消するだけであり、レガシーコンポーネントを利用できるようにするためのものではありません。もしプロジェクトのカスタムコードの中に`DialogController`、`LLMFunctionSkill`、`LLMContentSkill`、`ChatdollKit`を使用する箇所がある場合、以下の新しいコンポーネントを使用するようにしてください。
+
+- `DialogController`: `DialogProcessor`
+- `LLMFunctionSkill`: `Tool`
+- `LLMContentSkill`: `LLMContentProcessor`
+- `ChatdollKit`: `AIAvatar`
+
+
+### Migration from FunctionSkill to Tool
+
+コンポーネントが`LLMFunctionSkillBase`を継承している場合、以下の手順で簡単に`ToolBase`にマイグレーションできます。
+
+1. 継承元クラスの変更
+
+    `LLMFunctionSkillBase`から`ToolBase`に変更します。
+
+    ```md
+    // Before
+    public class MyFunctionSkill : LLMFunctionSkillBase
+
+    // After
+    public class MyFunctionSkill : ToolBase
+    ```
+
+1. `ExecuteFunction`メソッドのシグネチャの変更
+
+    `ExecuteFunction`メソッドの引数と戻り値の型を以下の通り変更します。
+
+    ```md
+    // Before
+    public UniTask<FunctionResponse> ExecuteFunction(string argumentsJsonString, Request request, State state, User user, CancellationToken token)
+
+    // After
+    public UniTask<ToolResponse> ExecuteFunction(string argumentsJsonString, CancellationToken token)
+    ```
+
+1. `ExecuteFunction`の戻り値の型の変更
+
+    `FunctionResponse`から`ToolResponse`に変更します。
 
 
 # ❤️ 謝辞

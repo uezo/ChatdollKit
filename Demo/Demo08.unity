@@ -1307,7 +1307,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: ChatdollKit Demo v0.8.3
+  m_Text: ChatdollKit Demo v0.8.4
 --- !u!222 &1976060164
 CanvasRenderer:
   m_ObjectHideFlags: 0

@@ -15,16 +15,21 @@
 - **Multi platforms**: Compatible with Windows, Mac, Linux, iOS, Android, and other Unity-supported platforms, including VR, AR, and WebGL.
 
 
-## 💎 What's New in Version 0.8.3
+## 💎 What's New in Version 0.8.4
+
+- **🧩 Modularized for Better Reusability and Maintainability**: We’ve reorganized key components, focusing on modularity to improve customizability and reusability. Check out the demos for more details!
+- **🧹 Removed Legacy Components**: Outdated components have been removed, simplifying the toolkit and ensuring compatibility with the latest features. Refer to [🔄 Migration from 0.7.x](#-migration-from-07x) if you're updating from v0.7.x.
+
+---
+
+### Previous Updates
+
+#### 0.8.3
 
 - **🎧 Stream Speech Listener**: We’ve added `AzureStreamSpeechListener` for smoother conversations by recognizing speech as it’s spoken.
 - **🗣️ Improved Conversation**: Interrupt characters to take your turn, and enjoy more expressive conversations with natural pauses—enhancing the overall experience.
 - **💃 Easier Animation Registration**: We’ve simplified the process of registering animations for your character, making your code cleaner and easier to manage.
 
-
----
-
-### Previous Updates
 
 #### 0.8.2
 
@@ -105,6 +110,7 @@ To run the demo for version 0.8, please follow the steps below after importing t
 - [🎮 Control from External Programs](#-control-from-external-programs)
   - [ChatdollKit Remote Client](#chatdollkit-remote-client)
 - [🌐 Run on WebGL](#-run-on-webgl)
+- [🔄 Migration from 0.7.x](#-migration-from-07x)
 - [❤️ Thanks](#%EF%B8%8F-thanks)
 
 
@@ -307,35 +313,36 @@ Hey, it's a beautiful day outside! [pause:1.5] What do you think we should do?
 
 Besides expressions and animations, you can execute actions based on developer-defined tags. Include the instructions to insert tags in the system prompt and implement `HandleExtractedTags`.
 
-Here's an example of automatically switching languages during the conversation based on the content:
+Here's an example of switching room lighting on/off during the conversation:
 
 
 ```
-If you want change current language, insert language tag like [language:en-US].
+If you want switch room light on or off, insert language tag like [light:on].
 
 Example:
-[language:en-US]From now on, let's talk in English.
+[light:off]OK, I will turn off the light. Good night.
 ```
 
 ```csharp
-chatGPTService.HandleExtractedTags = (tags, session) =>
+dialogProcessor.LLMServiceExtensions.HandleExtractedTags = (tags, session) =>
 {
-    if (tags.ContainsKey("language"))
+    if (tags.ContainsKey("light"))
     {
-        var language = tags["language"].Contains("-") ? tags["language"].Split('-')[0] : tags["language"];
-        if (language != "ja")
+        var lightCommand = tags["light"];
+        if (lightCommand.lower() == "on")
         {
-            var openAISpeechSynthesizer = gameObject.GetComponent<OpenAISpeechSynthesizer>();
-            modelController.SpeechSynthesizerFunc = openAISpeechSynthesizer.GetAudioClipAsync;
+            // Turn on the light
+            Debug.Log($"Turn on the light");
+        }
+        else if (lightCommand.lower() == "off")
+        {
+            // Turn off the light
+            Debug.Log($"Turn off the light");
         }
         else
         {
-            var voicevoxSpeechSynthesizer = gameObject.GetComponent<VoicevoxSpeechSynthesizer>();
-            modelController.SpeechSynthesizerFunc = voicevoxSpeechSynthesizer.GetAudioClipAsync;
+            Debug.LogWarning($"Unprocessable command: {lightCommand}");
         }
-        var openAIListener = gameObject.GetComponent<OpenAISpeechListener>();
-        openAIListener.Language = language;
-        Debug.Log($"Set language to {language}");
     }
 };
 ```
@@ -397,7 +404,7 @@ Note that WebGL does not support compressed audio playback, so make sure to hand
 
 To achieve fast response times, rather than synthesizing the entire response message into speech, we split the text into smaller parts based on punctuation and progressively synthesize and play each segment. While this greatly improves performance, excessively splitting the text can reduce the quality of the speech, especially when using AI-based speech synthesis like Style-Bert-VITS2, affecting the tone and fluency.
 
-You can balance performance and speech quality by adjusting how the text is split for synthesis in the `LLMContentSkill` component's inspector.
+You can balance performance and speech quality by adjusting how the text is split for synthesis in the `LLMContentProcessor` component's inspector.
 
 |Item|Description|
 |----|----|
@@ -443,12 +450,6 @@ Most of the settings related to the SpeechListener are configured in the inspect
 
 
 ### Using AzureStreamSpeechListener
-
-`AzureStreamSpeechListener`を使用する場合は、他のSpeechListenerとは一部設定が異なります。これは`AzureStreamSpeechListener`がSDK内部でマイクを制御していることや、文字起こしが逐次行われることに起因します。
-
-1. **Microphone Mute Byの設定**: `Stop Listener`を選択してください。そうしないと、発話内容を聞き取ってしまい、会話が成立しません。
-1. **User Message Windowの設定**: `Is Text Animated`のチェックを外し、`Pre Gap`を`0`、`Post Gap`を`0.2`程度にしてください。
-1. **メインロジックのUpdate処理**: 認識した文言を逐次表示させるため、以下のようなコードを`Update()`の中に追加してください。
 
 To use `AzureStreamSpeechListener`, some settings differ from other SpeechListeners. This is because `AzureStreamSpeechListener` controls the microphone internally through the SDK and performs transcription incrementally.
 
@@ -504,7 +505,9 @@ You can start a conversation based on the length of the recognized text, rather 
 
 Using the Tool Call (Function Calling) feature provided by the LLM, you can develop AI characters that function as AI agents, rather than simply engaging in conversation.
 
-By creating a component that inherits from `LLMFunctionSkillBase` and attaching it to the AIAvatar object, it will automatically be recognized as a tool and executed when needed. To create a custom skill, define `FunctionName` and `FunctionDescription`, and implement the `GetToolSpec` method, which returns the function definition, and the `ExecuteFunction` method, which handles the function’s process. For details, refer to `ChatdollKit/Examples/WeatherSkill`.
+By creating a component that implements `ITool` or extends `ToolBase` and attaching it to the AIAvatar object, it will automatically be recognized as a tool and executed when needed. To create a custom tool, define `FunctionName` and `FunctionDescription`, and implement the `GetToolSpec` method, which returns the function definition, and the `ExecuteFunction` method, which handles the function’s process. For details, refer to `ChatdollKit/Examples/WeatherTool`.
+
+**NOTE**: See [Migration from FunctionSkill to Tool](#migration-from-functionskill-to-tool) if your project has custom LLMFunctionSkills.
 
 
 ## 🎙️ Devices
@@ -532,7 +535,7 @@ We provide the `SimpleCamera` prefab, which packages features such as image capt
 
 ## 🥰 3D Model Control
 
-The `ModelController` component controls the gestures, facial expressions, and speech of 3D models. This component is also used by the `AIAvatar` and `LLMContentSkill` components.
+The `ModelController` component controls the gestures, facial expressions, and speech of 3D models.
 
 ### Idle Animations
 
@@ -548,7 +551,7 @@ modelController.AddIdleAnimation(new Animation("BaseParam", 99, 5f), mode: "slee
 
 ### Control by Script
 
-This section is under construction. Essentially, you create an `AnimatedVoiceRequest` object and call `ModelController.AnimatedSay`. The `LLMContentSkill` internally makes requests that combine animations, expressions, and speech, so refer to that for guidance.
+This section is under construction. Essentially, you create an `AnimatedVoiceRequest` object and call `ModelController.AnimatedSay`. The `AIAvatar` internally makes requests that combine animations, expressions, and speech, so refer to that for guidance.
 
 
 ## 🎚️ UI Components
@@ -635,6 +638,60 @@ Refer to the following tips for now. We are preparing demo for WebGL.
 - Compressed audio formats like MP3 are not supported. Use WAV in SpeechSynthesizer.
 - OVRLipSync is not supported. Use [uLipSync](https://github.com/hecomi/uLipSync) and [uLipSyncWebGL](https://github.com/uezo/uLipSyncWebGL) instead.
 - If you want to show multibyte characters in message window put the font that includes multibyte characters to your project and set it to message windows.
+
+
+## 🔄 Migration from 0.7.x
+
+The easiest way is deleting `Assets/ChatdollKit` and import ChatdollKit unitypackage again. But if you can't do so for some reasons, you can solve errors by following steps:
+
+1. Import the latest version of ChatdollKit unitypackage. Some errors will be shown in the console.
+
+1. Import ChatdollKit_0.7to084Migration.unitypackage.
+
+1. Add `partial` keyword to `ModelController`, `AnimatedVoiceRequest` and `Voice`.
+
+1. Replace `OnSayStart` with `OnSayStartMigration` in `DialogController`.
+
+**⚠️Note**: This simply suppresses error outputs and does not enable continued use of legacy code. If any parts of your project still use `DialogController`, `LLMFunctionSkill`, `LLMContentSkill`, or `ChatdollKit`, replace each with the updated component as follows:
+
+- `DialogController`: `DialogProcessor`
+- `LLMFunctionSkill`: `Tool`
+- `LLMContentSkill`: `LLMContentProcessor`
+- `ChatdollKit`: `AIAvatar`
+
+
+### Migration from FunctionSkill to Tool
+
+If your component inherits from `LLMFunctionSkillBase`, you can easily migrate it to inherit from `ToolBase` by following these steps:
+
+1. Change the inherited class
+
+    Replace `LLMFunctionSkillBase` with `ToolBase` as the base class.
+
+    ```md
+    // Before
+    public class MyFunctionSkill : LLMFunctionSkillBase
+
+    // After
+    public class MyFunctionSkill : ToolBase
+    ```
+
+1. Update the `ExecuteFunction` method signature
+
+    Modify the `ExecuteFunction` method’s parameters and return type as follows:
+
+    ```md
+    // Before
+    public UniTask<FunctionResponse> ExecuteFunction(string argumentsJsonString, Request request, State state, User user, CancellationToken token)
+
+    // After
+    public UniTask<ToolResponse> ExecuteFunction(string argumentsJsonString, CancellationToken token)
+    ```
+
+1. Update the return type of `ExecuteFunction`
+
+    Change `FunctionResponse` to `ToolResponse`.
+
 
 
 ## ❤️ Thanks

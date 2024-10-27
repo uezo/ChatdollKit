@@ -12,11 +12,14 @@ namespace ChatdollKit.Demo
         void Start()
         {
             speechListener = GetComponent<ISpeechListener>();
+
+#pragma warning disable CS1998
             speechListener.OnRecognized = async (text) =>
             {
                 Debug.Log(text);
                 TextListened.text = text;
             };
+#pragma warning restore CS1998
         }
     }
 }
