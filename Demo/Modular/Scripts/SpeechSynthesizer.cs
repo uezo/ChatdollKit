@@ -26,7 +26,7 @@ namespace ChatdollKit.Demo
 
             Debug.Log(text);
 
-            SayAsync(text);
+            _ = SayAsync(text);
         }
 
         private async UniTask SayAsync(string text)

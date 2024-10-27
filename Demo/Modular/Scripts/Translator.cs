@@ -29,6 +29,8 @@ namespace ChatdollKit.Demo
             };
 
             dialogProcessor = GetComponent<DialogProcessor>();
+
+#pragma warning disable CS1998
             dialogProcessor.OnRequestRecievedAsync = async (text, payloads, token) =>
             {
                 microphoneManager.MuteMicrophone(true);
@@ -37,6 +39,7 @@ namespace ChatdollKit.Demo
             {
                 microphoneManager.MuteMicrophone(false);
             };
+#pragma warning restore CS1998
 
             llmContentProcessor = GetComponent<LLMContentProcessor>();
             llmContentProcessor.ShowContentItemAsync = async (contentItem, cancellationToken) =>
