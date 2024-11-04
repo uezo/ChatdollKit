@@ -13,7 +13,7 @@ namespace ChatdollKit
 {
     public class AIAvatar : MonoBehaviour
     {
-        public static string VERSION = "0.8.4";
+        public static string VERSION = "0.8.4.1";
 
         [Header("Avatar lifecycle settings")]
         [SerializeField]
