@@ -38,6 +38,7 @@ namespace ChatdollKit.Dialog
         private Dictionary<string, ITool> toolResolver { get; set; } = new Dictionary<string, ITool>();
         private List<ILLMTool> toolSpecs { get; set; } = new List<ILLMTool>();
         public LLMServiceExtensions LLMServiceExtensions { get; } = new LLMServiceExtensions();
+        public ILLMService LLMService { get { return llmService; }}
 
         private void Awake()
         {

@@ -628,6 +628,8 @@ private void HandleExternalMessage(ExternalInboundMessage message, string source
 
 https://gist.github.com/uezo/9e56a828bb5ea0387f90cc07f82b4c15
 
+また、もしAITuber（AI VTuber）を開発したい場合は、AITuberのデモと [ChatdollKit AITuber Controller](https://github.com/uezo/chatdollkit-aituber) の組み合わせを試してみてください。内部的に`SocketServer`を使用しています。
+
 
 ## 🌐 WebGLでの実行
 

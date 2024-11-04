@@ -625,6 +625,8 @@ The `SocketServer` is designed to receive arbitrary information via socket commu
 
 https://gist.github.com/uezo/9e56a828bb5ea0387f90cc07f82b4c15
 
+Or, if you want to build AITuber (AI VTuber), try AITuber demo with [ChatdollKit AITuber Controller](https://github.com/uezo/chatdollkit-aituber) that is using `SocketServer` internally.
+
 
 ## 🌐 Run on WebGL
 

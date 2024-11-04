@@ -57,6 +57,11 @@ namespace ChatdollKit.Dialog
             }            
         }
 
+        public bool HasRequest()
+        {
+            return !dialogQueue.IsEmpty();
+        }
+
         public void ClearDialogRequestQueue(int priority = 0)
         {
             dialogQueue.Clear(priority);

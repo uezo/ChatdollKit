@@ -3,6 +3,7 @@ using ChatdollKit.Model;
 using ChatdollKit.Dialog;
 using ChatdollKit.Network;
 using ChatdollKit.IO;
+using ChatdollKit.LLM;
 
 namespace ChatdollKit.Demo
 {
@@ -12,12 +13,14 @@ namespace ChatdollKit.Demo
         private ModelController modelController;
         private ModelRequestBroker modelRequestBroker;
         private DialogPriorityManager dialogPriorityManager;
+        private DialogProcessor dialogProcessor;
 
         [SerializeField]
         private AGIARegistry.AnimationCollection animationCollectionKey = AGIARegistry.AnimationCollection.AGIAFree;
 
         [SerializeField]
-        private CommentContainer commentContainer;
+        private bool autoPilot = false;
+        public string AutoPilotRequestText;
 
         private void Start()
         {
@@ -25,49 +28,72 @@ namespace ChatdollKit.Demo
             modelController = gameObject.GetComponent<ModelController>();
             modelRequestBroker = gameObject.GetComponent<ModelRequestBroker>();
             dialogPriorityManager = gameObject.GetComponent<DialogPriorityManager>();
+            dialogProcessor = gameObject.GetComponent<DialogProcessor>();
 
-            // Show comment
 #pragma warning disable CS1998
-            modelController.OnSayStart = async (voice, token) =>
-            {
-                commentContainer.AddCharacterComment(voice.Text);
-            };
-
             // Access from external program
             gameObject.GetComponent<SocketServer>().OnDataReceived = async (message) =>
             {
                 HandleExternalMessage(message, "SocketServer");
             };
+#pragma warning restore CS1998
 
             // Animations used in conversation
             modelController.RegisterAnimations(AGIARegistry.GetAnimations(animationCollectionKey));
         }
-#pragma warning restore CS1998
+
+        private void Update()
+        {
+            if (dialogProcessor.Status == DialogProcessor.DialogStatus.Idling)
+            {
+                if (autoPilot && !dialogPriorityManager.HasRequest())
+                {
+                    // Continue talking automatically
+                    dialogPriorityManager.SetRequest(AutoPilotRequestText);
+                }
+            }
+        }
 
         private void HandleExternalMessage(ExternalInboundMessage message, string source)
         {
             // Assign actions based on the request's Endpoint and Operation
             if (message.Endpoint == "dialog")
             {
-                if (message.Operation == "start")
+                if (message.Operation == "process")
                 {
-                    commentContainer.ResetCharacterComment();
                     dialogPriorityManager.SetRequest(message.Text, message.Payloads, message.Priority);
                 }
                 else if (message.Operation == "clear")
                 {
                     dialogPriorityManager.ClearDialogRequestQueue(message.Priority);
                 }
+                else if (message.Operation == "auto_on")
+                {
+                    autoPilot = true;
+                }
+                else if (message.Operation == "auto_off")
+                {
+                    autoPilot = false;
+                }
+                else if (message.Operation == "clear_context")
+                {
+                    dialogProcessor.ClearContext();
+                }
             }
             else if (message.Endpoint == "model")
             {
-                commentContainer.ResetCharacterComment();
                 modelRequestBroker.SetRequest(message.Text);
             }
-            else if (message.Endpoint == "comment")
+            else if (message.Endpoint == "config")
             {
-                var userName = message.Payloads != null && message.Payloads.ContainsKey("userName") ? (string)message.Payloads["userName"] : null;
-                commentContainer.AddUserComment(message.Text, userName);
+                if (message.Payloads.ContainsKey("system_prompt"))
+                {
+                    ((LLMServiceBase)dialogProcessor.LLMService).SystemMessageContent = (string)message.Payloads["system_prompt"];
+                }
+                if (message.Payloads.ContainsKey("autopilot_request"))
+                {
+                    AutoPilotRequestText = (string)message.Payloads["autopilot_request"];
+                }
             }
         }
     }
