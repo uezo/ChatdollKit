@@ -145,8 +145,11 @@ namespace ChatdollKit.SpeechListener
 
         protected void OnDestroy()
         {
-            cancellationTokenSource.Cancel();
-            microphoneManager.StopRecordingSession(session);
+            if (cancellationTokenSource != null)
+            {
+                cancellationTokenSource.Cancel();
+                microphoneManager.StopRecordingSession(session);
+            }
         }
     }
 }
