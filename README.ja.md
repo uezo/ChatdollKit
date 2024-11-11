@@ -118,6 +118,8 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 
 VRMモデルを使用したセットアップの手順は以下の通りです。VRChatのモデルを使用する場合の手順は、[README v0.7.7](https://github.com/uezo/ChatdollKit/blob/v0.7.7/README.md#-modelcontroller)を参照してください。
 
+**⚠️注意**: UnityのSRP (Scriptable Render Pipeline) プロジェクトテンプレートは使用しないでください。ChatdollKitが使用するUniVRMがSRPをサポートしていません。
+
 ### 依存関係のインポート
 
 最新版の[ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases)をダウンロードし、以下の依存関係をインポートした後、Unityプロジェクトにインポートしてください：

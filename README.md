@@ -118,6 +118,8 @@ To run the demo for version 0.8, please follow the steps below after importing t
 
 The steps for setting up with a VRM model are as follows. For instructions on using models for VRChat, refer to [README v0.7.7](https://github.com/uezo/ChatdollKit/blob/v0.7.7/README.md#-modelcontroller).
 
+**⚠️CAUTION**: Do not use the SRP (Scriptable Render Pipeline) project template in Unity. UniVRM, which ChatdollKit depends on, does not support SRP.
+
 ### Import dependencies
 
 Download the latest version of [ChatdollKit.unitypackage](https://github.com/uezo/ChatdollKit/releases) and import it into your Unity project after import dependencies;
