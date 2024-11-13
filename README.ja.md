@@ -379,6 +379,15 @@ gameObject.GetComponent<ChatGPTService>().CaptureImage = async (source) =>
 ```
 
 
+### Chain of Thought Prompting
+
+Chain of Thought (CoT) プロンプティングはAIのパフォーマンスを向上させる手法です。コンセプトとその適用例についてはAnthropicの解説を参照してください。 https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/chain-of-thought .
+
+ChatdollKitはこのCoTの手法に、`<thinking> ~ </thinking>`の中身を読み上げの対象外とすることで対応しています。
+
+また、`LLMContentProcessor`のインスペクターの`ThinkTag`でタグの中の文字列をカスタマイズすることも可能です（reason、など）。
+
+
 ## 🗣️ Speech Synthesizer (Text-to-Speech)
 
 音声合成サービスとしてクラウドサービスとして提供されるGoogle、Azure、OpenAI、Watsonをサポートするほか、キャラクターとしてより魅力的な音声を提供するVOICEVOX、VOICEROID、Style-Bert-VITS2をサポートします。
