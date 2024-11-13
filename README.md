@@ -15,14 +15,19 @@
 - **Multi platforms**: Compatible with Windows, Mac, Linux, iOS, Android, and other Unity-supported platforms, including VR, AR, and WebGL.
 
 
-## 💎 What's New in Version 0.8.4
+## 💎 What's New in Version 0.8.5
 
-- **🧩 Modularized for Better Reusability and Maintainability**: We’ve reorganized key components, focusing on modularity to improve customizability and reusability. Check out the demos for more details!
-- **🧹 Removed Legacy Components**: Outdated components have been removed, simplifying the toolkit and ensuring compatibility with the latest features. Refer to [🔄 Migration from 0.7.x](#-migration-from-07x) if you're updating from v0.7.x.
+- **🎓 Chain of Thought Prompting**: Say hello to Chain of Thought (CoT) Prompting! 🎉 Your AI character just got a major boost in IQ and EQ!
 
 ---
 
 ### Previous Updates
+
+#### 0.8.4
+
+- **🧩 Modularized for Better Reusability and Maintainability**: We’ve reorganized key components, focusing on modularity to improve customizability and reusability. Check out the demos for more details!
+- **🧹 Removed Legacy Components**: Outdated components have been removed, simplifying the toolkit and ensuring compatibility with the latest features. Refer to [🔄 Migration from 0.7.x](#-migration-from-07x) if you're updating from v0.7.x.
+
 
 #### 0.8.3
 
@@ -87,6 +92,7 @@ To run the demo for version 0.8, please follow the steps below after importing t
   - [Pause in Speech](#pause-in-speech)
   - [User Defined Tag](#user-defined-tag)
   - [Multi Modal](#multi-modal)
+  - [Chain of Thought Prompting](#chain-of-thought-prompting)
 - [🗣️ Speech Synthesizer (Text-to-Speech)](#%EF%B8%8F-speech-synthesizer-text-to-speech)
   - [Make custom SpeechSynthesizer](#make-custom-speechsynthesizer)
   - [Performance and Quality Tuning](#performance-and-quality-tuning)

@@ -14,15 +14,19 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 - **マルチプラットフォーム**: Windows、Mac、Linux、iOS、Android、およびその他のUnityサポートプラットフォーム（VR、AR、WebGLを含む）に対応
 
 
-## 💎 バージョン0.8.3の新機能
+## 💎 バージョン0.8.5の新機能
 
-- **🧩 モジュール化による再利用性と保守性の向上**: 主要なコンポーネントをリファクタリングしました。モジュラー化によりユーザーによるカスタマイズ性が向上したほか、コードの再利用性も高まりました。詳細はデモをご確認ください。
-- **🧹 レガシーコンポーネントの削除**: v0.7.x以前で使用していたコンポーネントを削除し、全体がシンプルになりました。v0.7.xからアップデートする場合は[🔄 Migration from 0.7.x](#-migration-from-07x)をご参照ください。
-
+- **🎓 Chain of Thought Prompting**: Chain of Thought (CoT) プロンプティングに対応しました 🎉 AIキャラクターの思考力や感情コントロールの力を大幅にブーストすることができます。
 
 ---
 
 ### 以前の更新内容
+
+#### 0.8.4
+
+- **🧩 モジュール化による再利用性と保守性の向上**: 主要なコンポーネントをリファクタリングしました。モジュラー化によりユーザーによるカスタマイズ性が向上したほか、コードの再利用性も高まりました。詳細はデモをご確認ください。
+- **🧹 レガシーコンポーネントの削除**: v0.7.x以前で使用していたコンポーネントを削除し、全体がシンプルになりました。v0.7.xからアップデートする場合は[🔄 Migration from 0.7.x](#-migration-from-07x)をご参照ください。
+
 
 #### 0.8.3
 
@@ -87,6 +91,7 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
   - [Pause in Speech](#pause-in-speech)
   - [User Defined Tag](#user-defined-tag)
   - [Multi Modal](#multi-modal)
+  - [Chain of Thought Prompting](#chain-of-thought-prompting)
 - [🗣️ Speech Synthesizer (Text-to-Speech)](#-speech-synthesizer-text-to-speech)
   - [Make custom SpeechSynthesizer](#make-custom-speechsynthesizer)
   - [Performance and Quality Tuning](#performance-and-quality-tuning)
