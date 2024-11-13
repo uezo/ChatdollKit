@@ -13,6 +13,8 @@ namespace ChatdollKit.LLM
         public List<string> SplitChars = new List<string>() { "。", "！", "？", ". ", "!", "?" };
         private List<string> splitCharsWithNewLine;
         public List<string> OptionalSplitChars = new List<string>() { "、", ", " };
+        [SerializeField]
+        private string thinkTag = "thinking";
         public int MaxLengthBeforeOptionalSplit = 0;
         private Queue<LLMContentItem> llmContentQueue = new Queue<LLMContentItem>();
         public Action<LLMContentItem> HandleSplittedText;
@@ -37,6 +39,9 @@ namespace ChatdollKit.LLM
             {
                 var splitIndex = 0;
                 var isFirstWord = true;
+                var isInsideThinkTag = false;
+                var thinkStart = $"<{thinkTag}>";
+                var thinkEnd = $"</{thinkTag}>";
 
                 while (!token.IsCancellationRequested)
                 {
@@ -62,7 +67,54 @@ namespace ChatdollKit.LLM
                                     Debug.Log($"Content stream: {text} (isFirst={isFirstWord})");
                                 }
 
-                                var contentItem = new LLMContentItem(text, isFirstWord);          
+                                var processedText = string.Empty;
+
+                                if (isInsideThinkTag)
+                                {
+                                    var endIndex = text.IndexOf(thinkEnd);
+                                    if (endIndex != -1)
+                                    {
+                                        // Think tag is closed. Use the text after end tag.
+                                        isInsideThinkTag = false;
+                                        processedText = text.Substring(endIndex + thinkEnd.Length);
+                                    }
+                                    else
+                                    {
+                                        continue;   // Think tag is still open
+                                    }
+                                }
+                                else
+                                {
+                                    var startIndex = text.IndexOf(thinkStart);
+                                    if (startIndex != -1)
+                                    {
+                                        var endIndex = text.IndexOf(thinkEnd, startIndex);
+                                        if (endIndex != -1)
+                                        {
+                                            // Think tag opened and also closed.
+                                            var beforeTag = text.Substring(0, startIndex);
+                                            var afterTag = text.Substring(endIndex + thinkEnd.Length);
+                                            processedText = beforeTag + afterTag;
+                                        }
+                                        else
+                                        {
+                                            // Think tag opened but not closed.
+                                            isInsideThinkTag = true;
+                                            processedText = text.Substring(0, startIndex);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        processedText = text;
+                                    }
+                                }
+
+                                if (string.IsNullOrEmpty(processedText.Trim()))
+                                {
+                                    continue;
+                                }
+
+                                var contentItem = new LLMContentItem(processedText, isFirstWord);          
                                 HandleSplittedText?.Invoke(contentItem);
                                 if (contentItem != null)
                                 {

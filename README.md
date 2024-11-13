@@ -385,6 +385,15 @@ gameObject.GetComponent<ChatGPTService>().CaptureImage = async (source) =>
 ```
 
 
+### Chain of Thought Prompting
+
+Chain of Thought (CoT) prompting is a technique to enhance AI performance. For more information about CoT and examples of prompts, see https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/chain-of-thought .
+
+ChatdollKit supports Chain of Thought by excluding sentences wrapped in `<thinking> ~ </thinking>` tags from speech synthesis.
+
+You can customize the tag by setting a preferred word (e.g., "reason") as the `ThinkTag` in the inspector of `LLMContentProcessor`.
+
+
 ## 🗣️ Speech Synthesizer (Text-to-Speech)
 
 We support cloud-based speech synthesis services such as Google, Azure, OpenAI, and Watson, in addition to VOICEVOX, VOICEROID, and Style-Bert-VITS2 for more characterful and engaging voices. To use a speech synthesis service, attach `SpeechSynthesizer` from `ChatdollKit/Scripts/SpeechListener` to the AIAvatar object and check the `IsEnabled` box. If other `SpeechSynthesizer` components are attached, make sure to uncheck the `IsEnabled` box for those not in use.
