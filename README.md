@@ -127,7 +127,7 @@ Download the latest version of [ChatdollKit.unitypackage](https://github.com/uez
 - `Burst` from Unity Package Manager (Window > Package Manager)
 - [UniTask](https://github.com/Cysharp/UniTask)(Tested on Ver.2.5.4)
 - [uLipSync](https://github.com/hecomi/uLipSync)(Tested on v3.1.0)
-- [UniVRM](https://github.com/vrm-c/UniVRM/releases/tag/v0.89.0)(v0.89.0)
+- [UniVRM](https://github.com/vrm-c/UniVRM/releases/tag/v0.127.2)(v0.127.2)
 - [ChatdollKit VRM Extension](https://github.com/uezo/ChatdollKit/releases)
 - JSON.NET: If your project doesn't have JSON.NET, add it from Package Manager > [+] > Add package from git URL... > com.unity.nuget.newtonsoft-json
 - [Azure Speech SDK](https://learn.microsoft.com/ja-jp/azure/ai-services/speech-service/quickstarts/setup-platform?pivots=programming-language-csharp&tabs=macos%2Cubuntu%2Cdotnetcli%2Cunity%2Cjre%2Cmaven%2Cnodejs%2Cmac%2Cpypi#install-the-speech-sdk-for-unity): (Option) Required for `AzureStreamSpeechListener`: real-time speech recognition using a stream.

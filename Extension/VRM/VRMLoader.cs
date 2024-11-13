@@ -5,7 +5,7 @@ using UnityEngine;
 using Cysharp.Threading.Tasks;
 using UniGLTF;
 using VRM;
-using VRMShaders;
+// using VRMShaders;    // Uncomment if you use UniVRM 0.89
 using Newtonsoft.Json;
 using ChatdollKit.Model;
 using ChatdollKit.Network;
@@ -30,6 +30,8 @@ namespace ChatdollKit.Extension.VRM
         private void Start()
         {
             Debug.LogWarning("This is an example to load VRM and configure ChatdollKit at runtime.");
+            Debug.LogWarning("**CAUTION** YOU MUST INCLUDE SOME SHADERS TO BUILD RUNTIME LOAD APP.");
+            Debug.LogWarning("See https://vrm.dev/en/api/project/build/ for more details.");
 
             if (VRMFilePath.StartsWith("http://") || VRMFilePath.StartsWith("https://"))
             {
@@ -85,6 +87,10 @@ namespace ChatdollKit.Extension.VRM
                 var vrmData = new VRMData(gltfData);
                 var context = new VRMImporterContext(vrmData);
                 vrmInstance = await context.LoadAsync(new RuntimeOnlyAwaitCaller());
+                foreach (var renderer in vrmInstance.GetComponentsInChildren<SkinnedMeshRenderer>())
+                {
+                    renderer.receiveShadows = false;
+                }
                 // Dispose to prevent memory leak
                 context.Dispose();
 
