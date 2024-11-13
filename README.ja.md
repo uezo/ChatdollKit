@@ -127,7 +127,7 @@ VRMモデルを使用したセットアップの手順は以下の通りです�
 - Unity Package Manager（ウィンドウ > パッケージマネージャー）から `Burst`
 - [UniTask](https://github.com/Cysharp/UniTask)（Ver.2.5.4でテスト済み）
 - [uLipSync](https://github.com/hecomi/uLipSync)（v3.1.0でテスト済み）
-- [UniVRM](https://github.com/vrm-c/UniVRM/releases/tag/v0.89.0)（v0.89.0）
+- [UniVRM](https://github.com/vrm-c/UniVRM/releases/tag/v0.127.2)(v0.127.2)
 - [ChatdollKit VRM Extension](https://github.com/uezo/ChatdollKit/releases)
 - JSON.NET: プロジェクトにJSON.NETがない場合、パッケージマネージャーから[+] > gitのURLからパッケージを追加... > com.unity.nuget.newtonsoft-jsonを追加してください
 - [Azure Speech SDK](https://learn.microsoft.com/ja-jp/azure/ai-services/speech-service/quickstarts/setup-platform?pivots=programming-language-csharp&tabs=macos%2Cubuntu%2Cdotnetcli%2Cunity%2Cjre%2Cmaven%2Cnodejs%2Cmac%2Cpypi#install-the-speech-sdk-for-unity): （オプション）ストリームを使用したリアルタイム音声認識（`AzureStreamSpeechListener`）に必要です
