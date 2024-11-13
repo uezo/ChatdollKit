@@ -825,6 +825,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 2779731071012727286, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1886433103}
+    - targetCorrespondingSourceObject: {fileID: 2779731071012727286, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1886433104}
   m_SourcePrefab: {fileID: 100100000, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
 --- !u!1 &1886433055 stripped
 GameObject:
@@ -994,6 +997,19 @@ MonoBehaviour:
   animationCollectionKey: 0
   autoPilot: 0
   AutoPilotRequestText: "!\u30E6\u30FC\u30B6\u30FC\u304B\u3089\u306E\u30B3\u30E1\u30F3\u30C8\u304C\u306A\u3044\u306E\u3067\u3001\u767A\u8A00\u3092\u7D9A\u3051\u3066\u304F\u3060\u3055\u3044\u3002"
+--- !u!114 &1886433104
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1886433055}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f6da9993ba3234136b66e0cf46791be1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  logFilePrefix: AITuber
 --- !u!1 &1934380956
 GameObject:
   m_ObjectHideFlags: 0
