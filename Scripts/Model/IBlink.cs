@@ -5,7 +5,7 @@ namespace ChatdollKit.Model
 {
     public interface IBlink
     {
-        UniTask StartBlinkAsync(bool startNew = false);
+        UniTask StartBlinkAsync();
         void StopBlink();
         void Setup(GameObject avatarObject);
     }

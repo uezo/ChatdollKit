@@ -25,22 +25,13 @@ namespace ChatdollKit.Extension.VRM
         public bool IsBlinkEnabled { get; private set; } = false;
         private Action blinkAction;
         private CancellationTokenSource blinkTokenSource;
-
-        private void Awake()
-        {
-            Setup(gameObject.GetComponent<ModelController>().AvatarModel);
-        }
+        private bool blinkLoopAlreadyStarted = false;   // This doesn't back to false after once it turns to true
 
         public void Setup(GameObject avatarObject)
         {
             blendShapeProxy = avatarObject.GetComponent<VRMBlendShapeProxy>();
             blinkBlendShapeKey = BlendShapeKey.CreateFromPreset(BlendShapePreset.Blink);
             blinkTokenSource = new CancellationTokenSource();
-        }
-
-        private void Start()
-        {
-            _ = StartBlinkAsync(true);
         }
 
         private void LateUpdate()
@@ -54,10 +45,10 @@ namespace ChatdollKit.Extension.VRM
         }
 
         // Initialize and start blink
-        public async UniTask StartBlinkAsync(bool startNew = false)
+        public async UniTask StartBlinkAsync()
         {
             // Return with doing nothing when already blinking
-            if (IsBlinkEnabled && startNew == false)
+            if (IsBlinkEnabled && blinkLoopAlreadyStarted)
             {
                 return;
             }
@@ -74,12 +65,10 @@ namespace ChatdollKit.Extension.VRM
             // Enable blink
             IsBlinkEnabled = true;
 
-            if (!startNew)
-            {
-                return;
-            }
+            if (blinkLoopAlreadyStarted) return;
 
             // Start new blink loop
+            blinkLoopAlreadyStarted = true;
             while (true)
             {
                 if (blinkTokenSource.Token.IsCancellationRequested)

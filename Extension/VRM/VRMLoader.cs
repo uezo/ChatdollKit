@@ -38,7 +38,7 @@ namespace ChatdollKit.Extension.VRM
                 Debug.Log($"Get VRM from url: {VRMFilePath}");
                 _ = LoadCharacterAsync(VRMFilePath, "GET");
             }
-            else
+            else if (!string.IsNullOrEmpty(VRMFilePath.Trim()))
             {
                 Debug.Log($"Get VRM from file: {VRMFilePath}");
                 _ = LoadCharacterAsync(VRMFilePath);
@@ -70,15 +70,17 @@ namespace ChatdollKit.Extension.VRM
 
             try
             {
-                // Destroy current character and stop blinking
-                if (vrmInstance != null)
-                {
-                    Destroy(vrmInstance);
-                }
-                if (characterObject != null)
-                {
-                    Destroy(characterObject);
-                }
+                // Deactivate and unload
+                modelController.DeactivateAvatar(() => {
+                    if (vrmInstance != null)
+                    {
+                        Destroy(vrmInstance);
+                    }
+                    if (characterObject != null)
+                    {
+                        Destroy(characterObject);
+                    }
+                });
 
                 Debug.Log($"VRM size: {vrmBytes.Length} bytes");
 
@@ -94,19 +96,14 @@ namespace ChatdollKit.Extension.VRM
                 // Dispose to prevent memory leak
                 context.Dispose();
 
-                // Setup ChatdollKit
                 characterObject = vrmInstance.gameObject;
                 characterObject.name = "CharacterVRM";
-                modelController.AvatarModel = characterObject;
                 var animator = characterObject.GetComponent<Animator>();
                 animator.runtimeAnimatorController = animatorController;
-                var lipSyncHelper = modelController.gameObject.GetComponent<VRMuLipSyncHelper>();
-                lipSyncHelper.ConfigureViseme(characterObject);
 
-                // Initialize ChatdollKit
-                modelController.gameObject.SetActive(true);
+                // Apply avatar to ModelController
+                modelController.ActivateAvatar(characterObject, true);
 
-                // Wait before show to finish transition to initial animation
                 await UniTask.Delay(WaitBeforeShowCharacter);
 
                 // Show character
