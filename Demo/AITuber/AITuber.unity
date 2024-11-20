@@ -123,6 +123,82 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &80359152
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 80359154}
+  - component: {fileID: 80359153}
+  - component: {fileID: 80359155}
+  - component: {fileID: 80359156}
+  m_Layer: 0
+  m_Name: SocketServer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &80359153
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 80359152}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: add77e1bc29ac434c836b28ccfb949af, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  port: 8888
+  isDebug: 0
+--- !u!4 &80359154
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 80359152}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.77905864, z: -0.007965192}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &80359155
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 80359152}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 17265d7e49da84e47a3b1efb039759d6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  aiAvatarObject: {fileID: 1886433055}
+  vrmLoader: {fileID: 198608594}
+  mainCamera: {fileID: 1934380958}
+--- !u!114 &80359156
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 80359152}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f6da9993ba3234136b66e0cf46791be1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  logFilePrefix: AITuber
 --- !u!1001 &112896200
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -418,6 +494,54 @@ SkinnedMeshRenderer:
   m_CorrespondingSourceObject: {fileID: 1234128262992886893, guid: 2a59a7556b89b4df8bfdb1457b4650aa, type: 3}
   m_PrefabInstance: {fileID: 112896200}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &198608593
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 198608595}
+  - component: {fileID: 198608594}
+  m_Layer: 0
+  m_Name: VRMLoader
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &198608594
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 198608593}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0fe55bcdf554a4ac388a884434767019, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  VRMFilePath: 
+  modelController: {fileID: 1886433113}
+  animatorController: {fileID: 9100000, guid: b16a16366e5d5480fa5ffc3a5e73acf7, type: 2}
+  WaitBeforeShowCharacter: 1000
+--- !u!4 &198608595
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 198608593}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.77905864, z: -0.007965192}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1483195893
 GameObject:
   m_ObjectHideFlags: 0
@@ -821,13 +945,7 @@ PrefabInstance:
       addedObject: {fileID: 1886433090}
     - targetCorrespondingSourceObject: {fileID: 2779731071012727286, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1886433088}
-    - targetCorrespondingSourceObject: {fileID: 2779731071012727286, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 1886433103}
-    - targetCorrespondingSourceObject: {fileID: 2779731071012727286, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1886433104}
   m_SourcePrefab: {fileID: 100100000, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
 --- !u!1 &1886433055 stripped
 GameObject:
@@ -932,20 +1050,6 @@ MonoBehaviour:
   ApiKey: 
   Voice: nova
   Speed: 1
---- !u!114 &1886433088
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1886433055}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: add77e1bc29ac434c836b28ccfb949af, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  port: 8888
-  isDebug: 1
 --- !u!114 &1886433089
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -994,22 +1098,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 454325cf70cbf449b91b3cbd429e4abf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  aiTuberMessageHandler: {fileID: 80359155}
   animationCollectionKey: 0
   autoPilot: 0
   AutoPilotRequestText: "!\u30E6\u30FC\u30B6\u30FC\u304B\u3089\u306E\u30B3\u30E1\u30F3\u30C8\u304C\u306A\u3044\u306E\u3067\u3001\u767A\u8A00\u3092\u7D9A\u3051\u3066\u304F\u3060\u3055\u3044\u3002"
---- !u!114 &1886433104
+--- !u!114 &1886433113 stripped
 MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 3082384663952346143, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
+  m_PrefabInstance: {fileID: 1886433054}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1886433055}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f6da9993ba3234136b66e0cf46791be1, type: 3}
+  m_Script: {fileID: 11500000, guid: dbe823670680445ab88dfd996ec87ed2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  logFilePrefix: AITuber
 --- !u!1 &1934380956
 GameObject:
   m_ObjectHideFlags: 0
@@ -1189,3 +1292,5 @@ SceneRoots:
   - {fileID: 112896200}
   - {fileID: 1886433054}
   - {fileID: 5974710876369872102}
+  - {fileID: 80359154}
+  - {fileID: 198608595}

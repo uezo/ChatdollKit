@@ -1,9 +1,6 @@
 using UnityEngine;
 using ChatdollKit.Model;
 using ChatdollKit.Dialog;
-using ChatdollKit.Network;
-using ChatdollKit.IO;
-using ChatdollKit.LLM;
 
 namespace ChatdollKit.Demo
 {
@@ -11,35 +8,51 @@ namespace ChatdollKit.Demo
     {
         // ChatdollKit components
         private ModelController modelController;
-        private ModelRequestBroker modelRequestBroker;
         private DialogPriorityManager dialogPriorityManager;
         private DialogProcessor dialogProcessor;
+
+        [SerializeField]
+        private AITuberMessageHandler aiTuberMessageHandler;
 
         [SerializeField]
         private AGIARegistry.AnimationCollection animationCollectionKey = AGIARegistry.AnimationCollection.AGIAFree;
 
         [SerializeField]
         private bool autoPilot = false;
+        [TextArea(1, 6)]
         public string AutoPilotRequestText;
 
         private void Start()
         {
             // Get ChatdollKit components
             modelController = gameObject.GetComponent<ModelController>();
-            modelRequestBroker = gameObject.GetComponent<ModelRequestBroker>();
             dialogPriorityManager = gameObject.GetComponent<DialogPriorityManager>();
             dialogProcessor = gameObject.GetComponent<DialogProcessor>();
 
-#pragma warning disable CS1998
-            // Access from external program
-            gameObject.GetComponent<SocketServer>().OnDataReceived = async (message) =>
-            {
-                HandleExternalMessage(message, "SocketServer");
-            };
-#pragma warning restore CS1998
-
             // Animations used in conversation
             modelController.RegisterAnimations(AGIARegistry.GetAnimations(animationCollectionKey));
+
+#pragma warning disable CS1998
+            dialogProcessor.OnRequestRecievedAsync += async (text, payloads, token) =>
+            {
+                Debug.Log($"<<LISTENER>> {text}");
+            };
+
+            dialogProcessor.OnResponseShownAsync += async (text, payloads, llmSession, token) =>
+            {
+                Debug.Log($"<<AITUBER>> {llmSession.StreamBuffer}");
+            };
+
+            // Add handler for auto pilot
+            aiTuberMessageHandler.AddHandler("dialog", "auto_pilot", async (message) => {
+                autoPilot = (bool)message.Payloads["is_on"];
+                Debug.LogWarning($"auto_pilog: {autoPilot}");
+                if (message.Payloads.ContainsKey("auto_pilot_request"))
+                {
+                    AutoPilotRequestText = (string)message.Payloads["auto_pilot_request"];
+                }
+            });
+#pragma warning restore CS1998
         }
 
         private void Update()
@@ -50,49 +63,6 @@ namespace ChatdollKit.Demo
                 {
                     // Continue talking automatically
                     dialogPriorityManager.SetRequest(AutoPilotRequestText);
-                }
-            }
-        }
-
-        private void HandleExternalMessage(ExternalInboundMessage message, string source)
-        {
-            // Assign actions based on the request's Endpoint and Operation
-            if (message.Endpoint == "dialog")
-            {
-                if (message.Operation == "process")
-                {
-                    dialogPriorityManager.SetRequest(message.Text, message.Payloads, message.Priority);
-                }
-                else if (message.Operation == "clear")
-                {
-                    dialogPriorityManager.ClearDialogRequestQueue(message.Priority);
-                }
-                else if (message.Operation == "auto_on")
-                {
-                    autoPilot = true;
-                }
-                else if (message.Operation == "auto_off")
-                {
-                    autoPilot = false;
-                }
-                else if (message.Operation == "clear_context")
-                {
-                    dialogProcessor.ClearContext();
-                }
-            }
-            else if (message.Endpoint == "model")
-            {
-                modelRequestBroker.SetRequest(message.Text);
-            }
-            else if (message.Endpoint == "config")
-            {
-                if (message.Payloads.ContainsKey("system_prompt"))
-                {
-                    ((LLMServiceBase)dialogProcessor.LLMService).SystemMessageContent = (string)message.Payloads["system_prompt"];
-                }
-                if (message.Payloads.ContainsKey("autopilot_request"))
-                {
-                    AutoPilotRequestText = (string)message.Payloads["autopilot_request"];
                 }
             }
         }
