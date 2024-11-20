@@ -25,23 +25,7 @@ namespace ChatdollKit.Model
         public bool IsBlinkEnabled { get; private set; } = false;
         private Action blinkAction;
         private CancellationTokenSource blinkTokenSource;
-
-        private void Awake()
-        {
-            blinkTokenSource = new CancellationTokenSource();
-        }
-
-        private void Start()
-        {
-            if (string.IsNullOrEmpty(blinkBlendShapeName))
-            {
-                Debug.LogWarning("Blink is disabled because BlinkBlendShapeName is not defined");
-            }
-            else
-            {
-                _ = StartBlinkAsync(true);
-            }
-        }
+        private bool blinkLoopAlreadyStarted = false;   // This doesn't back to false after once it turns to true
 
         private void LateUpdate()
         {
@@ -62,6 +46,7 @@ namespace ChatdollKit.Model
             {
                 Debug.LogWarning("BlendShape for blink not found.");
             }
+            blinkTokenSource = new CancellationTokenSource();
         }
 
         public string GetBlinkShapeName()
@@ -89,10 +74,10 @@ namespace ChatdollKit.Model
         }
 
         // Initialize and start blink
-        public async UniTask StartBlinkAsync(bool startNew = false)
+        public async UniTask StartBlinkAsync()
         {
             // Return with doing nothing when already blinking
-            if (IsBlinkEnabled && startNew == false)
+            if (IsBlinkEnabled && blinkLoopAlreadyStarted)
             {
                 return;
             }
@@ -109,12 +94,10 @@ namespace ChatdollKit.Model
             // Enable blink
             IsBlinkEnabled = true;
 
-            if (!startNew)
-            {
-                return;
-            }
+            if (blinkLoopAlreadyStarted) return;
 
             // Start new blink loop
+            blinkLoopAlreadyStarted = true;
             while (true)
             {
                 if (blinkTokenSource.Token.IsCancellationRequested)

@@ -17,11 +17,6 @@ namespace ChatdollKit.Extension.VRM
         private float valueToApply;
         private float velocityAtStart;
 
-        private void Awake()
-        {
-            Setup(gameObject.GetComponent<ModelController>().AvatarModel);
-        }
-
         public void Setup(GameObject avatarObject)
         {
             blendShapeProxy = avatarObject.GetComponent<VRMBlendShapeProxy>();
@@ -30,6 +25,8 @@ namespace ChatdollKit.Extension.VRM
 
         private void Update()
         {
+            if (blendShapeProxy == null || blinker == null) return; // Do nothing if not setup yet
+
             if (changeStartAt > 0)
             {
                 if (currentFaceName == "Neutral")

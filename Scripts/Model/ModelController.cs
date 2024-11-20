@@ -55,20 +55,32 @@ namespace ChatdollKit.Model
         private List<FaceExpression> faceQueue = new List<FaceExpression>();
         private float faceStartAt { get; set; }
         private FaceExpression currentFace { get; set; }
+        private IBlink blinker { get; set; }
 
         // History recorder for debug and test
         public ActionHistoryRecorder History;
 
         private void Awake()
         {
-            animator = AvatarModel.gameObject.GetComponent<Animator>();
             GetAnimation = GetIdleAnimation;
 
-            // Get lipSyncHelper
+            // LipSyncHelper
             lipSyncHelper = gameObject.GetComponent<ILipSyncHelper>();
 
             // Face expression proxy
             faceExpressionProxy = gameObject.GetComponent<IFaceExpressionProxy>();
+
+            // Blinker
+            blinker = gameObject.GetComponent<IBlink>();
+
+            if (AvatarModel == null)
+            {
+                enabled = false;
+            }
+            else
+            {
+                ActivateAvatar();
+            }
         }
 
         private void Start()
@@ -544,37 +556,39 @@ namespace ChatdollKit.Model
 #endregion
 
 #region Avatar
-        public void SetAvatar(GameObject avatarObject = null, bool activation = false)
+        public void ActivateAvatar(GameObject avatarObject = null, bool configureViseme = false)
         {
-            var currentAvatarObject = animator.gameObject;
-            var newAvatarObject = avatarObject == null ? AvatarModel : avatarObject;
-
-            if (activation)
+            if (avatarObject != null)
             {
-                currentAvatarObject.SetActive(false);
+                AvatarModel = avatarObject;
             }
-
-            // Animator
-            animator = newAvatarObject.gameObject.GetComponent<Animator>();
+            animator = AvatarModel.GetComponent<Animator>();
 
             // Blink (Blink at first because FaceExpression depends blink)
-            // TODO: Make the dependency simple
-            GetComponent<IBlink>()?.Setup(newAvatarObject);
+            blinker.Setup(AvatarModel);
+            faceExpressionProxy.Setup(AvatarModel);
 
-            // Face expression
-            faceExpressionProxy.Setup(newAvatarObject);
-
-            // LipSync
-            lipSyncHelper.ConfigureViseme(newAvatarObject);
-
-            // Start idling
-            currentAnimation = null;  // Set null to newly start idling animation
-            StartIdling(true);
-
-            if (activation)
+            if (configureViseme)
             {
-                newAvatarObject.SetActive(true);
+                lipSyncHelper.ConfigureViseme(AvatarModel);
             }
+
+            _ = blinker.StartBlinkAsync();
+            currentAnimation = null;  // Set null to newly start idling animation
+
+            AvatarModel.SetActive(true);
+            enabled = true;
+        }
+
+        public void DeactivateAvatar(Action unloadAction = null)
+        {
+            if (AvatarModel == null) return;
+
+            enabled = false;
+            blinker.StopBlink();
+
+            AvatarModel.SetActive(false);
+            unloadAction?.Invoke();
         }
 #endregion
     }

@@ -11,23 +11,6 @@ using ChatdollKit.Model;
 [CustomEditor(typeof(ModelController))]
 public class FaceClipEditor : Editor
 {
-    public override void OnInspectorGUI()
-    {
-        var app = target as ModelController;
-
-        if (EditorApplication.isPlaying)
-        {
-            if (GUILayout.Button("Change Avatar"))
-            {
-                app.SetAvatar(activation: true);
-            }
-
-            GUILayout.Space(20.0f);
-        }
-
-        base.OnInspectorGUI();
-    }
-
     // Setup ModelController
     [MenuItem("CONTEXT/ModelController/Setup ModelController")]
     private static void Setup(MenuCommand menuCommand)
