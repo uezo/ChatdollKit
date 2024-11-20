@@ -15,13 +15,19 @@
 - **Multi platforms**: Compatible with Windows, Mac, Linux, iOS, Android, and other Unity-supported platforms, including VR, AR, and WebGL.
 
 
-## 💎 What's New in Version 0.8.5
+## 💎 What's New in Version 0.8.6
 
-- **🎓 Chain of Thought Prompting**: Say hello to Chain of Thought (CoT) Prompting! 🎉 Your AI character just got a major boost in IQ and EQ!
+- **🎛️ Support VOICEVOX and AivisSpeech inline style**: Enables dynamic and autonomous switching of voice styles to enrich character expression and adapt to emotional nuances.
+- **🥰 Improve VRM runtime loading**: Allows seamless and error-free switching of 3D models at runtime, ensuring a smoother user experience.
 
 ---
 
 ### Previous Updates
+
+#### 0.8.5
+
+- **🎓 Chain of Thought Prompting**: Say hello to Chain of Thought (CoT) Prompting! 🎉 Your AI character just got a major boost in IQ and EQ!
+
 
 #### 0.8.4
 
