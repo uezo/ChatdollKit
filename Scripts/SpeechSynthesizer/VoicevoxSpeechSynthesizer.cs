@@ -32,6 +32,8 @@ namespace ChatdollKit.SpeechSynthesizer
         [SerializeField]
         protected bool printSupportedSpeakers;
 
+        public List<VoiceStyle> VoiceStyles;
+
         private ChatdollHttp client;
 
         private void Start()
@@ -54,9 +56,30 @@ namespace ChatdollKit.SpeechSynthesizer
         {
             if (token.IsCancellationRequested) { return null; };
 
+            var textToSpeech = text.Replace(" ", "").Replace("\n", "").Trim();
+            if (string.IsNullOrEmpty(textToSpeech) || textToSpeech == "」") return null;
+
+            // Apply style
+            var inlineSpeaker = Speaker;
+            if (parameters.ContainsKey("style"))
+            {
+                var voiceStyle = parameters["style"] as string;
+                if (!string.IsNullOrEmpty(voiceStyle))
+                {
+                    foreach (var style in VoiceStyles)
+                    {
+                        if (style.VoiceStyleValue == voiceStyle)
+                        {
+                            inlineSpeaker = style.VoiceVoxSpeaker;
+                            break;
+                        }
+                    }
+                }
+            }
+
             // Convert text to query for TTS from VOICEVOX server
             var queryResp = await client.PostFormAsync(
-                EndpointUrl + $"/audio_query?speaker={(decimal)Speaker}&text={UnityWebRequest.EscapeURL(text, Encoding.UTF8)}",
+                EndpointUrl + $"/audio_query?speaker={(decimal)inlineSpeaker}&text={UnityWebRequest.EscapeURL(text, Encoding.UTF8)}",
                 new Dictionary<string, string>(), cancellationToken: token);
 
             var audioQuery = queryResp.Text;
@@ -70,7 +93,7 @@ namespace ChatdollKit.SpeechSynthesizer
             if (token.IsCancellationRequested) { return null; };
 
             // Get audio data from VOICEBOX server
-            var url = EndpointUrl + $"/synthesis?speaker={(decimal)Speaker}";
+            var url = EndpointUrl + $"/synthesis?speaker={(decimal)inlineSpeaker}";
             var headers = new Dictionary<string, string>() { { "Content-Type", "application/json" } };
             var data = Encoding.UTF8.GetBytes(audioQuery);
 
@@ -155,6 +178,13 @@ namespace ChatdollKit.SpeechSynthesizer
         {
             public string name;
             public int id;
+        }
+
+        [Serializable]
+        public class VoiceStyle
+        {
+            public string VoiceStyleValue;
+            public int VoiceVoxSpeaker;
         }
     }
 }
