@@ -936,7 +936,7 @@ PrefabInstance:
       addedObject: {fileID: 1886433086}
     - targetCorrespondingSourceObject: {fileID: 2779731071012727286, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1886433087}
+      addedObject: {fileID: 1886433114}
     - targetCorrespondingSourceObject: {fileID: 2779731071012727286, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1886433089}
@@ -1032,24 +1032,6 @@ MonoBehaviour:
   Language: 
   Prompt: 
   Temperature: 0
---- !u!114 &1886433087
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1886433055}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bbdf9600eeac14bdf9d7400840bf5c7d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Timeout: 10
-  isDebug: 0
-  _IsEnabled: 1
-  ApiKey: 
-  Voice: nova
-  Speed: 1
 --- !u!114 &1886433089
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1113,6 +1095,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dbe823670680445ab88dfd996ec87ed2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1886433114
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1886433055}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 948241ac309274d15b31b78dcc91ae7c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Timeout: 10
+  isDebug: 0
+  _IsEnabled: 1
+  EndpointUrl: http://127.0.0.1:50021
+  Speaker: 2
+  printSupportedSpeakers: 0
+  VoiceStyles: []
 --- !u!1 &1934380956
 GameObject:
   m_ObjectHideFlags: 0
