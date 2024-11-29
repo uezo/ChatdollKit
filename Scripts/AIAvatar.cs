@@ -71,7 +71,7 @@ namespace ChatdollKit
         public ModelController ModelController;
         public DialogProcessor DialogProcessor;
         public LLMContentProcessor LLMContentProcessor;
-        public MicrophoneManager MicrophoneManager;
+        public IMicrophoneManager MicrophoneManager;
         public ISpeechListener SpeechListener;
         public MessageWindowBase UserMessageWindow;
         public MessageWindowBase CharacterMessageWindow;
@@ -93,7 +93,7 @@ namespace ChatdollKit
         private void Awake()
         {
             // Get ChatdollKit components
-            MicrophoneManager = MicrophoneManager ?? gameObject.GetComponent<MicrophoneManager>();
+            MicrophoneManager = MicrophoneManager ?? gameObject.GetComponent<IMicrophoneManager>();
             ModelController = ModelController ?? gameObject.GetComponent<ModelController>();
             DialogProcessor = DialogProcessor ?? gameObject.GetComponent<DialogProcessor>();
             LLMContentProcessor = LLMContentProcessor ?? gameObject.GetComponent<LLMContentProcessor>();
