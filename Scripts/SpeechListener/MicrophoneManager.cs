@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace ChatdollKit.SpeechListener
 {
-    public class MicrophoneManager : MonoBehaviour
+    public class MicrophoneManager : MonoBehaviour, IMicrophoneManager
     {
 #if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")]
