@@ -19,6 +19,9 @@ namespace ChatdollKit.Network
 #if !UNITY_WEBGL
         [SerializeField]
         private int port;
+        public int Port { get { return port; } }
+        [SerializeField]
+        private bool autoStart = true;
         [SerializeField]
         private bool isDebug = false;
 
@@ -30,9 +33,10 @@ namespace ChatdollKit.Network
 
         private void Start()
         {
-            serverThread = new Thread(new ThreadStart(StartServer));
-            serverThread.IsBackground = true;
-            serverThread.Start();
+            if (autoStart)
+            {
+                StartServer();
+            }
         }
 
         private void Update()
@@ -48,9 +52,41 @@ namespace ChatdollKit.Network
             }
         }
 
-        private void StartServer()
+        public void StartServer(int port = 0)
+        {
+            if (IsRunning || (serverThread != null && serverThread.IsAlive))
+            {
+                Debug.LogWarning("Server is already running or thread is alive.");
+                return;
+            }
+
+            if (server != null)
+            {
+                try
+                {
+                    server.Stop();
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning($"Error stopping an existing server instance: {ex.Message}");
+                }
+                server = null;
+            }
+
+            if (port > 0)
+            {
+                this.port = port;
+            }
+
+            serverThread = new Thread(new ThreadStart(StartServerInThread));
+            serverThread.IsBackground = true;
+            serverThread.Start();
+        }
+
+        private void StartServerInThread()
         {
             server = new TcpListener(IPAddress.Any, port);
+            server.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, false);  // Throw error if port is already in use
             server.Start();
             IsRunning = true;
             Debug.Log($"Server started on port {port}");
@@ -79,7 +115,41 @@ namespace ChatdollKit.Network
             finally
             {
                 server.Stop();
-                Debug.Log("Server stopped.");
+                Debug.Log("Server stopped in thread.");
+            }
+        }
+
+        public void StopServer()
+        {
+            IsRunning = false;
+
+            if (server != null)
+            {
+                try
+                {
+                    server.Stop();
+                    Debug.Log("Server stopped.");
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"Error stopping the server: {ex.Message}");
+                }
+            }
+
+            if (serverThread != null && serverThread.IsAlive)
+            {
+                try
+                {
+                    serverThread.Join(1000); // Wait for thread to stop
+                    if (serverThread.IsAlive)
+                    {
+                        serverThread.Abort(); // Force stop if not stopped
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"Error stopping the server thread: {ex.Message}");
+                }
             }
         }
 
@@ -126,15 +196,7 @@ namespace ChatdollKit.Network
 
         private void OnApplicationQuit()
         {
-            IsRunning = false;
-            if (server != null)
-            {
-                server.Stop();
-            }
-            if (serverThread != null && serverThread.IsAlive)
-            {
-                serverThread.Abort();
-            }
+            StopServer();
         }
 #endif
     }
