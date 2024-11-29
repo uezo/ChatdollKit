@@ -52,10 +52,10 @@ namespace ChatdollKit.LLM.Claude
                 { "stream", true },
             };
 
-            if (llmTools.Count > 0) // tools must be included when tool_result
+            if (Tools.Count > 0) // tools must be included when tool_result
             {
                 var claudeTools = new List<ClaudeTool>();
-                foreach (var tool in llmTools)
+                foreach (var tool in Tools)
                 {
                     claudeTools.Add(new ClaudeTool(tool));
                 }
