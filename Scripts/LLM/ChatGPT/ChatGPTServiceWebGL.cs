@@ -54,10 +54,10 @@ namespace ChatdollKit.LLM.ChatGPT
             {
                 data.Add("max_tokens", MaxTokens);
             }
-            if (useFunctions && llmTools.Count > 0)
+            if (useFunctions && Tools.Count > 0)
             {
                 var tools = new List<Dictionary<string, object>>();
-                foreach (var tool in llmTools)
+                foreach (var tool in Tools)
                 {
                     tools.Add(new Dictionary<string, object>()
                     {

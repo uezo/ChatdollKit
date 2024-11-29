@@ -79,10 +79,10 @@ namespace ChatdollKit.LLM.CommandR
                 data["tool_results"] = toolResults;
             }
 
-            if (llmTools.Count > 0)
+            if (Tools.Count > 0)
             {
                 var commandRTools = new List<CommandRTool>();
-                foreach (var tool in llmTools)
+                foreach (var tool in Tools)
                 {
                     commandRTools.Add(new CommandRTool(tool));
                 }
