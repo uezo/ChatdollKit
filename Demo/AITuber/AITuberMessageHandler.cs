@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
 using VRM;
+using Newtonsoft.Json.Linq;
 using ChatdollKit.IO;
 using ChatdollKit.Model;
 using ChatdollKit.Dialog;
@@ -89,17 +90,27 @@ namespace ChatdollKit.Demo
 
                 else if (message.Operation == "appearance")
                 {
-                    var positionX = (float)(double)message.Payloads["position_x"];
-                    var rotationY = (float)(double)message.Payloads["rotation_y"];
+                    var positionX = Convert.ToSingle(message.Payloads["position_x"]);
+                    var rotationY = Convert.ToSingle(message.Payloads["rotation_y"]);
                     modelController.AvatarModel.transform.position = new Vector3(positionX, 0, 0);
                     modelController.AvatarModel.transform.rotation = Quaternion.Euler(0, rotationY, 0);
 
-                    var cameraPositionY = (float)(double)message.Payloads["camera_position_y"];
-                    var cameraRotationX = (float)(double)message.Payloads["camera_rotation_x"];
-                    var cameraFieldOfView = (float)(double)message.Payloads["camera_field_of_view"];
+                    var cameraPositionY = Convert.ToSingle(message.Payloads["camera_position_y"]);
+                    var cameraRotationX = Convert.ToSingle(message.Payloads["camera_rotation_x"]);
+                    var cameraFieldOfView = Convert.ToSingle(message.Payloads["camera_field_of_view"]);
                     mainCamera.transform.position = new Vector3(0, cameraPositionY, 2);
                     mainCamera.transform.rotation = Quaternion.Euler(cameraRotationX, 180, 0);
                     mainCamera.fieldOfView = cameraFieldOfView;
+
+                    if (message.Payloads.ContainsKey("camera_background_color"))
+                    {
+                        var bgString = (string)message.Payloads["camera_background_color"];
+                        if (ColorUtility.TryParseHtmlString(bgString.StartsWith("#") ? bgString : "#" + bgString, out Color color))
+                        {
+                            color.a = 1.0f;
+                            mainCamera.backgroundColor = color;
+                        }
+                    }
                 }
             }
 
@@ -125,26 +136,56 @@ namespace ChatdollKit.Demo
             {
                 if (message.Operation == "activate")
                 {
+                    var speechSynthesizerName = ((string)message.Payloads["name"]).ToLower();
 
+                    if (speechSynthesizerName == "voicevox")
+                    {
+                        styleBertVits2SpeechSynthesizer.IsEnabled = false;
+                        voicevoxSpeechSynthesizer.IsEnabled = true;
+                        voicevoxSpeechSynthesizer.EndpointUrl = (string)message.Payloads["url"];
+                        voicevoxSpeechSynthesizer.Speaker = int.Parse($"{message.Payloads["voicevox_speaker"]}");
+                        modelController.SpeechSynthesizerFunc = voicevoxSpeechSynthesizer.GetAudioClipAsync;
+                    }
+                    else if (speechSynthesizerName == "style-bert-vits2")
+                    {
+                        voicevoxSpeechSynthesizer.IsEnabled = false;
+                        styleBertVits2SpeechSynthesizer.IsEnabled = true;
+                        styleBertVits2SpeechSynthesizer.EndpointUrl = (string)message.Payloads["url"];
+                        styleBertVits2SpeechSynthesizer.ModelId = int.Parse($"{message.Payloads["sbv2_model_id"]}");
+                        styleBertVits2SpeechSynthesizer.SpeakerId = int.Parse($"{message.Payloads["sbv2_speaker_id"]}");
+                        modelController.SpeechSynthesizerFunc = styleBertVits2SpeechSynthesizer.GetAudioClipAsync;
+                    }
                 }
-                var speechSynthesizerName = ((string)message.Payloads["name"]).ToLower();
-
-                if (speechSynthesizerName == "voicevox")
+                else if (message.Operation == "styles")
                 {
-                    styleBertVits2SpeechSynthesizer.IsEnabled = false;
-                    voicevoxSpeechSynthesizer.IsEnabled = true;
-                    voicevoxSpeechSynthesizer.EndpointUrl = (string)message.Payloads["url"];
-                    voicevoxSpeechSynthesizer.Speaker = int.Parse($"{message.Payloads["voicevox_speaker"]}");
-                    modelController.SpeechSynthesizerFunc = voicevoxSpeechSynthesizer.GetAudioClipAsync;
-                }
-                else if (speechSynthesizerName == "style-bert-vits2")
-                {
-                    voicevoxSpeechSynthesizer.IsEnabled = false;
-                    styleBertVits2SpeechSynthesizer.IsEnabled = true;
-                    styleBertVits2SpeechSynthesizer.EndpointUrl = (string)message.Payloads["url"];
-                    styleBertVits2SpeechSynthesizer.ModelId = int.Parse($"{message.Payloads["sbv2_model_id"]}");
-                    styleBertVits2SpeechSynthesizer.SpeakerId = int.Parse($"{message.Payloads["sbv2_speaker_id"]}");
-                    modelController.SpeechSynthesizerFunc = styleBertVits2SpeechSynthesizer.GetAudioClipAsync;
+                    if (styleBertVits2SpeechSynthesizer.IsEnabled)
+                    {
+                        var styles = ((JObject)message.Payloads["styles"]).ToObject<Dictionary<string, string>>();
+                        styleBertVits2SpeechSynthesizer.VoiceStyles.Clear();
+                        foreach (var style in styles)
+                        {
+                            styleBertVits2SpeechSynthesizer.VoiceStyles.Add(
+                                new StyleBertVits2SpeechSynthesizer.VoiceStyle() {
+                                    VoiceStyleValue = style.Key,
+                                    StyleBertVITSStyle = style.Value
+                                }
+                            );
+                        }
+                    }
+                    else if (voicevoxSpeechSynthesizer.IsEnabled)
+                    {
+                        var styles = ((JObject)message.Payloads["styles"]).ToObject<Dictionary<string, int>>();
+                        voicevoxSpeechSynthesizer.VoiceStyles.Clear();
+                        foreach (var style in styles)
+                        {
+                            voicevoxSpeechSynthesizer.VoiceStyles.Add(
+                                new VoicevoxSpeechSynthesizer.VoiceStyle() {
+                                    VoiceStyleValue = style.Key,
+                                    VoiceVoxSpeaker = style.Value
+                                }
+                            );
+                        }
+                    }
                 }
             }
 
@@ -156,7 +197,7 @@ namespace ChatdollKit.Demo
                     var name = ((string)message.Payloads["name"]).ToLower();
                     var apiKey = message.Payloads.ContainsKey("api_key") ?  (string)message.Payloads["api_key"] : null;
                     var model = message.Payloads.ContainsKey("model") ?  (string)message.Payloads["model"] : null;
-                    var temperature = message.Payloads.ContainsKey("temperature") ?  (float)(double)message.Payloads["temperature"] : -1;
+                    var temperature = message.Payloads.ContainsKey("temperature") ?  Convert.ToSingle(message.Payloads["temperature"]) : -1;
 
                     if (name == "chatgpt")
                     {

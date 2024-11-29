@@ -1,6 +1,7 @@
 using UnityEngine;
 using ChatdollKit.Model;
 using ChatdollKit.Dialog;
+using Cysharp.Threading.Tasks;
 
 namespace ChatdollKit.Demo
 {
@@ -21,6 +22,9 @@ namespace ChatdollKit.Demo
         private bool autoPilot = false;
         [TextArea(1, 6)]
         public string AutoPilotRequestText;
+
+        [SerializeField]
+        private GameObject licensePanel;
 
         private void Start()
         {
@@ -45,8 +49,12 @@ namespace ChatdollKit.Demo
 
             // Add handler for auto pilot
             aiTuberMessageHandler.AddHandler("dialog", "auto_pilot", async (message) => {
-                autoPilot = (bool)message.Payloads["is_on"];
-                Debug.LogWarning($"auto_pilog: {autoPilot}");
+                if (message.Payloads == null) return;
+
+                if (message.Payloads.ContainsKey("is_on"))
+                {
+                    autoPilot = (bool)message.Payloads["is_on"];
+                }
                 if (message.Payloads.ContainsKey("auto_pilot_request"))
                 {
                     AutoPilotRequestText = (string)message.Payloads["auto_pilot_request"];
@@ -65,6 +73,11 @@ namespace ChatdollKit.Demo
                     dialogPriorityManager.SetRequest(AutoPilotRequestText);
                 }
             }
+        }
+
+        public void OnLicenseButton()
+        {
+            licensePanel.SetActive(!licensePanel.activeSelf);
         }
     }
 }

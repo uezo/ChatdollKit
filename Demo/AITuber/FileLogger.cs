@@ -61,6 +61,25 @@ namespace ChatdollKit.Demo
             writer.WriteLine(message);
         }
 
+        public void OpenLogFile()
+        {
+            try
+            {
+    #if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = logFilePath,
+                    UseShellExecute = true
+                });
+    #elif UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
+                System.Diagnostics.Process.Start("open", $"\"{logFilePath}\"");
+    #endif
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Error in opening log file: {ex.Message}");
+            }
+        }
         private void OnDestroy()
         {
             Application.logMessageReceived -= HandleLog;

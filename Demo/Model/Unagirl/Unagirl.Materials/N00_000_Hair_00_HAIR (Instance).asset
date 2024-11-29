@@ -79,7 +79,7 @@ Material:
     - _DstBlend: 0
     - _IndirectLightIntensity: 0.1
     - _LightColorAttenuation: 0
-    - _MToonVersion: 38
+    - _MToonVersion: 39
     - _OutlineColorMode: 1
     - _OutlineCullMode: 1
     - _OutlineLightingMix: 1
