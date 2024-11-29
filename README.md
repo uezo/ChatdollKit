@@ -15,8 +15,9 @@
 - **Multi platforms**: Compatible with Windows, Mac, Linux, iOS, Android, and other Unity-supported platforms, including VR, AR, and WebGL.
 
 
-## 💎 What's New in Version 0.8.6
+## 💎 What's New in Version 0.8.6 and 0.8.7
 
+- **✨ Update AITuber demo**: Support more APIs, bulk configuration, UI and mode!. (v0.8.7)
 - **🎛️ Support VOICEVOX and AivisSpeech inline style**: Enables dynamic and autonomous switching of voice styles to enrich character expression and adapt to emotional nuances.
 - **🥰 Improve VRM runtime loading**: Allows seamless and error-free switching of 3D models at runtime, ensuring a smoother user experience.
 

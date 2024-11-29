@@ -564,7 +564,7 @@ PrefabInstance:
     - target: {fileID: 6615837998379529211, guid: 2a59a7556b89b4df8bfdb1457b4650aa, type: 3}
       propertyPath: m_Controller
       value: 
-      objectReference: {fileID: 9100000, guid: bb49000e19ae64cd1a008fe4c43637e0, type: 2}
+      objectReference: {fileID: 9100000, guid: b16a16366e5d5480fa5ffc3a5e73acf7, type: 2}
     - target: {fileID: 6637680166259681608, guid: 2a59a7556b89b4df8bfdb1457b4650aa, type: 3}
       propertyPath: m_Controller
       value: 
@@ -639,7 +639,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9146934488382850401, guid: 2a59a7556b89b4df8bfdb1457b4650aa, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -766,7 +766,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   VRMFilePath: 
   modelController: {fileID: 1886433113}
-  animatorController: {fileID: 9100000, guid: bb49000e19ae64cd1a008fe4c43637e0, type: 2}
+  animatorController: {fileID: 9100000, guid: b16a16366e5d5480fa5ffc3a5e73acf7, type: 2}
   WaitBeforeShowCharacter: 1000
 --- !u!4 &198608595
 Transform:
@@ -1958,7 +1958,7 @@ PrefabInstance:
       objectReference: {fileID: 112896201}
     - target: {fileID: 3082384663952346143, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
       propertyPath: IdleAnimationValue
-      value: 19
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 3082384663952346143, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
       propertyPath: SkinnedMeshRenderer
@@ -2273,7 +2273,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   aiTuberMessageHandler: {fileID: 80359155}
-  animationCollectionKey: 1
+  animationCollectionKey: 0
   autoPilot: 0
   AutoPilotRequestText: "!\u30E6\u30FC\u30B6\u30FC\u304B\u3089\u306E\u30B3\u30E1\u30F3\u30C8\u304C\u306A\u3044\u306E\u3067\u3001\u767A\u8A00\u3092\u7D9A\u3051\u3066\u304F\u3060\u3055\u3044\u3002"
   licensePanel: {fileID: 1850643153}
@@ -2342,7 +2342,6 @@ MonoBehaviour:
   VoiceStyles:
   - VoiceStyleValue: a
     StyleBertVITSStyle: e
-  XAudioFormat: 20
 --- !u!114 &1886433126
 MonoBehaviour:
   m_ObjectHideFlags: 0
