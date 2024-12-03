@@ -156,7 +156,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   port: 8888
-  autoStart: 1
+  autoStart: 0
   isDebug: 0
 --- !u!4 &80359154
 Transform:
@@ -2160,6 +2160,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 2779731071012727286, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1886433103}
+    - targetCorrespondingSourceObject: {fileID: 2779731071012727286, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1886433130}
   m_SourcePrefab: {fileID: 100100000, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
 --- !u!1 &1886433055 stripped
 GameObject:
@@ -2305,7 +2308,7 @@ MonoBehaviour:
   _IsEnabled: 1
   EndpointUrl: http://127.0.0.1:50021
   Speaker: 2
-  printSupportedSpeakers: 1
+  printSupportedSpeakers: 0
   VoiceStyles: []
 --- !u!114 &1886433125
 MonoBehaviour:
@@ -2339,9 +2342,7 @@ MonoBehaviour:
   AssistText: 
   AssistTextWeight: 0
   ReferenceAudioPath: 
-  VoiceStyles:
-  - VoiceStyleValue: a
-    StyleBertVITSStyle: e
+  VoiceStyles: []
 --- !u!114 &1886433126
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2453,6 +2454,20 @@ MonoBehaviour:
   StopSequences: []
   responseTimeoutSec: 30
   noDataResponseTimeoutSec: 5
+--- !u!114 &1886433130
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1886433055}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8dba5cad3cc0b438b81d9c1c7b2a633c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  address: 127.0.0.1
+  port: 8889
 --- !u!1 &1934380956
 GameObject:
   m_ObjectHideFlags: 0
