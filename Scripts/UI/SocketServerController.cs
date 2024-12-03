@@ -18,6 +18,7 @@ namespace ChatdollKit.UI
             socketServer = gameObject.GetComponent<SocketServer>();
         }
 
+#if !UNITY_WEBGL
         private void Update()
         {
             serverStatusText.text = socketServer.IsRunning ? $"Listening: {socketServer.Port}" : "Stopped";
@@ -49,5 +50,6 @@ namespace ChatdollKit.UI
                 socketServer.StartServer(port);
             }
         }
+#endif
     }
 }

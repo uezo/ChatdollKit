@@ -10,7 +10,8 @@ namespace ChatdollKit.Demo
         private string logFilePrefix = "AITuber";
         private string logFilePath;
         private StreamWriter writer;
-        
+
+#if !UNITY_WEBGL
         private void Awake()
         {
             #if UNITY_EDITOR || UNITY_STANDALONE_WIN
@@ -27,12 +28,12 @@ namespace ChatdollKit.Demo
             var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
             logFilePath = Path.Combine(directory, $"{logFilePrefix}_{timestamp}.txt");
 
-            Debug.Log($"Log file: {logFilePath}");
-
             writer = new StreamWriter(logFilePath, true);
             writer.AutoFlush = true;
 
             Application.logMessageReceived += HandleLog;
+
+            Debug.Log($"Log file: {logFilePath}");
         }
 
         private void HandleLog(string logString, string stackTrace, LogType type)
@@ -90,5 +91,6 @@ namespace ChatdollKit.Demo
                 writer = null;
             }
         }
+#endif
     }
 }
