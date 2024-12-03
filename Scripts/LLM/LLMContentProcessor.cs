@@ -13,8 +13,7 @@ namespace ChatdollKit.LLM
         public List<string> SplitChars = new List<string>() { "。", "！", "？", ". ", "!", "?" };
         private List<string> splitCharsWithNewLine;
         public List<string> OptionalSplitChars = new List<string>() { "、", ", " };
-        [SerializeField]
-        private string thinkTag = "thinking";
+        public string ThinkTag = "thinking";
         public int MaxLengthBeforeOptionalSplit = 0;
         private Queue<LLMContentItem> llmContentQueue = new Queue<LLMContentItem>();
         public Action<LLMContentItem> HandleSplittedText;
@@ -40,8 +39,8 @@ namespace ChatdollKit.LLM
                 var splitIndex = 0;
                 var isFirstWord = true;
                 var isInsideThinkTag = false;
-                var thinkStart = $"<{thinkTag}>";
-                var thinkEnd = $"</{thinkTag}>";
+                var thinkStart = $"<{ThinkTag}>";
+                var thinkEnd = $"</{ThinkTag}>";
 
                 while (!token.IsCancellationRequested)
                 {

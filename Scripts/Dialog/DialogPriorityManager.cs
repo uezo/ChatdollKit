@@ -13,6 +13,8 @@ namespace ChatdollKit.Dialog
         private int idlingFrameThreshold = 2;
         private int idlingFrameCount = 0;
 
+        private string textToAppendNext = string.Empty;
+
         private void Start()
         {
             dialogProcessor = gameObject.GetComponent<DialogProcessor>();
@@ -52,9 +54,16 @@ namespace ChatdollKit.Dialog
             else
             {
                 dialogQueue.Enqueue(new DialogQueueItem() {
-                    Priority = priority, Text = text, Payloads = payloads
+                    Priority = priority, Text = text + textToAppendNext, Payloads = payloads
                 }, priority);
-            }            
+
+                textToAppendNext = string.Empty;
+            }
+        }
+
+        public void SetRequestToAppendNext(string text)
+        {
+            textToAppendNext = "\n\n" + text;
         }
 
         public bool HasRequest()

@@ -1,7 +1,11 @@
+using System.Text.RegularExpressions;
 using UnityEngine;
+using Newtonsoft.Json;
 using ChatdollKit.Model;
 using ChatdollKit.Dialog;
-using Cysharp.Threading.Tasks;
+using ChatdollKit.IO;
+using ChatdollKit.LLM;
+using ChatdollKit.Network;
 
 namespace ChatdollKit.Demo
 {
@@ -11,6 +15,8 @@ namespace ChatdollKit.Demo
         private ModelController modelController;
         private DialogPriorityManager dialogPriorityManager;
         private DialogProcessor dialogProcessor;
+        private LLMContentProcessor llmContentProcessor;
+        private SocketClient socketClient;
 
         [SerializeField]
         private AITuberMessageHandler aiTuberMessageHandler;
@@ -32,6 +38,8 @@ namespace ChatdollKit.Demo
             modelController = gameObject.GetComponent<ModelController>();
             dialogPriorityManager = gameObject.GetComponent<DialogPriorityManager>();
             dialogProcessor = gameObject.GetComponent<DialogProcessor>();
+            llmContentProcessor = gameObject.GetComponent<LLMContentProcessor>();
+            socketClient = gameObject.GetComponent<SocketClient>();
 
             // Animations used in conversation
             modelController.RegisterAnimations(AGIARegistry.GetAnimations(animationCollectionKey));
@@ -45,6 +53,15 @@ namespace ChatdollKit.Demo
             dialogProcessor.OnResponseShownAsync += async (text, payloads, llmSession, token) =>
             {
                 Debug.Log($"<<AITUBER>> {llmSession.StreamBuffer}");
+
+                if (socketClient.IsConnected)
+                {
+                    var pattarn = $@"<{llmContentProcessor.ThinkTag}>.*?</{llmContentProcessor.ThinkTag}>";
+                    var messageToAIAvatar = "$" + Regex.Replace(llmSession.StreamBuffer, pattarn, string.Empty, RegexOptions.Singleline);
+                    socketClient.SendMessageToServer(JsonConvert.SerializeObject(new ExternalInboundMessage(){
+                        Endpoint = "dialog", Operation = "process", Text = llmSession.StreamBuffer
+                    }));
+                }
             };
 
             // Add handler for auto pilot

@@ -4,13 +4,14 @@ using UnityEngine;
 using Cysharp.Threading.Tasks;
 using VRM;
 using Newtonsoft.Json.Linq;
-using ChatdollKit.IO;
-using ChatdollKit.Model;
 using ChatdollKit.Dialog;
+using ChatdollKit.IO;
 using ChatdollKit.LLM;
 using ChatdollKit.LLM.ChatGPT;
 using ChatdollKit.LLM.Claude;
 using ChatdollKit.LLM.Gemini;
+using ChatdollKit.Model;
+using ChatdollKit.Network;
 using ChatdollKit.SpeechSynthesizer;
 using ChatdollKit.Extension.VRM;
 
@@ -32,6 +33,8 @@ namespace ChatdollKit.Demo
         private GeminiService geminiService;
         private VoicevoxSpeechSynthesizer voicevoxSpeechSynthesizer;
         private StyleBertVits2SpeechSynthesizer styleBertVits2SpeechSynthesizer;
+        private LLMContentProcessor llmContentProcessor;
+        private SocketClient socketClient;
 
         [SerializeField]
         private VRMLoader vrmLoader;
@@ -60,6 +63,9 @@ namespace ChatdollKit.Demo
 
             voicevoxSpeechSynthesizer = aiAvatarObject.GetComponent<VoicevoxSpeechSynthesizer>();
             styleBertVits2SpeechSynthesizer = aiAvatarObject.GetComponent<StyleBertVits2SpeechSynthesizer>();
+
+            llmContentProcessor = aiAvatarObject.GetComponent<LLMContentProcessor>();
+            socketClient = aiAvatarObject.GetComponent<SocketClient>();
         }
 
         private async UniTask HandleExternalMessage(ExternalInboundMessage message)
@@ -121,6 +127,10 @@ namespace ChatdollKit.Demo
                 {
                     dialogPriorityManager.SetRequest(message.Text, message.Payloads, message.Priority);
                 }
+                else if (message.Operation == "append_next")
+                {
+                    dialogPriorityManager.SetRequestToAppendNext(message.Text);
+                }
                 else if (message.Operation == "clear_request_queue")
                 {
                     dialogPriorityManager.ClearDialogRequestQueue(message.Priority);
@@ -128,6 +138,17 @@ namespace ChatdollKit.Demo
                 else if (message.Operation == "clear_context")
                 {
                     dialogProcessor.ClearContext();
+                }
+                else if (message.Operation == "connect_to_aiavatar")
+                {
+                    socketClient.Disconnect();
+                    var address = (string)message.Payloads["address"];
+                    var port = int.Parse($"{message.Payloads["port"]}");
+                    socketClient.Connect(address, port);
+                }
+                else if (message.Operation == "disconnect_from_aiavatar")
+                {
+                    socketClient.Disconnect();
                 }
             }
 
@@ -224,6 +245,10 @@ namespace ChatdollKit.Demo
                 else if (message.Operation == "system_prompt")
                 {
                     ((LLMServiceBase)dialogProcessor.LLMService).SystemMessageContent = (string)message.Payloads["system_prompt"];
+                }
+                else if (message.Operation == "cot_tag")
+                {
+                    llmContentProcessor.ThinkTag = (string)message.Payloads["cot_tag"];
                 }
                 else if (message.Operation == "debug")
                 {
