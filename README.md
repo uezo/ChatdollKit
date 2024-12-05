@@ -15,9 +15,10 @@
 - **Multi platforms**: Compatible with Windows, Mac, Linux, iOS, Android, and other Unity-supported platforms, including VR, AR, and WebGL.
 
 
-## 💎 What's New in Version 0.8.8
+## 💎 What's New in Version 0.8.8.1
 
 - **🥰🥳 Support Multiple AITuber Dialogue**: AITubers can now chat with each other, bringing dynamic and engaging interactions to life like never before!
+- **💪 Support Dify as a backend for AITuber**: Seamlessly integrate with any LLM while empowering AITubers with agentic capabilities, blending advanced knowledge and functionality for highly efficient and scalable operations!
 
 ---
 
