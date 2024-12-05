@@ -2147,6 +2147,9 @@ PrefabInstance:
       addedObject: {fileID: 1886433128}
     - targetCorrespondingSourceObject: {fileID: 2779731071012727286, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
       insertIndex: -1
+      addedObject: {fileID: 1886433131}
+    - targetCorrespondingSourceObject: {fileID: 2779731071012727286, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
+      insertIndex: -1
       addedObject: {fileID: 1886433114}
     - targetCorrespondingSourceObject: {fileID: 2779731071012727286, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
       insertIndex: -1
@@ -2212,7 +2215,7 @@ MonoBehaviour:
     nodding_once\n- nodding_twice\n- swinging_body\n- tilt_neck\n\n\u52D5\u304D\u3092\u3064\u3051\u3066\u611F\u60C5\u3092\u8868\u73FE\u3057\u305F\u3044\u5834\u5408\u3001\u5FDC\u7B54\u306B[anim:nodding_once]\u306E\u3088\u3046\u306B\u30A2\u30CB\u30E1\u30FC\u30B7\u30E7\u30F3\u30BF\u30B0\u3092\u633F\u5165\u3057\u3066\u304F\u3060\u3055\u3044\u3002\n\n\u4F8B\n[face:Joy][anim:swinging_body]\u3088\u308D\u3057\u304F\u306D\uFF01\n\n\u30A2\u30CB\u30E1\u30FC\u30B7\u30E7\u30F3\u306F\u3053\u3053\u305E\u3068\u3044\u3046\u3068\u304D\u306B\u4F7F\u7528\u3059\u308B\u3053\u3068\u3067\u52B9\u679C\u304C\u9AD8\u307E\u308A\u307E\u3059\u3002\u4F7F\u7528\u306E\u3057\u3059\u304E\u306B\u6CE8\u610F\u3057\u3066\u304F\u3060\u3055\u3044\u3002\n\n\n##
     \u9593\u306E\u53D6\u308A\u65B9\n\n\u4F1A\u8A71\u306E\u30C6\u30F3\u30DD\u3084\u6291\u63DA\u306E\u8ABF\u6574\u306B\u9593\u3092\u8A2D\u3051\u308B\u3068\u304D\u306F\u3001[pause:0.7]\u306E\u3088\u3046\u306B\u30DD\u30FC\u30BA\u30BF\u30B0\u3092\u633F\u5165\u3057\u3066\u304F\u3060\u3055\u3044\u3002\u6570\u5024\u306F\u79D2\u5358\u4F4D\u3067\u3059\u3002\n\n\n\u305D\u308C\u3067\u306F\u3001Vtuber\u300C\u3046\u306A\u30AC\u30FC\u30EB\u300D\u3068\u3057\u3066\u914D\u4FE1\u3092\u59CB\u3081\u307E\u3057\u3087\u3046\uFF01\n"
   ErrorMessageContent: 
-  historyTurns: 10
+  historyTurns: 100
   contextTimeout: 600
   ApiKey: 
   Model: gpt-4o-mini
@@ -2399,7 +2402,7 @@ MonoBehaviour:
     nodding_once\n- nodding_twice\n- swinging_body\n- tilt_neck\n\n\u52D5\u304D\u3092\u3064\u3051\u3066\u611F\u60C5\u3092\u8868\u73FE\u3057\u305F\u3044\u5834\u5408\u3001\u5FDC\u7B54\u306B[anim:nodding_once]\u306E\u3088\u3046\u306B\u30A2\u30CB\u30E1\u30FC\u30B7\u30E7\u30F3\u30BF\u30B0\u3092\u633F\u5165\u3057\u3066\u304F\u3060\u3055\u3044\u3002\n\n\u4F8B\n[face:Joy][anim:swinging_body]\u3088\u308D\u3057\u304F\u306D\uFF01\n\n\u30A2\u30CB\u30E1\u30FC\u30B7\u30E7\u30F3\u306F\u3053\u3053\u305E\u3068\u3044\u3046\u3068\u304D\u306B\u4F7F\u7528\u3059\u308B\u3053\u3068\u3067\u52B9\u679C\u304C\u9AD8\u307E\u308A\u307E\u3059\u3002\u4F7F\u7528\u306E\u3057\u3059\u304E\u306B\u6CE8\u610F\u3057\u3066\u304F\u3060\u3055\u3044\u3002\n\n\n##
     \u9593\u306E\u53D6\u308A\u65B9\n\n\u4F1A\u8A71\u306E\u30C6\u30F3\u30DD\u3084\u6291\u63DA\u306E\u8ABF\u6574\u306B\u9593\u3092\u8A2D\u3051\u308B\u3068\u304D\u306F\u3001[pause:0.7]\u306E\u3088\u3046\u306B\u30DD\u30FC\u30BA\u30BF\u30B0\u3092\u633F\u5165\u3057\u3066\u304F\u3060\u3055\u3044\u3002\u6570\u5024\u306F\u79D2\u5358\u4F4D\u3067\u3059\u3002\n\n\n\u305D\u308C\u3067\u306F\u3001Vtuber\u300C\u3046\u306A\u30AC\u30FC\u30EB\u300D\u3068\u3057\u3066\u914D\u4FE1\u3092\u59CB\u3081\u307E\u3057\u3087\u3046\uFF01\n"
   ErrorMessageContent: 
-  historyTurns: 10
+  historyTurns: 100
   contextTimeout: 600
   ApiKey: 
   Model: gemini-1.5-flash-latest
@@ -2443,7 +2446,7 @@ MonoBehaviour:
     nodding_once\n- nodding_twice\n- swinging_body\n- tilt_neck\n\n\u52D5\u304D\u3092\u3064\u3051\u3066\u611F\u60C5\u3092\u8868\u73FE\u3057\u305F\u3044\u5834\u5408\u3001\u5FDC\u7B54\u306B[anim:nodding_once]\u306E\u3088\u3046\u306B\u30A2\u30CB\u30E1\u30FC\u30B7\u30E7\u30F3\u30BF\u30B0\u3092\u633F\u5165\u3057\u3066\u304F\u3060\u3055\u3044\u3002\n\n\u4F8B\n[face:Joy][anim:swinging_body]\u3088\u308D\u3057\u304F\u306D\uFF01\n\n\u30A2\u30CB\u30E1\u30FC\u30B7\u30E7\u30F3\u306F\u3053\u3053\u305E\u3068\u3044\u3046\u3068\u304D\u306B\u4F7F\u7528\u3059\u308B\u3053\u3068\u3067\u52B9\u679C\u304C\u9AD8\u307E\u308A\u307E\u3059\u3002\u4F7F\u7528\u306E\u3057\u3059\u304E\u306B\u6CE8\u610F\u3057\u3066\u304F\u3060\u3055\u3044\u3002\n\n\n##
     \u9593\u306E\u53D6\u308A\u65B9\n\n\u4F1A\u8A71\u306E\u30C6\u30F3\u30DD\u3084\u6291\u63DA\u306E\u8ABF\u6574\u306B\u9593\u3092\u8A2D\u3051\u308B\u3068\u304D\u306F\u3001[pause:0.7]\u306E\u3088\u3046\u306B\u30DD\u30FC\u30BA\u30BF\u30B0\u3092\u633F\u5165\u3057\u3066\u304F\u3060\u3055\u3044\u3002\u6570\u5024\u306F\u79D2\u5358\u4F4D\u3067\u3059\u3002\n\n\n\u305D\u308C\u3067\u306F\u3001Vtuber\u300C\u3046\u306A\u30AC\u30FC\u30EB\u300D\u3068\u3057\u3066\u914D\u4FE1\u3092\u59CB\u3081\u307E\u3057\u3087\u3046\uFF01\n"
   ErrorMessageContent: 
-  historyTurns: 10
+  historyTurns: 100
   contextTimeout: 600
   ApiKey: 
   Model: claude-3-haiku-20240307
@@ -2468,6 +2471,29 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   address: 127.0.0.1
   port: 8889
+--- !u!114 &1886433131
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1886433055}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 598a633cd394540c5a72f940b078e297, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _IsEnabled: 0
+  DebugMode: 0
+  SystemMessageContent: 
+  ErrorMessageContent: 
+  historyTurns: 10
+  contextTimeout: 600
+  ApiKey: 
+  BaseUrl: 
+  User: 
+  responseTimeoutSec: 30
+  noDataResponseTimeoutSec: 10
 --- !u!1 &1934380956
 GameObject:
   m_ObjectHideFlags: 0
