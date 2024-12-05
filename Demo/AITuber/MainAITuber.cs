@@ -59,7 +59,7 @@ namespace ChatdollKit.Demo
                     var pattarn = $@"<{llmContentProcessor.ThinkTag}>.*?</{llmContentProcessor.ThinkTag}>";
                     var messageToAIAvatar = "$" + Regex.Replace(llmSession.StreamBuffer, pattarn, string.Empty, RegexOptions.Singleline);
                     socketClient.SendMessageToServer(JsonConvert.SerializeObject(new ExternalInboundMessage(){
-                        Endpoint = "dialog", Operation = "process", Text = llmSession.StreamBuffer
+                        Endpoint = "dialog", Operation = "process", Text = messageToAIAvatar, Priority = 10
                     }));
                 }
             };

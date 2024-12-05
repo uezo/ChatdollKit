@@ -10,6 +10,7 @@ using ChatdollKit.LLM;
 using ChatdollKit.LLM.ChatGPT;
 using ChatdollKit.LLM.Claude;
 using ChatdollKit.LLM.Gemini;
+using ChatdollKit.LLM.Dify;
 using ChatdollKit.Model;
 using ChatdollKit.Network;
 using ChatdollKit.SpeechSynthesizer;
@@ -31,6 +32,7 @@ namespace ChatdollKit.Demo
         private ChatGPTService chatGPTService;
         private ClaudeService claudeService;
         private GeminiService geminiService;
+        private DifyService difyService;
         private VoicevoxSpeechSynthesizer voicevoxSpeechSynthesizer;
         private StyleBertVits2SpeechSynthesizer styleBertVits2SpeechSynthesizer;
         private LLMContentProcessor llmContentProcessor;
@@ -60,6 +62,7 @@ namespace ChatdollKit.Demo
             chatGPTService = aiAvatarObject.GetComponent<ChatGPTService>();
             claudeService = aiAvatarObject.GetComponent<ClaudeService>();
             geminiService = aiAvatarObject.GetComponent<GeminiService>();
+            difyService = aiAvatarObject.GetComponent<DifyService>();
 
             voicevoxSpeechSynthesizer = aiAvatarObject.GetComponent<VoicevoxSpeechSynthesizer>();
             styleBertVits2SpeechSynthesizer = aiAvatarObject.GetComponent<StyleBertVits2SpeechSynthesizer>();
@@ -219,6 +222,8 @@ namespace ChatdollKit.Demo
                     var apiKey = message.Payloads.ContainsKey("api_key") ?  (string)message.Payloads["api_key"] : null;
                     var model = message.Payloads.ContainsKey("model") ?  (string)message.Payloads["model"] : null;
                     var temperature = message.Payloads.ContainsKey("temperature") ?  Convert.ToSingle(message.Payloads["temperature"]) : -1;
+                    var url = message.Payloads.ContainsKey("url") ?  (string)message.Payloads["url"] : null;
+                    var user = message.Payloads.ContainsKey("user") ?  (string)message.Payloads["user"] : null;
 
                     if (name == "chatgpt")
                     {
@@ -226,6 +231,7 @@ namespace ChatdollKit.Demo
                         if (apiKey != null) chatGPTService.ApiKey = apiKey;
                         if (model != null) chatGPTService.Model = model;
                         if (temperature >= 0) chatGPTService.Temperature = temperature;
+                        if (url != null) chatGPTService.ChatCompletionUrl = url;
                     }
                     else if (name == "claude")
                     {
@@ -233,6 +239,7 @@ namespace ChatdollKit.Demo
                         if (apiKey != null) claudeService.ApiKey = apiKey;
                         if (model != null) claudeService.Model = model;
                         if (temperature >= 0) claudeService.Temperature = temperature;
+                        if (url != null) claudeService.CreateMessageUrl = url;
                     }
                     else if (name == "gemini")
                     {
@@ -240,6 +247,14 @@ namespace ChatdollKit.Demo
                         if (apiKey != null) geminiService.ApiKey = apiKey;
                         if (model != null) geminiService.Model = model;
                         if (temperature >= 0) geminiService.Temperature = temperature;
+                        if (url != null) geminiService.GenerateContentUrl = url;
+                    }
+                    else if (name == "dify")
+                    {
+                        dialogProcessor.SelectLLMService(difyService);
+                        if (apiKey != null) difyService.ApiKey = apiKey;
+                        if (url != null) difyService.BaseUrl = url;
+                        if (user != null) difyService.User = user;
                     }
                 }
                 else if (message.Operation == "system_prompt")
