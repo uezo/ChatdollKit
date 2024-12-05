@@ -30,7 +30,7 @@ namespace ChatdollKit.LLM.Dify
         {
             if (Time.time - contextUpdatedAt > contextTimeout)
             {
-                currentConversationId = string.Empty;
+                ClearContext();
             }
 
             return currentConversationId;
@@ -40,6 +40,12 @@ namespace ChatdollKit.LLM.Dify
         {
             currentConversationId = ((DifySession)llmSession).ConversationId;
 
+            contextUpdatedAt = Time.time;
+        }
+
+        public override void ClearContext()
+        {
+            currentConversationId = string.Empty;
             contextUpdatedAt = Time.time;
         }
 
