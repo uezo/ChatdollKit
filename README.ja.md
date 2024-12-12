@@ -10,7 +10,7 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 
 - **生成AI対応**: ChatGPT、Anthropic Claude、Google Gemini Pro、Difyなど、複数のLLMをサポートし、ファンクションコーリング（ChatGPT/Gemini）やマルチモーダル機能にも対応
 - **3Dモデル表現**: 発話とモーションの同期、表情やアニメーションの自律制御、瞬きや口の動きの同期をサポート
-- **対話制御**: 音声認識と音声合成（OpenAI、Azure、Google、Watson、VOICEVOX、VOICEROIDなど）の統合、対話状態（コンテキスト）の管理、意図抽出とトピックのルーティング、ウェイクワード検出をサポート
+- **対話制御**: 音声認識と音声合成（OpenAI、Azure、Google、Watson、VOICEVOX / AivisSpeech、Style-Bert-VITS2、にじボイスなど）の統合、対話状態（コンテキスト）の管理、意図抽出とトピックのルーティング、ウェイクワード検出をサポート
 - **マルチプラットフォーム**: Windows、Mac、Linux、iOS、Android、およびその他のUnityサポートプラットフォーム（VR、AR、WebGLを含む）に対応
 
 
@@ -414,7 +414,7 @@ ChatdollKitはこのCoTの手法に、`<thinking> ~ </thinking>`の中身を読�
 
 ## 🗣️ Speech Synthesizer (Text-to-Speech)
 
-音声合成サービスとしてクラウドサービスとして提供されるGoogle、Azure、OpenAI、Watsonをサポートするほか、キャラクターとしてより魅力的な音声を提供するVOICEVOX、VOICEROID、Style-Bert-VITS2をサポートします。
+音声合成サービスとしてクラウドサービスとして提供されるGoogle、Azure、OpenAI、Watsonをサポートするほか、キャラクターとしてより魅力的な音声を提供するVOICEVOX / AivisSpeech、VOICEROID、Style-Bert-VITS2, にじボイスをサポートします。
 音声合成サービスを使用するには、`ChatdollKit/Scripts/SpeechSynthesizer`の各サービス名が含まれる`SpeechSynthesizer`をAIAvatarオブジェクトにアタッチして、`IsEnabled`にチェックを入れてください。すでに他のSpeechSynthesizerがアタッチされている場合、使用しないSpeechSynthesizerの`IsEnabled`はチェックを外す必要がある点に注意してください。
 
 アタッチしたSpeechSynthesizerには、APIキーやエンドポイントなどのパラメーターをインスペクター上で設定することができます。これらのパラメーターの意味や設定すべき値等については各TTSサービス・製品のAPIリファレンスを参照してください。
