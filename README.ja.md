@@ -111,6 +111,7 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
   - [Multi Modal](#multi-modal)
   - [Chain of Thought Prompting](#chain-of-thought-prompting)
 - [🗣️ Speech Synthesizer (Text-to-Speech)](#-speech-synthesizer-text-to-speech)
+  - [Voice Prefetch Mode](#voice-prefetch-mode)
   - [Make custom SpeechSynthesizer](#make-custom-speechsynthesizer)
   - [Performance and Quality Tuning](#performance-and-quality-tuning)
 - [🎧 Speech Listener (Speech-to-Text)](#-speech-listener-speech-to-text)
@@ -417,6 +418,22 @@ ChatdollKitはこのCoTの手法に、`<thinking> ~ </thinking>`の中身を読�
 音声合成サービスを使用するには、`ChatdollKit/Scripts/SpeechSynthesizer`の各サービス名が含まれる`SpeechSynthesizer`をAIAvatarオブジェクトにアタッチして、`IsEnabled`にチェックを入れてください。すでに他のSpeechSynthesizerがアタッチされている場合、使用しないSpeechSynthesizerの`IsEnabled`はチェックを外す必要がある点に注意してください。
 
 アタッチしたSpeechSynthesizerには、APIキーやエンドポイントなどのパラメーターをインスペクター上で設定することができます。これらのパラメーターの意味や設定すべき値等については各TTSサービス・製品のAPIリファレンスを参照してください。
+
+
+### Voice Prefetch Mode
+
+`Voice Prefetch Mode` は音声合成リクエストの管理と処理方法を決定します。デフォルトでは、システムは **Parallel** モードで動作します。以下のモードがサポートされています：
+
+1. **Parallel（デフォルト）**:  
+   このモードでは、複数の音声合成リクエストが同時に送信・処理されます。複数の音声を短時間で生成する場合に最適で、最速の応答時間を保証します。低遅延が重要で、十分なリソースが利用可能な場合に使用してください。
+
+2. **Sequential**:  
+   リクエストがキューに追加された順に1つずつ処理されます。このモードは、リソースが限られている場合や音声出力の順序を厳密に制御する必要がある場合に適しています。ただし、次のリクエストが処理されるまで待機時間が長くなる可能性があります。
+
+3. **Disabled**:  
+   このモードではプリフェッチは行われません。音声合成は明示的にトリガーされた場合にのみ実行されます。リソースを最小限に抑えたい場合や、プリフェッチが不要な場合に適しています。
+
+`Voice Prefetch Mode` は、`SpeechSynthesizer` コンポーネントのインスペクターで変更できます。選択したモードがパフォーマンスやリソース管理の要件に適していることを確認してください。
 
 
 ### Make custom SpeechSynthesizer

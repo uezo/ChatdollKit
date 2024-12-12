@@ -111,6 +111,7 @@ To run the demo for version 0.8, please follow the steps below after importing t
   - [Multi Modal](#multi-modal)
   - [Chain of Thought Prompting](#chain-of-thought-prompting)
 - [🗣️ Speech Synthesizer (Text-to-Speech)](#%EF%B8%8F-speech-synthesizer-text-to-speech)
+  - [Voice Prefetch Mode](#voice-prefetch-mode)
   - [Make custom SpeechSynthesizer](#make-custom-speechsynthesizer)
   - [Performance and Quality Tuning](#performance-and-quality-tuning)
 - [🎧 Speech Listener (Speech-to-Text)](#-speech-listener-speech-to-text)
@@ -422,6 +423,17 @@ You can customize the tag by setting a preferred word (e.g., "reason") as the `T
 We support cloud-based speech synthesis services such as Google, Azure, OpenAI, and Watson, in addition to VOICEVOX, VOICEROID, and Style-Bert-VITS2 for more characterful and engaging voices. To use a speech synthesis service, attach `SpeechSynthesizer` from `ChatdollKit/Scripts/SpeechListener` to the AIAvatar object and check the `IsEnabled` box. If other `SpeechSynthesizer` components are attached, make sure to uncheck the `IsEnabled` box for those not in use.
 
 You can configure parameters like API keys and endpoints on the attached `SpeechSynthesizer` in the inspector. For more details of these parameters, refer to the API references of TTS services.
+
+### Voice Prefetch Mode
+
+The `Voice Prefetch Mode` determines how speech synthesis requests are managed and processed. By default, the system operates in Parallel mode. The following modes are supported:
+
+1. **Parallel (default)**: In this mode, multiple speech synthesis requests are sent and processed simultaneously. This ensures the fastest response times when generating multiple speech outputs in quick succession. Use this mode when latency is critical and sufficient resources are available for parallel processing.
+1. **Sequential**: Requests are processed one at a time in the order they are enqueued. This mode is ideal for managing limited resources or ensuring strict order of speech outputs. It avoids potential concurrency issues but may result in longer wait times for subsequent requests.
+1. **Disabled**: No prefetching is performed in this mode. Speech synthesis occurs only when explicitly triggered, making it suitable for minimal-resource scenarios or when prefetching is unnecessary.
+
+You can change the `Voice Prefetch Mode` in the inspector on the SpeechSynthesizer component. Ensure the selected mode aligns with your performance and resource management requirements.
+
 
 ### Make custom SpeechSynthesizer
 
