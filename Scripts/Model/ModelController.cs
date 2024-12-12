@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -8,6 +9,13 @@ using Cysharp.Threading.Tasks;
 
 namespace ChatdollKit.Model
 {
+    public enum VoicePrefetchMode
+    {
+        Parallel,
+        Sequential,
+        Disabled
+    }
+
     public class ModelController : MonoBehaviour
     {
         // Avator
@@ -20,7 +28,9 @@ namespace ChatdollKit.Model
         public Func<string, Dictionary<string, object>, CancellationToken, UniTask<AudioClip>> SpeechSynthesizerFunc;
         public Action<Voice, CancellationToken> OnSayStart;
         public Action OnSayEnd;
-        public bool UsePrefetch = true;
+        public VoicePrefetchMode VoicePrefetchMode = VoicePrefetchMode.Parallel;
+        private ConcurrentQueue<Voice> voicePrefetchQueue = new ConcurrentQueue<Voice>();
+        private CancellationTokenSource voicePrefetchCancellationTokenSource;
         private ILipSyncHelper lipSyncHelper;
 
         // Animation
@@ -96,6 +106,8 @@ namespace ChatdollKit.Model
 
             // NOTE: Do not start idling here to prevent overwrite the animation that user invokes at Start() in other module.
             // Don't worry, idling will be started at UpdateAnimation() if user doesn't invoke their custom animation.
+
+            StartVoicePrefetchTask().Forget();
         }
 
         private void Update()
@@ -108,6 +120,12 @@ namespace ChatdollKit.Model
         {
             // Move to avatar position (because this game object includes AudioSource)
             gameObject.transform.position = AvatarModel.transform.position;
+        }
+
+        private void OnDestroy()
+        {
+            voicePrefetchCancellationTokenSource?.Cancel();
+            voicePrefetchCancellationTokenSource?.Dispose();
         }
 
 #region Idling
@@ -281,7 +299,7 @@ namespace ChatdollKit.Model
             StopSpeech();
 
             // Prefetch Web/TTS voice
-            if (UsePrefetch)
+            if (VoicePrefetchMode != VoicePrefetchMode.Disabled)
             {
                 PrefetchVoices(voices, token);
             }
@@ -369,8 +387,42 @@ namespace ChatdollKit.Model
         {
             foreach (var voice in voices)
             {
-                var parameters = voice.TTSConfig != null ? voice.TTSConfig.Params : new Dictionary<string, object>();
-                SpeechSynthesizerFunc(voice.Text, parameters, token);
+                if (VoicePrefetchMode == VoicePrefetchMode.Sequential)
+                {
+                    voicePrefetchQueue.Enqueue(voice);
+                }
+                else
+                {
+                    var parameters = voice.TTSConfig != null ? voice.TTSConfig.Params : new Dictionary<string, object>();
+                    SpeechSynthesizerFunc(voice.Text, parameters, token);
+                }
+            }
+        }
+
+        private async UniTaskVoid StartVoicePrefetchTask()
+        {
+            voicePrefetchCancellationTokenSource = new CancellationTokenSource();
+            var token = voicePrefetchCancellationTokenSource.Token;
+
+            try
+            {
+                while (!token.IsCancellationRequested)
+                {
+                    if (VoicePrefetchMode == VoicePrefetchMode.Sequential && voicePrefetchQueue.TryDequeue(out var voice))
+                    {
+                        var parameters = voice.TTSConfig != null ? voice.TTSConfig.Params : new Dictionary<string, object>();
+                        Debug.LogWarning($"Prefetch: {voice.Text}");
+                        await SpeechSynthesizerFunc(voice.Text, parameters, token);
+                    }
+                    else
+                    {
+                        await UniTask.Delay(10, cancellationToken: token);
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Ignore OperationCanceledException
             }
         }
 
