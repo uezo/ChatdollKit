@@ -27,6 +27,7 @@ namespace ChatdollKit.Dialog
         // Actions for each status
         public Func<string, Dictionary<string, object>, CancellationToken, UniTask> OnStartAsync { get; set; }
         public Func<string, Dictionary<string, object>, CancellationToken, UniTask> OnRequestRecievedAsync { get; set; }
+        public Func<ILLMSession, CancellationToken, UniTask> OnBeforeProcessContentStreamAsync { get; set; }
         public Func<string, Dictionary<string, object>, ILLMSession, CancellationToken, UniTask> OnResponseShownAsync { get; set; }
         public Func<bool, CancellationToken, UniTask> OnEndAsync { get; set; }
         public Func<bool, UniTask> OnStopAsync { get; set; }
@@ -109,7 +110,7 @@ namespace ChatdollKit.Dialog
         }
 
         // Start dialog
-        public async UniTask StartDialogAsync(string text, Dictionary<string, object> payloads = null)
+        public async UniTask StartDialogAsync(string text, Dictionary<string, object> payloads = null, bool overwrite = true)
         {
             if (string.IsNullOrEmpty(text) && (payloads == null || payloads.Count == 0))
             {
@@ -120,8 +121,11 @@ namespace ChatdollKit.Dialog
             processingId = Guid.NewGuid().ToString();
             var currentProcessingId = processingId;
 
-            // Stop running dialog and get cancellation token
-            await StopDialog(true);
+            if (overwrite)
+            {
+                // Stop running dialog and get cancellation token
+                await StopDialog(true);
+            }
 
             var token = GetDialogToken();
 
@@ -165,6 +169,8 @@ namespace ChatdollKit.Dialog
                         if (token.IsCancellationRequested) { return; }
                     }
                 }
+
+                await OnBeforeProcessContentStreamAsync(llmSession, token);
 
                 // Start parsing voices, faces and animations
                 var processContentStreamTask = llmContentProcessor.ProcessContentStreamAsync(llmSession, token);
