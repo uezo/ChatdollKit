@@ -170,7 +170,10 @@ namespace ChatdollKit.Dialog
                     }
                 }
 
-                await OnBeforeProcessContentStreamAsync(llmSession, token);
+                if (OnBeforeProcessContentStreamAsync != null)
+                {
+                    await OnBeforeProcessContentStreamAsync(llmSession, token);
+                }
 
                 // Start parsing voices, faces and animations
                 var processContentStreamTask = llmContentProcessor.ProcessContentStreamAsync(llmSession, token);
