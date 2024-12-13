@@ -1957,6 +1957,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 112896201}
     - target: {fileID: 3082384663952346143, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
+      propertyPath: VoicePrefetchMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3082384663952346143, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
       propertyPath: IdleAnimationValue
       value: 6
       objectReference: {fileID: 0}
@@ -2154,6 +2158,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 2779731071012727286, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1886433125}
+    - targetCorrespondingSourceObject: {fileID: 2779731071012727286, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1886433132}
     - targetCorrespondingSourceObject: {fileID: 2779731071012727286, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1886433089}
@@ -2494,6 +2501,28 @@ MonoBehaviour:
   User: 
   responseTimeoutSec: 30
   noDataResponseTimeoutSec: 10
+--- !u!114 &1886433132
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1886433055}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5282c47e3a2e0478cafd3898ac8ca763, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Timeout: 10
+  isDebug: 0
+  _IsEnabled: 0
+  EndpointUrl: 
+  ApiKey: 
+  VoiceActorId: dba2fa0e-f750-43ad-b9f6-d5aeaea7dc16
+  Speed: 1
+  audioType: 13
+  VoiceModelSpeeds: []
+  printSupportedSpeakers: 0
 --- !u!1 &1934380956
 GameObject:
   m_ObjectHideFlags: 0
