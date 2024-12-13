@@ -49,16 +49,16 @@ namespace ChatdollKit.Dialog
         {
             if (priority == 0)
             {
-                _ = dialogProcessor.StartDialogAsync(text);
+                _ = dialogProcessor.StartDialogAsync(text + textToAppendNext);
             }
             else
             {
                 dialogQueue.Enqueue(new DialogQueueItem() {
                     Priority = priority, Text = text + textToAppendNext, Payloads = payloads
                 }, priority);
-
-                textToAppendNext = string.Empty;
             }
+
+            textToAppendNext = string.Empty;
         }
 
         public void SetRequestToAppendNext(string text)
