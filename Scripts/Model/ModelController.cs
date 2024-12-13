@@ -411,7 +411,6 @@ namespace ChatdollKit.Model
                     if (VoicePrefetchMode == VoicePrefetchMode.Sequential && voicePrefetchQueue.TryDequeue(out var voice))
                     {
                         var parameters = voice.TTSConfig != null ? voice.TTSConfig.Params : new Dictionary<string, object>();
-                        Debug.LogWarning($"Prefetch: {voice.Text}");
                         await SpeechSynthesizerFunc(voice.Text, parameters, token);
                     }
                     else
