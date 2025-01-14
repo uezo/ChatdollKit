@@ -232,6 +232,7 @@ namespace ChatdollKit.Demo
                         if (model != null) chatGPTService.Model = model;
                         if (temperature >= 0) chatGPTService.Temperature = temperature;
                         if (url != null) chatGPTService.ChatCompletionUrl = url;
+                        chatGPTService.IsAzure = message.Payloads.ContainsKey("is_azure") ? Convert.ToBoolean(message.Payloads["is_azure"]) : false;
                     }
                     else if (name == "claude")
                     {
