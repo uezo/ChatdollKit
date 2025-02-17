@@ -225,7 +225,7 @@ namespace ChatdollKit
             LLMContentProcessor.HandleSplittedText = (contentItem) =>
             {
                 // Convert to AnimatedVoiceRequest
-                var avreq = ModelController.ToAnimatedVoiceRequest(contentItem.Text);
+                var avreq = ModelController.ToAnimatedVoiceRequest(contentItem.Text, contentItem.Language);
                 avreq.StartIdlingOnEnd = contentItem.IsFirstItem;
                 if (contentItem.IsFirstItem)
                 {
@@ -505,37 +505,35 @@ namespace ChatdollKit
 
         private async UniTask OnSpeechListenerRecognized(string text)
         {
-            if (!string.IsNullOrEmpty(text))
-            {
-                if (!string.IsNullOrEmpty(ExtractCancelWord(text)))
-                {
-                    await StopChatAsync();
-                    return;
-                }
+            if (string.IsNullOrEmpty(text) || Mode == AvatarMode.Disabled) return;
 
-                if (!string.IsNullOrEmpty(ExtractInterruptWord(text)))
-                {
-                    await StopChatAsync(continueDialog: true);
-                    return;
-                }
+            // Cancel Word
+            else if (!string.IsNullOrEmpty(ExtractCancelWord(text)))
+            {
+                await StopChatAsync();
             }
 
-            if (Mode >= AvatarMode.Conversation)
+            // Interupt Word
+            else if (!string.IsNullOrEmpty(ExtractInterruptWord(text)))
+            {
+                await StopChatAsync(continueDialog: true);
+            }
+
+            // Conversation request (Priority is higher than wake word)
+            else if (Mode >= AvatarMode.Conversation)
             {
                 // Send text directly
                 _ = DialogProcessor.StartDialogAsync(text);
             }
-            else if (Mode > AvatarMode.Disabled)
+
+            // Wake Word
+            else if (!string.IsNullOrEmpty(ExtractWakeWord(text)))
             {
-                // Send text if wakeword is extracted
-                if (!string.IsNullOrEmpty(ExtractWakeWord(text)))
+                if (OnWakeAsync != null)
                 {
-                    if (OnWakeAsync != null)
-                    {
-                        await OnWakeAsync(text);
-                    }
-                    _ = DialogProcessor.StartDialogAsync(text, new Dictionary<string, object>() { {"IsWakeword", true} });
+                    await OnWakeAsync(text);
                 }
+                _ = DialogProcessor.StartDialogAsync(text, new Dictionary<string, object>() { {"IsWakeword", true} });
             }
         }
 

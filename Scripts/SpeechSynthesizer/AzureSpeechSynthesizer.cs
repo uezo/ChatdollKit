@@ -31,6 +31,7 @@ namespace ChatdollKit.SpeechSynthesizer
         public string Language = "ja-JP";
         public string Gender = "Female";
         public string SpeakerName = "ja-JP-AoiNeural";
+        public Dictionary<string, string> SpeakerMap = new ();
         public AudioType AudioType = AudioType.MPEG;
 
 #if UNITY_WEBGL && !UNITY_EDITOR
@@ -60,7 +61,27 @@ namespace ChatdollKit.SpeechSynthesizer
                 { "Ocp-Apim-Subscription-Key", ApiKey }
             };
 
-            var textML = $"<speak version='1.0' xml:lang='{Language}'><voice xml:lang='{Language}' xml:gender='{Gender}' name='{SpeakerName}'>{text}</voice></speak>";
+            string language;
+            string speaker;
+            if (parameters.ContainsKey("language"))
+            {
+                language = parameters["language"] as string;
+                if (SpeakerMap.ContainsKey(language))
+                {
+                    speaker = SpeakerMap[language];
+                }
+                else
+                {
+                    speaker = SpeakerName;
+                }
+            }
+            else
+            {
+                language = Language;
+                speaker = SpeakerName;
+            }
+
+            var textML = $"<speak version='1.0' xml:lang='{language}'><voice xml:lang='{language}' name='{speaker}'>{text}</voice></speak>";
             var data = System.Text.Encoding.UTF8.GetBytes(textML);
 
             return await DownloadAudioClipAsync(url, data, headers, token);

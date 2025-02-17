@@ -78,7 +78,7 @@ namespace ChatdollKit.Model
             }
         }
 
-        private List<AnimatedVoiceRequest> ToAnimatedVoiceRequests(string taggedText)
+        private List<AnimatedVoiceRequest> ToAnimatedVoiceRequests(string taggedText, string language = null)
         {
             var animatedVoiceRequests = new List<AnimatedVoiceRequest>();
             var isFirstAnimatedVoice = true;
@@ -91,7 +91,7 @@ namespace ChatdollKit.Model
                 {
                     if (!string.IsNullOrEmpty(text.Trim()))
                     {
-                        var avreq = modelController.ToAnimatedVoiceRequest(text);
+                        var avreq = modelController.ToAnimatedVoiceRequest(text, language);
                         avreq.StartIdlingOnEnd = isFirstAnimatedVoice;
                         isFirstAnimatedVoice = false;
 
