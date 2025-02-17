@@ -3,6 +3,7 @@ using System.Text;
 using System.Threading;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace ChatdollKit.SpeechListener
 {
@@ -13,6 +14,8 @@ namespace ChatdollKit.SpeechListener
         public float SilenceDurationThreshold = 0.3f;
         public float MinRecordingDuration = 0.5f;
         public float MaxRecordingDuration = 3.0f;
+        public string Language = "ja-JP";
+        public List<string> AlternativeLanguages;
         public bool AutoStart = true;
         public bool PrintResult = false;
 
