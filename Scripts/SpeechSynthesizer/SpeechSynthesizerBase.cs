@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace ChatdollKit.SpeechSynthesizer
 {
@@ -17,16 +18,20 @@ namespace ChatdollKit.SpeechSynthesizer
         [SerializeField]
         protected bool isDebug;
 
-        public async UniTask<AudioClip> GetAudioClipAsync(string text, Dictionary<string, object> parameters, CancellationToken cancellationToken = default)
+        protected virtual string GetCacheKey(string text, Dictionary<string, object> parameters)
+        {
+            return $"{text}_{JsonConvert.SerializeObject(parameters)}".GetHashCode().ToString();
+        }
+
+        public async UniTask<AudioClip> GetAudioClipAsync(string text, Dictionary<string, object> parameters, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(text.Trim()))
             {
                 return null;
             }
 
-            // Make cache key
-            var cacheKey = parameters.ContainsKey("style") && !string.IsNullOrEmpty((string)parameters["style"])
-                ? $"[{parameters["style"]}]{text}" : text;
+            // Get cache key
+            var cacheKey = GetCacheKey(text, parameters);
 
             // Return cache if exists
             if (HasCache(cacheKey))
