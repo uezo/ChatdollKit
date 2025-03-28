@@ -103,6 +103,7 @@ namespace ChatdollKit.LLM.CommandR
             // Start streaming session
             var commandRSession = new CommandRSession();
             commandRSession.Contexts = messages;
+            commandRSession.ContextId = contextId;
             commandRSession.StreamingTask = StartStreamingAsync(inputText, toolResults, commandRSession, customParameters, customHeaders, useFunctions, token);
             await WaitForResponseType(commandRSession, token);
 

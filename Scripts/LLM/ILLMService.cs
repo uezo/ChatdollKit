@@ -15,7 +15,7 @@ namespace ChatdollKit.LLM
         UniTask<List<ILLMMessage>> MakePromptAsync(string userId, string inputText, Dictionary<string, object> payloads, CancellationToken token = default);
         UniTask<ILLMSession> GenerateContentAsync(List<ILLMMessage> messages, Dictionary<string, object> payloads = null, bool useFunctions = true, int retryCounter = 1, CancellationToken token = default);
         ILLMMessage CreateMessageAfterFunction(string role = null, string content = null, ILLMSession llmSession = null, Dictionary<string, object> arguments = null);
-        Func<ILLMSession, CancellationToken, UniTask> OnStreamingEnd { get; set; }
+        Func<string, Dictionary<string, object>, ILLMSession, CancellationToken, UniTask> OnStreamingEnd { get; set; }
         Action <Dictionary<string, string>, ILLMSession> HandleExtractedTags { get; set; }
         Func<string, UniTask<byte[]>> CaptureImage { get; set; }
     }
@@ -33,9 +33,9 @@ namespace ChatdollKit.LLM
         bool IsVisionAvailable { get; set; }
         ResponseType ResponseType { get; set; }
         UniTask StreamingTask { get; set; }
-        Func<UniTask> OnStreamingEnd { get; set; }
         string FunctionName { get; set; }
         List<ILLMMessage> Contexts { get; set; }
+        string ContextId { get; set; }
     }
 
     public interface ILLMMessage { }
