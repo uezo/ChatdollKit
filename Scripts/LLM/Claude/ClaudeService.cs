@@ -106,6 +106,7 @@ namespace ChatdollKit.LLM.Claude
             // Start streaming session
             var claudeSession = new ClaudeSession();
             claudeSession.Contexts = messages;
+            claudeSession.ContextId = contextId;
             claudeSession.StreamingTask = StartStreamingAsync(claudeSession, customParameters, customHeaders, useFunctions, token);
             await WaitForResponseType(claudeSession, token);
 

@@ -133,6 +133,7 @@ namespace ChatdollKit.LLM.ChatGPT
             // Start streaming session
             var chatGPTSession = new ChatGPTSession();
             chatGPTSession.Contexts = messages;
+            chatGPTSession.ContextId = contextId;
             chatGPTSession.StreamingTask = StartStreamingAsync(chatGPTSession, customParameters, customHeaders, useFunctions, token);
             await WaitForFunctionInfo(chatGPTSession, token);
 

@@ -55,6 +55,10 @@ namespace ChatdollKit.LLM.Gemini
                 index--;
             }
 
+            if (string.IsNullOrEmpty(contextId))
+            {
+                contextId = Guid.NewGuid().ToString();
+            }
             return histories;
         }
 
@@ -127,6 +131,7 @@ namespace ChatdollKit.LLM.Gemini
             // Start streaming session
             var geminiSession = new GeminiSession();
             geminiSession.Contexts = messages;
+            geminiSession.ContextId = contextId;
             geminiSession.StreamingTask = StartStreamingAsync(geminiSession, customParameters, customHeaders, useFunctions, token);
             await WaitForResponseType(geminiSession, token);
 
