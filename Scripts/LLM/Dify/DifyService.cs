@@ -91,6 +91,9 @@ namespace ChatdollKit.LLM.Dify
                 difySession.ConversationId = GetConversationId();
             }
 
+            // Use ConversationId as ContextId, not base.contextId
+            difySession.ContextId = difySession.ConversationId;
+
             difySession.StreamingTask = StartStreamingAsync(difySession, customParameters, customHeaders, useFunctions, token);
 
             // Retry

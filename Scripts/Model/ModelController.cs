@@ -238,11 +238,15 @@ namespace ChatdollKit.Model
             }
         }
 
-        public AnimatedVoiceRequest ToAnimatedVoiceRequest(string inputText)
+        public AnimatedVoiceRequest ToAnimatedVoiceRequest(string inputText, string language = null)
         {
             var avreq = new AnimatedVoiceRequest();
             var preGap = 0f;
             var ttsConfig = new TTSConfiguration();
+            if (!string.IsNullOrEmpty(language))
+            {
+                ttsConfig.Params["language"] = language;
+            }
 
             var pattern = @"(\[.*?\])|([^[]+)";
             foreach (Match match in Regex.Matches(inputText, pattern))

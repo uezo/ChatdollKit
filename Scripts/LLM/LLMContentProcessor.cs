@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
@@ -38,6 +39,7 @@ namespace ChatdollKit.LLM
             {
                 var splitIndex = 0;
                 var isFirstWord = true;
+                var language = string.Empty;
                 var isInsideThinkTag = false;
                 var thinkStart = $"<{ThinkTag}>";
                 var thinkEnd = $"</{ThinkTag}>";
@@ -113,7 +115,13 @@ namespace ChatdollKit.LLM
                                     continue;
                                 }
 
-                                var contentItem = new LLMContentItem(processedText, isFirstWord);          
+                                var match = Regex.Match(processedText, @"\[lang:([a-zA-Z-]+)\]");
+                                if (match.Success)
+                                {
+                                    language = match.Groups[1].Value;
+                                }
+
+                                var contentItem = new LLMContentItem(processedText, isFirstWord, language);          
                                 HandleSplittedText?.Invoke(contentItem);
                                 if (contentItem != null)
                                 {
@@ -243,12 +251,14 @@ namespace ChatdollKit.LLM
     {
         public string Text { get; set; }
         public bool IsFirstItem { get; set; }
+        public string Language { get; set; }
         public object Data { get; set; }
 
-        public LLMContentItem(string text, bool isFirstItem, object data = null)
+        public LLMContentItem(string text, bool isFirstItem, string language, object data = null)
         {
             Text = text;
             IsFirstItem = isFirstItem;
+            Language = language;
             Data = data;
         }
     }

@@ -14,16 +14,21 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 - **マルチプラットフォーム**: Windows、Mac、Linux、iOS、Android、およびその他のUnityサポートプラットフォーム（VR、AR、WebGLを含む）に対応
 
 
-## 💎 バージョン0.8.8.1および0.8.9の新機能
+## 💎 バージョン0.8.10の新機能
+
+- **🌏 ダイナミック多言語切り替え**: 話す・聞くの双方について、使用する言語を会話の中で自律的に切り替えられるようになりました。
+- **🔖 長期記憶**: 過去の会話の内容を蓄積・検索できるようになりました。[ChatMemory](https://github.com/uezo/chatmemory)用のコンポーネントを提供していますが、mem0やZepなどに対応することもできます。
+
+---
+
+### 以前の更新内容
+
+#### 0.8.8および0.8.9
 
 - **✨ にじボイスのサポート**: AIによる感情豊かな音声生成サービス「にじボイス」のAPIが利用できるようになりました。
 - **🥰🥳 複数AITuber同士の会話**: AITuber同士が会話できるように！今までにない配信スタイルを楽しみましょう。
 - **💪 Difyを活用したAITuber**: あらゆるLLMへの対応はもちろん、ナレッジや機能を兼ね備えたAgenticなAITuberを高い運用性をもって実現できるように！
 
-
----
-
-### 以前の更新内容
 
 #### 0.8.7
 
@@ -111,6 +116,7 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
   - [User Defined Tag](#user-defined-tag)
   - [Multi Modal](#multi-modal)
   - [Chain of Thought Prompting](#chain-of-thought-prompting)
+  - [Long-Term Memory](#long-term-memory)
 - [🗣️ Speech Synthesizer (Text-to-Speech)](#-speech-synthesizer-text-to-speech)
   - [Voice Prefetch Mode](#voice-prefetch-mode)
   - [Make custom SpeechSynthesizer](#make-custom-speechsynthesizer)
@@ -411,6 +417,31 @@ Chain of Thought (CoT) プロンプティングはAIのパフォーマンスを�
 ChatdollKitはこのCoTの手法に、`<thinking> ~ </thinking>`の中身を読み上げの対象外とすることで対応しています。
 
 また、`LLMContentProcessor`のインスペクターの`ThinkTag`でタグの中の文字列をカスタマイズすることも可能です（reason、など）。
+
+
+### Long-Term Memory
+
+ChatdollKit自体は長期記憶管理の仕組みを持っていませんが、`OnStreamingEnd`を実装することで記憶を蓄積することができ、また、記憶を取得するToolを使用することで蓄積した記憶を思い出して会話に反映することができます。
+
+以下は[ChatMemory](https://github.com/uezo/chatmemory)を使用した例です。
+
+はじめに、記憶を蓄積するための対応です。メインのGameObjectに`Extension/ChatMemory/ChatMemoryIntegrator`コンポーネントをアタッチして、ChatMemoryサービスのURLとユーザーIDを設定します。ユーザーIDは任意の値で構いませんが、複数ユーザーが利用するサービスを構築する場合はサービス内のユーザーを一位に特定できるIDをコードビハインドで設定するようにしてください。
+次に以下のコードを任意の箇所（Main等）に追加して、LLMのストリーム受信完了時に要求・応答のメッセージをChatMemoryに履歴として登録するようにします。
+
+```csharp
+using ChatdollKit.Extension.ChatMemory;
+
+var chatMemory = gameObject.GetComponent<ChatMemoryIntegrator>();
+dialogProcessor.LLMServiceExtensions.OnStreamingEnd += async (text, payloads, llmSession, token) =>
+{
+    chatMemory.AddHistory(llmSession.ContextId, text, llmSession.CurrentStreamBuffer, token).Forget();
+};
+```
+
+続いて記憶を検索し、会話の中に含める対応です。こちらはメインのGameObjectに`Extension/ChatMemory/ChatMemoryTool`を追加するだけでOKです。
+
+
+**NOTE:** ChatMemoryはいわゆるEpisodicな記憶を管理します。Factに相当するKnowledgeというエンティティーもありますが、自動的に抽出・保存されませんので、必要に応じて自身で対応してください。（デフォルトで検索対象には含まれています）
 
 
 ## 🗣️ Speech Synthesizer (Text-to-Speech)

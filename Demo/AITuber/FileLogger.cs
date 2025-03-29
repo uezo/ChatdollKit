@@ -11,7 +11,7 @@ namespace ChatdollKit.Demo
         private string logFilePath;
         private StreamWriter writer;
 
-#if !UNITY_WEBGL
+#if UNITY_EDITOR || (!UNITY_WEBGL && !UNITY_IOS)
         private void Awake()
         {
             #if UNITY_EDITOR || UNITY_STANDALONE_WIN

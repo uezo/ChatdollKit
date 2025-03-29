@@ -4,6 +4,7 @@ using System.Threading;
 using UnityEngine;
 using UnityEngine.Networking;
 using Cysharp.Threading.Tasks;
+using Newtonsoft.Json;
 #if UNITY_WEBGL && !UNITY_EDITOR
 using ChatdollKit.Network;
 using ChatdollKit.IO;
@@ -11,7 +12,7 @@ using ChatdollKit.IO;
 
 namespace ChatdollKit.SpeechSynthesizer
 {
-    public class AzureSpeechSynthesizer : SpeechSynthesizerBase
+    public class SpeechGatewaySpeechSynthesizer : SpeechSynthesizerBase
     {
         public bool _IsEnabled = true;
         public override bool IsEnabled
@@ -26,13 +27,13 @@ namespace ChatdollKit.SpeechSynthesizer
             }
         }
 
-        public string ApiKey;
-        public string Region = "japanwest";
-        public string Language = "ja-JP";
-        public string Gender = "Female";
-        public string SpeakerName = "ja-JP-AoiNeural";
-        public Dictionary<string, string> SpeakerMap = new ();
+        public string EndpointUrl;
+        public string ServiceName;
+        public string Language;
+        public string Speaker;
         public AudioType AudioType = AudioType.MPEG;
+        public int WebGLWaveSampleRate = 44100;
+
 
 #if UNITY_WEBGL && !UNITY_EDITOR
         private ChatdollHttp client;
@@ -43,55 +44,61 @@ namespace ChatdollKit.SpeechSynthesizer
         }
 #endif
 
+        protected override string GetCacheKey(string text, Dictionary<string, object> parameters)
+        {
+            // Make cache key
+            var style = parameters.ContainsKey("style") && !string.IsNullOrEmpty((string)parameters["style"])
+                ? (string)parameters["style"] : string.Empty;
+
+            return $"{ServiceName}/{Speaker}/{style}: {text}";
+        }
+
+        // See API document: https://github.com/uezo/speech-gateway?tab=readme-ov-file#parameters
         protected override async UniTask<AudioClip> DownloadAudioClipAsync(string text, Dictionary<string, object> parameters, CancellationToken token)
         {
             if (token.IsCancellationRequested) { return null; };
 
-            if (string.IsNullOrEmpty(ApiKey) || string.IsNullOrEmpty(Region) || string.IsNullOrEmpty(Language))
+            if (string.IsNullOrEmpty(text.Replace(" ", "").Replace("\n", "").Trim()))
             {
-                Debug.LogError("API Key, Region or Language are missing from AzureTTSLoader");
+                Debug.LogWarning("Query for SpeechGateway TTS is empty");
+                return null;
             }
-
-            var url = $"https://{Region}.tts.speech.microsoft.com/cognitiveservices/v1";
 
             var headers = new Dictionary<string, string>()
             {
-                { "X-Microsoft-OutputFormat", AudioType == AudioType.MPEG ? "audio-16khz-32kbitrate-mono-mp3" : "riff-16khz-16bit-mono-pcm" },    // MP3 or Wave
-                { "Content-Type", "application/ssml+xml" },
-                { "Ocp-Apim-Subscription-Key", ApiKey }
+                { "Content-Type", "application/json" }
             };
 
-            string language;
-            string speaker;
-            if (parameters.ContainsKey("language"))
+            var data = new Dictionary<string, object>() {
+                { "text", text }
+            };
+
+            data["language"] = parameters.ContainsKey("language") ? parameters["language"] as string : Language;
+            if (data["language"] as string == Language)
             {
-                language = parameters["language"] as string;
-                if (SpeakerMap.ContainsKey(language))
-                {
-                    speaker = SpeakerMap[language];
-                }
-                else
-                {
-                    speaker = SpeakerName;
-                }
-            }
-            else
-            {
-                language = Language;
-                speaker = SpeakerName;
+                data["speaker"] = Speaker;
+                data["service_name"] = ServiceName;
             }
 
-            var textML = $"<speak version='1.0' xml:lang='{language}'><voice xml:lang='{language}' name='{speaker}'>{text}</voice></speak>";
-            var data = System.Text.Encoding.UTF8.GetBytes(textML);
+#if UNITY_WEBGL && !UNITY_EDITOR
+            var format = "wav";
+#else
+            var format = AudioType == AudioType.MPEG ? "mp3" : "wav";
+#endif
 
-            return await DownloadAudioClipAsync(url, data, headers, token);
+            return await DownloadAudioClipAsync(
+                EndpointUrl + $"/tts?x_audio_format={format}",
+                System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)),
+                headers,
+                token
+            );
         }
 
 #if UNITY_WEBGL && !UNITY_EDITOR
         protected async UniTask<AudioClip> DownloadAudioClipAsync(string url, byte[] data, Dictionary<string, string> headers, CancellationToken token)
         {
             var resp = await client.PostBytesAsync(url, data, headers, cancellationToken: token);
-            return AudioConverter.PCMToAudioClip(resp.Data, searchDataChunk: true);
+            return AudioConverter.PCMToAudioClip(resp.Data, 1, WebGLWaveSampleRate);
         }
 #else
         protected async UniTask<AudioClip> DownloadAudioClipAsync(string url, byte[] data, Dictionary<string, string> headers, CancellationToken token)
@@ -101,22 +108,17 @@ namespace ChatdollKit.SpeechSynthesizer
                 www.timeout = Timeout;
                 www.method = "POST";
 
-                // Header
-                www.SetRequestHeader("X-Microsoft-OutputFormat", headers["X-Microsoft-OutputFormat"]);
                 www.SetRequestHeader("Content-Type", headers["Content-Type"]);
-                www.SetRequestHeader("Ocp-Apim-Subscription-Key", headers["Ocp-Apim-Subscription-Key"]);
 
-                // Body
                 www.uploadHandler = new UploadHandlerRaw(data);
 
-                // Send request
                 try
                 {
                     await www.SendWebRequest().ToUniTask(cancellationToken: token);
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"Error occured while processing Azure text-to-speech: {ex}");
+                    Debug.LogError($"Error occured while processing SpeechGateway text-to-speech: {ex}");
                     return null;
                 }
 

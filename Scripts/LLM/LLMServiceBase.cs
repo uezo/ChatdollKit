@@ -45,11 +45,12 @@ namespace ChatdollKit.LLM
         protected int contextTimeout = 600;    // 10 min
         protected float contextUpdatedAt;
         protected List<ILLMMessage> context = new List<ILLMMessage>();
+        protected string contextId = string.Empty;
 
         public Action OnEnabled { get; set; }
         public Action <Dictionary<string, string>, ILLMSession> HandleExtractedTags { get; set; }
         public Func<string, UniTask<byte[]>> CaptureImage { get; set; }
-        public Func<ILLMSession, CancellationToken, UniTask> OnStreamingEnd { get; set; }
+        public Func<string, Dictionary<string, object>, ILLMSession, CancellationToken, UniTask> OnStreamingEnd { get; set; }
         public List<ILLMTool> Tools { get; set; } = new List<ILLMTool>();
 
         public virtual List<ILLMMessage> GetContext(int count)
@@ -60,6 +61,10 @@ namespace ChatdollKit.LLM
             }
 
             // Return copy not to update context directly
+            if (string.IsNullOrEmpty(contextId))
+            {
+                contextId = Guid.NewGuid().ToString();
+            }
             return context.Skip(context.Count - count).ToList();
         }
 
@@ -76,6 +81,7 @@ namespace ChatdollKit.LLM
         public virtual void ClearContext()
         {
             context.Clear();
+            contextId = string.Empty;
             contextUpdatedAt = Time.time;
         }
 
@@ -124,9 +130,9 @@ namespace ChatdollKit.LLM
         public bool IsVisionAvailable { get; set; } = true;
         public ResponseType ResponseType { get; set; } = ResponseType.None;
         public UniTask StreamingTask { get; set; }
-        public Func<UniTask> OnStreamingEnd { get; set; }   // No longer used in v0.8.4
         public string FunctionName { get; set; }
         public List<ILLMMessage> Contexts { get; set; }
+        public string ContextId { get; set; }
 
         public LLMSession()
         {
@@ -135,6 +141,7 @@ namespace ChatdollKit.LLM
             CurrentStreamBuffer = string.Empty;
             ResponseType = ResponseType.None;
             Contexts = new List<ILLMMessage>();
+            ContextId = string.Empty;
         }
     }
 

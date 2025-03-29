@@ -13,7 +13,6 @@ namespace ChatdollKit.SpeechListener
     {
         [Header("Google Cloud Settings")]
         public string ApiKey = string.Empty;
-        public string Language = "ja-JP";
         public bool UseEnhancedModel = false;
         public List<SpeechContext> SpeechContexts;
 
@@ -28,6 +27,10 @@ namespace ChatdollKit.SpeechListener
             var requestData = new SpeechRecognitionRequest(
                 microphoneManager.SampleRate, 1, Language, UseEnhancedModel, SpeechContexts, samples
             );
+            if (AlternativeLanguages?.Count > 0)
+            {
+                requestData.config.alternativeLanguageCodes = AlternativeLanguages;
+            }
             var json = JsonConvert.SerializeObject(requestData);
 
             using (UnityWebRequest request = new UnityWebRequest(url, "POST"))
@@ -74,6 +77,7 @@ namespace ChatdollKit.SpeechListener
             public double audioChannelCount;
             public bool enableSeparateRecognitionPerChannel;
             public string languageCode;
+            public List<string> alternativeLanguageCodes;
             public string model;
             public bool useEnhanced;
             public List<SpeechContext> speechContexts;

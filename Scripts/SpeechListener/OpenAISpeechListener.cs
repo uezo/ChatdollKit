@@ -11,7 +11,6 @@ namespace ChatdollKit.SpeechListener
         [Header("OpenAI Settings")]
         public string ApiKey;
         public string Model = "whisper-1";
-        public string Language;
         public string Prompt;
         public float Temperature = 0.0f;
 
@@ -25,9 +24,9 @@ namespace ChatdollKit.SpeechListener
 
             var form = new WWWForm();
             form.AddField("model", Model);
-            if (!string.IsNullOrEmpty(Language))
+            if (!string.IsNullOrEmpty(Language) && (AlternativeLanguages == null || AlternativeLanguages.Count == 0))
             {
-                form.AddField("language", Language);
+                form.AddField("language", Language.Contains("-") ? Language.Split("-")[0] : Language);
             }
             form.AddField("response_format", "text");
             form.AddBinaryData("file", SampleToPCM(samples, microphoneManager.SampleRate, 1), "voice.wav"); // filename is required to transcribe

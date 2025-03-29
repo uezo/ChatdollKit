@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 using Newtonsoft.Json;
 using Cysharp.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace ChatdollKit.SpeechListener
 {
@@ -12,9 +13,21 @@ namespace ChatdollKit.SpeechListener
         [Header("Azure Settings")]
         public string ApiKey = string.Empty;
         public string Region = string.Empty;
-        public string Language = "ja-JP";
+        public bool UseClassic = false;
 
         protected override async UniTask<string> ProcessTranscriptionAsync(float[] samples, CancellationToken token)
+        {
+            if (UseClassic)
+            {
+                return await ProcessTranscriptionClassicAsync(samples, token);
+            }
+            else
+            {
+                return await ProcessTranscriptionFastAsync(samples, token);
+            }
+        }
+
+        protected async UniTask<string> ProcessTranscriptionClassicAsync(float[] samples, CancellationToken token)
         {
             if (string.IsNullOrEmpty(ApiKey) || string.IsNullOrEmpty(Region) || string.IsNullOrEmpty(Language))
             {
@@ -45,12 +58,62 @@ namespace ChatdollKit.SpeechListener
             }
         }
 
+        protected async UniTask<string> ProcessTranscriptionFastAsync(float[] samples, CancellationToken token)
+        {
+            if (string.IsNullOrEmpty(ApiKey) || string.IsNullOrEmpty(Region) || string.IsNullOrEmpty(Language))
+            {
+                Debug.LogError("API Key, Region and Language are missing for AzureSpeechListener");
+            }
+
+            var url = $"https://{Region}.api.cognitive.microsoft.com/speechtotext/transcriptions:transcribe?api-version=2024-11-15";
+
+            var locales = new List<string>(){ Language };
+            if (AlternativeLanguages != null)
+            {
+                locales.AddRange(AlternativeLanguages);
+            }
+
+            var form = new WWWForm();
+            form.AddField("definition", JsonConvert.SerializeObject(new Dictionary<string, object>(){
+                {"locales", locales},
+                {"channels", new List<int>(){0, 1}}
+            }));
+            form.AddBinaryData("audio", SampleToPCM(samples, microphoneManager.SampleRate, 1), "voice.wav");
+
+            using (UnityWebRequest request = UnityWebRequest.Post(url, form))
+            {
+                request.SetRequestHeader("Ocp-Apim-Subscription-Key", ApiKey);
+
+                try
+                {
+                    await request.SendWebRequest().ToUniTask();
+                    var response = JsonConvert.DeserializeObject<FastSpeechRecognitionResponse>(request.downloadHandler.text);
+                    return response.combinedPhrases[0].text;
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"Error at SendWebRequest() to POST {url}: {ex.Message}\n{ex.StackTrace}");
+                    throw ex;
+                }
+            }
+        }
+
         class SpeechRecognitionResponse
         {
             public string RecognitionStatus;
             public string DisplayText;
             public int Offset;
             public int Duration;
+        }
+
+        class CombinedPhrase
+        {
+            public string text;
+        }
+
+        class FastSpeechRecognitionResponse
+        {
+            public List<CombinedPhrase> combinedPhrases;
         }
     }   
 }

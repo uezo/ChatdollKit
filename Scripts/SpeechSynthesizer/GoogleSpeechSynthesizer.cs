@@ -25,8 +25,8 @@ namespace ChatdollKit.SpeechSynthesizer
 
         public string ApiKey;
         public string Language = "ja-JP";
-        public string Gender = "FEMALE";
         public string SpeakerName = "ja-JP-Standard-A";
+        public Dictionary<string, string> SpeakerMap = new ();
 
         private ChatdollHttp client;
 
@@ -49,7 +49,20 @@ namespace ChatdollKit.SpeechSynthesizer
             {
                 var url = $"https://texttospeech.googleapis.com/v1/text:synthesize?key={ApiKey}";
 
-                var ttsRequest = new GoogleTextToSpeechRequest(text, Language, SpeakerName, Gender, "LINEAR16");
+                string language;
+                string speaker;
+                if (parameters.ContainsKey("language"))
+                {
+                    language = parameters["language"] as string;
+                    speaker = SpeakerMap[language];
+                }
+                else
+                {
+                    language = Language;
+                    speaker = SpeakerName;
+                }
+
+                var ttsRequest = new GoogleTextToSpeechRequest(text, language, speaker, "LINEAR16");
                 var ttsResponse = await client.PostJsonAsync<GoogleTextToSpeechResponse>(url, ttsRequest, cancellationToken: token);
 
                 if (!string.IsNullOrEmpty(ttsResponse.audioContent))
@@ -74,7 +87,6 @@ namespace ChatdollKit.SpeechSynthesizer
         {
             public string languageCode;
             public string name;
-            public string ssmlGender;
         }
 
         class GoogleTextToSpeechAudioConfig
@@ -88,10 +100,10 @@ namespace ChatdollKit.SpeechSynthesizer
             public GoogleTextToSpeechVoice voice;
             public GoogleTextToSpeechAudioConfig audioConfig;
 
-            public GoogleTextToSpeechRequest(string text, string language, string speakerName, string speakerGender, string audioEncoding)
+            public GoogleTextToSpeechRequest(string text, string language, string speakerName, string audioEncoding)
             {
                 input = new GoogleTextToSpeechInput() { text = text };
-                voice = new GoogleTextToSpeechVoice() { languageCode = language, name = speakerName, ssmlGender = speakerGender };
+                voice = new GoogleTextToSpeechVoice() { languageCode = language, name = speakerName };
                 audioConfig = new GoogleTextToSpeechAudioConfig() { audioEncoding = audioEncoding };
             }
         }

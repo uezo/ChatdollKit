@@ -28,7 +28,7 @@ namespace ChatdollKit.Demo
             // Image capture for vision
             if (simpleCamera == null)
             {
-                simpleCamera = FindObjectOfType<SimpleCamera>();
+                simpleCamera = FindFirstObjectByType<SimpleCamera>();
                 if (simpleCamera == null)
                 {
                     Debug.LogWarning("SimpleCamera is not found in this scene.");
@@ -81,46 +81,15 @@ namespace ChatdollKit.Demo
             faceOnStart.Add(new FaceExpression("Joy", 3.0f));
             modelController.SetFace(faceOnStart);
 
-            // User defined tag example: Dynamic multi language switching
-            // Insert following instruction to ChatGPTService.
-            // ----
-            // If you want change current language, insert language tag like [language:en-US].
-            //
-            // Example:
-            // [language:en-US]From now on, let's talk in English.
-            // ----
-            // var contentProcessor = gameObject.GetComponent<LLMContentProcessor>();
-            // contentProcessor.HandleSplittedText += (contentItem) =>
+            // // Long-Term Memory Manager (e.g. ChatMemory https://github.com/uezo/chatmemory)
+            // // 1. Add ChatMemoryIntegrator to this game object
+            // // 2. Configure ChatMemory url and user id
+            // // 3. To retrieve memory in the conversation add ChatMemoryTool to this game object
+            // var chatMemory = gameObject.GetComponent<ChatMemoryIntegrator>();
+            // dialogProcessor.LLMServiceExtensions.OnStreamingEnd += async (text, payloads, llmSession, token) =>
             // {
-            //     if (contentItem.Text.StartsWith("[language:"))
-            //     {
-            //         var languageCode = string.Empty;
-            //         var match = Regex.Match(contentItem.Text, @"\[language:(.*?)\]");
-            //         if (match.Success)
-            //         {
-            //             languageCode = match.Groups[1].Value;
-            //             // OpenAI TTS requires ISO-639-1 format
-            //             languageCode = languageCode.Contains("-") ? languageCode.Split('-')[0] : languageCode;
-            //         }
-
-            //         // Apply language to SpeechSynthesizer
-            //         if (languageCode != "ja" && !string.IsNullOrEmpty(languageCode))
-            //         {
-            //             var openAISpeechSynthesizer = gameObject.GetComponent<OpenAISpeechSynthesizer>();
-            //             modelController.SpeechSynthesizerFunc = openAISpeechSynthesizer.GetAudioClipAsync;
-            //         }
-            //         else
-            //         {
-            //             var voicevoxSpeechSynthesizer = gameObject.GetComponent<VoicevoxSpeechSynthesizer>();
-            //             modelController.SpeechSynthesizerFunc = voicevoxSpeechSynthesizer.GetAudioClipAsync;
-            //         }
-
-            //         // Apply language to SpeechListener
-            //         var openAIListener = gameObject.GetComponent<OpenAISpeechListener>();
-            //         openAIListener.Language = languageCode;
-
-            //         Debug.Log($"Set language to {languageCode}");
-            //     }
+            //     // Add history to ChatMemory service
+            //     chatMemory.AddHistory(llmSession.ContextId, text, llmSession.CurrentStreamBuffer, token).Forget();
             // };
         }
 
