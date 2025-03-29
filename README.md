@@ -111,6 +111,7 @@ To run the demo for version 0.8, please follow the steps below after importing t
   - [User Defined Tag](#user-defined-tag)
   - [Multi Modal](#multi-modal)
   - [Chain of Thought Prompting](#chain-of-thought-prompting)
+  - [Long-Term Memory](#long-term-memory)
 - [🗣️ Speech Synthesizer (Text-to-Speech)](#%EF%B8%8F-speech-synthesizer-text-to-speech)
   - [Voice Prefetch Mode](#voice-prefetch-mode)
   - [Make custom SpeechSynthesizer](#make-custom-speechsynthesizer)
@@ -417,6 +418,32 @@ Chain of Thought (CoT) prompting is a technique to enhance AI performance. For m
 ChatdollKit supports Chain of Thought by excluding sentences wrapped in `<thinking> ~ </thinking>` tags from speech synthesis.
 
 You can customize the tag by setting a preferred word (e.g., "reason") as the `ThinkTag` in the inspector of `LLMContentProcessor`.
+
+
+### Long-Term Memory
+
+ChatdollKit itself does not have a built-in mechanism for managing long-term memory. However, by implementing `OnStreamingEnd`, it is possible to accumulate memory. Additionally, by using a tool that retrieves stored memories, the system can recall and reflect them in conversations.
+
+The following is an example using [ChatMemory](https://github.com/uezo/chatmemory).
+
+First, to store memories, attach the `Extension/ChatMemory/ChatMemoryIntegrator` component to the main GameObject and set the ChatMemory service URL and a user ID. The user ID can be any value, but if you are building a service for multiple users, make sure to assign an ID that can uniquely identify each user within your service from code-behind.
+
+Next, add the following code to an appropriate location (such as `Main`) so that the request and response messages are stored in ChatMemory as history when the LLM stream finishes.
+
+```csharp
+using ChatdollKit.Extension.ChatMemory;
+
+var chatMemory = gameObject.GetComponent<ChatMemoryIntegrator>();
+dialogProcessor.LLMServiceExtensions.OnStreamingEnd += async (text, payloads, llmSession, token) =>
+{
+    await chatMemory.AddHistory(llmSession.ContextId, text, llmSession.CurrentStreamBuffer, token);
+};
+```
+
+
+To retrieve memories and include them in the conversation, simply add the `Extension/ChatMemory/ChatMemoryTool` component to the main GameObject.
+
+**NOTE:** ChatMemory manages what is known as episodic memory. There is also an entity called `Knowledge`, which is known as corresponds to factual information, but it is not automatically extracted or stored. Handle it manually as needed. (By default, it is included in search targets.)
 
 
 ## 🗣️ Speech Synthesizer (Text-to-Speech)
