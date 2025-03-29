@@ -20,7 +20,7 @@ public class FaceClipEditor : Editor
         if (modelController.AvatarModel == null)
         {
             // Get target avator model to control
-            var animators = FindObjectsOfType<Animator>().Where(a => a.isHuman);
+            var animators = FindObjectsByType<Animator>(FindObjectsSortMode.None).Where(a => a.isHuman);
             if (animators.Count() == 1)
             {
                 modelController.AvatarModel = animators.First().gameObject;

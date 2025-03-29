@@ -31,7 +31,7 @@ namespace ChatdollKit.UI
         {
             if (microphoneManager == null)
             {
-                microphoneManager = FindObjectOfType<MicrophoneManager>();
+                microphoneManager = FindFirstObjectByType<MicrophoneManager>();
                 if (microphoneManager == null)
                 {
                     Debug.LogWarning("MicrophoneManager is not found in this scene.");

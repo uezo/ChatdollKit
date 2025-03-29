@@ -15,15 +15,21 @@
 - **Multi platforms**: Compatible with Windows, Mac, Linux, iOS, Android, and other Unity-supported platforms, including VR, AR, and WebGL.
 
 
-## 💎 What's New in Version 0.8.8 and 0.8.9
+## 💎 What's New in Version 0.8.10
+
+- **🌎 Dynamic Multi-Language**: The system can now autonomously switch languages for both speaking and listening during conversations.
+- **🔖 Long-Term Memory**: Past conversation history can now be stored and searched. Components are provided for [ChatMemory](https://github.com/uezo/chatmemory), but you can also integrate with services like mem0 or Zep.
+
+---
+
+### Previous Updates
+
+#### 0.8.8 and 0.8.9
 
 - **✨ Support NijiVoice as a Speech Synthesizer**: Now support NijiVoice, an AI-Powered Expressive Speech Generation Service.
 - **🥰🥳 Support Multiple AITuber Dialogue**: AITubers can now chat with each other, bringing dynamic and engaging interactions to life like never before!
 - **💪 Support Dify as a backend for AITuber**: Seamlessly integrate with any LLM while empowering AITubers with agentic capabilities, blending advanced knowledge and functionality for highly efficient and scalable operations!
 
----
-
-### Previous Updates
 
 #### 0.8.7
 

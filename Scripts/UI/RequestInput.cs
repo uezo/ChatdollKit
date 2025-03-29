@@ -30,7 +30,7 @@ namespace ChatdollKit.UI
         {
             if (dialogProcessor == null)
             {
-                dialogProcessor = FindObjectOfType<DialogProcessor>();
+                dialogProcessor = FindFirstObjectByType<DialogProcessor>();
                 if (dialogProcessor == null)
                 {
                     Debug.LogWarning("DialogProcessor is not found in this scene.");
@@ -39,7 +39,7 @@ namespace ChatdollKit.UI
 
             if (simpleCamera == null)
             {
-                simpleCamera = FindObjectOfType<SimpleCamera>();
+                simpleCamera = FindFirstObjectByType<SimpleCamera>();
                 if (simpleCamera == null)
                 {
                     Debug.LogWarning("SimpleCamera is not found in this scene.");

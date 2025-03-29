@@ -28,7 +28,7 @@ namespace ChatdollKit.Demo
             // Image capture for vision
             if (simpleCamera == null)
             {
-                simpleCamera = FindObjectOfType<SimpleCamera>();
+                simpleCamera = FindFirstObjectByType<SimpleCamera>();
                 if (simpleCamera == null)
                 {
                     Debug.LogWarning("SimpleCamera is not found in this scene.");
