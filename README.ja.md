@@ -429,7 +429,7 @@ using ChatdollKit.Extension.ChatMemory;
 var chatMemory = gameObject.GetComponent<ChatMemoryIntegrator>();
 dialogProcessor.LLMServiceExtensions.OnStreamingEnd += async (text, payloads, llmSession, token) =>
 {
-    await chatMemory.AddHistory(llmSession.ContextId, text, llmSession.CurrentStreamBuffer, token);
+    chatMemory.AddHistory(llmSession.ContextId, text, llmSession.CurrentStreamBuffer, token).Forget();
 };
 ```
 
