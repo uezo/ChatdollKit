@@ -32,7 +32,7 @@ namespace ChatdollKit.Network
         public async UniTask<TResponse> GetJsonAsync<TResponse>(string url, Dictionary<string, string> parameters = null, Dictionary<string, string> headers = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             var response = await SendRequestAsync(url, "GET", null, headers, parameters, cancellationToken);
-            DebugFunc?.Invoke($"Response JSON: {response.Data}");
+            DebugFunc?.Invoke($"Response JSON: {response.Text}");
             return JsonConvert.DeserializeObject<TResponse>(response.Text);
         }
 
@@ -213,9 +213,12 @@ namespace ChatdollKit.Network
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"Error at SendWebRequest() to {method} {url}: {ex.Message}\n{ex.StackTrace}");
-                    DebugFunc?.Invoke($"Error at SendWebRequest() to {method} {url}: {ex.Message}\n{ex.StackTrace}");
-                    throw ex;
+                    var message = $"Error at SendWebRequest() to {method} {url}: {ex.Message}\n{ex.StackTrace}";
+                    Debug.LogError(message);
+                    DebugFunc?.Invoke(message);
+                    throw new ChatdollHttpException(
+                        message, (int)request.responseCode, content: request.downloadHandler.data
+                    );
                 }
 
                 DebugFunc?.Invoke($"Status code: {request.responseCode}");
@@ -229,9 +232,11 @@ namespace ChatdollKit.Network
                 // Throw exception if the status code is not success
                 if (request.result != UnityWebRequest.Result.Success)
                 {
-                    DebugFunc?.Invoke($"Error: {request.error} \n {request.downloadHandler.text}");
-
-                    throw new Exception($"Error: {request.error} \n {request.downloadHandler.text}");
+                    var message = $"Error: [{request.responseCode}] {request.error} \n {request.downloadHandler.text}";
+                    DebugFunc?.Invoke(message);
+                    throw new ChatdollHttpException(
+                        message, (int)request.responseCode, content: request.downloadHandler.data
+                    );
                 }
 
                 return new ChatdollHttpResponse((int)request.responseCode, request.GetResponseHeaders(), request.downloadHandler.data, request.downloadHandler.text);
@@ -258,6 +263,26 @@ namespace ChatdollKit.Network
             Headers = headers;
             Data = data;
             Text = text;
+        }
+    }
+
+    public class ChatdollHttpException : Exception
+    {
+        public int StatusCode { get; set; }
+        public byte[] Content { get; set; }
+
+        public ChatdollHttpException(string message, int statusCode, byte[] content)
+            : base(message)
+        {
+            StatusCode = statusCode;
+            Content = content;
+        }
+
+        public ChatdollHttpException(string message, int statusCode, byte[] content, Exception innerException)
+            : base(message, innerException)
+        {
+            StatusCode = statusCode;
+            Content = content;
         }
     }
 }
