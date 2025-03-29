@@ -443,7 +443,7 @@ dialogProcessor.LLMServiceExtensions.OnStreamingEnd += async (text, payloads, ll
 
 To retrieve memories and include them in the conversation, simply add the `Extension/ChatMemory/ChatMemoryTool` component to the main GameObject.
 
-**NOTE:** ChatMemory manages what is known as episodic memory. There is also an entity called `Knowledge`, which is known as corresponds to factual information, but it is not automatically extracted or stored. Handle it manually as needed. (By default, it is included in search targets.)
+**NOTE:** ChatMemory manages what is known as episodic memory. There is also an entity called `Knowledge`, which corresponds to factual information, but it is not automatically extracted or stored. Handle it manually as needed. (By default, it is included in search targets.)
 
 
 ## 🗣️ Speech Synthesizer (Text-to-Speech)
