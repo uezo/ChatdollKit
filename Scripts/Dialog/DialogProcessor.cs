@@ -189,7 +189,7 @@ namespace ChatdollKit.Dialog
                 await llmSession.StreamingTask;
                 if (llmService.OnStreamingEnd != null)
                 {
-                    await llmService.OnStreamingEnd(llmSession, token);
+                    await llmService.OnStreamingEnd(text, payloads, llmSession, token);
                 }
 
                 // Wait parsing and performance
@@ -298,7 +298,7 @@ namespace ChatdollKit.Dialog
     {
         public Action <Dictionary<string, string>, ILLMSession> HandleExtractedTags { get; set; }
         public Func<string, UniTask<byte[]>> CaptureImage { get; set; }
-        public Func<ILLMSession, CancellationToken, UniTask> OnStreamingEnd { get; set; }
+        public Func<string, Dictionary<string, object>, ILLMSession, CancellationToken, UniTask> OnStreamingEnd { get; set; }
 
         public void SetExtentions(ILLMService llmService)
         {
