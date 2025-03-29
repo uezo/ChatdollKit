@@ -125,7 +125,6 @@ namespace ChatdollKit.SpeechSynthesizer
         private async UniTask<Dictionary<string, VoiceActorData>> GetSpearkersAsync(CancellationToken token)
         {
             var speakers = new Dictionary<string, VoiceActorData>();
-
             var speakerResponse = await client.GetJsonAsync<SpeakersResponse>(
                 (string.IsNullOrEmpty(EndpointUrl) ? "https://api.nijivoice.com" : EndpointUrl) + "/api/platform/v1/voice-actors",
                 headers: new Dictionary<string, string>(){
@@ -187,7 +186,7 @@ namespace ChatdollKit.SpeechSynthesizer
         private class GeneratedVoice
         {
             public string audioFileUrl { get; set; }
-            public int duration { get; set; }
+            public float duration { get; set; }
         }
     }
 }
