@@ -32,6 +32,7 @@ namespace ChatdollKit.SpeechSynthesizer
         public string Language;
         public string Speaker;
         public AudioType AudioType = AudioType.MPEG;
+        public bool AddWaveHeader = false;
         public int WebGLWaveSampleRate = 44100;
 
 
@@ -98,7 +99,14 @@ namespace ChatdollKit.SpeechSynthesizer
         protected async UniTask<AudioClip> DownloadAudioClipAsync(string url, byte[] data, Dictionary<string, string> headers, CancellationToken token)
         {
             var resp = await client.PostBytesAsync(url, data, headers, cancellationToken: token);
-            return AudioConverter.PCMToAudioClip(resp.Data, 1, WebGLWaveSampleRate);
+            if (AddWaveHeader)
+            {
+                return AudioConverter.PCMToAudioClip(resp.Data, 1, WebGLWaveSampleRate);
+            }
+            else
+            {
+                return AudioConverter.PCMToAudioClip(resp.Data);
+            }
         }
 #else
         protected async UniTask<AudioClip> DownloadAudioClipAsync(string url, byte[] data, Dictionary<string, string> headers, CancellationToken token)
