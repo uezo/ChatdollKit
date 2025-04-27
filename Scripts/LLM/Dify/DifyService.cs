@@ -16,6 +16,7 @@ namespace ChatdollKit.LLM.Dify
         public string ApiKey;
         public string BaseUrl;
         public string User;
+        public Dictionary<string, object> Inputs;
 
         [Header("Network configuration")]
         [SerializeField]
@@ -91,7 +92,7 @@ namespace ChatdollKit.LLM.Dify
                 difySession.ConversationId = GetConversationId();
             }
 
-            // Use ConversationId as ContextId, not base.contextId
+            // Set ConversationId to ContextId for external use, not base.contextId
             difySession.ContextId = difySession.ConversationId;
 
             difySession.StreamingTask = StartStreamingAsync(difySession, customParameters, customHeaders, useFunctions, token);
@@ -124,7 +125,7 @@ namespace ChatdollKit.LLM.Dify
             // Make request data
             var data = new Dictionary<string, object>()
             {
-                { "inputs", new Dictionary<string, string>() },
+                { "inputs", Inputs ?? new Dictionary<string, object>() },
                 { "query", difyRequest.query },
                 { "response_mode", "streaming" },
                 { "user", User },
