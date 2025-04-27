@@ -1,65 +1,88 @@
 mergeInto(LibraryManager.library, {
-    InitWebGLMicrophone: function(targetObjectNamePtr) {
-        // Initialize webGLMicrophone
-        document.webGLMicrophone = new Object();
-        document.webGLMicrophone.isRecording = 0;
-        document.webGLMicrophone.targetObjectName = UTF8ToString(targetObjectNamePtr);
-        document.webGLMicrophone.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        document.webGLMicrophone.source = null;
-        document.webGLMicrophone.scriptNode = null;
+  InitWebGLMicrophone: function(targetObjectNamePtr) {
+    var mic = document.webGLMicrophone = {};
+    mic.isRecording = 0;
+    mic.targetObjectName = UTF8ToString(targetObjectNamePtr);
+    mic.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    mic.source = null;
+    mic.workletNode = null;
+    mic.processorModuleUrl = "StreamingAssets/WebGLMicrophoneProcessor.js";
+    mic._buffer = [];
+    mic._bufferSize = 4096;
 
-        // Observe the state of audio context for microphone and resume if disabled
-        setInterval(function() {
-            if (document.webGLMicrophone.audioContext.state === "suspended" || document.webGLMicrophone.audioContext.state === "interrupted") {
-                console.log("Resuming AudioContext: " + document.webGLMicrophone.audioContext.state);
-                document.webGLMicrophone.audioContext.resume();
+    setInterval(function() {
+      var ac = mic.audioContext;
+      if (ac.state === "suspended" || ac.state === "interrupted") {
+        console.log("Resuming AudioContext:", ac.state);
+        ac.resume();
+      }
+    }, 300);
+  },
+
+  StartWebGLMicrophone: function() {
+    var mic = document.webGLMicrophone;
+    mic.isRecording = 1;
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      console.error("getUserMedia not supported");
+      mic.isRecording = 0;
+      return;
+    }
+
+    navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, channelCount: 1 }
+    })
+    .then(function(stream) {
+      var ac = mic.audioContext;
+      ac.audioWorklet.addModule(mic.processorModuleUrl)
+        .then(function() {
+          mic.source = ac.createMediaStreamSource(stream);
+          mic.workletNode = new AudioWorkletNode(ac, "webgl-microphone-processor");
+
+          mic.workletNode.port.onmessage = function(event) {
+            var float32Array = event.data;
+            for (var i = 0; i < float32Array.length; i++) {
+              mic._buffer.push(float32Array[i]);
             }
-        }, 300);
-    },
+            if (mic._buffer.length >= mic._bufferSize) {
+              var chunk = mic._buffer.slice(0, mic._bufferSize);
+              mic._buffer = mic._buffer.slice(mic._bufferSize);
+              var csv = Array.prototype.join.call(chunk, ",");
+              SendMessage(mic.targetObjectName, "SetSamplingData", csv);
+            }
+          };
 
-    StartWebGLMicrophone: function() {
-        document.webGLMicrophone.isRecording = 1;
+          mic.source.connect(mic.workletNode);
+          mic.workletNode.connect(ac.destination);
 
-        if (navigator.mediaDevices.getUserMedia) {
-            navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, channelCount: 1} })
-            .then(function(stream) {
-                // Setup nodes
-                var audioContext = document.webGLMicrophone.audioContext;
-                var source = audioContext.createMediaStreamSource(stream);
-                var scriptNode = audioContext.createScriptProcessor(4096, 1, 1);
-                scriptNode.onaudioprocess = function (event) {
-                    SendMessage(document.webGLMicrophone.targetObjectName, "SetSamplingData", event.inputBuffer.getChannelData(0).join(','));
-                };
-                // Connect nodes;
-                source.connect(scriptNode);
-                scriptNode.connect(audioContext.destination);
+          console.log("WebGLMicrophone started recording");
+        })
+        .catch(function(err) {
+          console.error("Failed to load AudioWorklet module:", err);
+          mic.isRecording = 0;
+        });
+    })
+    .catch(function(err) {
+      console.error("Failed in getUserMedia:", err);
+      mic.isRecording = 0;
+    });
+  },
 
-                document.webGLMicrophone.scriptNode = scriptNode;
-                document.webGLMicrophone.source = source;
+  EndWebGLMicrophone: function() {
+    var mic = document.webGLMicrophone;
+    console.log("EndWebGLMicrophone");
+    if (mic.source && mic.workletNode) {
+      mic.source.disconnect(mic.workletNode);
+      mic.workletNode.disconnect();
+    }
+    mic.source = null;
+    mic.workletNode = null;
+    mic._buffer = [];
+    mic.isRecording = 0;
+  },
 
-                console.log("WebGLMicrophone started recording");
-            })
-            .catch(function(err) {
-                console.log("Failed in GetUserMedia: " + error);
-                document.webGLMicrophone.isRecording = 0;
-            });
-        }
-    },
-
-    EndWebGLMicrophone: function() {
-        console.log("EndWebGLMicrophone");
-        if (document.webGLMicrophone.source != null) {
-            document.webGLMicrophone.source.disconnect(document.webGLMicrophone.scriptNode);
-            document.webGLMicrophone.source = null;
-        }
-        if (document.webGLMicrophone.scriptNode != null) {
-            document.webGLMicrophone.scriptNode.disconnect();
-            document.webGLMicrophone.scriptNode = null;
-        }
-        document.webGLMicrophone.isRecording = 0;
-    },
-
-    IsWebGLMicrophoneRecording: function() {
-        return document.webGLMicrophone.isRecording == 1;
-    },
+  IsWebGLMicrophoneRecording: function() {
+    return document.webGLMicrophone &&
+           document.webGLMicrophone.isRecording === 1;
+  },
 });
