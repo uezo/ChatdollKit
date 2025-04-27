@@ -590,6 +590,13 @@ LLMでTool Call（Function Calling）がサポートされている場合、そ�
 
 **NOTE**: プロジェクトにLLMFunctionSkillを使用している場合、[Migration from FunctionSkill to Tool](#migration-from-functionskill-to-tool)も参照してください。
 
+### Integration with Remote AI Agents
+
+ChatdollKitは標準でシンプルなTool Callをサポートしていますが、よりAgenticな振る舞いを実現するため、サーバーサイドのAIエージェントとの連携機能も提供しています。
+
+具体的には、AIエージェントを`LLMService`として登録することでRESTful API経由で呼び出すことができます。これにより、裏側で行われているエージェント的なプロセスを意識することなく、ChatdollKitのフロント側ではリクエストの送信とレスポンスの受信と発話・モーション等の表現に注力することができます。
+現在のところ [Dify](https://dify.ai) と [AIAvatarKit](https://github.com/uezo/aiavatarkit) に対応しています。`DifyService`または`AIAvatarKitService`をアタッチし、設定を行ったうえで`IsEnabled`をオンにすることで利用できます。
+
 
 ## 🎙️ Devices
 

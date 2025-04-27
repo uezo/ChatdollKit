@@ -590,6 +590,14 @@ By creating a component that implements `ITool` or extends `ToolBase` and attach
 **NOTE**: See [Migration from FunctionSkill to Tool](#migration-from-functionskill-to-tool) if your project has custom LLMFunctionSkills.
 
 
+### Integration with Remote AI Agents
+
+While ChatdollKit natively supports simple tool calls, it also provides integration with server-side AI agents to enable more agentic behaviors.
+
+Specifically, ChatdollKit allows you to call AI agents through RESTful APIs by registering them as an `LLMService`. This lets you send requests and receive responses without needing to be aware of the agentic processes happening behind the scenes.  
+Currently, [Dify](https://dify.ai) and [AIAvatarKit](https://github.com/uezo/aiavatarkit) are supported. You can use them by attaching either `DifyService` or `AIAvatarKitService`, configuring their settings, and enabling the `IsEnabled` flag.
+
+
 ## 🎙️ Devices
 
 We provide a device control mechanism. Currently, microphones and cameras are supported.

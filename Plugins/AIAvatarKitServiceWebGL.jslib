@@ -1,0 +1,42 @@
+mergeInto(LibraryManager.library, {
+    StartAIAvatarKitMessageStreamJS: function(targetObjectNamePtr, sessionIdPtr, urlPtr, aakStreamRequestPtr) {
+        let targetObjectName = UTF8ToString(targetObjectNamePtr);
+        let sessionId = UTF8ToString(sessionIdPtr);
+        let url = UTF8ToString(urlPtr);
+        let aakStreamRequest = UTF8ToString(aakStreamRequestPtr);
+        let decoder = new TextDecoder("utf-8");
+
+        if (document.aakAbortController == null) {
+            document.aakAbortController = new AbortController();
+        }
+
+        fetch(url, {
+            headers: {
+                "Content-Type": "application/json"
+            },
+            method: "POST",
+            body: aakStreamRequest,
+            signal: document.aakAbortController.signal
+        })
+        .then((response) => response.body.getReader())
+        .then((reader) => {
+            const readChunk = function({done, value}) {
+                if(done) {
+                    reader.releaseLock();
+                    return;
+                }
+                SendMessage(targetObjectName, "SetAIAvatarKitMessageStreamChunk", sessionId + "::" + decoder.decode(value));
+                reader.read().then(readChunk);
+            }
+            reader.read().then(readChunk);
+        })
+        .catch((err) => {
+            console.error(`Error at fetch: ${err.message}`);
+        });
+    },
+
+    AbortAIAvatarKitMessageStreamJS: function() {
+        console.log("Abort AIAvatarKit at AbortAIAvatarKitMessageStreamJS");
+        document.aakAbortController.abort();
+    }
+});
