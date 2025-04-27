@@ -12,6 +12,7 @@ namespace ChatdollKit.Extension.ChatMemory
         [SerializeField]
         private string BaseUrl;
         public string UserId;
+        public string Channel;
         [SerializeField]
         private bool isDebug;
         private ChatdollHttp httpClient = new ChatdollHttp(timeout: 10000);
@@ -41,6 +42,7 @@ namespace ChatdollKit.Extension.ChatMemory
                             new() { { "role", "user" }, { "content", requestText } },
                             new() { { "role", "assistant" }, { "content", responseText } }
                         }},
+                        { "channel", Channel }
                     },
                     cancellationToken: token
                 );
