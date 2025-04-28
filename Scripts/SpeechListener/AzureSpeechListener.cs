@@ -15,19 +15,19 @@ namespace ChatdollKit.SpeechListener
         public string Region = string.Empty;
         public bool UseClassic = false;
 
-        protected override async UniTask<string> ProcessTranscriptionAsync(float[] samples, CancellationToken token)
+        protected override async UniTask<string> ProcessTranscriptionAsync(float[] samples, int sampleRate, CancellationToken token)
         {
             if (UseClassic)
             {
-                return await ProcessTranscriptionClassicAsync(samples, token);
+                return await ProcessTranscriptionClassicAsync(samples, sampleRate, token);
             }
             else
             {
-                return await ProcessTranscriptionFastAsync(samples, token);
+                return await ProcessTranscriptionFastAsync(samples, sampleRate, token);
             }
         }
 
-        protected async UniTask<string> ProcessTranscriptionClassicAsync(float[] samples, CancellationToken token)
+        protected async UniTask<string> ProcessTranscriptionClassicAsync(float[] samples, int sampleRate, CancellationToken token)
         {
             if (string.IsNullOrEmpty(ApiKey) || string.IsNullOrEmpty(Region) || string.IsNullOrEmpty(Language))
             {
@@ -35,7 +35,7 @@ namespace ChatdollKit.SpeechListener
             }
 
             var url = $"https://{Region}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language={Language}";
-            var requestData = SampleToPCM(samples, microphoneManager.SampleRate, 1);
+            var requestData = SampleToPCM(samples, sampleRate, 1);
 
             using (UnityWebRequest request = new UnityWebRequest(url, "POST"))
             {
@@ -58,7 +58,7 @@ namespace ChatdollKit.SpeechListener
             }
         }
 
-        protected async UniTask<string> ProcessTranscriptionFastAsync(float[] samples, CancellationToken token)
+        protected async UniTask<string> ProcessTranscriptionFastAsync(float[] samples, int sampleRate, CancellationToken token)
         {
             if (string.IsNullOrEmpty(ApiKey) || string.IsNullOrEmpty(Region) || string.IsNullOrEmpty(Language))
             {
@@ -78,7 +78,7 @@ namespace ChatdollKit.SpeechListener
                 {"locales", locales},
                 {"channels", new List<int>(){0, 1}}
             }));
-            form.AddBinaryData("audio", SampleToPCM(samples, microphoneManager.SampleRate, 1), "voice.wav");
+            form.AddBinaryData("audio", SampleToPCM(samples, sampleRate, 1), "voice.wav");
 
             using (UnityWebRequest request = UnityWebRequest.Post(url, form))
             {

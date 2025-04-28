@@ -16,7 +16,7 @@ namespace ChatdollKit.SpeechListener
         public bool UseEnhancedModel = false;
         public List<SpeechContext> SpeechContexts;
 
-        protected override async UniTask<string> ProcessTranscriptionAsync(float[] samples, CancellationToken token)
+        protected override async UniTask<string> ProcessTranscriptionAsync(float[] samples, int sampleRate, CancellationToken token)
         {
             if (string.IsNullOrEmpty(ApiKey) || string.IsNullOrEmpty(Language))
             {
@@ -25,7 +25,7 @@ namespace ChatdollKit.SpeechListener
 
             var url = $"https://speech.googleapis.com/v1/speech:recognize?key={ApiKey}";
             var requestData = new SpeechRecognitionRequest(
-                microphoneManager.SampleRate, 1, Language, UseEnhancedModel, SpeechContexts, samples
+                sampleRate, 1, Language, UseEnhancedModel, SpeechContexts, samples
             );
             if (AlternativeLanguages?.Count > 0)
             {
