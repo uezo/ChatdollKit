@@ -21,10 +21,21 @@ mergeInto(LibraryManager.library, {
             body: aakStreamRequest,
             signal: document.aakAbortController.signal
         })
-        .then((response) => response.body.getReader())
+        .then(response => {
+            if (!response.ok) {
+                SendMessage(
+                    targetObjectName,
+                    "SetAIAvatarKitMessageStreamChunk",
+                    sessionId + "::Error: " + response.status
+                );
+            }
+            return response.body.getReader();
+        })
         .then((reader) => {
             const readChunk = function({done, value}) {
                 if(done) {
+                    // Send empty message to ensure to stop stream handling
+                    SendMessage(targetObjectName, "SetAIAvatarKitMessageStreamChunk", sessionId + "::");
                     reader.releaseLock();
                     return;
                 }

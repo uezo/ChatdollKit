@@ -21,10 +21,21 @@ mergeInto(LibraryManager.library, {
             body: chatCompletionRequest,
             signal: document.chatGPTAbortController.signal
         })
-        .then((response) => response.body.getReader())
+        .then(response => {
+            if (!response.ok) {
+                SendMessage(
+                    targetObjectName,
+                    "SetChatCompletionStreamChunk",
+                    sessionId + "::Error: " + response.status
+                );
+            }
+            return response.body.getReader();
+        })
         .then((reader) => {
             const readChunk = function({done, value}) {
                 if(done) {
+                    // Send empty message to ensure to stop stream handling
+                    SendMessage(targetObjectName, "SetChatCompletionStreamChunk", sessionId + "::");
                     reader.releaseLock();
                     return;
                 }
