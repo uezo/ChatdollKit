@@ -62,7 +62,7 @@ namespace ChatdollKit.LLM.AIAvatarKit
                 };
             }
 
-            if (SystemPromptParams.Count > 0)
+            if (SystemPromptParams != null && SystemPromptParams.Count > 0)
             {
                 data["system_prompt_params"] = SystemPromptParams;
             }
