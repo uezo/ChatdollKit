@@ -24,7 +24,7 @@ namespace ChatdollKit.LLM.AIAvatarKit
 
 #if UNITY_WEBGL
         [DllImport("__Internal")]
-        protected static extern void StartAIAvatarKitMessageStreamJS(string targetObjectName, string sessionId, string url, string chatCompletionRequest);
+        protected static extern void StartAIAvatarKitMessageStreamJS(string targetObjectName, string sessionId, string url, string chatCompletionRequest, string aakHeaders);
         [DllImport("__Internal")]
         protected static extern void AbortAIAvatarKitMessageStreamJS();
 
@@ -83,6 +83,12 @@ namespace ChatdollKit.LLM.AIAvatarKit
                 Debug.LogWarning("Custom headers for AIAvatarKit on WebGL is not supported for now.");
             }
 
+            var authHeader = new Dictionary<string, string>();
+            if (!string.IsNullOrEmpty(ApiKey))
+            {
+                authHeader["Authorization"] = $"Bearer {ApiKey}";
+            }
+
             var serializedData = JsonConvert.SerializeObject(data);
 
             if (DebugMode)
@@ -96,7 +102,8 @@ namespace ChatdollKit.LLM.AIAvatarKit
                 gameObject.name,
                 sessionId,
                 BaseUrl + "/chat",
-                serializedData
+                serializedData,
+                JsonConvert.SerializeObject(authHeader)
             );
 
             // Preprocessing response

@@ -1,19 +1,22 @@
 mergeInto(LibraryManager.library, {
-    StartAIAvatarKitMessageStreamJS: function(targetObjectNamePtr, sessionIdPtr, urlPtr, aakStreamRequestPtr) {
+    StartAIAvatarKitMessageStreamJS: function(targetObjectNamePtr, sessionIdPtr, urlPtr, aakStreamRequestPtr, aakHeadersPtr) {
         let targetObjectName = UTF8ToString(targetObjectNamePtr);
         let sessionId = UTF8ToString(sessionIdPtr);
         let url = UTF8ToString(urlPtr);
         let aakStreamRequest = UTF8ToString(aakStreamRequestPtr);
+        let aakHeaders = JSON.parse(UTF8ToString(aakHeadersPtr));
         let decoder = new TextDecoder("utf-8");
 
         if (document.aakAbortController == null) {
             document.aakAbortController = new AbortController();
         }
 
+        let headers = { "Content-Type": "application/json" };
+        for (let key in aakHeaders) {
+            headers[key] = aakHeaders[key];
+        }
         fetch(url, {
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: headers,
             method: "POST",
             body: aakStreamRequest,
             signal: document.aakAbortController.signal
