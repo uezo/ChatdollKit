@@ -123,6 +123,7 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
   - [Performance and Quality Tuning](#performance-and-quality-tuning)
 - [🎧 Speech Listener (Speech-to-Text)](#-speech-listener-speech-to-text)
   - [Settings on AIAvatar Inspector](#settings-on-aiavatar-inspector)
+  - [Downsampling](#downsampling)
   - [Using AzureStreamSpeechListener](#using-azurestreamspeechlistener)
 - [⏰ Wake Word Detection](#-wake-word-detection)
   - [Wake Words](#wake-words)
@@ -526,6 +527,16 @@ SpeechListnerに関連する設定の多くは、`AIAvatar`コンポーネント
 |**Idle Min Recording Duration**|アイドルモード時の最低録音時間。短いフレーズをスムーズに識別できるように、会話中よりも小さな値を設定します|
 |**Idle Max Recording Duration**|アイドルモード時の最長録音時間。ウェイクワードは通常短いため、会話中よりも短い値を設定します|
 |**Microphone Mute By**|発話中にアバターの発話内容を音声認識させないための方式です。<br><br>- None: 何もしません<br>- Threshold: 音声認識の閾値を`Voice Recognition Raised Threshold DB`まで上昇させます<br>- Mute: マイクからの入力音声を無視します<br>- Stop Device: マイクデバイスを停止します<br>- Stop Listener: リスナーを停止します。**AzureStreamSpeechListenerを使用する場合はこれを選択してください**|
+
+
+### Downsampling
+
+`SpeechListener` クラスは、生のマイク入力を STT サービスに送信する前に、より低いサンプルレートにダウンサンプリングする機能をサポートしています。この機能により、音声データのペイロードサイズを削減し、帯域幅の限られたネットワーク環境でもスムーズな文字起こしを実現します。
+
+SpeechListener コンポーネントの Inspector では **Target Sample Rate** (int) フィールドが表示されます:
+
+- `0`（デフォルト）に設定すると、元のサンプルレートが使用され、ダウンサンプリングは行われません。  
+- 正の整数（例: `16000`）に設定すると、そのレート (Hz) にダウンサンプリングします。
 
 
 ### Using AzureStreamSpeechListener

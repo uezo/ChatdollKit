@@ -15,14 +15,19 @@
 - **Multi platforms**: Compatible with Windows, Mac, Linux, iOS, Android, and other Unity-supported platforms, including VR, AR, and WebGL.
 
 
-## 💎 What's New in Version 0.8.10
+## 💎 What's New in Version 0.8.11
 
-- **🌎 Dynamic Multi-Language**: The system can now autonomously switch languages for both speaking and listening during conversations.
-- **🔖 Long-Term Memory**: Past conversation history can now be stored and searched. Components are provided for [ChatMemory](https://github.com/uezo/chatmemory), but you can also integrate with services like mem0 or Zep.
+ここに更新内容を列挙
 
 ---
 
 ### Previous Updates
+
+#### 0.8.10
+
+- **🌎 Dynamic Multi-Language**: The system can now autonomously switch languages for both speaking and listening during conversations.
+- **🔖 Long-Term Memory**: Past conversation history can now be stored and searched. Components are provided for [ChatMemory](https://github.com/uezo/chatmemory), but you can also integrate with services like mem0 or Zep.
+
 
 #### 0.8.8 and 0.8.9
 
@@ -124,6 +129,7 @@ To run the demo for version 0.8, please follow the steps below after importing t
   - [Performance and Quality Tuning](#performance-and-quality-tuning)
 - [🎧 Speech Listener (Speech-to-Text)](#-speech-listener-speech-to-text)
   - [Settings on AIAvatar Inspector](#settings-on-aiavatar-inspector)
+  - [Downsampling](#downsampling)
   - [Using AzureStreamSpeechListener](#using-azurestreamspeechlistener)
 - [⏰ Wake Word Detection](#-wake-word-detection)
   - [Wake Words](#wake-words)
@@ -527,6 +533,16 @@ Most of the settings related to the SpeechListener are configured in the inspect
 
 
 **NOTE: **`AzureStreamSpeechListener` doesn't have some properties above because that control microphone by SDK DLL internally.
+
+
+### Downsampling
+
+The `SpeechListener` class supports downsampling of raw microphone input to a lower sample rate before sending input data to the STT service. This feature helps reduce audio payload size, leading to smoother transcription over limited-bandwidth networks.
+
+You’ll find the **Target Sample Rate** (int) field exposed in the Inspector of SpeechListener component:
+
+- Set to `0` (default) to use the original sample rate (no downsampling).  
+- Set to a positive integer (e.g., `16000`) to downsample input to that rate (in Hz).
 
 
 ### Using AzureStreamSpeechListener
