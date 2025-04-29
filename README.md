@@ -17,70 +17,72 @@
 
 ## 💎 What's New in Version 0.8.11
 
-ここに更新内容を列挙
+- **🤖 AIAvatarKit Backend**: Offloads AI agent logic to the server—boosting front-end maintainability—while letting you plug in frameworks like AutoGen (and any other agent SDK) for unlimited capability expansion.
+- **🌐 WebGL Improvements**: Upgraded mic capture to modern `AudioWorkletNode` for lower latency and reliability; stabilized mute/unmute handling; improved error handling to immediately surface HTTP errors and prevent hangs; fixed API-key authorization in WebGL builds.
 
----
+<details>
+<summary>🕰️ Previous Updates (click to expand)</summary>
 
-### Previous Updates
-
-#### 0.8.10
+### 0.8.10
 
 - **🌎 Dynamic Multi-Language**: The system can now autonomously switch languages for both speaking and listening during conversations.
 - **🔖 Long-Term Memory**: Past conversation history can now be stored and searched. Components are provided for [ChatMemory](https://github.com/uezo/chatmemory), but you can also integrate with services like mem0 or Zep.
 
 
-#### 0.8.8 and 0.8.9
+### 0.8.8 and 0.8.9
 
 - **✨ Support NijiVoice as a Speech Synthesizer**: Now support NijiVoice, an AI-Powered Expressive Speech Generation Service.
 - **🥰🥳 Support Multiple AITuber Dialogue**: AITubers can now chat with each other, bringing dynamic and engaging interactions to life like never before!
 - **💪 Support Dify as a backend for AITuber**: Seamlessly integrate with any LLM while empowering AITubers with agentic capabilities, blending advanced knowledge and functionality for highly efficient and scalable operations!
 
 
-#### 0.8.7
+### 0.8.7
 
 - **✨ Update AITuber demo**: Support more APIs, bulk configuration, UI and mode!. (v0.8.7)
 
 
-#### 0.8.6
+### 0.8.6
 
 - **🎛️ Support VOICEVOX and AivisSpeech inline style**: Enables dynamic and autonomous switching of voice styles to enrich character expression and adapt to emotional nuances.
 - **🥰 Improve VRM runtime loading**: Allows seamless and error-free switching of 3D models at runtime, ensuring a smoother user experience.
 
 
-#### 0.8.5
+### 0.8.5
 
 - **🎓 Chain of Thought Prompting**: Say hello to Chain of Thought (CoT) Prompting! 🎉 Your AI character just got a major boost in IQ and EQ!
 
 
-#### 0.8.4
+### 0.8.4
 
 - **🧩 Modularized for Better Reusability and Maintainability**: We’ve reorganized key components, focusing on modularity to improve customizability and reusability. Check out the demos for more details!
 - **🧹 Removed Legacy Components**: Outdated components have been removed, simplifying the toolkit and ensuring compatibility with the latest features. Refer to [🔄 Migration from 0.7.x](#-migration-from-07x) if you're updating from v0.7.x.
 
 
-#### 0.8.3
+### 0.8.3
 
 - **🎧 Stream Speech Listener**: We’ve added `AzureStreamSpeechListener` for smoother conversations by recognizing speech as it’s spoken.
 - **🗣️ Improved Conversation**: Interrupt characters to take your turn, and enjoy more expressive conversations with natural pauses—enhancing the overall experience.
 - **💃 Easier Animation Registration**: We’ve simplified the process of registering animations for your character, making your code cleaner and easier to manage.
 
 
-#### 0.8.2
+### 0.8.2
 
 - **🌐 Control WebGL Character from JavaScript**: We’ve added the ability to control the ChatdollKit Unity application from JavaScript when running in WebGL builds. This allows for more seamless interactions between the Unity app and web-based systems.
 - **🗣️ Speech Synthesizer**: A new `SpeechSynthesizer` component has been introduced to streamline text-to-speech (TTS) operations. This component is reusable across projects without `Model` package, simplifying maintenance and reusability. 
 
 
-#### 0.8.1
+### 0.8.1
 
 - **🏷️ User-Defined Tags Support**: You can now include custom tags in AI responses, enabling dynamic actions. For instance, embed language codes in replies to switch between multiple languages on the fly during conversations.
 - **🌐 External Control via Socket**: Now supports external commands through Socket communication. Direct conversation flow, trigger specific phrases, or control expressions and gestures, unlocking new use cases like AI Vtubers and remote customer service. Check out the client-side demo here: https://gist.github.com/uezo/9e56a828bb5ea0387f90cc07f82b4c15
 
-#### 0.8 Beta
+### 0.8 Beta
 
 - **⚡ Optimized AI Dialog Processing**: We've boosted response speed with parallel processing and made it easier for you to customize behavior with your own code. Enjoy faster, more flexible AI conversations!
 - **🥰 Emotionally Rich Speech**: Adjusts vocal tone dynamically to match the conversation, delivering more engaging and natural interactions.
 - **🎤 Enhanced Microphone Control**: Microphone control is now more flexible than ever! Easily start/stop devices, mute/unmute, and adjust voice recognition thresholds independently.
+
+</details>
 
 
 ## 🚀 Quick Start
