@@ -6,17 +6,16 @@ using UnityEngine.Networking;
 using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
 
-namespace ChatdollKit.LLM.Dify
+namespace ChatdollKit.LLM.AIAvatarKit
 {
-    public class DifyService : LLMServiceBase
+    public class AIAvatarKitService : LLMServiceBase
     {
-        public string ConversationIdKey { get; } = "DifyConversationId";
-
         [Header("API configuration")]
         public string ApiKey;
         public string BaseUrl;
         public string User;
-        public Dictionary<string, object> Inputs;
+        public string AAKSessionId;
+        public Dictionary<string, object> SystemPromptParams;
 
         [Header("Network configuration")]
         [SerializeField]
@@ -24,29 +23,28 @@ namespace ChatdollKit.LLM.Dify
         [SerializeField]
         protected float noDataResponseTimeoutSec = 10.0f;
 
-        protected string currentConversationId;
-        protected string conversationIdKey = "DifyConversationId";
+        public Func<byte[], UniTask<string>> UploadImageFunc;
 
-        public string GetConversationId()
+        public string GetContextId()
         {
             if (Time.time - contextUpdatedAt > contextTimeout)
             {
                 ClearContext();
             }
 
-            return currentConversationId;
+            return contextId;
         }
 
         protected override void UpdateContext(LLMSession llmSession)
         {
-            currentConversationId = ((DifySession)llmSession).ConversationId;
+            contextId = ((AIAvatarKitSession)llmSession).ContextId;
 
             contextUpdatedAt = Time.time;
         }
 
         public override void ClearContext()
         {
-            currentConversationId = string.Empty;
+            contextId = string.Empty;
             contextUpdatedAt = Time.time;
         }
 
@@ -60,12 +58,12 @@ namespace ChatdollKit.LLM.Dify
                 // Message with image
                 var imageBytes = (byte[])((Dictionary<string, object>)payloads["RequestPayloads"])["imageBytes"];
                 var uploadedImageId = await UploadImage(imageBytes);
-                messages.Add(new DifyRequestMessage(inputText, uploadedImageId));
+                messages.Add(new AIAvatarKitRequestMessage(inputText, uploadedImageId));
             }
             else
             {
                 // Text message
-                messages.Add(new DifyRequestMessage(inputText));
+                messages.Add(new AIAvatarKitRequestMessage(inputText));
             }
 
             return messages;
@@ -80,74 +78,76 @@ namespace ChatdollKit.LLM.Dify
             var customHeaders = requestPayloads.ContainsKey(CustomHeaderKey) ? (Dictionary<string, string>)requestPayloads[CustomHeaderKey] : new Dictionary<string, string>();
 
             // Start streaming session
-            var difySession = new DifySession();
-            difySession.Contexts = messages;
+            var aakSession = new AIAvatarKitSession();
+            aakSession.Contexts = messages;
 
-            if (requestPayloads.ContainsKey(ConversationIdKey) && !string.IsNullOrEmpty((string)requestPayloads[ConversationIdKey]))
+            if (!string.IsNullOrEmpty(GetContextId()))
             {
-                difySession.ConversationId = requestPayloads[ConversationIdKey] as string;
-            }
-            else if (!string.IsNullOrEmpty(GetConversationId()))
-            {
-                difySession.ConversationId = GetConversationId();
+                aakSession.ContextId = GetContextId();
             }
 
-            // Set ConversationId to ContextId for external use, not base.contextId
-            difySession.ContextId = difySession.ConversationId;
+            // Set SessionId
+            if (string.IsNullOrEmpty(AAKSessionId))
+            {
+                AAKSessionId = $"ChatdollKit-{Guid.NewGuid()}";
+            }
 
-            difySession.StreamingTask = StartStreamingAsync(difySession, customParameters, customHeaders, useFunctions, token);
+            aakSession.StreamingTask = StartStreamingAsync(aakSession, customParameters, customHeaders, useFunctions, token);
 
             // Retry
-            if (difySession.ResponseType == ResponseType.Timeout)
+            if (aakSession.ResponseType == ResponseType.Timeout)
             {
                 if (retryCounter > 0)
                 {
-                    Debug.LogWarning($"Dify timeouts with no response data. Retrying ...");
-                    difySession = (DifySession)await GenerateContentAsync(messages, payloads, useFunctions, retryCounter - 1, token);
+                    Debug.LogWarning($"AIAvatarKit timeouts with no response data. Retrying ...");
+                    aakSession = (AIAvatarKitSession)await GenerateContentAsync(messages, payloads, useFunctions, retryCounter - 1, token);
                 }
                 else
                 {
-                    Debug.LogError($"Dify timeouts with no response data.");
-                    difySession.ResponseType = ResponseType.Error;
-                    difySession.StreamBuffer = ErrorMessageContent;
+                    Debug.LogError($"AIAvatarKit timeouts with no response data.");
+                    aakSession.ResponseType = ResponseType.Error;
+                    aakSession.StreamBuffer = ErrorMessageContent;
                 }
             }
 
-            return difySession;
+            return aakSession;
         }
 
-        public virtual async UniTask StartStreamingAsync(DifySession difySession, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
+        public virtual async UniTask StartStreamingAsync(AIAvatarKitSession aakSession, Dictionary<string, string> customParameters, Dictionary<string, string> customHeaders, bool useFunctions = true, CancellationToken token = default)
         {
-            difySession.CurrentStreamBuffer = string.Empty;
+            aakSession.CurrentStreamBuffer = string.Empty;
 
-            var difyRequest = (DifyRequestMessage)difySession.Contexts[0];
+            var aakRequest = (AIAvatarKitRequestMessage)aakSession.Contexts[0];
 
             // Make request data
             var data = new Dictionary<string, object>()
             {
-                { "inputs", Inputs ?? new Dictionary<string, object>() },
-                { "query", difyRequest.query },
-                { "response_mode", "streaming" },
-                { "user", User },
-                { "auto_generate_name", false },
+                { "type", "start" },    // Always start
+                { "session_id", AAKSessionId },
+                { "user_id", User },
+                { "text", aakRequest.Text },
             };
 
-            if (!string.IsNullOrEmpty(difyRequest.uploaded_file_id))
+            if (!string.IsNullOrEmpty(aakRequest.ImageUrl))
             {
                 data["files"] = new List<Dictionary<string, string>>()
                 {
                     new Dictionary<string, string>()
                     {
                         { "type", "image" },
-                        { "transfer_method", "local_file" },
-                        { "upload_file_id", difyRequest.uploaded_file_id }
+                        { "url", aakRequest.ImageUrl }
                     }
                 };
             }
 
-            if (!string.IsNullOrEmpty(difySession.ConversationId))
+            if (SystemPromptParams != null && SystemPromptParams.Count > 0)
             {
-                data.Add("conversation_id", difySession.ConversationId);
+                data["system_prompt_params"] = SystemPromptParams;
+            }
+
+            if (!string.IsNullOrEmpty(aakSession.ContextId))
+            {
+                data.Add("context_id", aakSession.ContextId);
             }
 
             foreach (var p in customParameters)
@@ -157,12 +157,15 @@ namespace ChatdollKit.LLM.Dify
 
             // Prepare API request
             using var streamRequest = new UnityWebRequest(
-                BaseUrl + "/chat-messages",
+                BaseUrl + "/chat",
                 "POST"
             );
             streamRequest.timeout = responseTimeoutSec;
             streamRequest.SetRequestHeader("Content-Type", "application/json");
-            streamRequest.SetRequestHeader("Authorization", "Bearer " + ApiKey);
+            if (!string.IsNullOrEmpty(ApiKey))
+            {
+                streamRequest.SetRequestHeader("Authorization", $"Bearer {ApiKey}");
+            }
             foreach (var h in customHeaders)
             {
                 streamRequest.SetRequestHeader(h.Key, h.Value);
@@ -170,21 +173,21 @@ namespace ChatdollKit.LLM.Dify
 
             if (DebugMode)
             {
-                Debug.Log($"Request to Dify: {JsonConvert.SerializeObject(data)}");
+                Debug.Log($"Request to AIAvatarKit: {JsonConvert.SerializeObject(data)}");
             }
             var bodyRaw = System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data));
 
             // Request and response handlers
             streamRequest.uploadHandler = new UploadHandlerRaw(bodyRaw);
-            var downloadHandler = new DifyStreamDownloadHandler();
+            var downloadHandler = new AIAvatarKitStreamDownloadHandler();
             downloadHandler.DebugMode = DebugMode;
-            downloadHandler.SetReceivedChunk = (answer, convid) =>
+            downloadHandler.SetReceivedChunk = (text, contextId) =>
             {
-                difySession.CurrentStreamBuffer += answer;
-                difySession.StreamBuffer += answer;
-                if (!string.IsNullOrEmpty(convid))
+                aakSession.CurrentStreamBuffer += text;
+                aakSession.StreamBuffer += text;
+                if (!string.IsNullOrEmpty(contextId))
                 {
-                    difySession.ConversationId = convid;
+                    aakSession.ContextId = contextId;
                 }
             };
             streamRequest.downloadHandler = downloadHandler;
@@ -206,23 +209,23 @@ namespace ChatdollKit.LLM.Dify
                 else if (streamRequest.downloadedBytes == 0 && DateTime.Now > noDataResponseTimeoutsAt)
                 {
                     streamRequest.Abort();
-                    difySession.ResponseType = ResponseType.Timeout;
+                    aakSession.ResponseType = ResponseType.Timeout;
                     break;
                 }
 
                 // Other errors
                 else if (streamRequest.isDone)
                 {
-                    Debug.LogError($"Dify ends with error ({streamRequest.result}): {streamRequest.error}");
-                    difySession.ResponseType = ResponseType.Error;
+                    Debug.LogError($"AIAvatarKit ends with error ({streamRequest.result}): {streamRequest.error}");
+                    aakSession.ResponseType = ResponseType.Error;
                     break;
                 }
 
                 // Cancel
                 else if (token.IsCancellationRequested)
                 {
-                    Debug.Log("Preprocessing response from Dify canceled.");
-                    difySession.ResponseType = ResponseType.Error;
+                    Debug.Log("Preprocessing response from AIAvatarKit canceled.");
+                    aakSession.ResponseType = ResponseType.Error;
                     streamRequest.Abort();
                     break;
                 }
@@ -231,32 +234,32 @@ namespace ChatdollKit.LLM.Dify
             }
 
             // Update histories (put ConversationId to state)
-            if (difySession.ResponseType != ResponseType.Error && difySession.ResponseType != ResponseType.Timeout)
+            if (aakSession.ResponseType != ResponseType.Error && aakSession.ResponseType != ResponseType.Timeout)
             {
-                UpdateContext(difySession);
+                UpdateContext(aakSession);
             }
             else
             {
-                Debug.LogWarning($"Messages are not added to histories for response type is not success: {difySession.ResponseType}");
+                Debug.LogWarning($"Messages are not added to histories for response type is not success: {aakSession.ResponseType}");
             }
 
             // Ends with error
-            if (difySession.ResponseType == ResponseType.Error)
+            if (aakSession.ResponseType == ResponseType.Error)
             {
-                throw new Exception($"Dify ends with error ({streamRequest.result}): {streamRequest.error}");
+                throw new Exception($"AIAvatarKit ends with error ({streamRequest.result}): {streamRequest.error}");
             }
 
             // Process tags
-            var extractedTags = ExtractTags(difySession.CurrentStreamBuffer);
+            var extractedTags = ExtractTags(aakSession.CurrentStreamBuffer);
             if (extractedTags.Count > 0 && HandleExtractedTags != null)
             {
-                HandleExtractedTags(extractedTags, difySession);
+                HandleExtractedTags(extractedTags, aakSession);
             }
 
-            if (CaptureImage != null && extractedTags.ContainsKey("vision") && difySession.IsVisionAvailable)
+            if (CaptureImage != null && extractedTags.ContainsKey("vision") && aakSession.IsVisionAvailable)
             {
                 // Prevent infinit loop
-                difySession.IsVisionAvailable = false;
+                aakSession.IsVisionAvailable = false;
 
                 // Get image
                 var imageSource = extractedTags["vision"];
@@ -266,32 +269,32 @@ namespace ChatdollKit.LLM.Dify
                 if (imageBytes != null)
                 {
                     // Upload image
-                    var uploadedImageId = await UploadImage(imageBytes);
-                    if (string.IsNullOrEmpty(uploadedImageId))
+                    var imageUrl = await UploadImage(imageBytes);
+                    if (string.IsNullOrEmpty(imageUrl))
                     {
-                        difySession.Contexts = new List<ILLMMessage>() { new DifyRequestMessage("Please inform the user that an error occurred while capturing the image.") };
+                        aakSession.Contexts = new List<ILLMMessage>() { new AIAvatarKitRequestMessage("Please inform the user that an error occurred while capturing the image.") };
                     }
                     else
                     {
-                        difyRequest.uploaded_file_id = uploadedImageId;
-                        difyRequest.query = $"This is the image you captured. (source: {imageSource})";
+                        aakRequest.ImageUrl = imageUrl;
+                        aakRequest.Text = $"This is the image you captured. (source: {imageSource})";
                     }
                 }
                 else
                 {
-                    difySession.Contexts = new List<ILLMMessage>() { new DifyRequestMessage("Please inform the user that an error occurred while capturing the image.") };
+                    aakSession.Contexts = new List<ILLMMessage>() { new AIAvatarKitRequestMessage("Please inform the user that an error occurred while capturing the image.") };
                 }
 
                 // Call recursively with image
-                await StartStreamingAsync(difySession, customParameters, customHeaders, useFunctions, token);
+                await StartStreamingAsync(aakSession, customParameters, customHeaders, useFunctions, token);
             }
             else
             {
-                difySession.IsResponseDone = true;
+                aakSession.IsResponseDone = true;
 
                 if (DebugMode)
                 {
-                    Debug.Log($"Response from Dify: {JsonConvert.SerializeObject(difySession.StreamBuffer)}");
+                    Debug.Log($"Response from AIAvatarKit: {JsonConvert.SerializeObject(aakSession.StreamBuffer)}");
                 }
             }
         }
@@ -300,26 +303,14 @@ namespace ChatdollKit.LLM.Dify
         {
             try
             {
-                var form = new WWWForm();
-                form.AddField("user", User);
-                form.AddBinaryData("file", imageBytes, "image.png", "image/png");
-
-                var request = UnityWebRequest.Post(BaseUrl + "/files/upload", form);
-                request.SetRequestHeader("Authorization", "Bearer " + ApiKey);
-
-                await request.SendWebRequest();
-
-                if (request.result != UnityWebRequest.Result.Success)
+                if (UploadImageFunc != null)
                 {
-                    Debug.LogError($"Error at UploadImage: {request.error}");
-                    return null;
+                    
+                    return await UploadImageFunc(imageBytes);
                 }
                 else
                 {
-                    var responseText = request.downloadHandler.text;
-                    var responseJson = JsonConvert.DeserializeObject<DifyImageUploadResponse>(responseText);
-                    string id = responseJson.id;
-                    return id;
+                    return "data:image/jpeg;base64," + Convert.ToBase64String(imageBytes);
                 }
             }
             catch (Exception ex)
@@ -330,7 +321,7 @@ namespace ChatdollKit.LLM.Dify
             return null;
         }
 
-        protected class DifyStreamDownloadHandler : DownloadHandlerScript
+        protected class AIAvatarKitStreamDownloadHandler : DownloadHandlerScript
         {
             public Action<string, string> SetReceivedChunk;
             public bool DebugMode = false;
@@ -342,7 +333,7 @@ namespace ChatdollKit.LLM.Dify
                 var receivedData = System.Text.Encoding.UTF8.GetString(data, 0, dataLength);
                 if (DebugMode)
                 {
-                    Debug.Log($"Chunk from Dify: {receivedData}");
+                    Debug.Log($"Chunk from AIAvatarKit: {receivedData}");
                 }
 
                 var resp = string.Empty;
@@ -354,10 +345,19 @@ namespace ChatdollKit.LLM.Dify
 
                         try
                         {
-                            var dsr = JsonConvert.DeserializeObject<DifyStreamResponse>(d);
-                            if (dsr.@event == "message" || dsr.@event == "agent_message")
+                            if (DebugMode)
                             {
-                                SetReceivedChunk(dsr.answer, dsr.conversation_id);
+                                Debug.Log($"Deserialize JSON: {d}");
+                            }
+                            var asr = JsonConvert.DeserializeObject<AIAvatarKitStreamResponse>(d);
+                            if (asr.type == "start")
+                            {
+                                SetReceivedChunk(string.Empty, asr.context_id);
+                                continue;
+                            }
+                            else if (asr.type == "chunk")
+                            {
+                                SetReceivedChunk(asr.text, asr.context_id);
                                 continue;
                             }
                         }
@@ -367,6 +367,10 @@ namespace ChatdollKit.LLM.Dify
                             continue;
                         }
                     }
+                    else if (line.StartsWith("ping"))
+                    {
+                        Debug.Log("Just ping");
+                    }
                 }
 
                 return true;
@@ -374,32 +378,27 @@ namespace ChatdollKit.LLM.Dify
         }
     }
 
-    public class DifySession : LLMSession
+    public class AIAvatarKitSession : LLMSession
     {
-        public string ConversationId { get; set; }
+
     }
 
-    public class DifyRequestMessage : ILLMMessage
+    public class AIAvatarKitRequestMessage : ILLMMessage
     {
-        public string query { get; set; }
-        public string uploaded_file_id { get; set; }
+        public string Text { get; set; }
+        public string ImageUrl { get; set; }
 
-        public DifyRequestMessage(string query, string uploaded_file_id = null)
+        public AIAvatarKitRequestMessage(string text, string imageUrl = null)
         {
-            this.query = query;
-            this.uploaded_file_id = uploaded_file_id;
+            Text = text;
+            ImageUrl = imageUrl;
         }
     }
 
-    public class DifyStreamResponse
+    public class AIAvatarKitStreamResponse
     {
-        public string @event { get; set; }
-        public string conversation_id { get; set; }
-        public string answer { get; set; }
-    }
-
-    public class DifyImageUploadResponse
-    {
-        public string id;
+        public string type { get; set; }
+        public string context_id { get; set; }
+        public string text { get; set; }
     }
 }

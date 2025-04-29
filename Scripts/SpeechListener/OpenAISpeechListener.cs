@@ -15,7 +15,7 @@ namespace ChatdollKit.SpeechListener
         public float Temperature = 0.0f;
 
         // See API document: https://platform.openai.com/docs/api-reference/audio/createTranscription
-        protected override async UniTask<string> ProcessTranscriptionAsync(float[] samples, CancellationToken token)
+        protected override async UniTask<string> ProcessTranscriptionAsync(float[] samples, int sampleRate, CancellationToken token)
         {
             if (string.IsNullOrEmpty(ApiKey) || string.IsNullOrEmpty(Model))
             {
@@ -29,7 +29,7 @@ namespace ChatdollKit.SpeechListener
                 form.AddField("language", Language.Contains("-") ? Language.Split("-")[0] : Language);
             }
             form.AddField("response_format", "text");
-            form.AddBinaryData("file", SampleToPCM(samples, microphoneManager.SampleRate, 1), "voice.wav"); // filename is required to transcribe
+            form.AddBinaryData("file", SampleToPCM(samples, sampleRate, 1), "voice.wav"); // filename is required to transcribe
             if (!string.IsNullOrEmpty(Prompt))
             {
                 form.AddField("prompt", Prompt);

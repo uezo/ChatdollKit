@@ -131,18 +131,15 @@ namespace ChatdollKit.SpeechListener
 #if UNITY_WEBGL && !UNITY_EDITOR
         private float[] GetAmplitudeData()
         {
+            var buffer = webGLSamplesBuffer.Count > 0 ? webGLSamplesBuffer.Dequeue() : new float[0];
+
             if (IsMuted || IsWebGLMicrophoneRecording() == 0)
             {
                 return new float[0];
             }
-
-            if (webGLSamplesBuffer.Count > 0)
-            {
-                return webGLSamplesBuffer.Dequeue();
-            }
             else
             {
-                return new float[0];
+                return buffer;
             }
         }
 

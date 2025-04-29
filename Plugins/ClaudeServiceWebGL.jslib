@@ -23,10 +23,21 @@ mergeInto(LibraryManager.library, {
             body: claudeStreamRequest,
             signal: document.claudeAbortController.signal
         })
-        .then((response) => response.body.getReader())
+        .then(response => {
+            if (!response.ok) {
+                SendMessage(
+                    targetObjectName,
+                    "SetClaudeMessageStreamChunk",
+                    sessionId + "::Error: " + response.status
+                );
+            }
+            return response.body.getReader();
+        })
         .then((reader) => {
             const readChunk = function({done, value}) {
                 if(done) {
+                    // Send empty message to ensure to stop stream handling
+                    SendMessage(targetObjectName, "SetClaudeMessageStreamChunk", sessionId + "::");
                     reader.releaseLock();
                     return;
                 }

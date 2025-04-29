@@ -44,7 +44,7 @@ namespace ChatdollKit.LLM.Dify
             // Make request data
             var data = new Dictionary<string, object>()
             {
-                { "inputs", new Dictionary<string, string>() },
+                { "inputs", Inputs ?? new Dictionary<string, object>() },
                 { "query", difyRequest.query },
                 { "response_mode", "streaming" },
                 { "user", User },

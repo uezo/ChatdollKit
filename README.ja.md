@@ -14,28 +14,33 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 - **マルチプラットフォーム**: Windows、Mac、Linux、iOS、Android、およびその他のUnityサポートプラットフォーム（VR、AR、WebGLを含む）に対応
 
 
-## 💎 バージョン0.8.10の新機能
+## 💎 バージョン0.8.11の新機能
+
+- **🤖 AIAvatarKitバックエンド**：AIエージェントのロジックをサーバー側にオフロードし、フロントエンドの保守性を高めつつ、AutoGenなどの各種エージェントSDKを自由にプラグインして機能を無限に拡張できるようにしました。
+- **🌐 WebGLの改善**：マイク入力キャプチャを最新の `AudioWorkletNode` にアップグレードして低遅延・高信頼性を実現。ミュート／アンミュート処理を安定化し、HTTPエラーを即座に検出してハングを防ぐエラーハンドリングを強化。WebGLビルドにおける API キー認証の不具合を修正。
+
+
+<details>
+<summary>🕰️ 過去の更新履歴 (click to expand)</summary>
+
+### 0.8.10
 
 - **🌏 ダイナミック多言語切り替え**: 話す・聞くの双方について、使用する言語を会話の中で自律的に切り替えられるようになりました。
 - **🔖 長期記憶**: 過去の会話の内容を蓄積・検索できるようになりました。[ChatMemory](https://github.com/uezo/chatmemory)用のコンポーネントを提供していますが、mem0やZepなどに対応することもできます。
 
----
-
-### 以前の更新内容
-
-#### 0.8.8および0.8.9
+### 0.8.8および0.8.9
 
 - **✨ にじボイスのサポート**: AIによる感情豊かな音声生成サービス「にじボイス」のAPIが利用できるようになりました。
 - **🥰🥳 複数AITuber同士の会話**: AITuber同士が会話できるように！今までにない配信スタイルを楽しみましょう。
 - **💪 Difyを活用したAITuber**: あらゆるLLMへの対応はもちろん、ナレッジや機能を兼ね備えたAgenticなAITuberを高い運用性をもって実現できるように！
 
 
-#### 0.8.7
+### 0.8.7
 
 - **✨ Update AITuber demo**: より多くのAPI、一括設定、UI操作などをサポートしました。
 
 
-#### 0.8.6
+### 0.8.6
 
 - **🎛️ VOICEVOXとAivisSpeechの動的スタイル切り替え**: 声のスタイルを動的かつ自律的に切り替えることで、キャラクター表現を豊かにし、感情のニュアンスに対応できるようになりました。
 - **🥰 VRMランタイム読み込みの改善**: ランタイムでエラーなく3Dモデルをシームレスに切り替えられるようになり、ユーザー体験が向上しました。
@@ -46,35 +51,37 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
 - **🎓 Chain of Thought Prompting**: Chain of Thought (CoT) プロンプティングに対応しました 🎉 AIキャラクターの思考力や感情コントロールの力を大幅にブーストすることができます。
 
 
-#### 0.8.4
+### 0.8.4
 
 - **🧩 モジュール化による再利用性と保守性の向上**: 主要なコンポーネントをリファクタリングしました。モジュラー化によりユーザーによるカスタマイズ性が向上したほか、コードの再利用性も高まりました。詳細はデモをご確認ください。
 - **🧹 レガシーコンポーネントの削除**: v0.7.x以前で使用していたコンポーネントを削除し、全体がシンプルになりました。v0.7.xからアップデートする場合は[🔄 Migration from 0.7.x](#-migration-from-07x)をご参照ください。
 
 
-#### 0.8.3
+### 0.8.3
 
 - **🎧 Stream Speech Listener**: 音声を逐次認識する`AzureStreamSpeechLister`を追加し、会話をよりスムーズなものにしました。
 - **🗣️ Improved Conversation**: キャラクターの発話を停止するInterrupt Wordsや会話に「間」を挿入する機構を追加し、会話体験をより自然で豊かなものにしました。
 - **💃 Easier Animation Registration**: キャラクターが利用するアニメーションの登録方法を簡易化し、ユーザーコードをより簡潔にできるようにしました。
 
 
-#### 0.8.2
+### 0.8.2
 
 - **🌐 JavaScriptによるWebGLキャラクター制御**: WebGLビルドで実行されるChatdollKit UnityアプリケーションをJavaScriptから制御できるようになりました。これにより、Unityアプリとウェブベースのシステム間でよりシームレスな連携が可能になります。
 - **🗣️ SpeechSynthesizerの導入**: テキスト読み上げ（TTS）のための新しい`SpeechSynthesizer`コンポーネントが導入されました。このコンポーネントは`Model`パッケージに依存せず、プロジェクト間で再利用可能なため、キャラクター対話以外のあらゆるユースケースで利用することができます。
 
 
-#### 0.8.1
+### 0.8.1
 
 - **🏷️ ユーザー定義タグのサポート**: AIの応答にカスタムタグを含めることができるようになり、動的なアクションが可能になりました。例えば、会話中に複数の言語を切り替えるために、応答に言語コードを埋め込むことができます。
 - **🌐 ソケットを介した外部制御**: ソケット通信を通じた外部コマンドをサポートするようになりました。会話の流れを指示したり、特定のフレーズをトリガーしたり、表情やジェスチャーを制御したりすることができ、AI Vtuberやリモートカスタマーサービスなどの新しいユースケースが可能になります。クライアント側のデモはこちら：https://gist.github.com/uezo/9e56a828bb5ea0387f90cc07f82b4c15
 
-#### 0.8 Beta
+### 0.8 Beta
 
 - **⚡ AI対話処理の最適化**: 並列処理によってレスポンス速度を向上させ、独自のコードでの動作のカスタマイズも容易になりました。より高速で柔軟なAI会話をお楽しみください！
 - **🥰 感情豊かな発話**: 会話に合わせて声のトーンを動的に調整し、よりエンゲージングで自然な対話を実現します。
 - **🎤 マイク制御の強化**: マイク制御がこれまで以上に柔軟になりました！デバイスの開始/停止、ミュート/アンミュート、音声認識のしきい値調整を個別に簡単に行えます。
+
+</details>
 
 
 ## 🚀 クイックスタート
@@ -123,6 +130,7 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
   - [Performance and Quality Tuning](#performance-and-quality-tuning)
 - [🎧 Speech Listener (Speech-to-Text)](#-speech-listener-speech-to-text)
   - [Settings on AIAvatar Inspector](#settings-on-aiavatar-inspector)
+  - [Downsampling](#downsampling)
   - [Using AzureStreamSpeechListener](#using-azurestreamspeechlistener)
 - [⏰ Wake Word Detection](#-wake-word-detection)
   - [Wake Words](#wake-words)
@@ -528,6 +536,16 @@ SpeechListnerに関連する設定の多くは、`AIAvatar`コンポーネント
 |**Microphone Mute By**|発話中にアバターの発話内容を音声認識させないための方式です。<br><br>- None: 何もしません<br>- Threshold: 音声認識の閾値を`Voice Recognition Raised Threshold DB`まで上昇させます<br>- Mute: マイクからの入力音声を無視します<br>- Stop Device: マイクデバイスを停止します<br>- Stop Listener: リスナーを停止します。**AzureStreamSpeechListenerを使用する場合はこれを選択してください**|
 
 
+### Downsampling
+
+`SpeechListener` クラスは、生のマイク入力を STT サービスに送信する前に、より低いサンプルレートにダウンサンプリングする機能をサポートしています。この機能により、音声データのペイロードサイズを削減し、帯域幅の限られたネットワーク環境でもスムーズな文字起こしを実現します。
+
+SpeechListener コンポーネントの Inspector では **Target Sample Rate** (int) フィールドが表示されます:
+
+- `0`（デフォルト）に設定すると、元のサンプルレートが使用され、ダウンサンプリングは行われません。  
+- 正の整数（例: `16000`）に設定すると、そのレート (Hz) にダウンサンプリングします。
+
+
 ### Using AzureStreamSpeechListener
 
 `AzureStreamSpeechListener`を使用する場合は、他のSpeechListenerとは一部設定が異なります。これは`AzureStreamSpeechListener`がSDK内部でマイクを制御していることや、文字起こしが逐次行われることに起因します。
@@ -589,6 +607,13 @@ LLMでTool Call（Function Calling）がサポートされている場合、そ�
 独自のスキルを作成するには、`FunctionName`、`FunctionDescription`を定義し、Functionの定義を返す`GetToolSpec`メソッド、Functionの処理そのものである`ExecuteFunction`メソッドを実装します。詳細は`ChatdollKit/Examples/WeatherTool`を参考にしてください。
 
 **NOTE**: プロジェクトにLLMFunctionSkillを使用している場合、[Migration from FunctionSkill to Tool](#migration-from-functionskill-to-tool)も参照してください。
+
+### Integration with Remote AI Agents
+
+ChatdollKitは標準でシンプルなTool Callをサポートしていますが、よりAgenticな振る舞いを実現するため、サーバーサイドのAIエージェントとの連携機能も提供しています。
+
+具体的には、AIエージェントを`LLMService`として登録することでRESTful API経由で呼び出すことができます。これにより、裏側で行われているエージェント的なプロセスを意識することなく、ChatdollKitのフロント側ではリクエストの送信とレスポンスの受信と発話・モーション等の表現に注力することができます。
+現在のところ [Dify](https://dify.ai) と [AIAvatarKit](https://github.com/uezo/aiavatarkit) に対応しています。`DifyService`または`AIAvatarKitService`をアタッチし、設定を行ったうえで`IsEnabled`をオンにすることで利用できます。
 
 
 ## 🎙️ Devices

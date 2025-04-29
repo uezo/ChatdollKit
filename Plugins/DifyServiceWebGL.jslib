@@ -21,10 +21,21 @@ mergeInto(LibraryManager.library, {
             body: difyStreamRequest,
             signal: document.difyAbortController.signal
         })
-        .then((response) => response.body.getReader())
+        .then(response => {
+            if (!response.ok) {
+                SendMessage(
+                    targetObjectName,
+                    "SetDifyMessageStreamChunk",
+                    sessionId + "::Error: " + response.status
+                );
+            }
+            return response.body.getReader();
+        })
         .then((reader) => {
             const readChunk = function({done, value}) {
                 if(done) {
+                    // Send empty message to ensure to stop stream handling
+                    SendMessage(targetObjectName, "SetDifyMessageStreamChunk", sessionId + "::");
                     reader.releaseLock();
                     return;
                 }

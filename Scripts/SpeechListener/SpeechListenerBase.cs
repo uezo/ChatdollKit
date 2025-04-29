@@ -18,6 +18,7 @@ namespace ChatdollKit.SpeechListener
         public List<string> AlternativeLanguages;
         public bool AutoStart = true;
         public bool PrintResult = false;
+        public int TargetSampleRate = 0;
 
         public Func<string, UniTask> OnRecognized { get; set; }
 
@@ -78,11 +79,43 @@ namespace ChatdollKit.SpeechListener
             StartListening(true);
         }
 
+        private float[] Resample(float[] samples, int originalRate, int targetRate)
+        {
+            if (originalRate == targetRate) return samples;
+
+            int dstLength = Mathf.CeilToInt(samples.Length * (targetRate / (float)originalRate));
+            var dst = new float[dstLength];
+            float ratio = samples.Length / (float)dstLength;
+
+            for (int i = 0; i < dstLength; i++)
+            {
+                float srcIndex = i * ratio;
+                int i0 = Mathf.FloorToInt(srcIndex);
+                int i1 = Mathf.Min(i0 + 1, samples.Length - 1);
+                float t = srcIndex - i0;
+                dst[i] = Mathf.Lerp(samples[i0], samples[i1], t);
+            }
+            return dst;
+        }
+
         protected async UniTask HandleRecordingCompleteAsync(float[] samples, CancellationToken token)
         {
             try
             {
-                var text = await ProcessTranscriptionAsync(samples, token);
+                float[] samplesToTranscript;
+                int sampleRate;
+                if (TargetSampleRate > 0 && microphoneManager.SampleRate > TargetSampleRate)
+                {
+                    sampleRate = TargetSampleRate;
+                    samplesToTranscript = Resample(samples, microphoneManager.SampleRate, TargetSampleRate);
+                }
+                else
+                {
+                    sampleRate = microphoneManager.SampleRate;
+                    samplesToTranscript = samples;
+                }
+
+                var text = await ProcessTranscriptionAsync(samplesToTranscript, sampleRate, token);
                 if (PrintResult)
                 {
                     Debug.Log($"Speech recognized: {text} ({Name})");
@@ -106,7 +139,7 @@ namespace ChatdollKit.SpeechListener
         }
 
     #pragma warning disable CS1998
-        protected virtual async UniTask<string> ProcessTranscriptionAsync(float[] samples, CancellationToken token)
+        protected virtual async UniTask<string> ProcessTranscriptionAsync(float[] samples, int sampleRate, CancellationToken token)
         {
             throw new NotImplementedException($"ProcessTranscriptionAsync for {Name} is not implemented");
         }
