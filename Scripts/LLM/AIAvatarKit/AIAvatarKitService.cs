@@ -80,6 +80,7 @@ namespace ChatdollKit.LLM.AIAvatarKit
             // Start streaming session
             var aakSession = new AIAvatarKitSession();
             aakSession.Contexts = messages;
+            aakSession.ProcessLastChunkImmediately = true;
 
             if (!string.IsNullOrEmpty(GetContextId()))
             {
