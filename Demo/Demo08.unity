@@ -1089,6 +1089,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   animationCollectionKey: 0
   ListRegisteredAnimationsOnStart: 0
+  titleText: {fileID: 1976060163}
 --- !u!114 &1886433086
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1109,6 +1110,7 @@ MonoBehaviour:
   AlternativeLanguages: []
   AutoStart: 1
   PrintResult: 1
+  TargetSampleRate: 0
   ApiKey: 
   Model: whisper-1
   Prompt: 
@@ -1307,7 +1309,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: ChatdollKit Demo v0.8.11
+  m_Text: ChatdollKit Demo
 --- !u!222 &1976060164
 CanvasRenderer:
   m_ObjectHideFlags: 0
