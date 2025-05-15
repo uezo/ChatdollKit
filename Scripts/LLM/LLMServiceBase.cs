@@ -133,6 +133,7 @@ namespace ChatdollKit.LLM
         public string FunctionName { get; set; }
         public List<ILLMMessage> Contexts { get; set; }
         public string ContextId { get; set; }
+        public bool ProcessLastChunkImmediately { get; set; } = false;
 
         public LLMSession()
         {

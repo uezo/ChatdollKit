@@ -55,7 +55,11 @@ namespace ChatdollKit.LLM
                         break;
                     }
 
-                    if (splittedBuffer.Count() > splitIndex + 1 || llmSession.IsResponseDone)
+                    // Process if the response is complete or if we have enough buffered chunks to process.
+                    // When llmSession.ProcessLastChunkImmediately is true, we treat the last chunk as a complete sentence,
+                    // so we require buffer.Count > splitIndex; otherwise buffer.Count > splitIndex + 1.
+                    bool hasProcessableChunks = splittedBuffer.Count() > splitIndex + (llmSession.ProcessLastChunkImmediately ? 0 : 1);
+                    if (llmSession.IsResponseDone || hasProcessableChunks)
                     {
                         // Process each splitted unprocessed sentence
                         foreach (var text in splittedBuffer.Skip(splitIndex).Take(llmSession.IsResponseDone ? splittedBuffer.Count - splitIndex : 1))

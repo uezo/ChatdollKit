@@ -268,6 +268,13 @@ namespace ChatdollKit.LLM.AIAvatarKit
                             isDone = true;
                             break;
                         }
+                        else if (asr.type == "error")
+                        {
+                            Debug.LogError($"Error in AIAvatarKit: {d}");
+                            aakSession.ResponseType = ResponseType.Error;
+                            isDone = true;
+                            break;
+                        }
                     }
                     catch (Exception)
                     {

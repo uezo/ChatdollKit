@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using ChatdollKit.Dialog;
 using ChatdollKit.IO;
 using ChatdollKit.Model;
@@ -18,9 +19,16 @@ namespace ChatdollKit.Demo
         private AGIARegistry.AnimationCollection animationCollectionKey = AGIARegistry.AnimationCollection.AGIAFree;
         [SerializeField]
         private bool ListRegisteredAnimationsOnStart = false;
+        [SerializeField]
+        private Text titleText;
 
         private void Start()
         {
+            if (titleText != null)
+            {
+                titleText.text = $"ChatdollKit Demo v{AIAvatar.VERSION}";
+            }
+
             // Get ChatdollKit components
             modelController = gameObject.GetComponent<ModelController>();
             dialogProcessor = gameObject.GetComponent<DialogProcessor>();

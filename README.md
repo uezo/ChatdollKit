@@ -15,7 +15,7 @@
 - **Multi platforms**: Compatible with Windows, Mac, Linux, iOS, Android, and other Unity-supported platforms, including VR, AR, and WebGL.
 
 
-## 💎 What's New in Version 0.8.11
+## 💎 What's New in Version 0.8.11 and 0.8.12
 
 - **🤖 AIAvatarKit Backend**: Offloads AI agent logic to the server—boosting front-end maintainability—while letting you plug in frameworks like AutoGen (and any other agent SDK) for unlimited capability expansion.
 - **🌐 WebGL Improvements**: Upgraded mic capture to modern `AudioWorkletNode` for lower latency and reliability; stabilized mute/unmute handling; improved error handling to immediately surface HTTP errors and prevent hangs; fixed API-key authorization in WebGL builds.

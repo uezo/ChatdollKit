@@ -80,6 +80,7 @@ namespace ChatdollKit.LLM.AIAvatarKit
             // Start streaming session
             var aakSession = new AIAvatarKitSession();
             aakSession.Contexts = messages;
+            aakSession.ProcessLastChunkImmediately = true;
 
             if (!string.IsNullOrEmpty(GetContextId()))
             {
@@ -181,13 +182,19 @@ namespace ChatdollKit.LLM.AIAvatarKit
             streamRequest.uploadHandler = new UploadHandlerRaw(bodyRaw);
             var downloadHandler = new AIAvatarKitStreamDownloadHandler();
             downloadHandler.DebugMode = DebugMode;
-            downloadHandler.SetReceivedChunk = (text, contextId) =>
+            downloadHandler.SetReceivedChunk = (text, contextId, error) =>
             {
                 aakSession.CurrentStreamBuffer += text;
                 aakSession.StreamBuffer += text;
                 if (!string.IsNullOrEmpty(contextId))
                 {
                     aakSession.ContextId = contextId;
+                }
+
+                if (!string.IsNullOrEmpty(error))
+                {
+                    aakSession.ResponseType = ResponseType.Error;
+                    Debug.LogError(error);
                 }
             };
             streamRequest.downloadHandler = downloadHandler;
@@ -323,7 +330,7 @@ namespace ChatdollKit.LLM.AIAvatarKit
 
         protected class AIAvatarKitStreamDownloadHandler : DownloadHandlerScript
         {
-            public Action<string, string> SetReceivedChunk;
+            public Action<string, string, string> SetReceivedChunk;
             public bool DebugMode = false;
 
             protected override bool ReceiveData(byte[] data, int dataLength)
@@ -352,18 +359,23 @@ namespace ChatdollKit.LLM.AIAvatarKit
                             var asr = JsonConvert.DeserializeObject<AIAvatarKitStreamResponse>(d);
                             if (asr.type == "start")
                             {
-                                SetReceivedChunk(string.Empty, asr.context_id);
+                                SetReceivedChunk(string.Empty, asr.context_id, string.Empty);
                                 continue;
                             }
                             else if (asr.type == "chunk")
                             {
-                                SetReceivedChunk(asr.text, asr.context_id);
+                                SetReceivedChunk(asr.text, asr.context_id, string.Empty);
                                 continue;
                             }
+                            else if (asr.type == "error")
+                            {
+                                SetReceivedChunk(string.Empty, asr.context_id, $"Error in AIAvatarKit: {d}");
+                                break;
+                            }
                         }
-                        catch (Exception)
+                        catch (JsonReaderException)
                         {
-                            Debug.LogError($"Deserialize error: {d}");
+                            Debug.LogWarning($"Deserialize error: {d}");
                             continue;
                         }
                     }

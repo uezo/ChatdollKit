@@ -36,6 +36,7 @@ namespace ChatdollKit.LLM
         string FunctionName { get; set; }
         List<ILLMMessage> Contexts { get; set; }
         string ContextId { get; set; }
+        bool ProcessLastChunkImmediately { get; set; }
     }
 
     public interface ILLMMessage { }
