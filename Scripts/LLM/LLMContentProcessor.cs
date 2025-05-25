@@ -52,13 +52,15 @@ namespace ChatdollKit.LLM
                     if (llmSession.IsResponseDone && splitIndex == splittedBuffer.Count)
                     {
                         // Exit while loop when stream response ends and all sentences has been processed
+                        if (debugMode)
+                        {
+                            Debug.Log($"Exit from content stream loop: splitted={string.Join(",", splittedBuffer)} / streamBuffer={llmSession.StreamBuffer}");
+                        }
                         break;
                     }
 
                     // Process if the response is complete or if we have enough buffered chunks to process.
-                    // When llmSession.ProcessLastChunkImmediately is true, we treat the last chunk as a complete sentence,
-                    // so we require buffer.Count > splitIndex; otherwise buffer.Count > splitIndex + 1.
-                    bool hasProcessableChunks = splittedBuffer.Count() > splitIndex + (llmSession.ProcessLastChunkImmediately ? 0 : 1);
+                    bool hasProcessableChunks = splittedBuffer.Count() > splitIndex + 1;
                     if (llmSession.IsResponseDone || hasProcessableChunks)
                     {
                         // Process each splitted unprocessed sentence
@@ -69,7 +71,7 @@ namespace ChatdollKit.LLM
                             {
                                 if (debugMode)
                                 {
-                                    Debug.Log($"Content stream: {text} (isFirst={isFirstWord})");
+                                    Debug.Log($"Content stream: {text} (splitted={string.Join(",", splittedBuffer)} / isFirst={isFirstWord})");
                                 }
 
                                 var processedText = string.Empty;
