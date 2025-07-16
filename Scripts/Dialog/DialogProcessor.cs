@@ -110,7 +110,7 @@ namespace ChatdollKit.Dialog
         }
 
         // Start dialog
-        public async UniTask StartDialogAsync(string text, Dictionary<string, object> payloads = null, bool overwrite = true)
+        public async UniTask StartDialogAsync(string text, Dictionary<string, object> payloads = null, bool overwrite = true, bool endConversation = false)
         {
             if (string.IsNullOrEmpty(text) && (payloads == null || payloads.Count == 0))
             {
@@ -227,7 +227,7 @@ namespace ChatdollKit.Dialog
                 {
                     try
                     {
-                        await OnEndAsync(false, token);
+                        await OnEndAsync(endConversation, token);
                     }
                     catch (Exception fex)
                     {

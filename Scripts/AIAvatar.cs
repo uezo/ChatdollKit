@@ -60,12 +60,13 @@ namespace ChatdollKit
         }
         public MicrophoneMuteStrategy MicrophoneMuteBy = MicrophoneMuteStrategy.Mute;
 
-        [Header("WakeWord settings")]
+        [Header("Conversation settings")]
         public List<WordWithAllowance> WakeWords;
         public List<string> CancelWords;
         public List<WordWithAllowance> InterruptWords;
         public List<string> IgnoreWords = new List<string>() { "。", "、", "？", "！" };
         public int WakeLength;
+        public string BackgroundRequestPrefix = "$";
 
         [Header("ChatdollKit components")]
         public ModelController ModelController;
@@ -159,6 +160,10 @@ namespace ChatdollKit
                     if (!showMessageWindowOnWake && payloads != null && payloads.ContainsKey("IsWakeword") && (bool)payloads["IsWakeword"])
                     {
                         // Don't show message window on wakeword
+                    }
+                    else if (text.StartsWith(BackgroundRequestPrefix))
+                    {
+                        // Don't show message window when text starts with BackgroundRequestPrefix (default: $)
                     }
                     else
                     {

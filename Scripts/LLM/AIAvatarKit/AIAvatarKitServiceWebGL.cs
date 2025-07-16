@@ -258,9 +258,19 @@ namespace ChatdollKit.LLM.AIAvatarKit
                         }
                         else if (asr.type == "chunk")
                         {
-                            aakSession.CurrentStreamBuffer += asr.text;
-                            aakSession.StreamBuffer += asr.text;
+                            // Add `\n` to flush stream buffer immediately
+                            aakSession.CurrentStreamBuffer += (asr.text + "\n ");
+                            aakSession.StreamBuffer += (asr.text + "\n ");
                             aakSession.ContextId = asr.context_id;
+                            continue;
+                        }
+                        else if (asr.type == "tool_call")
+                        {
+                            if (HandleToolCall != null)
+                            {
+                                var toolCall = (asr.metadata["tool_call"] as JObject).ToObject<AIAvatarKitToolCall>();
+                                HandleToolCall(toolCall);
+                            }
                             continue;
                         }
                         else if (asr.type == "final" || asr.type == "vision")

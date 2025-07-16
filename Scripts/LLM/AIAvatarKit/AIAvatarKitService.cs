@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace ChatdollKit.LLM.AIAvatarKit
 {
@@ -24,6 +25,7 @@ namespace ChatdollKit.LLM.AIAvatarKit
         protected float noDataResponseTimeoutSec = 10.0f;
 
         public Func<byte[], UniTask<string>> UploadImageFunc;
+        public Action<AIAvatarKitToolCall> HandleToolCall;
 
         public string GetContextId()
         {
@@ -197,6 +199,7 @@ namespace ChatdollKit.LLM.AIAvatarKit
                     Debug.LogError(error);
                 }
             };
+            downloadHandler.HandleToolCall = HandleToolCall;
             streamRequest.downloadHandler = downloadHandler;
 
             // Start API stream
@@ -331,6 +334,7 @@ namespace ChatdollKit.LLM.AIAvatarKit
         protected class AIAvatarKitStreamDownloadHandler : DownloadHandlerScript
         {
             public Action<string, string, string> SetReceivedChunk;
+            public Action<AIAvatarKitToolCall> HandleToolCall;
             public bool DebugMode = false;
 
             protected override bool ReceiveData(byte[] data, int dataLength)
@@ -364,7 +368,17 @@ namespace ChatdollKit.LLM.AIAvatarKit
                             }
                             else if (asr.type == "chunk")
                             {
-                                SetReceivedChunk(asr.text, asr.context_id, string.Empty);
+                                // Add `\n ` to flush stream buffer immediately
+                                SetReceivedChunk(asr.text + "\n ", asr.context_id, string.Empty);
+                                continue;
+                            }
+                            else if (asr.type == "tool_call")
+                            {
+                                if (HandleToolCall != null)
+                                {
+                                    var toolCall = (asr.metadata["tool_call"] as JObject).ToObject<AIAvatarKitToolCall>();
+                                    HandleToolCall(toolCall);
+                                }
                                 continue;
                             }
                             else if (asr.type == "error")
@@ -412,5 +426,19 @@ namespace ChatdollKit.LLM.AIAvatarKit
         public string type { get; set; }
         public string context_id { get; set; }
         public string text { get; set; }
+        public Dictionary<string, object> metadata { get; set; }
+    }
+
+    public class AIAvatarKitToolCallResult
+    {
+        public Dictionary<string, object> data { get; set; }
+        public bool is_final { get; set; }
+    }
+
+    public class AIAvatarKitToolCall
+    {
+        public string name { get; set; }
+        public object arguments { get; set; }
+        public AIAvatarKitToolCallResult result { get; set; }
     }
 }
