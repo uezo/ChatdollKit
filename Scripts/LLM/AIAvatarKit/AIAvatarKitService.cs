@@ -368,8 +368,11 @@ namespace ChatdollKit.LLM.AIAvatarKit
                             }
                             else if (asr.type == "chunk")
                             {
+                                var language = !string.IsNullOrEmpty(asr.language)
+                                    ? $"[lang:{asr.language}]"
+                                    : string.Empty;
                                 // Add `\n ` to flush stream buffer immediately
-                                SetReceivedChunk(asr.text + "\n ", asr.context_id, string.Empty);
+                                SetReceivedChunk(language + asr.text + "\n ", asr.context_id, string.Empty);
                                 continue;
                             }
                             else if (asr.type == "tool_call")
@@ -426,6 +429,7 @@ namespace ChatdollKit.LLM.AIAvatarKit
         public string type { get; set; }
         public string context_id { get; set; }
         public string text { get; set; }
+        public string language { get; set; }
         public Dictionary<string, object> metadata { get; set; }
     }
 
