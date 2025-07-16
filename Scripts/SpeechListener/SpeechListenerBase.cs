@@ -14,6 +14,8 @@ namespace ChatdollKit.SpeechListener
         public float SilenceDurationThreshold = 0.3f;
         public float MinRecordingDuration = 0.5f;
         public float MaxRecordingDuration = 3.0f;
+        public float MaxPrerollDuration = 0.2f;
+        public Func<float[], float, bool> DetectVoiceFunc = null;
         public string Language = "ja-JP";
         public List<string> AlternativeLanguages;
         public bool AutoStart = true;
@@ -49,14 +51,17 @@ namespace ChatdollKit.SpeechListener
 
             cancellationTokenSource = new CancellationTokenSource();
 
-            session = new RecordingSession
-            {
-                Name = Name,
-                SilenceDurationThreshold = SilenceDurationThreshold,
-                MinRecordingDuration = MinRecordingDuration,
-                MaxRecordingDuration = MaxRecordingDuration,
-                OnRecordingComplete = async (samples) => await HandleRecordingCompleteAsync(samples, cancellationTokenSource.Token)
-            };
+            var maxPrerollSamples = (int)(microphoneManager.SampleRate * MaxPrerollDuration);
+
+            session = new RecordingSession(
+                name: Name,
+                silenceDurationThreshold: SilenceDurationThreshold,
+                minRecordingDuration: MinRecordingDuration,
+                maxRecordingDuration: MaxRecordingDuration,
+                maxPrerollSamples: maxPrerollSamples,
+                onRecordingComplete: async (samples) => await HandleRecordingCompleteAsync(samples, cancellationTokenSource.Token),
+                detectVoiceFunc: DetectVoiceFunc
+            );
 
             microphoneManager.StartRecordingSession(session);
         }
