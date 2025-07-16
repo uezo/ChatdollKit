@@ -258,9 +258,12 @@ namespace ChatdollKit.LLM.AIAvatarKit
                         }
                         else if (asr.type == "chunk")
                         {
+                            var language = !string.IsNullOrEmpty(asr.language)
+                                ? $"[lang:{asr.language}]"
+                                : string.Empty;
                             // Add `\n` to flush stream buffer immediately
-                            aakSession.CurrentStreamBuffer += (asr.text + "\n ");
-                            aakSession.StreamBuffer += (asr.text + "\n ");
+                            aakSession.CurrentStreamBuffer += (language + asr.text + "\n ");
+                            aakSession.StreamBuffer += (language + asr.text + "\n ");
                             aakSession.ContextId = asr.context_id;
                             continue;
                         }
