@@ -46,10 +46,14 @@ namespace ChatdollKit.LLM.ChatGPT
                 { "model", Model },
                 { "temperature", Temperature },
                 { "messages", chatGPTSession.Contexts },
-                { "frequency_penalty", FrequencyPenalty },
-                { "presence_penalty", PresencePenalty },
                 { "stream", true },
             };
+
+            if (!IsOpenAICompatibleAPI)
+            {
+                data["frequency_penalty"] = FrequencyPenalty;
+                data["presence_penalty"] = PresencePenalty;
+            }
             if (MaxTokens > 0)
             {
                 data.Add("max_tokens", MaxTokens);
