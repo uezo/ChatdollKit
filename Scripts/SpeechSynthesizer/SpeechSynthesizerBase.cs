@@ -18,6 +18,8 @@ namespace ChatdollKit.SpeechSynthesizer
         [SerializeField]
         protected bool isDebug;
 
+        public Func<string, Dictionary<string, object>, CancellationToken, UniTask<string>> PreprocessText;
+
         protected virtual string GetCacheKey(string text, Dictionary<string, object> parameters)
         {
             return $"{text}_{JsonConvert.SerializeObject(parameters)}".GetHashCode().ToString();
@@ -64,8 +66,13 @@ namespace ChatdollKit.SpeechSynthesizer
                 Debug.Log($"Start downloading: {cacheKey}");
             }
 
+            // Preprocess text (e.g. convert alphabet -> kana)
+            var preprocessedText = PreprocessText == null
+                ? text
+                : await PreprocessText(text, parameters, cancellationToken);
+
             // Start new downloading task
-            audioDownloadTasks[cacheKey] = DownloadAudioClipAsync(text, parameters, cancellationToken);
+            audioDownloadTasks[cacheKey] = DownloadAudioClipAsync(preprocessedText, parameters, cancellationToken);
 
             try
             {
