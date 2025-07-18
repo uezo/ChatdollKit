@@ -15,13 +15,19 @@
 - **Multi platforms**: Compatible with Windows, Mac, Linux, iOS, Android, and other Unity-supported platforms, including VR, AR, and WebGL.
 
 
-## 💎 What's New in Version 0.8.11 and 0.8.12
+## 💎 What's New in Version 0.8.13
 
-- **🤖 AIAvatarKit Backend**: Offloads AI agent logic to the server—boosting front-end maintainability—while letting you plug in frameworks like AutoGen (and any other agent SDK) for unlimited capability expansion.
-- **🌐 WebGL Improvements**: Upgraded mic capture to modern `AudioWorkletNode` for lower latency and reliability; stabilized mute/unmute handling; improved error handling to immediately surface HTTP errors and prevent hangs; fixed API-key authorization in WebGL builds.
+- **🥳 Silero VAD Support**: ML-based voice-activity detection vastly improves turn-end accuracy in noisy settings, enabling smooth conversations outdoors or at events.
+- **🪄 TTS Pre-processing**: Optional text pre-processing lets you fine-tune pronunciation (e.g., convert “OpenAI” to katakana) before synthesis.
+- **🤝 Grok & Gemini Compatibility**: Removes OpenAI-specific params from the OpenAI-style endpoint, so Grok, Gemini, and other API-compatible models work out of the box.
 
 <details>
 <summary>🕰️ Previous Updates (click to expand)</summary>
+
+### 0.8.11 and 0.8.12
+
+- **🤖 AIAvatarKit Backend**: Offloads AI agent logic to the server—boosting front-end maintainability—while letting you plug in frameworks like AutoGen (and any other agent SDK) for unlimited capability expansion.
+- **🌐 WebGL Improvements**: Upgraded mic capture to modern `AudioWorkletNode` for lower latency and reliability; stabilized mute/unmute handling; improved error handling to immediately surface HTTP errors and prevent hangs; fixed API-key authorization in WebGL builds.
 
 ### 0.8.10
 
@@ -129,10 +135,12 @@ To run the demo for version 0.8, please follow the steps below after importing t
   - [Voice Prefetch Mode](#voice-prefetch-mode)
   - [Make custom SpeechSynthesizer](#make-custom-speechsynthesizer)
   - [Performance and Quality Tuning](#performance-and-quality-tuning)
+  - [Preprocessing](#preprocessing)
 - [🎧 Speech Listener (Speech-to-Text)](#-speech-listener-speech-to-text)
   - [Settings on AIAvatar Inspector](#settings-on-aiavatar-inspector)
   - [Downsampling](#downsampling)
   - [Using AzureStreamSpeechListener](#using-azurestreamspeechlistener)
+  - [Using Silero VAD](#using-silero-vad)
 - [⏰ Wake Word Detection](#-wake-word-detection)
   - [Wake Words](#wake-words)
   - [Cancel Words](#cancel-words)
@@ -501,6 +509,17 @@ You can balance performance and speech quality by adjusting how the text is spli
 |**Max Length Before Optional Split**|Threshold for text length at which optional split characters are used as split points.|
 
 
+### Preprocessing
+
+Implement `SpeechSynthesizer.PreprocessText` method to preprocess the text to synthesize.
+
+Interface:
+
+```csharp
+Func<string, Dictionary<string, object>, CancellationToken, UniTask<string>> PreprocessText;
+```
+
+
 ## 🎧 Speech Listener (Speech-to-Text)
 
 We support cloud-based speech recognition services such as Google, Azure, and OpenAI. To use these services, attach the `SpeechListener` component from `ChatdollKit/Scripts/SpeechListener` to the AIAvatar object. Be aware that if multiple SpeechListeners are attached, they will run in parallel, so ensure that only the one you want is active.
@@ -565,6 +584,28 @@ if (aiAvatar.Mode == AIAvatar.AvatarMode.Conversation)
     }
 }
 ```
+
+
+### Using Silero VAD
+
+Silero VAD is a machine learning-based voice activity detection model. By using this, you can determine human voice even in noisy environments, which significantly improves the accuracy of turn-end detection in noisy conditions compared to microphone volume-based voice activity detection.
+
+The usage procedure is as follows:
+
+- Import [onnxruntime-unity](https://github.com/asus4/onnxruntime-unity). Follow the procedure on GitHub to edit manifest.json.
+- Download the [Silero VAD ONNX model](https://github.com/snakers4/silero-vad/tree/master/src/silero_vad/data) and place it in the StreamingAssets folder. The filename should be `silero_vad.onnx`.
+- Download and import ChatdollKit's SileroVADExtension.
+- Attach `SileroVADProcessor` to the object where SpeechListener is attached.
+- In the `Awake` method of any MonoBehaviour component, set it as the voice detection function for SpeechListener.
+    ```csharp
+    var sileroVad = gameObject.GetComponent<SileroVADProcessor>();
+    sileroVad.Initialize();
+    var speechListener = gameObject.GetComponent<SpeechListenerBase>();
+    speechListener.DetectVoiceFunc = sileroVad.IsVoiced;
+    ```
+- Place SileroVADMicrophoneButton in the scene if necessary
+
+When executed, Silero VAD will be used for voice activity detection.
 
 
 ## ⏰ Wake Word Detection

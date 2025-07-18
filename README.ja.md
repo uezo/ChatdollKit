@@ -128,10 +128,12 @@ ChatdollKitは、お好みの3Dモデルを使って音声対話可能なチャ�
   - [Voice Prefetch Mode](#voice-prefetch-mode)
   - [Make custom SpeechSynthesizer](#make-custom-speechsynthesizer)
   - [Performance and Quality Tuning](#performance-and-quality-tuning)
+  - [Preprocessing](#preprocessing)
 - [🎧 Speech Listener (Speech-to-Text)](#-speech-listener-speech-to-text)
   - [Settings on AIAvatar Inspector](#settings-on-aiavatar-inspector)
   - [Downsampling](#downsampling)
   - [Using AzureStreamSpeechListener](#using-azurestreamspeechlistener)
+  - [Using Silero VAD](#using-silero-vad)
 - [⏰ Wake Word Detection](#-wake-word-detection)
   - [Wake Words](#wake-words)
   - [Cancel Words](#cancel-words)
@@ -501,6 +503,14 @@ UniTask<AudioClip> DownloadAudioClipAsync(string text, Dictionary<string, object
 |**Max Length Before Optional Split**|オプション区切り文字を区切り文字として使用する長さの閾値。|
 
 
+### Preprocessing
+
+音声合成の事前処理をするには、`SpeechSynthesizer.PreprocessText`メソッドを実装してください。インターフェイスは以下の通り。
+
+```csharp
+Func<string, Dictionary<string, object>, CancellationToken, UniTask<string>> PreprocessText;
+```
+
 
 ## 🎧 Speech Listener (Speech-to-Text)
 
@@ -563,6 +573,28 @@ if (aiAvatar.Mode == AIAvatar.AvatarMode.Conversation)
     }
 }
 ```
+
+
+### Using Silero VAD
+
+Silero VADは機械学習ベースの発話区間認識モデルです。これを使用することで、騒がしい環境でも人の声を判定できるため、マイクボリュームベースの発話区間認識よりも騒音下でのターンエンド判定の精度が大幅に向上します。
+
+使用する手順は以下の通り。
+
+- [onnxruntime-unity](https://github.com/asus4/onnxruntime-unity)をインポート。手順はGitHubの通りmanifest.jsonを編集する。
+- [Silero VADのONNXモデル](https://github.com/snakers4/silero-vad/tree/master/src/silero_vad/data)を入手し、StreamingAssetsフォルダーに配置。ファイル名は`silero_vad.onnx`とすること。
+- ChatdollKitのSileroVADExtentionを入手し、インポート。
+- SileroVADProcessorをSpeechListenerがアタッチされているオブジェクトにアタッチ。
+- 任意のMonoBehaviourコンポーネントの`Awake`メソッドにて、SpeechListenerの発話判定関数に設定。
+    ```
+    var sileroVad = gameObject.GetComponent<SileroVADProcessor>();
+    sileroVad.Initialize();
+    var speechListener = gameObject.GetComponent<SpeechListenerBase>();
+    speechListener.DetectVoiceFunc = sileroVad.IsVoiced;
+    ```
+- 必要に応じてSileroVADMicrophoneButtonをシーンに配置
+
+実行すると、発話区間認識にSileroVADが使用されるようになります。
 
 
 ## ⏰ Wake Word Detection
