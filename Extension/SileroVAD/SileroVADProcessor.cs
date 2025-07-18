@@ -11,7 +11,8 @@ namespace ChatdollKit.Extension.SileroVAD
     {
         [Header("VAD Model Settings")]
         [Tooltip("The filename of the ONNX model in the StreamingAssets folder.")]
-        [SerializeField] private string onnxModelName = "silero_vad.onnx";
+        [SerializeField]
+        private string onnxModelName = "silero_vad.onnx";
 
         // The chunk size for SireloVAD is 512.
         private int sampleSize = 512;
@@ -20,15 +21,18 @@ namespace ChatdollKit.Extension.SileroVAD
         private long modelSamplingRate = 16000;
 
         [Tooltip("Confidence threshold for detecting speech (0.0 to 1.0).")]
-        [SerializeField] private float threshold = 0.5f;
+        [SerializeField]
+        private float threshold = 0.5f;
 
-        [Header("Debug")]
         [Tooltip("The speech probability from the most recent inference.")]
-        public float lastProbability = 0f;
+        [SerializeField]
+        private float lastProbability = 0f;
 
         private InferenceSession session;
         private float[] state = new float[256];
         private readonly List<float> audioBuffer = new List<float>();
+
+        public bool IsVoiceDetected { get { return lastProbability > threshold; } }
 
         public void Initialize()
         {
