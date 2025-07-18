@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using UnityEngine;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Cysharp.Threading.Tasks;
 
 namespace ChatdollKit.LLM.AIAvatarKit
