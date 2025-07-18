@@ -16,6 +16,7 @@ namespace ChatdollKit.LLM.ChatGPT
         public string Model = "gpt-4o-mini";
         public string ChatCompletionUrl;
         public bool IsAzure;
+        public bool IsOpenAICompatibleAPI;
         public int MaxTokens = 0;
         public float Temperature = 0.5f;
         public float FrequencyPenalty = 0.0f;
@@ -166,11 +167,14 @@ namespace ChatdollKit.LLM.ChatGPT
                 { "model", Model },
                 { "temperature", Temperature },
                 { "messages", chatGPTSession.Contexts },
-                { "frequency_penalty", FrequencyPenalty },
-                { "presence_penalty", PresencePenalty },
                 { "stream", true },
             };
 
+            if (!IsOpenAICompatibleAPI)
+            {
+                data["frequency_penalty"] = FrequencyPenalty;
+                data["presence_penalty"] = PresencePenalty;
+            }
             if (MaxTokens > 0)
             {
                 data.Add("max_tokens", MaxTokens);
