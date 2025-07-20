@@ -270,6 +270,12 @@ We support ChatGPT, Claude, Gemini, and Dify as text generation AI services. Exp
 
 You can configure parameters like API keys and system prompts directly on the attached LLMService in the inspector. For more details of these parameters, please refer to the API references for the LLM services.
 
+NOTE: To use OpenAI-compatible APIs, check `IsOpenAPICompatibleAPI` and set `ChatCompletionURL` in addition to the above.
+
+- Gemini: https://generativelanguage.googleapis.com/v1beta/chat/completions
+- Grok: https://api.x.ai/v1/chat/completions
+
+
 ### Facial Expressions
 
 You can autonomously control facial expressions according to the conversation content.
