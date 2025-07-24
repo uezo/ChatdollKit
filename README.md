@@ -11,7 +11,7 @@
 
 - **Generative AI Native**: Supports multiple LLMs like ChatGPT, Anthropic Claude, Google Gemini Pro, Dify, and others, with function calling (ChatGPT/Gemini) and multimodal capabilities.
 - **3D model expression**: Synchronizes speech and motion, controls facial expressions and animations autonomously, supports blinking and lip-sync.
-- **Dialog control**: Integrates Speech-to-Text and Text-to-Speech (OpenAI, Azure, Google, VOICEVOX / AivisSpeech, Style-Bert-VITS2, NijiVoice etc.), manages dialog state (context), extracts intents and routes topics, supports wakeword detection.
+- **Dialog control**: Integrates Speech-to-Text and Text-to-Speech (OpenAI, Azure, Google, VOICEVOX / AivisSpeech, Aivis Cloud API, Style-Bert-VITS2, NijiVoice etc.), manages dialog state (context), extracts intents and routes topics, supports wakeword detection.
 - **Multi platforms**: Compatible with Windows, Mac, Linux, iOS, Android, and other Unity-supported platforms, including VR, AR, and WebGL.
 
 
@@ -476,7 +476,7 @@ To retrieve memories and include them in the conversation, simply add the `Exten
 
 ## 🗣️ Speech Synthesizer (Text-to-Speech)
 
-We support cloud-based speech synthesis services such as Google, Azure, OpenAI, and Watson, in addition to VOICEVOX / AivisSpeech, VOICEROID, Style-Bert-VITS2, and NijiVoice for more characterful and engaging voices. To use a speech synthesis service, attach `SpeechSynthesizer` from `ChatdollKit/Scripts/SpeechListener` to the AIAvatar object and check the `IsEnabled` box. If other `SpeechSynthesizer` components are attached, make sure to uncheck the `IsEnabled` box for those not in use.
+We support cloud-based speech synthesis services such as Google, Azure, OpenAI, and Watson, in addition to VOICEVOX / AivisSpeech, Aivis Cloud API, VOICEROID, Style-Bert-VITS2, and NijiVoice for more characterful and engaging voices. To use a speech synthesis service, attach `SpeechSynthesizer` from `ChatdollKit/Scripts/SpeechListener` to the AIAvatar object and check the `IsEnabled` box. If other `SpeechSynthesizer` components are attached, make sure to uncheck the `IsEnabled` box for those not in use.
 
 You can configure parameters like API keys and endpoints on the attached `SpeechSynthesizer` in the inspector. For more details of these parameters, refer to the API references of TTS services.
 
