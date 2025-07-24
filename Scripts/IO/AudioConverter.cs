@@ -42,7 +42,8 @@ namespace ChatdollKit.IO
             var channels = BitConverter.ToUInt16(pcm, 22);
             var frequency = BitConverter.ToInt32(pcm, 24);
             var ckIDPosition = searchDataChunk ? PatternAt(pcm, Encoding.ASCII.GetBytes("data")) : 36;
-            var sampleLength = BitConverter.ToInt32(pcm, ckIDPosition + 4) / 2;
+            var dataSize = BitConverter.ToInt32(pcm, ckIDPosition + 4);
+            var sampleLength = dataSize > 0 ? dataSize / 2 : (pcm.Length - ckIDPosition - 8) / 2;
 
             // Convert to sample data
             var samples = new float[sampleLength];
