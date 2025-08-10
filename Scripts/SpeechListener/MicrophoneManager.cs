@@ -8,6 +8,16 @@ using UnityEngine;
 
 namespace ChatdollKit.SpeechListener
 {
+    public class UnityMicrophoneProvider : IMicrophoneProvider
+    {
+        public bool IsRecording(string deviceName) => Microphone.IsRecording(deviceName);
+        public AudioClip Start(string deviceName, bool loop, int lengthSec, int frequency) 
+            => Microphone.Start(deviceName, loop, lengthSec, frequency);
+        public void End(string deviceName) => Microphone.End(deviceName);
+        public int GetPosition(string deviceName) => Microphone.GetPosition(deviceName);
+        public string[] devices => Microphone.devices;
+    }
+
     public class MicrophoneManager : MonoBehaviour, IMicrophoneManager
     {
 #if UNITY_WEBGL && !UNITY_EDITOR
@@ -26,6 +36,8 @@ namespace ChatdollKit.SpeechListener
         public float NoiseGateThresholdDb = -50.0f;
         public bool AutoStart = true;
         public bool IsDebug = false;
+        public IMicrophoneProvider MicrophoneProvider { get; set; }
+        public bool IsRecording;
         public float CurrentVolumeDb { get; private set; }
 
         public bool IsMuted { get; private set; } = false;
@@ -52,10 +64,14 @@ namespace ChatdollKit.SpeechListener
             var samples = GetAmplitudeData();
             CurrentVolumeDb = GetCurrentMicVolumeDb(samples);
 
-            foreach (var session in activeSessions)
+            // NOTE: ProcessSamples may trigger OnRecordingComplete callback which calls StopRecording,
+            // modifying activeSessions during iteration. Reverse loop prevents Collection modified exception. 
+            for (int i = activeSessions.Count - 1; i >= 0; i--)
             {
-                session.ProcessSamples(samples, linearNoiseGateThreshold);
+                activeSessions[i].ProcessSamples(samples, linearNoiseGateThreshold);
             }
+
+            IsRecording = MicrophoneProvider.IsRecording(MicrophoneDevice);
         }
 
         // Control microphone device
@@ -85,26 +101,32 @@ namespace ChatdollKit.SpeechListener
 #else
         public void StartMicrophone()
         {
-            if (microphoneClip != null)
+            if (MicrophoneProvider == null)
             {
-                Debug.Log("Microphone already started");
-                return;
+                Debug.Log($"Use Unity built-in Microphone");
+                MicrophoneProvider = new UnityMicrophoneProvider();
             }
+
+            if (microphoneClip != null)
+                {
+                    Debug.Log("Microphone already started");
+                    return;
+                }
 
             if (MicrophoneDevice == null)
             {
-                MicrophoneDevice = Microphone.devices[0];
+                MicrophoneDevice = MicrophoneProvider.devices[0];
             }
 
-            microphoneClip = Microphone.Start(MicrophoneDevice, true, 1, SampleRate);
+            microphoneClip = MicrophoneProvider.Start(MicrophoneDevice, true, 1, SampleRate);
             lastSamplePosition = 0;
 
-            if (IsDebug) Debug.Log("Microphone started");
+            if (IsDebug) Debug.Log($"Microphone started: {MicrophoneDevice}");
         }
 
         public void StopMicrophone()
         {
-            Microphone.End(MicrophoneDevice);
+            MicrophoneProvider.End(MicrophoneDevice);
             microphoneClip = null;
 
             if (IsDebug) Debug.Log("Microphone stopped");
@@ -157,7 +179,7 @@ namespace ChatdollKit.SpeechListener
                 return new float[0];
             }
 
-            var currentPosition = Microphone.GetPosition(MicrophoneDevice);
+            var currentPosition = MicrophoneProvider.GetPosition(MicrophoneDevice);
             if (currentPosition < 0 || currentPosition >= microphoneClip.samples)
             {
                 Debug.LogWarning($"Invalid microphone position detected: {currentPosition}");
