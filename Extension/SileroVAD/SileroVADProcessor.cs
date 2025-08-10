@@ -2,6 +2,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+#if UNITY_ANDROID && !UNITY_EDITOR
+using System;
+using UnityEngine.Networking;
+#endif
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
 
@@ -38,7 +42,26 @@ namespace ChatdollKit.Extension.SileroVAD
         {
             try
             {
+#if UNITY_ANDROID && !UNITY_EDITOR
+                string modelPath = Path.Combine(Application.persistentDataPath, onnxModelName);
+                using (UnityWebRequest www = UnityWebRequest.Get(Path.Combine(Application.streamingAssetsPath, onnxModelName)))
+                {
+                    www.SendWebRequest();
+                    while (!www.isDone) { }
+                    
+                    if (www.result == UnityWebRequest.Result.Success)
+                    {
+                        File.WriteAllBytes(modelPath, www.downloadHandler.data);
+                        Debug.Log($"Successfully copied {onnxModelName} to persistent storage");
+                    }
+                    else
+                    {
+                        throw new Exception($"Failed to load {onnxModelName} from StreamingAssets: {www.error}");
+                    }
+                }
+#else
                 string modelPath = Path.Combine(Application.streamingAssetsPath, onnxModelName);
+#endif
                 session = new InferenceSession(modelPath, new SessionOptions());
                 ResetStates();
                 Debug.Log($"VAD Initialized. Expecting {modelSamplingRate}Hz audio. Processing chunk size: {sampleSize}.");
