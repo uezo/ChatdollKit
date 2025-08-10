@@ -41,6 +41,14 @@ namespace ChatdollKit.Dialog
         public LLMServiceExtensions LLMServiceExtensions { get; } = new LLMServiceExtensions();
         public ILLMService LLMService { get { return llmService; }}
 
+        // Merge consecutive requests
+        [SerializeField]
+        private float mergeRequestThreshold = 0.0f;
+        [SerializeField]
+        private string mergeRequestPrefix = "Previous user's request and your response have been canceled. Please respond again to the following request:";
+        private string previousRequestText;
+        private DateTime previousRequestAt = DateTime.MinValue;
+
         private void Awake()
         {
             // Select enabled LLMService
@@ -152,6 +160,24 @@ namespace ChatdollKit.Dialog
                 // Configure LLMService
                 llmService.Tools = toolSpecs;
                 LLMServiceExtensions.SetExtentions(llmService);
+
+                // Merge consecutive requests
+                if (mergeRequestThreshold > 0)
+                {
+                    var now = DateTime.UtcNow;
+                    var requestInterval = (now - previousRequestAt).TotalSeconds;
+                    if (mergeRequestThreshold > requestInterval)
+                    {
+                        Debug.Log($"Merge consecutive requests: Interval {requestInterval} < Threshold {mergeRequestThreshold}");
+                        text = previousRequestText + "\n" + text;
+                        if (!text.StartsWith(mergeRequestPrefix))
+                        {
+                            text = mergeRequestPrefix + "\n\n" + text;
+                        }
+                    }
+                    previousRequestText = text;
+                    previousRequestAt = now;
+                }
 
                 // Call LLM
                 var messages = await llmService.MakePromptAsync("_", text, llmPayloads, token);

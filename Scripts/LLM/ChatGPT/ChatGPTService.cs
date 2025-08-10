@@ -100,6 +100,21 @@ namespace ChatdollKit.LLM.ChatGPT
 
             // Histories
             messages.AddRange(GetContext(historyTurns * 2));
+            for (var i = messages.Count - 1; i >= 0; i--)
+            {
+                if (messages[i] is ChatGPTSystemMessage) continue;
+
+                if (messages[i] is ChatGPTAssistantMessage assistantMessage
+                    && assistantMessage.content != null
+                    && assistantMessage.tool_calls == null)
+                {
+                    break;
+                }
+                else
+                {
+                    messages.RemoveAt(i);
+                }
+            }
 
             // User (current input)
             if (((Dictionary<string, object>)payloads["RequestPayloads"]).ContainsKey("imageBytes"))
