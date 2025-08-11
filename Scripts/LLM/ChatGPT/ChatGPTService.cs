@@ -91,17 +91,24 @@ namespace ChatdollKit.LLM.ChatGPT
             messages.AddRange(GetContext(historyTurns * 2));
             for (var i = messages.Count - 1; i >= 0; i--)
             {
-                if (messages[i] is ChatGPTSystemMessage) continue;
-
-                if (messages[i] is ChatGPTAssistantMessage assistantMessage
-                    && assistantMessage.content != null
-                    && assistantMessage.tool_calls == null)
+                var message = messages[i] as ChatGPTAssistantMessage;
+                if (message != null && message.tool_calls != null)
                 {
-                    break;
-                }
-                else
-                {
-                    messages.RemoveAt(i);
+                    // Valid sequence: tool_calls -> tool_result
+                    if (i + 1 < messages.Count)
+                    {
+                        var nextMessage = messages[i + 1] as ChatGPTFunctionMessage;
+                        if (nextMessage == null)
+                        {
+                            messages.RemoveAt(i);
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        messages.RemoveAt(i);
+                        continue;
+                    }
                 }
             }
 
