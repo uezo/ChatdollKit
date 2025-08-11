@@ -857,6 +857,10 @@ PrefabInstance:
       propertyPath: SkinnedMeshRenderer
       value: 
       objectReference: {fileID: 112896202}
+    - target: {fileID: 3492972881459660374, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
+      propertyPath: OutputAudioMixerGroup
+      value: 
+      objectReference: {fileID: 24300002, guid: a77b782b889a943579507334e1133815, type: 2}
     - target: {fileID: 4234857022457540485, guid: 74e8f3777a3aa42ba9447b4bec832cd1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -1060,14 +1064,16 @@ MonoBehaviour:
 
 '
   ErrorMessageContent: 
-  historyTurns: 10
+  historyTurns: 100
   contextTimeout: 600
   ApiKey: 
   Model: gpt-4o-mini
   ChatCompletionUrl: 
   IsAzure: 0
+  IsOpenAICompatibleAPI: 0
   MaxTokens: 0
   Temperature: 0.5
+  ReasoningEffort: 
   FrequencyPenalty: 0
   Logprobs: 0
   TopLogprobs: 0
@@ -1106,6 +1112,7 @@ MonoBehaviour:
   SilenceDurationThreshold: 0.3
   MinRecordingDuration: 0.5
   MaxRecordingDuration: 3
+  MaxPrerollDuration: 0.2
   Language: 
   AlternativeLanguages: []
   AutoStart: 1
