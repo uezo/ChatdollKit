@@ -10,6 +10,7 @@ using UnityEngine;
 
 namespace ChatdollKit.SpeechListener
 {
+#if !UNITY_WEBGL || UNITY_EDITOR
     public class UnityMicrophoneProvider : IMicrophoneProvider
     {
         public bool IsRecording(string deviceName) => Microphone.IsRecording(deviceName);
@@ -19,6 +20,7 @@ namespace ChatdollKit.SpeechListener
         public int GetPosition(string deviceName) => Microphone.GetPosition(deviceName);
         public string[] devices => Microphone.devices;
     }
+#endif
 
     public class MicrophoneManager : MonoBehaviour, IMicrophoneManager
     {
@@ -75,8 +77,11 @@ namespace ChatdollKit.SpeechListener
             {
                 activeSessions[i].ProcessSamples(samples, linearNoiseGateThreshold);
             }
-
+#if UNITY_WEBGL && !UNITY_EDITOR
+            IsRecording = IsWebGLMicrophoneRecording() == 1;
+#else
             IsRecording = MicrophoneProvider.IsRecording(MicrophoneDevice);
+#endif
         }
 
         // Control microphone device

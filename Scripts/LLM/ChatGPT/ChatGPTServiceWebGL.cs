@@ -117,7 +117,7 @@ namespace ChatdollKit.LLM.ChatGPT
             while (true)
             {
                 // Success
-                if (!string.IsNullOrEmpty(chatGPTSession.StreamBuffer) && isChatCompletionJSDone)
+                if ((!string.IsNullOrEmpty(chatGPTSession.StreamBuffer) || !string.IsNullOrEmpty(chatGPTSession.FunctionName)) && isChatCompletionJSDone)
                 {
                     break;
                 }
@@ -262,7 +262,6 @@ namespace ChatdollKit.LLM.ChatGPT
 
             var chatGPTSession = sessions[sessionId];
 
-            var temp = string.Empty;
             var isDone = false;
 
             foreach (var d in chunkString.Split("data:"))
@@ -301,8 +300,8 @@ namespace ChatdollKit.LLM.ChatGPT
                         chatGPTSession.ResponseType = ResponseType.Content;
                         if (delta.tool_calls == null)
                         {
-                            chatGPTSession.CurrentStreamBuffer += temp;
-                            chatGPTSession.StreamBuffer += temp;
+                            chatGPTSession.CurrentStreamBuffer += delta.content;
+                            chatGPTSession.StreamBuffer += delta.content;
                         }
                         else if (delta.tool_calls.Count > 0)
                         {
