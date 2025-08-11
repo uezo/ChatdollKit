@@ -13,7 +13,7 @@ namespace ChatdollKit.LLM.Gemini
     {
         [Header("API configuration")]
         public string ApiKey;
-        public string Model = "gemini-1.5-flash-latest";
+        public string Model = "gemini-2.5-flash";
         public string GenerateContentUrl;
         public int MaxOutputTokens = 0;
         public float Temperature = 0.5f;
@@ -26,17 +26,6 @@ namespace ChatdollKit.LLM.Gemini
         protected int responseTimeoutSec = 30;
         [SerializeField]
         protected float noDataResponseTimeoutSec = 10.0f;   // Some requests like multi-modal takes time longer
-
-        public override ILLMMessage CreateMessageAfterFunction(string role = null, string content = null, ILLMSession llmSession = null, Dictionary<string, object> arguments = null)
-        {
-            return new GeminiMessage(
-                string.IsNullOrEmpty(role) ? "function" : role,
-                functionResponse: new GeminiFunctionResponse() {
-                    name = llmSession.FunctionName,
-                    response = JsonConvert.DeserializeObject<Dictionary<string, object>>(content)
-                }
-            );
-        }
 
         public override List<ILLMMessage> GetContext(int count)
         {
@@ -72,21 +61,21 @@ namespace ChatdollKit.LLM.Gemini
             context.Add(lastUserMessage);
 
             // Assistant message
-            if (llmSession.ResponseType == ResponseType.FunctionCalling)
+            var assistantMessage = new GeminiMessage("model");
+            if (!string.IsNullOrEmpty(llmSession.StreamBuffer))
             {
-                var functionCallMessage = new GeminiMessage("model", functionCall: new GeminiFunctionCall() {
+                assistantMessage.parts.Add(new GeminiPart(llmSession.StreamBuffer));
+            }
+            if (!string.IsNullOrEmpty(((GeminiSession)llmSession).FunctionName))
+            {
+                assistantMessage.parts.Add(new GeminiPart(functionCall: new GeminiFunctionCall(){
                     name = llmSession.FunctionName,
-                    args = JsonConvert.DeserializeObject<Dictionary<string, object>>(llmSession.StreamBuffer)
-                });
-                context.Add(functionCallMessage);
-
-                // Add also to contexts for using this message in this turn
-                llmSession.Contexts.Add(functionCallMessage);
+                    args = JsonConvert.DeserializeObject<Dictionary<string, object>>(llmSession.FunctionArguments)
+                }));
+                // Add also to llmSession.Contexts to create tool_call execution response
+                llmSession.Contexts.Add(assistantMessage);
             }
-            else
-            {
-                context.Add(new GeminiMessage("model", llmSession.StreamBuffer));
-            }
+            context.Add(assistantMessage);
 
             contextUpdatedAt = Time.time;
         }
@@ -105,6 +94,28 @@ namespace ChatdollKit.LLM.Gemini
 
             // Histories
             messages.AddRange(GetContext(historyTurns * 2));
+            for (var i = messages.Count - 1; i >= 0; i--)
+            {
+                var message = messages[i] as GeminiMessage;
+                if (message.parts.Any(p => p.functionCall != null))
+                {
+                    // Valid sequence: function_call -> function_response
+                    if (i + 1 < messages.Count)
+                    {
+                        var nextMessage = messages[i + 1] as GeminiMessage;
+                        if (!nextMessage.parts.Any(p => p.functionResponse != null))
+                        {
+                            messages.RemoveAt(i);
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        messages.RemoveAt(i);
+                        continue;
+                    }
+                }
+            }
 
             // User (current input)
             if (((Dictionary<string, object>)payloads["RequestPayloads"]).ContainsKey("imageBytes"))
@@ -213,15 +224,21 @@ namespace ChatdollKit.LLM.Gemini
             downloadHandler.DebugMode = DebugMode;
             downloadHandler.SetReceivedChunk = (chunk) =>
             {
+                geminiSession.ResponseType = ResponseType.Content;
                 geminiSession.CurrentStreamBuffer += chunk;
                 geminiSession.StreamBuffer += chunk;
             };
-            downloadHandler.SetResponseType = (responseType, functionName) =>
+            downloadHandler.SetToolCallInfo = (name, arguments) =>
             {
-                geminiSession.ResponseType = responseType;
-                if (!string.IsNullOrEmpty(functionName))
+                geminiSession.ResponseType = ResponseType.Content;  // Set to exit WaitForResponseType
+                if (!string.IsNullOrEmpty(name))
                 {
-                    geminiSession.FunctionName = functionName;
+                    geminiSession.FunctionName = name;
+                    geminiSession.FunctionArguments = string.Empty;
+                }
+                if (!string.IsNullOrEmpty(arguments))
+                {
+                    geminiSession.FunctionArguments += arguments;
                 }
             };
             streamRequest.downloadHandler = downloadHandler;
@@ -290,6 +307,31 @@ namespace ChatdollKit.LLM.Gemini
                 HandleExtractedTags(extractedTags, geminiSession);
             }
 
+            if (!string.IsNullOrEmpty(geminiSession.FunctionName))
+            {
+                foreach (var tool in gameObject.GetComponents<ITool>())
+                {
+                    var toolSpec = tool.GetToolSpec();
+                    if (toolSpec.name == geminiSession.FunctionName)
+                    {
+                        Debug.Log($"Execute tool: {toolSpec.name}({geminiSession.FunctionArguments})");
+                        // Execute tool
+                        var toolResponse = await tool.ExecuteAsync(geminiSession.FunctionArguments, token);
+                        geminiSession.Contexts.Add(new GeminiMessage(
+                            "function",
+                            functionResponse: new GeminiFunctionResponse() {
+                                name = geminiSession.FunctionName,
+                                response = JsonConvert.DeserializeObject<Dictionary<string, object>>(toolResponse.Body)
+                            }
+                        ));
+                        // Reset tool call info to prevent infinite loop
+                        geminiSession.FunctionName = null;
+                        geminiSession.FunctionArguments = null;
+                        // Call recursively with tool response
+                        await StartStreamingAsync(geminiSession, customParameters, customHeaders, useFunctions, token);
+                    }
+                }
+            }
             if (CaptureImage != null && extractedTags.ContainsKey("vision") && geminiSession.IsVisionAvailable)
             {
                 // Prevent infinit loop
@@ -340,7 +382,7 @@ namespace ChatdollKit.LLM.Gemini
         protected class GeminiStreamDownloadHandler : DownloadHandlerScript
         {
             public Action<string> SetReceivedChunk;
-            public Action<ResponseType, string> SetResponseType;
+            public Action<string, string> SetToolCallInfo;
             public bool DebugMode = false;
             private string receivedData = string.Empty;
             private ResponseType responseType = ResponseType.None;
@@ -383,20 +425,13 @@ namespace ChatdollKit.LLM.Gemini
                         {
                             if (streamResponse.candidates[0].content.parts[0].functionCall != null)
                             {
-                                if (responseType == ResponseType.None)
-                                {
-                                    responseType = ResponseType.FunctionCalling;
-                                    SetResponseType(responseType, streamResponse.candidates[0].content.parts[0].functionCall.name);
-                                }
-                                SetReceivedChunk(JsonConvert.SerializeObject(streamResponse.candidates[0].content.parts[0].functionCall.args));
+                                SetToolCallInfo(
+                                    streamResponse.candidates[0].content.parts[0].functionCall.name,
+                                    JsonConvert.SerializeObject(streamResponse.candidates[0].content.parts[0].functionCall.args)
+                                );
                             }
                             else
                             {
-                                if (responseType == ResponseType.None)
-                                {
-                                    responseType = ResponseType.Content;
-                                    SetResponseType(responseType, string.Empty);
-                                }
                                 SetReceivedChunk(streamResponse.candidates[0].content.parts[0].text);
                             }
                         }

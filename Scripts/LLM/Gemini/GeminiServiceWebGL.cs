@@ -5,7 +5,6 @@ using System.Threading;
 using UnityEngine;
 using Newtonsoft.Json;
 using Cysharp.Threading.Tasks;
-using System.Linq;
 
 namespace ChatdollKit.LLM.Gemini
 {
@@ -156,7 +155,32 @@ namespace ChatdollKit.LLM.Gemini
                 HandleExtractedTags(extractedTags, geminiSession);
             }
 
-            if (CaptureImage != null && extractedTags.ContainsKey("vision") && geminiSession.IsVisionAvailable)
+            if (!string.IsNullOrEmpty(geminiSession.FunctionName))
+            {
+                foreach (var tool in gameObject.GetComponents<ITool>())
+                {
+                    var toolSpec = tool.GetToolSpec();
+                    if (toolSpec.name == geminiSession.FunctionName)
+                    {
+                        Debug.Log($"Execute tool: {toolSpec.name}({geminiSession.FunctionArguments})");
+                        // Execute tool
+                        var toolResponse = await tool.ExecuteAsync(geminiSession.FunctionArguments, token);
+                        geminiSession.Contexts.Add(new GeminiMessage(
+                            "function",
+                            functionResponse: new GeminiFunctionResponse() {
+                                name = geminiSession.FunctionName,
+                                response = JsonConvert.DeserializeObject<Dictionary<string, object>>(toolResponse.Body)
+                            }
+                        ));
+                        // Reset tool call info to prevent infinite loop
+                        geminiSession.FunctionName = null;
+                        geminiSession.FunctionArguments = null;
+                        // Call recursively with tool response
+                        await StartStreamingAsync(geminiSession, customParameters, customHeaders, useFunctions, token);
+                    }
+                }
+            }
+            else if (CaptureImage != null && extractedTags.ContainsKey("vision") && geminiSession.IsVisionAvailable)
             {
                 // Prevent infinit loop
                 geminiSession.IsVisionAvailable = false;
@@ -241,34 +265,24 @@ namespace ChatdollKit.LLM.Gemini
                 var streamResponse = JsonConvert.DeserializeObject<GeminiStreamResponse>(chunkString);
                 if (streamResponse == null) return;
 
+                geminiSession.ResponseType = ResponseType.Content;
                 if (streamResponse.candidates[0].content.parts[0].functionCall != null)
                 {
-                    if (geminiSession.ResponseType == ResponseType.None)
-                    {
-                        geminiSession.ResponseType = ResponseType.FunctionCalling;
-                        if (string.IsNullOrEmpty(geminiSession.FunctionName))
-                        {
-                            geminiSession.FunctionName = streamResponse.candidates[0].content.parts[0].functionCall.name;
-                        }
-                    }
-                    resp = JsonConvert.SerializeObject(streamResponse.candidates[0].content.parts[0].functionCall.args);
+                    geminiSession.ResponseType = ResponseType.Content;
+                    geminiSession.FunctionName = streamResponse.candidates[0].content.parts[0].functionCall.name;
+                    geminiSession.FunctionArguments = JsonConvert.SerializeObject(streamResponse.candidates[0].content.parts[0].functionCall.args);
                 }
                 else
                 {
-                    if (geminiSession.ResponseType == ResponseType.None)
-                    {
-                        geminiSession.ResponseType = ResponseType.Content;
-                    }
-                    resp = streamResponse.candidates[0].content.parts[0].text;
+                    geminiSession.ResponseType = ResponseType.Content;
+                    geminiSession.CurrentStreamBuffer += streamResponse.candidates[0].content.parts[0].text;
+                    geminiSession.StreamBuffer += streamResponse.candidates[0].content.parts[0].text;
                 }
             }
             else if (chunkString.EndsWith("]"))
             {
                 isDone = true;
             }
-
-            geminiSession.CurrentStreamBuffer += resp;
-            geminiSession.StreamBuffer += resp;
 
             if (isDone)
             {

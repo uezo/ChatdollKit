@@ -40,7 +40,7 @@ namespace ChatdollKit.LLM
         public string SystemMessageContent;
         public string ErrorMessageContent;
         [SerializeField]
-        protected int historyTurns = 10;
+        protected int historyTurns = 100;
         [SerializeField]
         protected int contextTimeout = 600;    // 10 min
         protected float contextUpdatedAt;
@@ -86,11 +86,6 @@ namespace ChatdollKit.LLM
         }
 
 #pragma warning disable CS1998
-        public virtual ILLMMessage CreateMessageAfterFunction(string role = null, string content = null, ILLMSession llmSession = null, Dictionary<string, object> arguments = null)
-        {
-            throw new NotImplementedException("LLMServiceBase.CreateMessageAfterFunction must be implemented");
-        }
-
         public virtual async UniTask<List<ILLMMessage>> MakePromptAsync(string userId, string inputText, Dictionary<string, object> payloads, CancellationToken token = default)
         {
             throw new NotImplementedException("LLMServiceBase.MakePromptAsync must be implemented");
@@ -131,6 +126,7 @@ namespace ChatdollKit.LLM
         public ResponseType ResponseType { get; set; } = ResponseType.None;
         public UniTask StreamingTask { get; set; }
         public string FunctionName { get; set; }
+        public string FunctionArguments { get; set; }
         public List<ILLMMessage> Contexts { get; set; }
         public string ContextId { get; set; }
         public bool ProcessLastChunkImmediately { get; set; } = false;

@@ -157,7 +157,27 @@ namespace ChatdollKit.LLM.Claude
                 HandleExtractedTags(extractedTags, claudeSession);
             }
 
-            if (CaptureImage != null && extractedTags.ContainsKey("vision") && claudeSession.IsVisionAvailable)
+            if (!string.IsNullOrEmpty(claudeSession.ToolUseId))
+            {
+                foreach (var tool in gameObject.GetComponents<ITool>())
+                {
+                    var toolSpec = tool.GetToolSpec();
+                    if (toolSpec.name == claudeSession.FunctionName)
+                    {
+                        Debug.Log($"Execute tool: {toolSpec.name}({claudeSession.FunctionArguments})");
+                        // Execute tool
+                        var toolResponse = await tool.ExecuteAsync(claudeSession.FunctionArguments, token);
+                        claudeSession.Contexts.Add(new ClaudeMessage("user", tool_use_id: claudeSession.ToolUseId, tool_use_content: toolResponse.Body));
+                        // Reset tool call info to prevent infinite loop
+                        claudeSession.ToolUseId = null;
+                        claudeSession.FunctionName = null;
+                        claudeSession.FunctionArguments = null;
+                        // Call recursively with tool response
+                        await StartStreamingAsync(claudeSession, customParameters, customHeaders, useFunctions, token);
+                    }
+                }
+            }
+            else if (CaptureImage != null && extractedTags.ContainsKey("vision") && claudeSession.IsVisionAvailable)
             {
                 // Prevent infinit loop
                 claudeSession.IsVisionAvailable = false;
@@ -223,7 +243,6 @@ namespace ChatdollKit.LLM.Claude
 
             var claudeSession = sessions[sessionId];
 
-            var resp = string.Empty;
             var isDone = false;
             foreach (string line in chunkString.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries))
             {
@@ -245,40 +264,37 @@ namespace ChatdollKit.LLM.Claude
 
                     if (csr.type == "content_block_start")
                     {
+                        claudeSession.ResponseType = ResponseType.Content;
                         if (csr.content_block.type == "tool_use")
                         {
-                            claudeSession.ToolUseId = csr.content_block.id;
-                            claudeSession.FunctionName = csr.content_block.name;
-                            claudeSession.ResponseType = ResponseType.FunctionCalling;
+                            if (!string.IsNullOrEmpty(csr.content_block.id))
+                            {
+                                claudeSession.ToolUseId = csr.content_block.id;
+                                claudeSession.FunctionName = csr.content_block.name;
+                                claudeSession.FunctionArguments = string.Empty;
+                            }
                         }
-                        else
-                        {
-                            claudeSession.ResponseType = ResponseType.Content;
-                        }
-                        continue;
                     }
                     else if (csr.type == "content_block_delta")
                     {
-                        if (claudeSession.ResponseType == ResponseType.FunctionCalling)
+                        if (csr.content_block.type == "tool_use")
                         {
-                            resp += csr.delta.partial_json;
+                            claudeSession.FunctionArguments += csr.delta.partial_json;
                         }
                         else
                         {
-                            resp += csr.delta.text;
+                            claudeSession.CurrentStreamBuffer += csr.delta.text;
+                            claudeSession.StreamBuffer += csr.delta.text;
                         }
                     }
-                    else if (csr.type == "content_block_stop")
+                    else if (csr.type == "message_stop")
                     {
-                        // NOTE: Only the first content block is used
+                        Debug.Log("Chunk is data:{'type': 'message_stop'}. Set true to isChatCompletionJSDone.");
                         isDone = true;
                         break;
                     }
                 }
             }
-
-            claudeSession.CurrentStreamBuffer += resp;
-            claudeSession.StreamBuffer += resp;
 
             if (isDone)
             {
