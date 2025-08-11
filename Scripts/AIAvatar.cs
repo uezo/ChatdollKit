@@ -14,7 +14,7 @@ namespace ChatdollKit
 {
     public class AIAvatar : MonoBehaviour
     {
-        public static string VERSION = "0.8.13";
+        public static string VERSION = "0.8.14";
 
         [Header("Avatar lifecycle settings")]
         [SerializeField]
@@ -302,7 +302,10 @@ namespace ChatdollKit
             }
 
             // Character speech volume
-            characterAudioMixer = ModelController.AudioSource.outputAudioMixerGroup.audioMixer;
+            if (ModelController.AudioSource.outputAudioMixerGroup != null)
+            {
+                characterAudioMixer = ModelController.AudioSource.outputAudioMixerGroup.audioMixer;
+            }
         }
 
         private void Update()
