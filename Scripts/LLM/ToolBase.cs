@@ -15,20 +15,14 @@ namespace ChatdollKit.LLM
 
         public async UniTask<ILLMSession> ProcessAsync(ILLMService llmService, ILLMSession llmSession, Dictionary<string, object> payloads, CancellationToken token)
         {
-            // TODO: Waiting AnimatedVoice. See https://x.com/uezochan/status/1795216169969864865
-            await llmSession.StreamingTask;
+            // Implementation for migration from older version
+            return null;
+        }
 
-            // Execute function
-            var responseForRequest = await ExecuteFunction(llmSession.StreamBuffer, token);
-
-            // Add human message for next request
-            var humanFriendlyAnswerRequestMessage = llmService.CreateMessageAfterFunction(responseForRequest.Role, responseForRequest.Body, llmSession: llmSession);
-            llmSession.Contexts.Add(humanFriendlyAnswerRequestMessage);
-
-            // Call LLM to get human-friendly response
-            var llmSessionForHuman = await llmService.GenerateContentAsync(llmSession.Contexts, payloads, false, token: token);
-
-            return llmSessionForHuman;
+        public virtual async UniTask<ToolResponse> ExecuteAsync(string argumentsJsonString, CancellationToken token)
+        {
+            // Implementation for migration from older version
+            return await ExecuteFunction(argumentsJsonString, token);
         }
 
 #pragma warning disable CS1998
@@ -37,17 +31,5 @@ namespace ChatdollKit.LLM
             throw new NotImplementedException("ToolBase.ExecuteFunction must be implemented");
         }
 #pragma warning restore CS1998
-
-        protected class ToolResponse
-        {
-            public string Body { get; protected set; }
-            public string Role { get; protected set; }
-
-            public ToolResponse(string body, string role = "function")
-            {
-                Body = body;
-                Role = role;
-            }
-        }
     }
 }

@@ -180,21 +180,9 @@ namespace ChatdollKit.Dialog
                 }
 
                 // Call LLM
+                Status = DialogStatus.Processing;
                 var messages = await llmService.MakePromptAsync("_", text, llmPayloads, token);
                 var llmSession = await llmService.GenerateContentAsync(messages, llmPayloads, token: token);
-
-                // Tool call
-                Status = DialogStatus.Routing;
-                if (!string.IsNullOrEmpty(llmSession.FunctionName))
-                {
-                    if (toolResolver.ContainsKey(llmSession.FunctionName))
-                    {
-                        var tool = toolResolver[llmSession.FunctionName];
-                        Status = DialogStatus.Processing;
-                        llmSession = await tool.ProcessAsync(llmService, llmSession, llmPayloads, token);
-                        if (token.IsCancellationRequested) { return; }
-                    }
-                }
 
                 if (OnBeforeProcessContentStreamAsync != null)
                 {

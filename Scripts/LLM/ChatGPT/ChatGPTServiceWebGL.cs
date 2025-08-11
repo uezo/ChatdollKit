@@ -48,7 +48,11 @@ namespace ChatdollKit.LLM.ChatGPT
                 { "messages", chatGPTSession.Contexts },
                 { "stream", true },
             };
-
+            if (!string.IsNullOrEmpty(ReasoningEffort))
+            {
+                data["reasoning_effort"] = ReasoningEffort;
+                
+            }
             if (!IsOpenAICompatibleAPI)
             {
                 data["frequency_penalty"] = FrequencyPenalty;
@@ -171,7 +175,27 @@ namespace ChatdollKit.LLM.ChatGPT
                 HandleExtractedTags(extractedTags, chatGPTSession);
             }
 
-            if (CaptureImage != null && extractedTags.ContainsKey("vision") && chatGPTSession.IsVisionAvailable)
+            if (!string.IsNullOrEmpty(chatGPTSession.ToolCallId))
+            {
+                foreach (var tool in gameObject.GetComponents<ITool>())
+                {
+                    var toolSpec = tool.GetToolSpec();
+                    if (toolSpec.name == chatGPTSession.FunctionName)
+                    {
+                        Debug.Log($"Execute tool: {toolSpec.name}({chatGPTSession.FunctionArguments})");
+                        // Execute tool
+                        var toolResponse = await tool.ExecuteAsync(chatGPTSession.FunctionArguments, token);
+                        chatGPTSession.Contexts.Add(new ChatGPTFunctionMessage(toolResponse.Body, chatGPTSession.ToolCallId));
+                        // Reset tool call info to prevent infinite loop
+                        chatGPTSession.ToolCallId = null;
+                        chatGPTSession.FunctionName = null;
+                        chatGPTSession.FunctionArguments = null;
+                        // Call recursively with tool response
+                        await StartStreamingAsync(chatGPTSession, customParameters, customHeaders, useFunctions, token);
+                    }
+                }
+            }
+            else if (CaptureImage != null && extractedTags.ContainsKey("vision") && chatGPTSession.IsVisionAvailable)
             {
                 // Prevent infinit loop
                 chatGPTSession.IsVisionAvailable = false;
@@ -271,30 +295,26 @@ namespace ChatdollKit.LLM.ChatGPT
                         }
 
                         var delta = j.choices[0].delta;
-                        if (delta != null)
-                        {
-                            if (chatGPTSession.FirstDelta == null)
-                            {
-                                chatGPTSession.FirstDelta = delta;
 
-                                if (delta.tool_calls != null)
-                                {
-                                    chatGPTSession.ToolCallId = chatGPTSession.FirstDelta.tool_calls[0].id;
-                                    chatGPTSession.FunctionName = chatGPTSession.FirstDelta.tool_calls[0].function.name;
-                                    chatGPTSession.ResponseType = ResponseType.FunctionCalling;
-                                }
-                                else
-                                {
-                                    chatGPTSession.ResponseType = ResponseType.Content;
-                                }
-                            }
-                            if (delta.tool_calls == null)
+                        if (delta == null) continue;
+
+                        chatGPTSession.ResponseType = ResponseType.Content;
+                        if (delta.tool_calls == null)
+                        {
+                            chatGPTSession.CurrentStreamBuffer += temp;
+                            chatGPTSession.StreamBuffer += temp;
+                        }
+                        else if (delta.tool_calls.Count > 0)
+                        {
+                            if (!string.IsNullOrEmpty(delta.tool_calls[0].id))
                             {
-                                temp += delta.content;
+                                chatGPTSession.ToolCallId = delta.tool_calls[0].id;
+                                chatGPTSession.FunctionName = delta.tool_calls[0].function.name;
+                                chatGPTSession.FunctionArguments = string.Empty;
                             }
-                            else
+                            if (!string.IsNullOrEmpty(delta.tool_calls[0].function.arguments))
                             {
-                                temp += delta.tool_calls[0].function.arguments;
+                                chatGPTSession.FunctionArguments += delta.tool_calls[0].function.arguments;
                             }
                         }
                     }
@@ -306,9 +326,6 @@ namespace ChatdollKit.LLM.ChatGPT
                     }
                 }
             }
-
-            chatGPTSession.CurrentStreamBuffer += temp;
-            chatGPTSession.StreamBuffer += temp;
 
             if (isDone)
             {
