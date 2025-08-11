@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
+using UnityEngine.Audio;
 using Cysharp.Threading.Tasks;
 using ChatdollKit.Dialog;
 using ChatdollKit.LLM;
@@ -67,6 +68,16 @@ namespace ChatdollKit
         public List<string> IgnoreWords = new List<string>() { "。", "、", "？", "！" };
         public int WakeLength;
         public string BackgroundRequestPrefix = "$";
+        private AudioMixer characterAudioMixer;
+        [SerializeField]
+        private string characterVolumeParameter = "CharacterVolume";
+        [SerializeField]
+        private float characterVolumeSmoothTime = 0.2f;
+        private float targetCharacterVolumeDb;
+        private float currentCharacterVolumeDb;
+        private float currentCharacterVelocity;
+        private bool isPreviousRecording = false;
+        public bool IsCharacterMuted;
 
         [Header("ChatdollKit components")]
         public ModelController ModelController;
@@ -289,11 +300,15 @@ namespace ChatdollKit
                     break;
                 }
             }
+
+            // Character speech volume
+            characterAudioMixer = ModelController.AudioSource.outputAudioMixerGroup.audioMixer;
         }
 
         private void Update()
         {
             UpdateMode();
+            UpdateCharacterVolume();
 
             if (DialogProcessor.Status == DialogProcessor.DialogStatus.Idling)
             {
@@ -306,7 +321,7 @@ namespace ChatdollKit
                             minRecordingDuration: conversationMinRecordingDuration,
                             maxRecordingDuration: conversationMaxRecordingDuration
                         );
-                        UserMessageWindow?.Show("Listening...");    
+                        UserMessageWindow?.Show("Listening...");
                     }
                 }
                 else
@@ -358,6 +373,44 @@ namespace ChatdollKit
                 Mode = AvatarMode.Sleep;
                 modeTimer = 0.0f;
             }
+        }
+
+        private void UpdateCharacterVolume()
+        {
+            if (characterAudioMixer == null || IsCharacterMuted) return;
+
+            // Set target on recording status changed
+            if (SpeechListener.IsRecording && !isPreviousRecording)
+            {
+                targetCharacterVolumeDb = -80.0f;   // Mute
+            }
+            else if (!SpeechListener.IsRecording && isPreviousRecording)
+            {
+                targetCharacterVolumeDb = 0.0f;     // Unmute
+            }
+            isPreviousRecording = SpeechListener.IsRecording;
+
+            // Smoothing
+            currentCharacterVolumeDb = Mathf.SmoothDamp(
+                currentCharacterVolumeDb,
+                targetCharacterVolumeDb,
+                ref currentCharacterVelocity,
+                characterVolumeSmoothTime
+            );
+
+            // Apply to mixer
+            characterAudioMixer.SetFloat(characterVolumeParameter, currentCharacterVolumeDb);
+        }
+
+        public void MuteCharacter(bool mute)
+        {
+            if (characterAudioMixer == null) return;
+
+            currentCharacterVelocity = 0.0f;
+            currentCharacterVolumeDb = mute ? -80.0f : 0.0f;
+            targetCharacterVolumeDb = currentCharacterVolumeDb;
+            characterAudioMixer.SetFloat(characterVolumeParameter, currentCharacterVolumeDb);
+            IsCharacterMuted = mute;
         }
 
         private string ExtractWakeWord(string text)

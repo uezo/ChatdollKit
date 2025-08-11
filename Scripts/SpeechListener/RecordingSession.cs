@@ -18,7 +18,7 @@ namespace ChatdollKit.SpeechListener
         private int maxPrerollSamples;
         private int prerollIndex = 0;
         private int prerollCount = 0;
-        private bool isRecording = false;
+        public bool IsRecording { get; private set; }
         private bool isCompleted = false;
         private float silenceDuration = 0.0f;
         private float recordingStartTime;
@@ -61,12 +61,12 @@ namespace ChatdollKit.SpeechListener
                 isSilent = !DetectVoiceFunc(samples, linearNoiseGateThreshold);
             }
 
-            if (!isRecording && !isSilent)
+            if (!IsRecording && !isSilent)
             {
                 StartRecording();
             }
 
-            if (isRecording)
+            if (IsRecording)
             {
                 if (isSilent)
                 {
@@ -103,12 +103,12 @@ namespace ChatdollKit.SpeechListener
 
         private void StartRecording()
         {
-            if (isRecording || isCompleted)
+            if (IsRecording || isCompleted)
             {
                 return; // Do not start recording when session is already started or completed
             }
 
-            isRecording = true;
+            IsRecording = true;
             silenceDuration = 0.0f;
             recordingStartTime = Time.time;
             recordedSamples.Clear();
@@ -116,12 +116,12 @@ namespace ChatdollKit.SpeechListener
 
         private void StopRecording(bool invokeCallback = true)
         {
-            if (!isRecording || isCompleted)
+            if (!IsRecording || isCompleted)
             {
                 return; // Do not stop recording when session is not started yet or already completed
             }
 
-            isRecording = false;
+            IsRecording = false;
 
             if (invokeCallback)
             {
