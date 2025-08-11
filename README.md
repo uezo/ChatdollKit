@@ -15,14 +15,21 @@
 - **Multi platforms**: Compatible with Windows, Mac, Linux, iOS, Android, and other Unity-supported platforms, including VR, AR, and WebGL.
 
 
-## 💎 What's New in Version 0.8.13
+## 💎 What's New in Version 0.8.14
+
+- **🎙️ Echo Cancelling Support**: Add native microphone support for Android, iOS, and macOSX that support AEC, noise cancelling and other features for voice conversation.
+- **🗣️ Conversation Improvement**: Prevent conversation breakdown caused by turn-end misrecognition and improve conversation experience with features like automatic volume control when users interrupt during AI speech
+- **💠 Platform Expansion**: Support for Aivis Cloud API TTS, AIAvatarKit TTS/STT, and GPT-5 `reasoning_effort` parameter
+
+
+<details>
+<summary>🕰️ Previous Updates (click to expand)</summary>
+
+### 0.8.13
 
 - **🥳 Silero VAD Support**: ML-based voice-activity detection vastly improves turn-end accuracy in noisy settings, enabling smooth conversations outdoors or at events.
 - **🪄 TTS Pre-processing**: Optional text pre-processing lets you fine-tune pronunciation (e.g., convert “OpenAI” to katakana) before synthesis.
 - **🤝 Grok & Gemini Compatibility**: Removes OpenAI-specific params from the OpenAI-style endpoint, so Grok, Gemini, and other API-compatible models work out of the box.
-
-<details>
-<summary>🕰️ Previous Updates (click to expand)</summary>
 
 ### 0.8.11 and 0.8.12
 
