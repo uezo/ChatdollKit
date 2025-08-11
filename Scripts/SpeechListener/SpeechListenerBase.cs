@@ -21,6 +21,7 @@ namespace ChatdollKit.SpeechListener
         public bool AutoStart = true;
         public bool PrintResult = false;
         public int TargetSampleRate = 0;
+        public bool IsRecording { get; private set; }
 
         public Func<string, UniTask> OnRecognized { get; set; }
 
@@ -36,6 +37,11 @@ namespace ChatdollKit.SpeechListener
             {
                 StartListening();
             }
+        }
+
+        protected virtual void Update()
+        {
+            IsRecording = session != null && session.IsRecording;
         }
 
         public void StartListening(bool stopBeforeStart = false)

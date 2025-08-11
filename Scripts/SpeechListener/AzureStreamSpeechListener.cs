@@ -22,6 +22,7 @@ namespace ChatdollKit.SpeechListener
 
         // Recognizer
         public Func<string, UniTask> OnRecognized { get; set; }
+        public bool IsRecording { get; }    // TODO: Implement
         private SpeechRecognizer recognizer { get; set; }
         private EventHandler<SpeechRecognitionEventArgs> OnRecognizerRecognizing { get; set; }
         private EventHandler<SpeechRecognitionEventArgs> OnRecognizerRecognized { get; set; }

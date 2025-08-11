@@ -8,6 +8,7 @@ namespace ChatdollKit.SpeechListener
     public class DummySpeechListener : MonoBehaviour, ISpeechListener
     {
         public Func<string, UniTask> OnRecognized { get; set; }
+        public bool IsRecording { get; }
         public void ChangeSessionConfig(float silenceDurationThreshold = float.MinValue, float minRecordingDuration = float.MinValue, float maxRecordingDuration = float.MinValue)
         {
         }
