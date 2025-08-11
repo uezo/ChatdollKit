@@ -99,7 +99,7 @@ namespace ChatdollKit.LLM.Claude
             while (true)
             {
                 // Success
-                if (!string.IsNullOrEmpty(claudeSession.StreamBuffer) && isChatCompletionJSDone)
+                if ((!string.IsNullOrEmpty(claudeSession.StreamBuffer) || !string.IsNullOrEmpty(claudeSession.FunctionName)) && isChatCompletionJSDone)
                 {
                     break;
                 }
@@ -277,7 +277,7 @@ namespace ChatdollKit.LLM.Claude
                     }
                     else if (csr.type == "content_block_delta")
                     {
-                        if (csr.content_block.type == "tool_use")
+                        if (csr.delta.type == "input_json_delta")
                         {
                             claudeSession.FunctionArguments += csr.delta.partial_json;
                         }

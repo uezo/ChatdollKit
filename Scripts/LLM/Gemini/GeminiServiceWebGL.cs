@@ -98,7 +98,7 @@ namespace ChatdollKit.LLM.Gemini
             while (true)
             {
                 // Success
-                if (!string.IsNullOrEmpty(geminiSession.StreamBuffer) && isChatCompletionJSDone)
+                if ((!string.IsNullOrEmpty(geminiSession.StreamBuffer) || !string.IsNullOrEmpty(geminiSession.FunctionName)) && isChatCompletionJSDone)
                 {
                     break;
                 }

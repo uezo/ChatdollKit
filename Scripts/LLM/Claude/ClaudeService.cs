@@ -398,7 +398,7 @@ namespace ChatdollKit.LLM.Claude
                         }
                         else if (csr.type == "content_block_delta")
                         {
-                            if (contentBlockType == "tool_use")
+                            if (csr.delta.type == "input_json_delta")
                             {
                                 SetToolCallInfo(null, null, csr.delta.partial_json);
                             }
@@ -436,6 +436,7 @@ namespace ChatdollKit.LLM.Claude
 
     public class ClaudeDelta
     {
+        public string type { get; set; }
         public string text { get; set; }
         public string partial_json { get; set; }
     }
