@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.ComponentModel;
+
 #if UNITY_WEBGL && !UNITY_EDITOR
 using System;
 using System.Linq;
@@ -37,8 +39,11 @@ namespace ChatdollKit.SpeechListener
         public bool AutoStart = true;
         public bool IsDebug = false;
         public IMicrophoneProvider MicrophoneProvider { get; set; }
+
+        // Expose on inspector for debugging
         public bool IsRecording;
-        public float CurrentVolumeDb { get; private set; }
+        public float CurrentVolumeDb;
+        public int CurrentSamples;
 
         public bool IsMuted { get; private set; } = false;
         private AudioClip microphoneClip;
@@ -174,6 +179,8 @@ namespace ChatdollKit.SpeechListener
 #else
         private float[] GetAmplitudeData()
         {
+            CurrentSamples = 0;
+
             if (IsMuted || microphoneClip == null)
             {
                 return new float[0];
@@ -182,13 +189,15 @@ namespace ChatdollKit.SpeechListener
             var currentPosition = MicrophoneProvider.GetPosition(MicrophoneDevice);
             if (currentPosition < 0 || currentPosition >= microphoneClip.samples)
             {
-                Debug.LogWarning($"Invalid microphone position detected: {currentPosition}");
+                Debug.LogWarning($"Invalid microphone position detected: {currentPosition} (samples={microphoneClip.samples})");
                 return new float[0];
             }
 
             var sampleLength = (currentPosition >= lastSamplePosition) 
                 ? currentPosition - lastSamplePosition 
                 : microphoneClip.samples - lastSamplePosition + currentPosition;
+
+            CurrentSamples = sampleLength;
 
             if (sampleLength <= 0)
             {
