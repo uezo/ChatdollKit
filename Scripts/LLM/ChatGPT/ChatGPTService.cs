@@ -356,7 +356,7 @@ namespace ChatdollKit.LLM.ChatGPT
                         chatGPTSession.FunctionName = null;
                         chatGPTSession.FunctionArguments = null;
                         // Call recursively with tool response
-                        await StartStreamingAsync(chatGPTSession, customParameters, customHeaders, useFunctions, token);
+                        await StartStreamingAsync(chatGPTSession, customParameters, customHeaders, false, token);
                     }
                 }
             }

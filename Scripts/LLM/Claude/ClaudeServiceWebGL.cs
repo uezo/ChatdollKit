@@ -201,7 +201,7 @@ namespace ChatdollKit.LLM.Claude
                 }
 
                 // Call recursively with image
-                await StartStreamingAsync(claudeSession, customParameters, customHeaders, useFunctions, token);
+                await StartStreamingAsync(claudeSession, customParameters, customHeaders, false, token);
             }
             else
             {

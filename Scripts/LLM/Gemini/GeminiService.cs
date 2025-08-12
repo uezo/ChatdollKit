@@ -328,7 +328,7 @@ namespace ChatdollKit.LLM.Gemini
                         geminiSession.FunctionName = null;
                         geminiSession.FunctionArguments = null;
                         // Call recursively with tool response
-                        await StartStreamingAsync(geminiSession, customParameters, customHeaders, useFunctions, token);
+                        await StartStreamingAsync(geminiSession, customParameters, customHeaders, false, token);
                     }
                 }
             }
