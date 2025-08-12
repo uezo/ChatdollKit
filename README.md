@@ -621,6 +621,35 @@ The usage procedure is as follows:
 When executed, Silero VAD will be used for voice activity detection.
 
 
+### Echo Cancelling
+
+Unity's built-in Microphone API doesn't support echo cancelling. To enable this feature, use platform-specific native microphone plugins.
+
+```csharp
+private void Awake()
+{
+    var microphoneManager = gameObject.GetComponent<MicrophoneManager>();
+    
+    // First, import the ChatdollKit_NativeMicrophone package
+    // Then, set the appropriate provider for your platform:
+    
+    // iOS
+    microphoneManager.MicrophoneProvider = new IOSMicrophoneProvider();
+    // Android
+    microphoneManager.MicrophoneProvider = new AndroidMicrophoneProvider();
+    // macOS
+    microphoneManager.MicrophoneProvider = new MacMicrophoneProvider();
+}
+```
+
+With echo cancelling enabled, you can allow users to interrupt the AI while it's speaking. To enable this feature:
+
+1. In the Inspector, select the `AIAvatar` component
+2. Set `MicrophoneMuteBy` to `None`
+
+This configuration allows the microphone to remain active during AI speech, enabling natural conversation interruptions while the echo cancelling prevents the AI's voice from being picked up by the microphone.
+
+
 ## ⏰ Wake Word Detection
 
 You can detect wake words as triggers to start a conversation. You can also configure settings in the AIAvatar component’s inspector for cancel words that end a conversation, or to use the length of recognized speech as a trigger instead of specific phrases.
