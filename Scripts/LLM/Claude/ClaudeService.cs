@@ -301,7 +301,7 @@ namespace ChatdollKit.LLM.Claude
                         claudeSession.FunctionName = null;
                         claudeSession.FunctionArguments = null;
                         // Call recursively with tool response
-                        await StartStreamingAsync(claudeSession, customParameters, customHeaders, useFunctions, token);
+                        await StartStreamingAsync(claudeSession, customParameters, customHeaders, false, token);
                     }
                 }
             }

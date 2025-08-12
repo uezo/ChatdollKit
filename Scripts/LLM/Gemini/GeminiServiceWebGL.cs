@@ -204,7 +204,7 @@ namespace ChatdollKit.LLM.Gemini
                 }
 
                 // Call recursively with image
-                await StartStreamingAsync(geminiSession, customParameters, customHeaders, useFunctions, token);
+                await StartStreamingAsync(geminiSession, customParameters, customHeaders, false, token);
             }
             else
             {
