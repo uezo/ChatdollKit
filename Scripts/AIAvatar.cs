@@ -73,10 +73,14 @@ namespace ChatdollKit
         private string characterVolumeParameter = "CharacterVolume";
         [SerializeField]
         private float characterVolumeSmoothTime = 0.2f;
+        [SerializeField]
+        private float characterVolumeChangeDelay = 0.2f;
         private float targetCharacterVolumeDb;
         private float currentCharacterVolumeDb;
         private float currentCharacterVelocity;
         private bool isPreviousRecording = false;
+        private float recordingStartTime = 0f;
+        private bool isVolumeChangePending = false;
         public bool IsCharacterMuted;
 
         [Header("ChatdollKit components")]
@@ -313,17 +317,13 @@ namespace ChatdollKit
             UpdateMode();
             UpdateCharacterVolume();
 
+            // User message window (Listening...)
             if (DialogProcessor.Status == DialogProcessor.DialogStatus.Idling)
             {
                 if (Mode == AvatarMode.Conversation)
                 {
                     if (DialogProcessor.Status != previousDialogStatus)
                     {
-                        SpeechListener.ChangeSessionConfig(
-                            silenceDurationThreshold: conversationSilenceDurationThreshold,
-                            minRecordingDuration: conversationMinRecordingDuration,
-                            maxRecordingDuration: conversationMaxRecordingDuration
-                        );
                         UserMessageWindow?.Show("Listening...");
                     }
                 }
@@ -331,13 +331,29 @@ namespace ChatdollKit
                 {
                     if (Mode != previousMode)
                     {
-                        SpeechListener.ChangeSessionConfig(
-                            silenceDurationThreshold: idleSilenceDurationThreshold,
-                            minRecordingDuration: idleMinRecordingDuration,
-                            maxRecordingDuration: idleMaxRecordingDuration
-                        );
                         UserMessageWindow?.Hide();
                     }
+                }
+            }
+
+            // Speech listener config
+            if (Mode != previousMode)
+            {
+                if (Mode == AvatarMode.Conversation)
+                {
+                    SpeechListener.ChangeSessionConfig(
+                        silenceDurationThreshold: conversationSilenceDurationThreshold,
+                        minRecordingDuration: conversationMinRecordingDuration,
+                        maxRecordingDuration: conversationMaxRecordingDuration
+                    );
+                }
+                else
+                {
+                    SpeechListener.ChangeSessionConfig(
+                        silenceDurationThreshold: idleSilenceDurationThreshold,
+                        minRecordingDuration: idleMinRecordingDuration,
+                        maxRecordingDuration: idleMaxRecordingDuration
+                    );
                 }
             }
 
@@ -382,15 +398,31 @@ namespace ChatdollKit
         {
             if (characterAudioMixer == null || IsCharacterMuted) return;
 
-            // Set target on recording status changed
+            // Handle recording state changes
             if (SpeechListener.IsRecording && !isPreviousRecording)
             {
-                targetCharacterVolumeDb = -80.0f;   // Mute
+                // Recording just started - mark the time and set pending flag
+                recordingStartTime = Time.time;
+                isVolumeChangePending = true;
             }
             else if (!SpeechListener.IsRecording && isPreviousRecording)
             {
+                // Recording stopped - immediately restore volume
                 targetCharacterVolumeDb = 0.0f;     // Unmute
+                isVolumeChangePending = false;
             }
+            
+            // Check if we should start muting after delay
+            if (isVolumeChangePending && SpeechListener.IsRecording)
+            {
+                if (Time.time - recordingStartTime >= characterVolumeChangeDelay)
+                {
+                    // Delay has passed and still recording - start muting
+                    targetCharacterVolumeDb = -80.0f;   // Mute
+                    isVolumeChangePending = false;
+                }
+            }
+            
             isPreviousRecording = SpeechListener.IsRecording;
 
             // Smoothing
