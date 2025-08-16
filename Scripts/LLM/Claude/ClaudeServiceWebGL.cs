@@ -60,6 +60,11 @@ namespace ChatdollKit.LLM.Claude
                     claudeTools.Add(new ClaudeTool(tool));
                 }
                 data.Add("tools", claudeTools);
+                // Mask tools if useFunctions = false. Don't remove tools to prevent hallucination
+                if (!useFunctions)
+                {
+                    data.Add("tool_choice", new Dictionary<string, string>(){ {"type", "none"} });
+                }
             }
 
             if (TopK > 0)

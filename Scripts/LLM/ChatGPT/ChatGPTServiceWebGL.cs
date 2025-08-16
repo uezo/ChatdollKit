@@ -62,7 +62,7 @@ namespace ChatdollKit.LLM.ChatGPT
             {
                 data.Add("max_tokens", MaxTokens);
             }
-            if (useFunctions && Tools.Count > 0)
+            if (Tools.Count > 0)
             {
                 var tools = new List<Dictionary<string, object>>();
                 foreach (var tool in Tools)
@@ -74,6 +74,11 @@ namespace ChatdollKit.LLM.ChatGPT
                     });
                 }
                 data.Add("tools", tools);
+                // Mask tools if useFunctions = false. Don't remove tools to keep cache hit and to prevent hallucination
+                if (!useFunctions)
+                {
+                    data.Add("tool_choice", "none");
+                }
             }
             if (Logprobs == true)
             {
