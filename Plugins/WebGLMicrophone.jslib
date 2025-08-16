@@ -9,6 +9,41 @@ mergeInto(LibraryManager.library, {
     mic.processorModuleUrl = "StreamingAssets/WebGLMicrophoneProcessor.js";
     mic._buffer = [];
     mic._bufferSize = 4096;
+    
+    // Properties for VAD
+    mic.vadBuffer = [];
+    mic.isVoiceDetected = false;
+    mic.voiceProbability = 0.0;
+    
+    // Downsampling function for VAD
+    mic.downsampleTo16kHz = function(buffer, fromSampleRate) {
+      if (fromSampleRate === 16000) {
+        return Array.from(buffer);
+      }
+      
+      var sampleRateRatio = 16000 / fromSampleRate;
+      var newLength = Math.round(buffer.length * sampleRateRatio);
+      var result = new Array(newLength);
+      var offsetResult = 0;
+      var offsetBuffer = 0;
+      
+      while (offsetResult < result.length) {
+        var nextOffsetBuffer = Math.round((offsetResult + 1) * (1 / sampleRateRatio));
+        var accum = 0;
+        var count = 0;
+        
+        for (var i = offsetBuffer; i < nextOffsetBuffer && i < buffer.length; i++) {
+          accum += buffer[i];
+          count++;
+        }
+        
+        result[offsetResult] = accum / count;
+        offsetResult++;
+        offsetBuffer = nextOffsetBuffer;
+      }
+      
+      return result;
+    };
 
     setInterval(function() {
       var ac = mic.audioContext;
@@ -41,6 +76,34 @@ mergeInto(LibraryManager.library, {
 
           mic.workletNode.port.onmessage = function(event) {
             var float32Array = event.data;
+            
+            // VAD
+            if (window.vad && window.vad.isReady) {
+              try {
+                // Downsample to 16kHz
+                var downsampled = mic.downsampleTo16kHz(float32Array, ac.sampleRate);
+                mic.vadBuffer.push(...downsampled);
+                
+                // Process each 512 sample
+                var chunkSize = window.vad.chunkSize || 512;
+                while (mic.vadBuffer.length >= chunkSize) {
+                  var vadChunk = mic.vadBuffer.slice(0, chunkSize);
+                  mic.vadBuffer = mic.vadBuffer.slice(chunkSize);
+                  
+                  (function(chunk) {
+                    window.vad.isVoiced(chunk).then(function(voiced) {
+                      mic.isVoiceDetected = voiced;
+                      mic.voiceProbability = window.vad.lastProbability || 0;
+                    }).catch(function(error) {
+                      console.error("VAD processing error:", error);
+                    });
+                  })(vadChunk);
+                }
+              } catch (error) {
+                console.error("VAD error:", error);
+              }
+            }
+            
             for (var i = 0; i < float32Array.length; i++) {
               mic._buffer.push(float32Array[i]);
             }
@@ -56,6 +119,11 @@ mergeInto(LibraryManager.library, {
           mic.workletNode.connect(ac.destination);
 
           console.log("WebGLMicrophone started recording");
+          
+          if (window.vad && window.vad.reset) {
+            window.vad.reset();
+            console.log("VAD reset on microphone start");
+          }
         })
         .catch(function(err) {
           console.error("Failed to load AudioWorklet module:", err);
@@ -79,10 +147,47 @@ mergeInto(LibraryManager.library, {
     mic.workletNode = null;
     mic._buffer = [];
     mic.isRecording = 0;
+    mic.vadBuffer = [];
+    mic.isVoiceDetected = false;
+    mic.voiceProbability = 0.0;
+    
+    if (window.vad && window.vad.dispose) {
+      window.vad.dispose();
+      console.log("VAD disposed");
+    }
   },
 
   IsWebGLMicrophoneRecording: function() {
     return document.webGLMicrophone &&
            document.webGLMicrophone.isRecording === 1;
   },
+  
+  // Function for VAD
+  IsVoiceDetected: function() {
+    var mic = document.webGLMicrophone;
+    return mic && mic.isVoiceDetected ? 1 : 0;
+  },
+  
+  GetVoiceProbability: function() {
+    var mic = document.webGLMicrophone;
+    return mic ? mic.voiceProbability : 0.0;
+  },
+  
+  IsVADEnabled: function() {
+    return window.vad && window.vad.isReady ? 1 : 0;
+  },
+  
+  SetVADThreshold: function(threshold) {
+    if (window.vad && typeof window.vad.threshold !== 'undefined') {
+      window.vad.threshold = threshold;
+      console.log("VAD threshold set to:", threshold);
+    }
+  },
+  
+  GetVADThreshold: function() {
+    if (window.vad && typeof window.vad.threshold !== 'undefined') {
+      return window.vad.threshold;
+    }
+    return 0.5;
+  }
 });

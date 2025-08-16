@@ -6,13 +6,30 @@ using UnityEngine;
 using System;
 using UnityEngine.Networking;
 #endif
+#if UNITY_WEBGL && !UNITY_EDITOR
+using System.Runtime.InteropServices;
+#else
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
+# endif
 
 namespace ChatdollKit.Extension.SileroVAD
 {
     public class SileroVADProcessor : MonoBehaviour
     {
+#if UNITY_WEBGL && !UNITY_EDITOR
+        [DllImport("__Internal", EntryPoint = "IsVoiceDetected")]
+        private static extern int IsVoiceDetectedJS();
+
+        [DllImport("__Internal")]
+        private static extern float GetVoiceProbability();
+
+        [DllImport("__Internal")]
+        private static extern void SetVADThreshold(float threshold);
+
+        private float lastThreshold;
+        public bool IsMuted { get; private set; } = false;
+#else
         [Header("VAD Model Settings")]
         [Tooltip("The filename of the ONNX model in the StreamingAssets folder.")]
         [SerializeField]
@@ -23,7 +40,10 @@ namespace ChatdollKit.Extension.SileroVAD
 
         // The sampling rate for SileroVAD is 16000.
         private long modelSamplingRate = 16000;
-
+        private InferenceSession session;
+        private float[] state = new float[256];
+        private readonly List<float> audioBuffer = new List<float>();
+#endif
         [Tooltip("Confidence threshold for detecting speech (0.0 to 1.0).")]
         [SerializeField]
         private float threshold = 0.5f;
@@ -32,14 +52,20 @@ namespace ChatdollKit.Extension.SileroVAD
         [SerializeField]
         private float lastProbability = 0f;
 
-        private InferenceSession session;
-        private float[] state = new float[256];
-        private readonly List<float> audioBuffer = new List<float>();
-
         public bool IsVoiceDetected { get { return lastProbability > threshold; } }
 
+#if UNITY_WEBGL && !UNITY_EDITOR
+        private void Start()
+        {
+            lastThreshold = threshold;
+            SetVADThreshold(threshold);
+        }
+#endif
         public void Initialize()
         {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            // Do nothing on WebGL runtime
+#else
             try
             {
 #if UNITY_ANDROID && !UNITY_EDITOR
@@ -70,10 +96,24 @@ namespace ChatdollKit.Extension.SileroVAD
             {
                 Debug.LogError($"VAD initialization failed: {ex.Message}\n{ex.StackTrace}");
             }
+#endif
         }
 
         public bool IsVoiced(float[] newSamples, float _)
         {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            if (IsMuted) return false;
+
+            if (Mathf.Abs(threshold - lastThreshold) > 0.01f)
+            {
+                SetVADThreshold(threshold);
+                lastThreshold = threshold;
+            }
+
+            lastProbability = GetVoiceProbability();
+
+            return IsVoiceDetectedJS() == 1;
+#else
             if (session == null || newSamples == null) return false;
 
             audioBuffer.AddRange(newSamples);
@@ -98,8 +138,15 @@ namespace ChatdollKit.Extension.SileroVAD
             }
 
             return false;
+#endif
         }
 
+#if UNITY_WEBGL && !UNITY_EDITOR
+        public void Mute(bool mute)
+        {
+            IsMuted = mute;
+        }
+#else
         private bool RunInference(float[] audioSamples)
         {
             try
@@ -151,5 +198,6 @@ namespace ChatdollKit.Extension.SileroVAD
         {
             session?.Dispose();
         }
-    }    
+#endif
+    }
 }
