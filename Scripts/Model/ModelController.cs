@@ -32,6 +32,7 @@ namespace ChatdollKit.Model
         private ConcurrentQueue<Voice> voicePrefetchQueue = new ConcurrentQueue<Voice>();
         private CancellationTokenSource voicePrefetchCancellationTokenSource;
         private ILipSyncHelper lipSyncHelper;
+        public Action<float[]> HandlePlayingSamples;
 
         // Animation
         [Header("Animation")]
@@ -346,28 +347,78 @@ namespace ChatdollKit.Model
                                 }
                             }
                         }
-                        // Play audio
                         History?.Add(v);
-                        AudioSource.PlayOneShot(clip);
-                    }
 
-                    // Wait while voice playing
-                    while (AudioSource.isPlaying && !token.IsCancellationRequested)
-                    {
-                        await UniTask.Delay(1);
-                    }
+                        if (HandlePlayingSamples != null)
+                        {
+                            // Wait while voice playing with processing LipSync
+                            var startTime = Time.realtimeSinceStartup;
+                            var bufferSize = clip.channels == 2 ? 2048 : 1024;  // Optimized for 44100Hz / 30FPS
+                            var sampleBuffer = new float[bufferSize];
+                            var nextPosition = 0;
+                            var samples = new float[clip.samples * clip.channels];
 
-                    if (!token.IsCancellationRequested)
-                    {
-                        try
-                        {
-                            // Wait for PostGap
-                            await UniTask.Delay((int)(v.PostGap * 1000), cancellationToken: token);
+                            if (!clip.GetData(samples, 0))
+                            {
+                                Debug.LogWarning("Failed to get audio data from clip");
+                            }
+                            else
+                            {
+                                // Play audio
+                                AudioSource.PlayOneShot(clip);
+
+                                // Process samples by estimating current playing position by time
+                                while (Time.realtimeSinceStartup - startTime < clip.length && !token.IsCancellationRequested)
+                                {
+                                    var elapsedTime = Time.realtimeSinceStartup - startTime;
+                                    var currentPosition = Mathf.FloorToInt(elapsedTime * clip.frequency) * clip.channels;
+
+                                    while (nextPosition + bufferSize <= currentPosition &&
+                                        nextPosition + bufferSize <= samples.Length)
+                                    {
+                                        System.Array.Copy(samples, nextPosition, sampleBuffer, 0, bufferSize);
+                                        HandlePlayingSamples(sampleBuffer);
+                                        nextPosition += bufferSize;
+                                    }
+
+                                    await UniTask.Delay(33, cancellationToken: token);  // 30FPS
+                                }
+
+                                // Remaining samples
+                                if (nextPosition < samples.Length)
+                                {
+                                    var remaining = samples.Length - nextPosition;
+                                    var lastBuffer = new float[remaining];
+                                    System.Array.Copy(samples, nextPosition, lastBuffer, 0, remaining);
+                                    HandlePlayingSamples(lastBuffer);
+                                }
+                            }
                         }
-                        catch (OperationCanceledException)
+                        else
                         {
-                            Debug.Log("Task canceled in waiting PostGap");
+                            // Play audio
+                            AudioSource.PlayOneShot(clip);
+
+                            // Wait while voice playing
+                            while (AudioSource.isPlaying && !token.IsCancellationRequested)
+                            {
+                                await UniTask.Delay(33, cancellationToken: token);  // 30FPS
+                            }
                         }
+
+                        if (!token.IsCancellationRequested)
+                        {
+                            try
+                            {
+                                // Wait for PostGap
+                                await UniTask.Delay((int)(v.PostGap * 1000), cancellationToken: token);
+                            }
+                            catch (OperationCanceledException)
+                            {
+                                Debug.Log("Task canceled in waiting PostGap");
+                            }
+                        }
+
                     }
                 }
 
