@@ -104,6 +104,9 @@ namespace ChatdollKit.Extension.SileroVAD
         public void OnButtonClick()
         {
             microphoneManager.MuteMicrophone(!microphoneManager.IsMuted);
+#if UNITY_WEBGL && !UNITY_EDITOR
+            sileroVADProcessor.Mute(microphoneManager.IsMuted);
+#endif
         }
     }
 }
