@@ -190,14 +190,22 @@ namespace ChatdollKit.LLM.Gemini
                 data[p.Key] = p.Value;
             }
 
-            // Set tools. Multimodal model doesn't support function calling for now (2023.12.29)
-            if (useFunctions && Tools.Count > 0 && !Model.ToLower().Contains("vision"))
+            // Set tools
+            if (Tools.Count > 0)
             {
-                 data.Add("tools", new List<Dictionary<string, object>>(){
-                     new Dictionary<string, object> {
-                         { "function_declarations", Tools }
-                     }
-                 });
+                data.Add("tools", new List<Dictionary<string, object>>(){
+                    new Dictionary<string, object> {
+                        { "functionDeclarations", Tools }
+                    }
+                });
+                // Mask tools if useFunctions = false. Don't remove tools to keep cache hit and to prevent hallucination
+                if (!useFunctions)
+                {
+                    data.Add("toolConfig", new Dictionary<string, Dictionary<string, string>>()
+                    {
+                        { "functionCallingConfig", new() { { "mode", "NONE" } } }
+                    });
+                }
             }
 
             // Prepare API request
