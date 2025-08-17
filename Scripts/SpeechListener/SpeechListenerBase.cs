@@ -190,7 +190,7 @@ namespace ChatdollKit.SpeechListener
             Array.Copy(BitConverter.GetBytes((UInt32)(pcm.Length - 44)), 0, pcm, 40, 4);
         }
 
-        protected void OnDestroy()
+        protected virtual void OnDestroy()
         {
             if (cancellationTokenSource != null)
             {
