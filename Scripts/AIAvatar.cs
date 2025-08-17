@@ -72,6 +72,13 @@ namespace ChatdollKit
         [SerializeField]
         private string characterVolumeParameter = "CharacterVolume";
         [SerializeField]
+        private float maxCharacterVolumeDb = 0.0f;
+        public float MaxCharacterVolumeDb
+        {
+            get { return maxCharacterVolumeDb; }
+            set { SetCharacterMaxVolumeDb(value); }
+        }
+        [SerializeField]
         private float characterVolumeSmoothTime = 0.2f;
         [SerializeField]
         private float characterVolumeChangeDelay = 0.2f;
@@ -81,7 +88,12 @@ namespace ChatdollKit
         private bool isPreviousRecording = false;
         private float recordingStartTime = 0f;
         private bool isVolumeChangePending = false;
-        public bool IsCharacterMuted;
+        private bool isCharacterMuted;
+        public bool IsCharacterMuted
+        {
+            get { return isCharacterMuted; }
+            set { MuteCharacter(value); }
+        }
 
         [Header("ChatdollKit components")]
         public ModelController ModelController;
@@ -396,7 +408,7 @@ namespace ChatdollKit
 
         private void UpdateCharacterVolume()
         {
-            if (characterAudioMixer == null || IsCharacterMuted) return;
+            if (characterAudioMixer == null || isCharacterMuted) return;
 
             // Handle recording state changes
             if (SpeechListener.IsRecording && !isPreviousRecording)
@@ -408,7 +420,7 @@ namespace ChatdollKit
             else if (!SpeechListener.IsRecording && isPreviousRecording)
             {
                 // Recording stopped - immediately restore volume
-                targetCharacterVolumeDb = 0.0f;     // Unmute
+                targetCharacterVolumeDb = maxCharacterVolumeDb; // Unmute
                 isVolumeChangePending = false;
             }
             
@@ -437,15 +449,27 @@ namespace ChatdollKit
             characterAudioMixer.SetFloat(characterVolumeParameter, currentCharacterVolumeDb);
         }
 
-        public void MuteCharacter(bool mute)
+        private void MuteCharacter(bool mute)
         {
             if (characterAudioMixer == null) return;
 
             currentCharacterVelocity = 0.0f;
-            currentCharacterVolumeDb = mute ? -80.0f : 0.0f;
+            // Update currentCharacterVolumeDb and targetCharacterVolumeDb to stop smoothing
+            currentCharacterVolumeDb = mute ? -80.0f : maxCharacterVolumeDb;
             targetCharacterVolumeDb = currentCharacterVolumeDb;
             characterAudioMixer.SetFloat(characterVolumeParameter, currentCharacterVolumeDb);
-            IsCharacterMuted = mute;
+            isCharacterMuted = mute;
+        }
+
+        private void SetCharacterMaxVolumeDb(float volumeDb)
+        {
+            if (characterAudioMixer == null) return;
+
+            maxCharacterVolumeDb = volumeDb > 0 ? 0.0f : volumeDb < -80.0f ? -80.0f : volumeDb;
+            // Update currentCharacterVolumeDb and targetCharacterVolumeDb to stop smoothing
+            currentCharacterVolumeDb = maxCharacterVolumeDb;
+            targetCharacterVolumeDb = currentCharacterVolumeDb;
+            characterAudioMixer.SetFloat(characterVolumeParameter, currentCharacterVolumeDb);
         }
 
         private string ExtractWakeWord(string text)
