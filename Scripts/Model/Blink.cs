@@ -40,8 +40,23 @@ namespace ChatdollKit.Model
         // For setup
         public void Setup(GameObject avatarObject)
         {
-            skinnedMeshRenderer = AvatarUtility.GetFacialSkinnedMeshRenderer(avatarObject);
-            blinkBlendShapeName = GetBlinkTargetName(skinnedMeshRenderer);
+            if (skinnedMeshRenderer == null && blinkBlendShapeName == null)
+            {
+                skinnedMeshRenderer = AvatarUtility.GetFacialSkinnedMeshRenderer(avatarObject);
+                if (skinnedMeshRenderer != null)
+                {
+                    blinkBlendShapeName = GetBlinkTargetName(skinnedMeshRenderer);
+                }
+            }
+            else if (skinnedMeshRenderer == null && blinkBlendShapeName != null)
+            {
+                skinnedMeshRenderer = AvatarUtility.GetFacialSkinnedMeshRenderer(avatarObject, blinkBlendShapeName);
+            }
+            else if (skinnedMeshRenderer != null && blinkBlendShapeName == null)
+            {
+                blinkBlendShapeName = GetBlinkTargetName(skinnedMeshRenderer);
+            }
+
             if (string.IsNullOrEmpty(blinkBlendShapeName))
             {
                 Debug.LogWarning("BlendShape for blink not found.");
