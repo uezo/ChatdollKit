@@ -22,7 +22,7 @@ namespace ChatdollKit.UI
                 }
             }
 
-            if (imageButton.HandleImage == null)
+            if (imageButton != null && imageButton.HandleImage == null)
             {
                 imageButton.HandleImage = (imageBytes) =>
                 {
