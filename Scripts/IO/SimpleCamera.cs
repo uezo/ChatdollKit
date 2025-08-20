@@ -1,17 +1,28 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Linq;
 #if PLATFORM_ANDROID
 using UnityEngine.Android;
 #endif
 using Cysharp.Threading.Tasks;
+#if UNITY_WEBGL && !UNITY_EDITOR
+using Newtonsoft.Json;
+using System.Runtime.InteropServices;
+#endif
 
 namespace ChatdollKit.IO
 {
     public class SimpleCamera : MonoBehaviour
     {
+#if UNITY_WEBGL && !UNITY_EDITOR
+        [DllImport("__Internal")]
+        private static extern void GetCameraDevices(string objectName, string functionName);
+#endif
+
         [SerializeField]
         private RawImage previewWindow;
         public string DeviceName;
@@ -41,6 +52,9 @@ namespace ChatdollKit.IO
         public bool IsCameraEnabled { get; private set; } = false;
         public bool IsAlreadyStarted { get; private set; } = false;
         private WebCamTexture webCamTexture;
+        public List<CameraDeviceInfo> CameraDevices { get; private set; } = new List<CameraDeviceInfo>();
+        [SerializeField]
+        private List<string> unavailableCameraKeywords;
 
         private void Awake()
         {
@@ -51,16 +65,6 @@ namespace ChatdollKit.IO
                 Permission.RequestUserPermission(Permission.Camera);
             }
 #endif
-
-            currentDeviceName = DeviceName;
-
-            if (PrintDevicesOnStart)
-            {
-                foreach (var device in GetDevices())
-                {
-                    Debug.Log(device.name);
-                }
-            }
         }
 
         private void Update()
@@ -94,7 +98,13 @@ namespace ChatdollKit.IO
 
             try
             {
+                if (CameraDevices.Count == 0)
+                {
+                    await LoadDevices();
+                }
+
                 // Configure and start camera
+                Debug.Log($"Start camera: {currentDeviceName}");
                 webCamTexture = new WebCamTexture(currentDeviceName, size.x, size.y, fps > 0 ? fps : 10);
                 previewWindow.texture = webCamTexture;
                 webCamTexture.Play();
@@ -102,7 +112,7 @@ namespace ChatdollKit.IO
                 // Wait
                 if (!await WaitForReadyAsync(launchTimeout))
                 {
-                    Debug.LogError($"Failed to launch camera in {launchTimeout} seconds");
+                    Debug.LogError($"Failed to launch camera '{currentDeviceName}' in {launchTimeout} seconds");
                     return;
                 }
 
@@ -111,12 +121,12 @@ namespace ChatdollKit.IO
                 {
                     AdjustAspectRatio();
 
-                    foreach (var device in WebCamTexture.devices)
+                    foreach (var device in CameraDevices)
                     {
-                        if (device.name == webCamTexture.deviceName)
+                        if (device.Name == webCamTexture.deviceName)
                         {
 #if PLATFORM_IOS && !UNITY_EDITOR
-                            if (device.isFrontFacing)
+                            if (device.IsFrontFacing)
                             {
                                 previewWindow.transform.rotation = Quaternion.Euler(0, 0, -webCamTexture.videoRotationAngle);
                             }
@@ -125,7 +135,7 @@ namespace ChatdollKit.IO
                                 previewWindow.transform.rotation = Quaternion.Euler(0, 180, -webCamTexture.videoRotationAngle);
                             }
 #else
-                            if (device.isFrontFacing)
+                            if (device.IsFrontFacing)
                             {
                                 previewWindow.transform.rotation = Quaternion.Euler(0, 180, -webCamTexture.videoRotationAngle);
                             }
@@ -134,6 +144,7 @@ namespace ChatdollKit.IO
                                 previewWindow.transform.rotation = Quaternion.Euler(0, 0, -webCamTexture.videoRotationAngle);
                             }
 # endif
+                            break;
                         }
                     }
 
@@ -173,7 +184,20 @@ namespace ChatdollKit.IO
                 adjustedWidth = previewWidth;
                 adjustedHeight = adjustedWidth / textureAspectRatio;
             }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+            Vector2 previewSize;
+            if (Application.isMobilePlatform)
+            {
+                previewSize = new Vector2(adjustedHeight, adjustedWidth);
+            }
+            else
+            {
+                previewSize = new Vector2(adjustedWidth, adjustedHeight);
+            }
+#else
             var previewSize = new Vector2(adjustedWidth, adjustedHeight);
+#endif
 
             // Still button
             var buttonRectTransform = stillImageButton.GetComponent<RectTransform>();
@@ -259,9 +283,69 @@ namespace ChatdollKit.IO
             return jpg;
         }
 
-        public WebCamDevice[] GetDevices()
+        public async UniTask LoadDevices()
         {
-            return WebCamTexture.devices;
+            // Load devices
+#if UNITY_WEBGL && !UNITY_EDITOR
+            GetCameraDevices(gameObject.name, "HandleCameraDeviceNames");
+            var startTime = Time.time;
+            while (CameraDevices.Count == 0)
+            {
+                if ((Time.time - startTime) >= 5f)
+                {
+                    Debug.LogWarning("No camera devices found.");
+                    break;
+                }
+                await UniTask.Delay(16);    // 60FPS
+            }
+#else
+            CameraDevices.Clear();
+            foreach (var d in WebCamTexture.devices)
+            {
+                CameraDevices.Add(CameraDeviceInfo.FromWebCamDevice(d));
+            }
+#endif
+
+            // Remove unavailable devices
+            CameraDevices.RemoveAll(d =>
+                unavailableCameraKeywords.Any(keyword =>
+                    d.Name.ToLower().Contains(keyword.ToLower())));
+
+            // Select main and sub device
+            foreach (var d in CameraDevices)
+            {
+                if (d.IsFrontFacing)
+                {
+                    SubDeviceName = d.Name;
+                }
+                else
+                {
+                    DeviceName = d.Name;
+                }
+                if (!string.IsNullOrEmpty(DeviceName) && !string.IsNullOrEmpty(SubDeviceName))
+                {
+                    break;
+                }
+            }
+
+            // Fallback
+            DeviceName = string.IsNullOrEmpty(DeviceName) && CameraDevices.Count > 0
+                ? CameraDevices[0].Name : DeviceName;
+            DeviceName = string.IsNullOrEmpty(SubDeviceName) && CameraDevices.Count > 1
+                ? CameraDevices[1].Name : DeviceName;
+
+            currentDeviceName = DeviceName;
+
+            Debug.Log($"Set camera devices: main={DeviceName} / sub={SubDeviceName}");
+
+            if (PrintDevicesOnStart)
+            {
+                Debug.Log($"==== Camera Device List ({CameraDevices.Count}) ====");
+                foreach (var d in CameraDevices)
+                {
+                    Debug.Log($"{d.Name} ({d.IsFrontFacing})");
+                }
+            }
         }
 
         private async UniTask<bool> WaitForReadyAsync(float timeout)
@@ -272,7 +356,8 @@ namespace ChatdollKit.IO
                 || !webCamTexture.isReadable
                 || webCamTexture.width != webCamTexture.requestedWidth
                 || webCamTexture.height != webCamTexture.requestedHeight
-                || previewWindow.texture != webCamTexture)
+                || previewWindow.texture != webCamTexture
+            )
             {
                 await UniTask.Delay(100);
                 if (Time.time - startTime > timeout)
@@ -287,16 +372,26 @@ namespace ChatdollKit.IO
         private void AdjustAspectRatio()
         {
             var imageAspectRatio = (float)webCamTexture.width / webCamTexture.height;
+#if UNITY_WEBGL && !UNITY_EDITOR
+            if (Application.isMobilePlatform)
+            {
+                imageAspectRatio = 1 / imageAspectRatio;
+            }
+#endif
             var windowAspectRatio = previewWindow.rectTransform.rect.width / previewWindow.rectTransform.rect.height;
+
+            Debug.Log($"Aspect Ratio: Image={imageAspectRatio} / Preview={windowAspectRatio}");
 
             if (imageAspectRatio > windowAspectRatio)
             {
                 var scaleHeight = windowAspectRatio / imageAspectRatio;
+                Debug.Log($"Adjust to landscape 1:{scaleHeight}");
                 previewWindow.rectTransform.localScale = new Vector3(1, scaleHeight, 1);
             }
             else
             {
                 var scaleWidth = imageAspectRatio / windowAspectRatio;
+                Debug.Log($"Adjust to portrait {scaleWidth}:1");
                 previewWindow.rectTransform.localScale = new Vector3(scaleWidth, 1, 1);
             }
         }
@@ -380,6 +475,13 @@ namespace ChatdollKit.IO
             var texture = new Texture2D(2, 2);
             texture.LoadImage(imageBytes);
 
+#if UNITY_WEBGL && !UNITY_EDITOR
+            if (Application.isMobilePlatform)
+            {
+                texture = FixWebGLMobileAspect(texture);
+            }
+#endif
+
             // Set image to preview
             var sprite = Sprite.Create(texture, new Rect(0.0f, 0.0f, texture.width, texture.height), new Vector2(0.5f, 0.5f));
             stillImage.preserveAspect = true;
@@ -391,20 +493,65 @@ namespace ChatdollKit.IO
             stillImage.gameObject.SetActive(true);
         }
 
+        private Texture2D FixWebGLMobileAspect(Texture2D texture)
+        {
+            if (texture.height > texture.width)
+            {
+                return texture;
+            }
+            
+            var targetWidth = texture.height;
+            var targetHeight = texture.width;
+            
+            var fixedTexture = new Texture2D(targetWidth, targetHeight);
+            
+            for (var y = 0; y < targetHeight; y++)
+            {
+                for (var x = 0; x < targetWidth; x++)
+                {
+                    var u = (float)x / targetWidth;
+                    var v = (float)y / targetHeight;
+                    fixedTexture.SetPixel(x, y, texture.GetPixelBilinear(u, v));
+                }
+            }
+            
+            fixedTexture.Apply();
+            Destroy(texture);
+            
+            return fixedTexture;
+        }
+
         public void ClearStillImage()
         {
             stillImage.sprite = null;
             stillImage.gameObject.SetActive(false);
         }
 
-        public byte[] GetStillImage()
+        public byte[] GetStillImage(bool clear = false)
         {
             if (stillImage.sprite != null)
             {
-                return stillImage.sprite.texture.EncodeToJPG();
+                var imageBytes = stillImage.sprite.texture.EncodeToJPG();
+                if (clear)
+                {
+                    ClearStillImage();
+                }
+                return imageBytes;
             }
-
             return null;
+        }
+
+        public void SetStillImage(byte[] imageBytes)
+        {
+            var texture = new Texture2D(2, 2);
+            texture.LoadImage(imageBytes);
+
+            // Set image to preview
+            var sprite = Sprite.Create(texture, new Rect(0.0f, 0.0f, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+            stillImage.preserveAspect = true;
+            stillImage.sprite = sprite;
+
+            stillImage.gameObject.SetActive(true);            
         }
 
         private IEnumerator StillButtonFadeEffect()
@@ -428,5 +575,79 @@ namespace ChatdollKit.IO
             stillFadeImage.color = new Color(stillFadeImage.color.r, stillFadeImage.color.g, stillFadeImage.color.b, originalAlpha);
             stillFadeImage.gameObject.SetActive(false);
         }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        public void HandleCameraDeviceNames(string deviceNamesJsonString)
+        {
+            Debug.Log($"Camera devices: {deviceNamesJsonString}");
+            CameraDevices = CameraDeviceInfo.FromJsonString(deviceNamesJsonString);
+        }
+#endif
+    }
+
+    public enum CameraDeviceType
+    {
+        UNKNOWN, OUT, IN
+    }
+
+    public class CameraDeviceInfo
+    {
+        public string Name { get; set; }
+        public CameraDeviceType CameraDeviceType { get; set; }
+        public bool IsFrontFacing { get { return this.CameraDeviceType == CameraDeviceType.IN; } }
+        public int MaxResolutionX { get; set; }
+        public int MaxResolutionY { get; set; }
+
+        private static CameraDeviceType DetectType(bool isFrontFacing, string name)
+        {
+            if (isFrontFacing)
+            {
+                return CameraDeviceType.IN;
+            }
+
+            var lowerName = name.ToLower();
+
+            if (lowerName.Contains("front") ||
+                lowerName.Contains("前") ||
+                lowerName.Contains("user") ||
+                lowerName.Contains("facetime"))
+            {
+                return CameraDeviceType.IN;
+            }
+            else if (lowerName.Contains("back") ||
+                lowerName.Contains("rear") ||
+                lowerName.Contains("後") ||
+                lowerName.Contains("environment"))
+            {
+                return CameraDeviceType.OUT;
+            }
+
+            return CameraDeviceType.UNKNOWN;
+        }
+
+        public static CameraDeviceInfo FromWebCamDevice(WebCamDevice device)
+        {
+            return new CameraDeviceInfo()
+            {
+                Name = device.name,
+                CameraDeviceType = DetectType(device.isFrontFacing, device.name)
+            };
+        }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        public static List<CameraDeviceInfo> FromJsonString(string devicesJsonString)
+        {
+            var devices = new List<CameraDeviceInfo>();
+            foreach (var name in JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(devicesJsonString)["names"])
+            {
+                devices.Add(new CameraDeviceInfo()
+                {
+                    Name = name,
+                    CameraDeviceType = DetectType(false, name),
+                });
+            }
+            return devices;
+        }
+#endif
     }
 }
