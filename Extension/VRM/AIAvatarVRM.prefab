@@ -162,9 +162,14 @@ MonoBehaviour:
   - "\uFF1F"
   - "\uFF01"
   WakeLength: 0
+  BackgroundRequestPrefix: $
+  characterVolumeParameter: CharacterVolume
+  maxCharacterVolumeDb: 0
+  characterVolumeSmoothTime: 0.2
+  characterVolumeChangeDelay: 0.2
   ModelController: {fileID: 3082384663952346143}
   DialogProcessor: {fileID: 8527211872230696717}
-  MicrophoneManager: {fileID: 6103327943189844944}
+  LLMContentProcessor: {fileID: 0}
   UserMessageWindow: {fileID: 3036360141450902936}
   CharacterMessageWindow: {fileID: 3694518353320716660}
   ErrorVoice: 
@@ -185,7 +190,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   AvatarModel: {fileID: 0}
   AudioSource: {fileID: 3492972881459660374}
-  UsePrefetch: 1
+  VoicePrefetchMode: 0
   IdleAnimationDefaultDuration: 10
   IdleAnimationKey: BaseParam
   IdleAnimationValue: 6
@@ -205,6 +210,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c0f7c0517dde5488a8a605e633795e31, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  mergeRequestThreshold: 0
+  mergeRequestPrefix: 'Previous user''s request and your response have been canceled.
+    Please respond again to the following request:'
 --- !u!114 &3322979063469237806
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -227,7 +235,9 @@ MonoBehaviour:
   OptionalSplitChars:
   - "\u3001"
   - ', '
+  ThinkTag: thinking
   MaxLengthBeforeOptionalSplit: 0
+  debugMode: 0
 --- !u!114 &6103327943189844944
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -245,6 +255,9 @@ MonoBehaviour:
   NoiseGateThresholdDb: -50
   AutoStart: 1
   IsDebug: 1
+  IsRecording: 0
+  CurrentVolumeDb: 0
+  CurrentSamples: 0
 --- !u!82 &3492972881459660374
 AudioSource:
   m_ObjectHideFlags: 0
@@ -256,6 +269,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
   m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
@@ -546,7 +560,7 @@ MonoBehaviour:
   m_ScaleFactor: 1
   m_ReferenceResolution: {x: 800, y: 600}
   m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 0
+  m_MatchWidthOrHeight: 0.5
   m_PhysicalUnit: 3
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96

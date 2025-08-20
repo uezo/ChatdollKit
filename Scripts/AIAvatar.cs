@@ -115,6 +115,7 @@ namespace ChatdollKit
         private int ErrorAnimationParamValue;
 
         private DialogProcessor.DialogStatus previousDialogStatus = DialogProcessor.DialogStatus.Idling;
+        public Func<Dictionary<string, object>> GetPayloads { get; set; }
         public Func<string, UniTask> OnWakeAsync { get; set; }
         public List<ProcessingPresentation> ProcessingPresentations = new List<ProcessingPresentation>();
 
@@ -640,7 +641,7 @@ namespace ChatdollKit
             else if (Mode >= AvatarMode.Conversation)
             {
                 // Send text directly
-                _ = DialogProcessor.StartDialogAsync(text);
+                _ = DialogProcessor.StartDialogAsync(text, payloads: GetPayloads?.Invoke());
             }
 
             // Wake Word
@@ -650,7 +651,13 @@ namespace ChatdollKit
                 {
                     await OnWakeAsync(text);
                 }
-                _ = DialogProcessor.StartDialogAsync(text, new Dictionary<string, object>() { {"IsWakeword", true} });
+                var payloads = GetPayloads?.Invoke();
+                if (payloads == null || payloads.Count == 0)
+                {
+                    payloads = new Dictionary<string, object>();
+                }
+                payloads["IsWakeword"] = true;
+                _ = DialogProcessor.StartDialogAsync(text, payloads: payloads);
             }
         }
 
