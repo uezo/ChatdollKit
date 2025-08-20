@@ -2,11 +2,19 @@ using System;
 using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
+#if UNITY_WEBGL && !UNITY_EDITOR
+using System.Runtime.InteropServices;
+#endif
 
 namespace ChatdollKit.UI
 {
     public class ImageButton : MonoBehaviour
     {
+#if UNITY_WEBGL && !UNITY_EDITOR
+        [DllImport("__Internal")]
+        private static extern void OpenFileDialog(string gameObjectName, string methodName, string accept);
+#endif
+
         [SerializeField]
         private bool pathMode;
         [SerializeField]
@@ -19,6 +27,9 @@ namespace ChatdollKit.UI
 
         public void OnButtonClick()
         {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            OpenFileDialog(gameObject.name, "OnFileSelected", "image/*");
+#else
             if (pathMode)
             {
                 var active = !pathPanel.activeSelf;
@@ -33,6 +44,7 @@ namespace ChatdollKit.UI
             {
                 OnButtonClickAction();
             }
+#endif
         }
 
         public void OnSubmitImagePath()
@@ -49,5 +61,13 @@ namespace ChatdollKit.UI
             pathInput.text = string.Empty;
             pathPanel.SetActive(false);
         }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        public void OnFileSelected(string base64Data)
+        {
+            var imageBytes = Convert.FromBase64String(base64Data);
+            HandleImage?.Invoke(imageBytes);
+        }
+#endif
     }
 }
