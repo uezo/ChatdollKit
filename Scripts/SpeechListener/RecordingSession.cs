@@ -11,7 +11,7 @@ namespace ChatdollKit.SpeechListener
         public float MinRecordingDuration;
         public float MaxRecordingDuration;
         public System.Action<float[]> OnRecordingComplete;
-        public Func<float[], float, bool> DetectVoiceFunc = null;
+        public List<Func<float[], float, bool>> DetectVoiceFunctions;
 
         private List<float> recordedSamples = new List<float>();
         private float[] prerollBuffer;
@@ -19,11 +19,12 @@ namespace ChatdollKit.SpeechListener
         private int prerollIndex = 0;
         private int prerollCount = 0;
         public bool IsRecording { get; private set; }
+        public bool IsSilent { get; private set; }
         private bool isCompleted = false;
         private float silenceDuration = 0.0f;
         private float recordingStartTime;
 
-        public RecordingSession(string name, float silenceDurationThreshold, float minRecordingDuration, float maxRecordingDuration, int maxPrerollSamples, System.Action<float[]> onRecordingComplete, Func<float[], float, bool> detectVoiceFunc)
+        public RecordingSession(string name, float silenceDurationThreshold, float minRecordingDuration, float maxRecordingDuration, int maxPrerollSamples, System.Action<float[]> onRecordingComplete, List<Func<float[], float, bool>> detectVoiceFunctions)
         {
             Name = name;
             SilenceDurationThreshold = silenceDurationThreshold;
@@ -32,7 +33,7 @@ namespace ChatdollKit.SpeechListener
             this.maxPrerollSamples = maxPrerollSamples;
             prerollBuffer = new float[maxPrerollSamples];
             OnRecordingComplete = onRecordingComplete;
-            DetectVoiceFunc = detectVoiceFunc;
+            DetectVoiceFunctions = detectVoiceFunctions;
         }
 
         public void ProcessSamples(float[] samples, float linearNoiseGateThreshold)
@@ -43,32 +44,24 @@ namespace ChatdollKit.SpeechListener
             }
 
             // Check silence
-            var isSilent = true;
-
-            if (DetectVoiceFunc == null)
+            IsSilent = true;
+            foreach (var f in DetectVoiceFunctions)
             {
-                for (var i = 0; i < samples.Length; i++)
+                IsSilent = !f(samples, linearNoiseGateThreshold);
+                if (IsSilent)
                 {
-                    if (Mathf.Abs(samples[i]) >= linearNoiseGateThreshold)
-                    {
-                        isSilent = false;
-                        break;
-                    }
+                    break;
                 }
             }
-            else
-            {
-                isSilent = !DetectVoiceFunc(samples, linearNoiseGateThreshold);
-            }
 
-            if (!IsRecording && !isSilent)
+            if (!IsRecording && !IsSilent)
             {
                 StartRecording();
             }
 
             if (IsRecording)
             {
-                if (isSilent)
+                if (IsSilent)
                 {
                     silenceDuration += Time.deltaTime;
                     if (silenceDuration >= SilenceDurationThreshold)

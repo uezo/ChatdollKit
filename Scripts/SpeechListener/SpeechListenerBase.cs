@@ -15,13 +15,18 @@ namespace ChatdollKit.SpeechListener
         public float MinRecordingDuration = 0.5f;
         public float MaxRecordingDuration = 3.0f;
         public float MaxPrerollDuration = 0.2f;
-        public Func<float[], float, bool> DetectVoiceFunc = null;
+        public List<Func<float[], float, bool>> DetectVoiceFunctions;
+        public Func<float[], float, bool> DetectVoiceFunc
+        {
+            set { DetectVoiceFunctions = new List<Func<float[], float, bool>>(){value};}
+        }
         public string Language = "ja-JP";
         public List<string> AlternativeLanguages;
         public bool AutoStart = true;
         public bool PrintResult = false;
         public int TargetSampleRate = 0;
         public bool IsRecording { get; private set; }
+        public bool IsVoiceDetected { get; private set; }
 
         public Func<string, UniTask> OnRecognized { get; set; }
 
@@ -42,10 +47,11 @@ namespace ChatdollKit.SpeechListener
         protected virtual void Update()
         {
             IsRecording = session != null && session.IsRecording;
+            IsVoiceDetected = session != null && !session.IsSilent;
         }
 
         public void StartListening(bool stopBeforeStart = false)
-        {      
+        {
             if (microphoneManager == null) return;
 
             if (stopBeforeStart)
@@ -66,10 +72,22 @@ namespace ChatdollKit.SpeechListener
                 maxRecordingDuration: MaxRecordingDuration,
                 maxPrerollSamples: maxPrerollSamples,
                 onRecordingComplete: async (samples) => await HandleRecordingCompleteAsync(samples, cancellationTokenSource.Token),
-                detectVoiceFunc: DetectVoiceFunc
+                detectVoiceFunctions: DetectVoiceFunctions ?? new() { IsVoiceDetectedByVolume }
             );
 
             microphoneManager.StartRecordingSession(session);
+        }
+
+        public bool IsVoiceDetectedByVolume(float[] samples, float linearThreshold)
+        {
+            for (var i = 0; i < samples.Length; i++)
+            {
+                if (Mathf.Abs(samples[i]) >= linearThreshold)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         public void StopListening()
