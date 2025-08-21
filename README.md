@@ -15,15 +15,21 @@
 - **Multi platforms**: Compatible with Windows, Mac, Linux, iOS, Android, and other Unity-supported platforms, including VR, AR, and WebGL.
 
 
-## 💎 What's New in Version 0.8.14
+## 💎 What's New in Version 0.8.15
 
-- **🎙️ Echo Cancelling Support**: Add native microphone support for Android, iOS, and macOSX that support AEC, noise cancelling and other features for voice conversation.
-- **🗣️ Conversation Improvement**: Prevent conversation breakdown caused by turn-end misrecognition and improve conversation experience with features like automatic volume control when users interrupt during AI speech
-- **💠 Platform Expansion**: Support for Aivis Cloud API TTS, AIAvatarKit TTS/STT, and GPT-5 `reasoning_effort` parameter
+- **🌏 WebGL Enhancements**: Add Silero VAD support, camera switching (front/rear) with correct aspect ratio handling, file upload for images, optimized microphone data transfer, and fixes for lip-sync when muted.  
+- **✨ UI Control Improvements**: Sleeker and more streamlined UI controls that work out-of-the-box with zero configuration—just drop them onto your scene’s Canvas.  
+- **🥁 Stronger Noise Resistance**: Combine multiple voice activity detection methods (e.g., Silero VAD + built-in energy-based VAD) to better capture user speech even in noisy environments like event venues.  
 
 
 <details>
 <summary>🕰️ Previous Updates (click to expand)</summary>
+
+### 0.8.14
+
+- **🎙️ Echo Cancelling Support**: Add native microphone support for Android, iOS, and macOSX that support AEC, noise cancelling and other features for voice conversation.
+- **🗣️ Conversation Improvement**: Prevent conversation breakdown caused by turn-end misrecognition and improve conversation experience with features like automatic volume control when users interrupt during AI speech
+- **💠 Platform Expansion**: Support for Aivis Cloud API TTS, AIAvatarKit TTS/STT, and GPT-5 `reasoning_effort` parameter
 
 ### 0.8.13
 
@@ -185,7 +191,6 @@ Download the latest version of [ChatdollKit.unitypackage](https://github.com/uez
 - [UniVRM](https://github.com/vrm-c/UniVRM/releases/tag/v0.127.2)(v0.127.2)
 - [ChatdollKit VRM Extension](https://github.com/uezo/ChatdollKit/releases)
 - JSON.NET: If your project doesn't have JSON.NET, add it from Package Manager > [+] > Add package from git URL... > com.unity.nuget.newtonsoft-json
-- [Azure Speech SDK](https://learn.microsoft.com/ja-jp/azure/ai-services/speech-service/quickstarts/setup-platform?pivots=programming-language-csharp&tabs=macos%2Cubuntu%2Cdotnetcli%2Cunity%2Cjre%2Cmaven%2Cnodejs%2Cmac%2Cpypi#install-the-speech-sdk-for-unity): (Option) Required for `AzureStreamSpeechListener`: real-time speech recognition using a stream.
 
 <img src="Documents/Images/burst.png" width="640">
 
@@ -621,6 +626,20 @@ The usage procedure is as follows:
 When executed, Silero VAD will be used for voice activity detection.
 
 
+### Using Multiple VADs Combination
+
+ChatdollKit supports combining multiple types of VADs. For example, by combining Silero VAD, which can recognize only human voices even in noisy environments, with the built-in energy-based VAD, which only captures loud voices, the system can accurately pick up the user’s speech at event venues while partially filtering out surrounding voices and venue announcements.
+
+To use multiple VADs, add multiple voice detection functions to `DetectVoiceFunctions` instead of `DetectVoiceFunc`.
+
+```csharp
+speechListener.DetectVoiceFunctions = new List<Func<float[], float, bool>>()
+{
+    sileroVad.IsVoiced, speechListener.IsVoiceDetectedByVolume
+};
+```
+
+
 ### Echo Cancelling
 
 Unity's built-in Microphone API doesn't support echo cancelling. To enable this feature, use platform-specific native microphone plugins.
@@ -827,7 +846,15 @@ Refer to the following tips for now. We are preparing demo for WebGL.
 - CORS required for HTTP requests.
 - Microphone is not supported. Use `ChatdollMicrophone` that is compatible with WebGL.
 - Compressed audio formats like MP3 are not supported. Use WAV in SpeechSynthesizer.
-- OVRLipSync is not supported. Use [uLipSync](https://github.com/hecomi/uLipSync) and [uLipSyncWebGL](https://github.com/uezo/uLipSyncWebGL) instead.
+- OVRLipSync is not supported. Use [uLipSync](https://github.com/hecomi/uLipSync) instead.
+- You also add the code below to your main script to enable uLipSync:
+    ```
+    var ul = gameObject.GetComponent<uLipSync.uLipSync>();
+    modelController.HandlePlayingSamples = (samples) =>
+    {
+        ul.OnDataReceived(samples, 1);
+    };
+    ```
 - If you want to show multibyte characters in message window put the font that includes multibyte characters to your project and set it to message windows.
 
 
