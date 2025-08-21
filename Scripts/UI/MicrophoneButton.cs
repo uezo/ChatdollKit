@@ -30,6 +30,8 @@ namespace ChatdollKit.UI
         [SerializeField]
         private MicrophoneManager microphoneManager;
         [SerializeField]
+        private SpeechListenerBase speechListener;
+        [SerializeField]
         private Coroutine flashCoroutine;
 
         private void Start()
@@ -44,6 +46,14 @@ namespace ChatdollKit.UI
                     Debug.LogWarning("MicrophoneManager is not found in this scene.");
                 }
             }
+            if (speechListener == null)
+            {
+                speechListener = FindFirstObjectByType<SpeechListenerBase>();
+                if (speechListener == null)
+                {
+                    Debug.LogWarning("SpeechListener is not found in this scene.");
+                }
+            }
 
             volumeSlider.value = microphoneManager.NoiseGateThresholdDb * -1;
         }
@@ -52,7 +62,7 @@ namespace ChatdollKit.UI
         {
             volumeSlider.value = microphoneManager.NoiseGateThresholdDb * -1;
 
-            if (microphoneManager.CurrentVolumeDb > microphoneManager.NoiseGateThresholdDb)
+            if (speechListener.IsVoiceDetected)
             {
                 FlashImageColor();
             }
