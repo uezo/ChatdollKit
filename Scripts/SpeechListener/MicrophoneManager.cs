@@ -1,12 +1,11 @@
 using System.Collections.Generic;
-using System.ComponentModel;
-
+using UnityEngine;
 #if UNITY_WEBGL && !UNITY_EDITOR
 using System;
+using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
 #endif
-using UnityEngine;
 
 namespace ChatdollKit.SpeechListener
 {
@@ -26,13 +25,15 @@ namespace ChatdollKit.SpeechListener
     {
 #if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")]
-        private static extern void InitWebGLMicrophone(string targetObjectName);
+        private static extern void InitWebGLMicrophone(string targetObjectName, bool useMalloc);
         [DllImport("__Internal")]
         private static extern void StartWebGLMicrophone();
         [DllImport("__Internal")]
         private static extern void EndWebGLMicrophone();
         [DllImport("__Internal")]
         private static extern int IsWebGLMicrophoneRecording();
+        [DllImport("__Internal")]
+        private static extern void JsFree(IntPtr ptr);
         private Queue<float[]> webGLSamplesBuffer = new Queue<float[]>();
 #endif
         public string MicrophoneDevice;
@@ -41,6 +42,8 @@ namespace ChatdollKit.SpeechListener
         public bool AutoStart = true;
         public bool IsDebug = false;
         public IMicrophoneProvider MicrophoneProvider { get; set; }
+        [SerializeField]
+        private bool useMallocInWebGL = true;
 
         // Expose on inspector for debugging
         public bool IsRecording;
@@ -53,11 +56,19 @@ namespace ChatdollKit.SpeechListener
         private float linearNoiseGateThreshold;
         private List<RecordingSession> activeSessions = new List<RecordingSession>();
 
+#if UNITY_WEBGL && !UNITY_EDITOR
+        private byte[] tempBytes;
+#endif
+
         private void Start()
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
             SampleRate = 44100;
-            InitWebGLMicrophone(gameObject.name);
+            InitWebGLMicrophone(gameObject.name, useMallocInWebGL);
+            if (!useMallocInWebGL)
+            {
+                Debug.LogWarning("Set `useMallocInWebGL = true` to improve performance.");
+            }
 #endif
             UpdateLinearVolumes();
             if (AutoStart)
@@ -178,8 +189,47 @@ namespace ChatdollKit.SpeechListener
         // WebGL plugin sets sample data here
         private void SetSamplingData(string samplingDataString)
         {
-            var samplingData = samplingDataString.Split(',').Select(s => Convert.ToSingle(s)).ToArray();
-            webGLSamplesBuffer.Enqueue(samplingData);
+            if (useMallocInWebGL)
+            {
+                // Get pointer and length of sampling data
+                var sep = samplingDataString.IndexOf(":");
+                var span = samplingDataString.AsSpan();
+                var ptrSpan = span.Slice(0, sep);
+                var lenSpan = span.Slice(sep + 1);
+                if (!int.TryParse(ptrSpan, NumberStyles.Integer, CultureInfo.InvariantCulture, out int ptrInt) ||
+                    !int.TryParse(lenSpan, NumberStyles.Integer, CultureInfo.InvariantCulture, out int length) ||
+                    length <= 0)
+                {
+                    return;
+                }
+                if (length > (int.MaxValue / sizeof(float))) return;
+
+                // Buffers
+                var bytes = length * sizeof(float);
+                if (tempBytes == null || tempBytes.Length < bytes)
+                {
+                    tempBytes = new byte[Math.Max(bytes, 4096)];    // Min 4096 to reduce GC
+                }
+                var samplingData = new float[length];
+
+                // Get data from malloc
+                var src = new IntPtr(ptrInt);
+                try
+                {
+                    Marshal.Copy(src, tempBytes, 0, bytes);     // WASM heap -> byte[]
+                    Buffer.BlockCopy(tempBytes, 0, samplingData, 0, bytes); //byte[] -> float[]
+                    webGLSamplesBuffer.Enqueue(samplingData);
+                }
+                finally
+                {
+                    JsFree(src);
+                }
+            }
+            else
+            {
+                var samplingData = samplingDataString.Split(',').Select(s => Convert.ToSingle(s)).ToArray();
+                webGLSamplesBuffer.Enqueue(samplingData);
+            }
         }
 #else
         private float[] GetAmplitudeData()

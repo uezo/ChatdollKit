@@ -1,5 +1,7 @@
 mergeInto(LibraryManager.library, {
-  InitWebGLMicrophone: function(targetObjectNamePtr) {
+  JsFree: function (p) { _free(p); },
+
+  InitWebGLMicrophone: function(targetObjectNamePtr, useMalloc) {
     var mic = document.webGLMicrophone = {};
     mic.isRecording = 0;
     mic.targetObjectName = UTF8ToString(targetObjectNamePtr);
@@ -7,8 +9,9 @@ mergeInto(LibraryManager.library, {
     mic.source = null;
     mic.workletNode = null;
     mic.processorModuleUrl = "StreamingAssets/WebGLMicrophoneProcessor.js";
+    mic.useMalloc = useMalloc;
     mic._buffer = [];
-    mic._bufferSize = 4096;
+    mic._bufferSize = 2048;
     
     // Properties for VAD
     mic.vadBuffer = [];
@@ -107,11 +110,21 @@ mergeInto(LibraryManager.library, {
             for (var i = 0; i < float32Array.length; i++) {
               mic._buffer.push(float32Array[i]);
             }
+
             if (mic._buffer.length >= mic._bufferSize) {
-              var chunk = mic._buffer.slice(0, mic._bufferSize);
-              mic._buffer = mic._buffer.slice(mic._bufferSize);
-              var csv = Array.prototype.join.call(chunk, ",");
-              SendMessage(mic.targetObjectName, "SetSamplingData", csv);
+              if (mic.useMalloc) {
+                while (mic._buffer.length >= mic._bufferSize) {
+                  var chunk = mic._buffer.splice(0, mic._bufferSize);
+                  var ptr = _malloc(mic._bufferSize * 4);
+                  Module.HEAPF32.set(chunk, ptr >> 2);
+                  SendMessage(mic.targetObjectName, "SetSamplingData", (ptr|0) + ":" + mic._bufferSize);
+                }
+              } else {
+                var chunk = mic._buffer.slice(0, mic._bufferSize);
+                mic._buffer = mic._buffer.slice(mic._bufferSize);
+                var csv = Array.prototype.join.call(chunk, ",");
+                SendMessage(mic.targetObjectName, "SetSamplingData", csv);
+              }
             }
           };
 
