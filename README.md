@@ -4,7 +4,7 @@
 - [🐈 Live demo](https://unagiken.blob.core.windows.net/chatdollkit/ChatdollKitDemoWebGL/index.html) A WebGL demo. Say "Hello" to start conversation. She’s multilingual, so you can ask her something like "Let's talk in Japanese" when you want to switch languages.
 - [🍎 iOS App: OshaberiAI](https://apps.apple.com/us/app/oshaberiai/id6446883638) A Virtual Agent App made with ChatdollKit: a perfect fusion of character creation by AI prompt engineering, customizable 3D VRM models, and your favorite voices by VOICEVOX.
 
-<img src="https://uezo.blob.core.windows.net/github/chatdoll/chatdollkit-overview-080beta.png" width="720">
+<img src="Documents/Images/chatdollkit_architecture_overview.png" width="720">
 
 
 ## ✨ Features
