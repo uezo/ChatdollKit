@@ -11,7 +11,7 @@ namespace ChatdollKit.Model
 
         [Header("Blink")]
         [SerializeField] private string blinkBlendShapeName;
-        private int blinkShapeIndex;
+        private int blinkShapeIndex = -1;
         [SerializeField] private float minBlinkIntervalToClose = 3.0f;
         [SerializeField] private float maxBlinkIntervalToClose = 5.0f;
         [SerializeField] private float minBlinkIntervalToOpen = 0.05f;
@@ -40,7 +40,7 @@ namespace ChatdollKit.Model
         // For setup
         public void Setup(GameObject avatarObject)
         {
-            if (skinnedMeshRenderer == null && blinkBlendShapeName == null)
+            if (skinnedMeshRenderer == null && string.IsNullOrEmpty(blinkBlendShapeName))
             {
                 skinnedMeshRenderer = AvatarUtility.GetFacialSkinnedMeshRenderer(avatarObject);
                 if (skinnedMeshRenderer != null)
@@ -48,11 +48,11 @@ namespace ChatdollKit.Model
                     blinkBlendShapeName = GetBlinkTargetName(skinnedMeshRenderer);
                 }
             }
-            else if (skinnedMeshRenderer == null && blinkBlendShapeName != null)
+            else if (skinnedMeshRenderer == null && !string.IsNullOrEmpty(blinkBlendShapeName))
             {
                 skinnedMeshRenderer = AvatarUtility.GetFacialSkinnedMeshRenderer(avatarObject, blinkBlendShapeName);
             }
-            else if (skinnedMeshRenderer != null && blinkBlendShapeName == null)
+            else if (skinnedMeshRenderer != null && string.IsNullOrEmpty(blinkBlendShapeName))
             {
                 blinkBlendShapeName = GetBlinkTargetName(skinnedMeshRenderer);
             }
@@ -97,6 +97,18 @@ namespace ChatdollKit.Model
                 return;
             }
 
+            if (skinnedMeshRenderer == null)
+            {
+                Debug.LogWarning("Facial SkinnedMeshRenderer not found.");
+                return;
+            }
+
+            if (string.IsNullOrEmpty(blinkBlendShapeName))
+            {
+                Debug.LogWarning("BlendShape for blink not found.");
+                return;
+            }
+
             // Initialize
             blinkShapeIndex = skinnedMeshRenderer.sharedMesh.GetBlendShapeIndex(blinkBlendShapeName);
             blinkWeight = 0f;
@@ -135,6 +147,19 @@ namespace ChatdollKit.Model
         public void StopBlink()
         {
             IsBlinkEnabled = false;
+
+            if (skinnedMeshRenderer == null)
+            {
+                Debug.LogWarning("Facial SkinnedMeshRenderer not found.");
+                return;
+            }
+
+            if (blinkShapeIndex == -1)
+            {
+                Debug.LogWarning("BlendShape for blink not found.");
+                return;
+            }
+
             skinnedMeshRenderer.SetBlendShapeWeight(blinkShapeIndex, 0);
         }
 
@@ -146,6 +171,19 @@ namespace ChatdollKit.Model
                 return;
             }
             blinkWeight = Mathf.SmoothDamp(blinkWeight, 1, ref blinkVelocity, blinkTransitionToClose);
+
+            if (skinnedMeshRenderer == null)
+            {
+                Debug.LogWarning("Facial SkinnedMeshRenderer not found.");
+                return;
+            }
+
+            if (blinkShapeIndex == -1)
+            {
+                Debug.LogWarning("BlendShape for blink not found.");
+                return;
+            }
+
             skinnedMeshRenderer.SetBlendShapeWeight(blinkShapeIndex, blinkWeight * 100);
         }
 
@@ -157,6 +195,19 @@ namespace ChatdollKit.Model
                 return;
             }
             blinkWeight = Mathf.SmoothDamp(blinkWeight, 0, ref blinkVelocity, blinkTransitionToOpen);
+
+            if (skinnedMeshRenderer == null)
+            {
+                Debug.LogWarning("Facial SkinnedMeshRenderer not found.");
+                return;
+            }
+
+            if (blinkShapeIndex == -1)
+            {
+                Debug.LogWarning("BlendShape for blink not found.");
+                return;
+            }
+
             skinnedMeshRenderer.SetBlendShapeWeight(blinkShapeIndex, blinkWeight * 100);
         }
     }
