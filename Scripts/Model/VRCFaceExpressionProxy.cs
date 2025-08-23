@@ -25,7 +25,27 @@ namespace ChatdollKit.Model
 
         public void Setup(GameObject avatarObject)
         {
-            SkinnedMeshRenderer = AvatarUtility.GetFacialSkinnedMeshRenderer(avatarObject);
+            if (FaceClipConfiguration == null)
+            {
+                Debug.LogWarning("FaceClipConfiguration is not set.");
+                return;
+            }
+
+            if (SkinnedMeshRenderer == null)
+            {
+                var facialSkinnedMeshRenderer = AvatarUtility.GetFacialSkinnedMeshRenderer(avatarObject, FaceClipConfiguration.FaceClips[0].Values[0].Name);
+
+                if (facialSkinnedMeshRenderer == null)
+                {
+                    Debug.LogWarning("Facial SkinnedMeshRenderer not found");
+                    return;
+                }
+                else
+                {
+                    SkinnedMeshRenderer = facialSkinnedMeshRenderer;
+                }
+            }
+
             blinker = gameObject.GetComponent<IBlink>();
             LoadFaces();
             if (faceClips.Count == 0)
