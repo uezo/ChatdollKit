@@ -1,3 +1,4 @@
+using System.Linq;
 using UnityEngine;
 
 namespace ChatdollKit.Model
