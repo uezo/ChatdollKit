@@ -23,8 +23,16 @@ namespace ChatdollKit.Model
 
         public void ConfigureViseme(GameObject avatarObject)
         {
+            var faceMesh = AvatarUtility.GetFacialSkinnedMeshRenderer(avatarObject, BlendShapeNamesForMouth);
+
+            if (faceMesh == null)
+            {
+                Debug.LogWarning("Could not find a SkinnedMeshRenderer for facial blendshapes. Please review the Inspector variables: blendShapeNameForMouthA to blendShapeNameForMouthO.");
+                return;
+            }
+
             // Get BlendShapeMap for viseme
-            var blendShapeMap = GetBlendShapeMap(avatarObject);
+            var blendShapeMap = GetBlendShapeMap(faceMesh.sharedMesh);
 
             // Get/Add uLipSyncBlendShape
             var uLipSyncBlendShape = gameObject.GetComponent<uLipSyncBlendShape>();
@@ -35,7 +43,6 @@ namespace ChatdollKit.Model
 
             // Configure uLipSyncBlendShape
             uLipSyncBlendShape.skinnedMeshRenderer = AvatarUtility.GetFacialSkinnedMeshRenderer(avatarObject, BlendShapeNamesForMouth);
-            Debug.Log(uLipSyncBlendShape.skinnedMeshRenderer.name);
 
             // Apply blend shapes
             uLipSyncBlendShape.blendShapes.Clear();
@@ -64,9 +71,8 @@ namespace ChatdollKit.Model
 #endif
         }
 
-        private Dictionary<string, int> GetBlendShapeMap(GameObject avatarObject)
+        private Dictionary<string, int> GetBlendShapeMap(Mesh mesh)
         {
-            var mesh = AvatarUtility.GetFacialSkinnedMeshRenderer(avatarObject, BlendShapeNamesForMouth).sharedMesh;
             var blendShapeMap = new Dictionary<string, int>()
             {
                 { "A", 0 }, { "I", 0 }, { "U", 0 }, { "E", 0 }, { "O", 0 }, { "N", -1 }, { "-", -1 }
