@@ -84,7 +84,7 @@ public class FaceClipEditor : Editor
         }
         else
         {
-            Debug.LogWarning($"Could not find a SkinnedMeshRenderer with the standard facial shapekeys: {string.Join(", ", AvatarUtility.BasicFaceBlendShapeKeywords)}. Please configure the Blink and VRCFaceExpressionProxy components individually.");
+            Debug.LogWarning($"Could not find a SkinnedMeshRenderer for standard facial blendshapes: {string.Join(", ", AvatarUtility.BasicFaceBlendShapeKeywords)}. Please configure the Blink and VRCFaceExpressionProxy components individually.");
         }
     }
 
