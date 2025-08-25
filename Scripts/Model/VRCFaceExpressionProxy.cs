@@ -33,7 +33,7 @@ namespace ChatdollKit.Model
 
             if (SkinnedMeshRenderer == null)
             {
-                var facialSkinnedMeshRenderer = AvatarUtility.GetFacialSkinnedMeshRenderer(avatarObject, FaceClipConfiguration.FaceClips[0].Values[0].Name);
+                var facialSkinnedMeshRenderer = AvatarUtility.GetFacialSkinnedMeshRenderer(avatarObject, new[] { FaceClipConfiguration.FaceClips[0].Values[0].Name });
 
                 if (facialSkinnedMeshRenderer == null)
                 {

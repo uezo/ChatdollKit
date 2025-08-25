@@ -2,6 +2,7 @@
 using System.Threading;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
+using System.Linq;
 
 namespace ChatdollKit.Model
 {
@@ -10,7 +11,11 @@ namespace ChatdollKit.Model
         [SerializeField] private SkinnedMeshRenderer skinnedMeshRenderer;
 
         [Header("Blink")]
+        [Tooltip("Explicitly specify the BlendShape name for 'Blink'. If not set, it will be auto-detected.")]
         [SerializeField] private string blinkBlendShapeName;
+        private static readonly string[] ExcludeBlinkKeywords = { "left", "right" };
+        [Tooltip("Keywords used to auto-detect the BlendShape name for 'Blink' when not explicitly specified.")]
+        [SerializeField] private string[] blinkKeywords = { "blink", "eye", "close" };
         private int blinkShapeIndex = -1;
         [SerializeField] private float minBlinkIntervalToClose = 3.0f;
         [SerializeField] private float maxBlinkIntervalToClose = 5.0f;
@@ -50,7 +55,7 @@ namespace ChatdollKit.Model
             }
             else if (skinnedMeshRenderer == null && !string.IsNullOrEmpty(blinkBlendShapeName))
             {
-                skinnedMeshRenderer = AvatarUtility.GetFacialSkinnedMeshRenderer(avatarObject, blinkBlendShapeName);
+                skinnedMeshRenderer = AvatarUtility.GetFacialSkinnedMeshRenderer(avatarObject, new[] { blinkBlendShapeName });
             }
             else if (skinnedMeshRenderer != null && string.IsNullOrEmpty(blinkBlendShapeName))
             {
@@ -69,16 +74,16 @@ namespace ChatdollKit.Model
             return blinkBlendShapeName;
         }
 
-        private static string GetBlinkTargetName(SkinnedMeshRenderer skinnedMeshRenderer)
+        private string GetBlinkTargetName(SkinnedMeshRenderer skinnedMeshRenderer)
         {
             var mesh = skinnedMeshRenderer.sharedMesh;
             for (var i = 0; i < mesh.blendShapeCount; i++)
             {
                 var shapeName = mesh.GetBlendShapeName(i);
                 var shapeNameLower = shapeName.ToLower();
-                if (!shapeNameLower.Contains("left") && !shapeNameLower.Contains("right"))
+                if (!ExcludeBlinkKeywords.Any(keyword => shapeNameLower.Contains(keyword)))
                 {
-                    if (shapeNameLower.Contains("blink") || (shapeNameLower.Contains("eye") && shapeNameLower.Contains("close")))
+                    if (blinkKeywords.Any(keyword => !string.IsNullOrEmpty(keyword) && shapeNameLower.Contains(keyword)))
                     {
                         return shapeName;
                     }

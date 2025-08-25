@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -5,10 +6,15 @@ namespace ChatdollKit.Model
 {
     public class AvatarUtility
     {
-        public static SkinnedMeshRenderer GetFacialSkinnedMeshRenderer(GameObject avatarGameObject, string blendShapeKeyword = null)
-        {
-            string[] blendShapeKeywords = { "blink", "eye_close", blendShapeKeyword };
+        public static readonly string[] BasicFaceBlendShapeKeywords = { "blink", "eye_close" };
 
+        public static SkinnedMeshRenderer GetFacialSkinnedMeshRenderer(GameObject avatarGameObject)
+        {
+            return GetFacialSkinnedMeshRenderer(avatarGameObject, BasicFaceBlendShapeKeywords);
+        }
+
+        public static SkinnedMeshRenderer GetFacialSkinnedMeshRenderer(GameObject avatarGameObject, IEnumerable<string> blendShapeKeywords)
+        {
             foreach (var smr in avatarGameObject.GetComponentsInChildren<SkinnedMeshRenderer>())
             {
                 if (smr.sharedMesh == null) continue;
