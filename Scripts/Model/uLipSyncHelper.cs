@@ -7,21 +7,12 @@ namespace ChatdollKit.Model
 {
     public class uLipSyncHelper : MonoBehaviour, ILipSyncHelper
     {
-        [SerializeField] private string blendShapeNameForMouthA = "vrc.v_aa";
-        [SerializeField] private string blendShapeNameForMouthI = "vrc.v_ih";
-        [SerializeField] private string blendShapeNameForMouthU = "vrc.v_ou";
-        [SerializeField] private string blendShapeNameForMouthE = "vrc.v_e";
-        [SerializeField] private string blendShapeNameForMouthO = "vrc.v_oh";
-
-        private string[] BlendShapeNamesForMouth
-            => new[] { blendShapeNameForMouthA, blendShapeNameForMouthI, blendShapeNameForMouthU, blendShapeNameForMouthE, blendShapeNameForMouthO };
-
         public void ResetViseme()
         {
             // do nothing
         }
 
-        public void ConfigureViseme(GameObject avatarObject)
+        public virtual void ConfigureViseme(GameObject avatarObject)
         {
             // Get BlendShapeMap for viseme
             var blendShapeMap = GetBlendShapeMap(avatarObject);
@@ -34,8 +25,7 @@ namespace ChatdollKit.Model
             }
 
             // Configure uLipSyncBlendShape
-            uLipSyncBlendShape.skinnedMeshRenderer = AvatarUtility.GetFacialSkinnedMeshRenderer(avatarObject, BlendShapeNamesForMouth);
-            Debug.Log(uLipSyncBlendShape.skinnedMeshRenderer.name);
+            uLipSyncBlendShape.skinnedMeshRenderer = AvatarUtility.GetFacialSkinnedMeshRenderer(avatarObject);
 
             // Apply blend shapes
             uLipSyncBlendShape.blendShapes.Clear();
@@ -64,9 +54,9 @@ namespace ChatdollKit.Model
 #endif
         }
 
-        private Dictionary<string, int> GetBlendShapeMap(GameObject avatarObject)
+        protected virtual Dictionary<string, int> GetBlendShapeMap(GameObject avatarObject)
         {
-            var mesh = AvatarUtility.GetFacialSkinnedMeshRenderer(avatarObject, BlendShapeNamesForMouth).sharedMesh;
+            var mesh = AvatarUtility.GetFacialSkinnedMeshRenderer(avatarObject).sharedMesh;
             var blendShapeMap = new Dictionary<string, int>()
             {
                 { "A", 0 }, { "I", 0 }, { "U", 0 }, { "E", 0 }, { "O", 0 }, { "N", -1 }, { "-", -1 }
@@ -74,23 +64,23 @@ namespace ChatdollKit.Model
 
             for (var i = 0; i < mesh.blendShapeCount; i++)
             {
-                if (mesh.GetBlendShapeName(i).Contains(blendShapeNameForMouthA))
+                if (mesh.GetBlendShapeName(i).Contains("vrc.v_aa"))
                 {
                     blendShapeMap["A"] = i;
                 }
-                else if (mesh.GetBlendShapeName(i).Contains(blendShapeNameForMouthI))
+                else if (mesh.GetBlendShapeName(i).Contains("vrc.v_ih"))
                 {
                     blendShapeMap["I"] = i;
                 }
-                else if (mesh.GetBlendShapeName(i).Contains(blendShapeNameForMouthU))
+                else if (mesh.GetBlendShapeName(i).Contains("vrc.v_ou"))
                 {
                     blendShapeMap["U"] = i;
                 }
-                else if (mesh.GetBlendShapeName(i).Contains(blendShapeNameForMouthE))
+                else if (mesh.GetBlendShapeName(i).Contains("vrc.v_e"))
                 {
                     blendShapeMap["E"] = i;
                 }
-                else if (mesh.GetBlendShapeName(i).Contains(blendShapeNameForMouthO))
+                else if (mesh.GetBlendShapeName(i).Contains("vrc.v_oh"))
                 {
                     blendShapeMap["O"] = i;
                 }
