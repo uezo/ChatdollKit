@@ -1,10 +1,19 @@
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace ChatdollKit.Model
 {
     public class AvatarUtility
     {
+        public static readonly string[] BasicFaceBlendShapeKeywords = { "blink", "eye_close" };
+
         public static SkinnedMeshRenderer GetFacialSkinnedMeshRenderer(GameObject avatarGameObject)
+        {
+            return GetFacialSkinnedMeshRenderer(avatarGameObject, BasicFaceBlendShapeKeywords);
+        }
+
+        public static SkinnedMeshRenderer GetFacialSkinnedMeshRenderer(GameObject avatarGameObject, IEnumerable<string> blendShapeKeywords)
         {
             foreach (var smr in avatarGameObject.GetComponentsInChildren<SkinnedMeshRenderer>())
             {
@@ -14,7 +23,7 @@ namespace ChatdollKit.Model
                 {
                     var blendShapeNameLower = smr.sharedMesh.GetBlendShapeName(i).ToLower();
 
-                    if (blendShapeNameLower.Contains("blink") || blendShapeNameLower.Contains("eye_close"))
+                    if (blendShapeKeywords.Any(keyword => !string.IsNullOrEmpty(keyword) && blendShapeNameLower.Contains(keyword)))
                     {
                         return smr;
                     }
