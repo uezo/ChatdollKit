@@ -48,7 +48,8 @@ namespace ChatdollKit.UI
             }
             if (speechListener == null)
             {
-                speechListener = FindFirstObjectByType<SpeechListenerBase>();
+                var aiavatar = FindFirstObjectByType<AIAvatar>();
+                speechListener = aiavatar.SpeechListener as SpeechListenerBase;
                 if (speechListener == null)
                 {
                     Debug.LogWarning("SpeechListener is not found in this scene.");

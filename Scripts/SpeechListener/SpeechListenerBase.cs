@@ -9,6 +9,19 @@ namespace ChatdollKit.SpeechListener
 {
     public class SpeechListenerBase : MonoBehaviour, ISpeechListener
     {
+        public bool _IsEnabled = true;
+        public virtual bool IsEnabled
+        {
+            get
+            {
+                return _IsEnabled;
+            }
+            set
+            {
+                _IsEnabled = value;
+            }
+        }
+
         [Header("Voice Recorder Settings")]
         public string Name;
         public float SilenceDurationThreshold = 0.3f;
@@ -38,7 +51,7 @@ namespace ChatdollKit.SpeechListener
         {
             microphoneManager = gameObject.GetComponent<MicrophoneManager>();
 
-            if (AutoStart)
+            if (AutoStart && IsEnabled)
             {
                 StartListening();
             }

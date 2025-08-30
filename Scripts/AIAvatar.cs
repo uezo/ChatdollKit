@@ -126,7 +126,6 @@ namespace ChatdollKit
             ModelController = ModelController ?? gameObject.GetComponent<ModelController>();
             DialogProcessor = DialogProcessor ?? gameObject.GetComponent<DialogProcessor>();
             LLMContentProcessor = LLMContentProcessor ?? gameObject.GetComponent<LLMContentProcessor>();
-            SpeechListener = gameObject.GetComponent<ISpeechListener>();
 
             // Setup MicrophoneManager
             MicrophoneManager.SetNoiseGateThresholdDb(VoiceRecognitionThresholdDB);
@@ -301,21 +300,39 @@ namespace ChatdollKit
             };
 
             // Setup SpeechListner
-            SpeechListener.OnRecognized = OnSpeechListenerRecognized;
-            SpeechListener.ChangeSessionConfig(
-                silenceDurationThreshold: idleSilenceDurationThreshold,
-                minRecordingDuration: idleMinRecordingDuration,
-                maxRecordingDuration: idleMaxRecordingDuration
-            );
+            foreach (var speechListener in gameObject.GetComponents<ISpeechListener>())
+            {
+                if (speechListener.IsEnabled)
+                {
+                    Debug.Log($"SpeechListener: {speechListener.GetType().Name}");
+                    SpeechListener = speechListener;
+                    SpeechListener.OnRecognized = OnSpeechListenerRecognized;
+                    SpeechListener.ChangeSessionConfig(
+                        silenceDurationThreshold: idleSilenceDurationThreshold,
+                        minRecordingDuration: idleMinRecordingDuration,
+                        maxRecordingDuration: idleMaxRecordingDuration
+                    );
+                    break;
+                }
+            }
+            if (SpeechListener == null)
+            {
+                Debug.LogWarning("Enabled SpeechListener not found.");
+            }
 
             // Setup SpeechSynthesizer
             foreach (var speechSynthesizer in gameObject.GetComponents<ISpeechSynthesizer>())
             {
                 if (speechSynthesizer.IsEnabled)
                 {
+                    Debug.Log($"SpeechSynthesizer: {speechSynthesizer.GetType().Name}");
                     ModelController.SpeechSynthesizerFunc = speechSynthesizer.GetAudioClipAsync;
                     break;
                 }
+            }
+            if (ModelController.SpeechSynthesizerFunc == null)
+            {
+                Debug.LogWarning("Enabled SpeechSynthesizer not found.");
             }
 
             // Character speech volume
@@ -409,7 +426,7 @@ namespace ChatdollKit
 
         private void UpdateCharacterVolume()
         {
-            if (characterAudioMixer == null || isCharacterMuted) return;
+            if (characterAudioMixer == null || isCharacterMuted || SpeechListener == null) return;
 
             // Handle recording state changes
             if (SpeechListener.IsRecording && !isPreviousRecording)
