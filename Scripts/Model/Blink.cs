@@ -1,8 +1,8 @@
 ﻿using System;
+using System.Linq;
 using System.Threading;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
-using System.Linq;
 
 namespace ChatdollKit.Model
 {
@@ -28,6 +28,7 @@ namespace ChatdollKit.Model
         private float blinkWeight = 0.0f;
         private float blinkVelocity = 0.0f;
         public bool IsBlinkEnabled { get; private set; } = false;
+        private bool isBlinkSetup { get; set; } = false;
         private Action blinkAction;
         private CancellationTokenSource blinkTokenSource;
         private bool blinkLoopAlreadyStarted = false;   // This doesn't back to false after once it turns to true
@@ -45,27 +46,51 @@ namespace ChatdollKit.Model
         // For setup
         public void Setup(GameObject avatarObject)
         {
-            if (skinnedMeshRenderer == null && string.IsNullOrEmpty(blinkBlendShapeName))
+            isBlinkSetup = false;
+
+            // Get facial skinned mesh renderer and blend shape name for blink
+            if (skinnedMeshRenderer == null)
             {
-                skinnedMeshRenderer = AvatarUtility.GetFacialSkinnedMeshRenderer(avatarObject);
-                if (skinnedMeshRenderer != null)
+                if (string.IsNullOrEmpty(blinkBlendShapeName))
+                {
+                    skinnedMeshRenderer = AvatarUtility.GetFacialSkinnedMeshRenderer(avatarObject);
+                    if (skinnedMeshRenderer != null)
+                    {
+                        blinkBlendShapeName = GetBlinkTargetName(skinnedMeshRenderer);
+                    }
+                }
+                else
+                {
+                    skinnedMeshRenderer = AvatarUtility.GetFacialSkinnedMeshRenderer(avatarObject, new[] { blinkBlendShapeName });
+                }
+            }
+            else
+            {
+                if (string.IsNullOrEmpty(blinkBlendShapeName))
                 {
                     blinkBlendShapeName = GetBlinkTargetName(skinnedMeshRenderer);
                 }
             }
-            else if (skinnedMeshRenderer == null && !string.IsNullOrEmpty(blinkBlendShapeName))
-            {
-                skinnedMeshRenderer = AvatarUtility.GetFacialSkinnedMeshRenderer(avatarObject, new[] { blinkBlendShapeName });
-            }
-            else if (skinnedMeshRenderer != null && string.IsNullOrEmpty(blinkBlendShapeName))
-            {
-                blinkBlendShapeName = GetBlinkTargetName(skinnedMeshRenderer);
-            }
 
-            if (string.IsNullOrEmpty(blinkBlendShapeName))
+            if (skinnedMeshRenderer == null)
+            {
+                Debug.LogWarning("Facial SkinnedMeshRenderer not found.");
+                return;
+            }
+            else if (string.IsNullOrEmpty(blinkBlendShapeName))
             {
                 Debug.LogWarning("BlendShape for blink not found.");
+                return;
             }
+
+            blinkShapeIndex = skinnedMeshRenderer.sharedMesh.GetBlendShapeIndex(blinkBlendShapeName);
+            if (blinkShapeIndex == -1)
+            {
+                Debug.LogWarning($"BlendShape for the name not found: {blinkBlendShapeName}");
+                return;
+            }
+
+            isBlinkSetup = true;
             blinkTokenSource = new CancellationTokenSource();
         }
 
@@ -96,26 +121,19 @@ namespace ChatdollKit.Model
         // Initialize and start blink
         public async UniTask StartBlinkAsync()
         {
+            // Return if not setup
+            if (!isBlinkSetup)
+            {
+                return;
+            }
+
             // Return with doing nothing when already blinking
             if (IsBlinkEnabled && blinkLoopAlreadyStarted)
             {
                 return;
             }
 
-            if (skinnedMeshRenderer == null)
-            {
-                Debug.LogWarning("Facial SkinnedMeshRenderer not found.");
-                return;
-            }
-
-            if (string.IsNullOrEmpty(blinkBlendShapeName))
-            {
-                Debug.LogWarning("BlendShape for blink not found.");
-                return;
-            }
-
             // Initialize
-            blinkShapeIndex = skinnedMeshRenderer.sharedMesh.GetBlendShapeIndex(blinkBlendShapeName);
             blinkWeight = 0f;
             blinkVelocity = 0f;
             blinkAction = null;
@@ -152,19 +170,6 @@ namespace ChatdollKit.Model
         public void StopBlink()
         {
             IsBlinkEnabled = false;
-
-            if (skinnedMeshRenderer == null)
-            {
-                Debug.LogWarning("Facial SkinnedMeshRenderer not found.");
-                return;
-            }
-
-            if (blinkShapeIndex == -1)
-            {
-                Debug.LogWarning("BlendShape for blink not found.");
-                return;
-            }
-
             skinnedMeshRenderer.SetBlendShapeWeight(blinkShapeIndex, 0);
         }
 
@@ -176,19 +181,6 @@ namespace ChatdollKit.Model
                 return;
             }
             blinkWeight = Mathf.SmoothDamp(blinkWeight, 1, ref blinkVelocity, blinkTransitionToClose);
-
-            if (skinnedMeshRenderer == null)
-            {
-                Debug.LogWarning("Facial SkinnedMeshRenderer not found.");
-                return;
-            }
-
-            if (blinkShapeIndex == -1)
-            {
-                Debug.LogWarning("BlendShape for blink not found.");
-                return;
-            }
-
             skinnedMeshRenderer.SetBlendShapeWeight(blinkShapeIndex, blinkWeight * 100);
         }
 
@@ -200,19 +192,6 @@ namespace ChatdollKit.Model
                 return;
             }
             blinkWeight = Mathf.SmoothDamp(blinkWeight, 0, ref blinkVelocity, blinkTransitionToOpen);
-
-            if (skinnedMeshRenderer == null)
-            {
-                Debug.LogWarning("Facial SkinnedMeshRenderer not found.");
-                return;
-            }
-
-            if (blinkShapeIndex == -1)
-            {
-                Debug.LogWarning("BlendShape for blink not found.");
-                return;
-            }
-
             skinnedMeshRenderer.SetBlendShapeWeight(blinkShapeIndex, blinkWeight * 100);
         }
     }
