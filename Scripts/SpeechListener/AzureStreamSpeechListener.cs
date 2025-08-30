@@ -9,6 +9,19 @@ namespace ChatdollKit.SpeechListener
 {
     public class AzureStreamSpeechListener : MonoBehaviour, ISpeechListener
     {
+        public bool _IsEnabled = true;
+        public virtual bool IsEnabled
+        {
+            get
+            {
+                return _IsEnabled;
+            }
+            set
+            {
+                _IsEnabled = value;
+            }
+        }
+
         [Header("Voice Recorder Settings")]
         public float SilenceDurationThreshold = 0.3f;
         public float ListeningTimeout = 30.0f;  // Session timeout. Start new recognition session after silence for ListeningTimeout.
@@ -62,7 +75,7 @@ namespace ChatdollKit.SpeechListener
 
         private void Start()
         {
-            if (AutoStart)
+            if (AutoStart && IsEnabled)
             {
                 StartListening();
             }
