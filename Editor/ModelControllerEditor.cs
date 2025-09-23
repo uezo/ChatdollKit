@@ -44,11 +44,12 @@ public class FaceClipEditor : Editor
                 return;
             }
         }
+        modelController.FaceController = modelController.GetComponent<FaceController>();
 
         // Set skinned mesh renderer before configure facial expression and lipsync
         var facialSkinnedMeshRenderer = AvatarUtility.GetFacialSkinnedMeshRenderer(modelController.AvatarModel);
         // TODO: Remove SkinnedMeshRenderer from ModelController
-        modelController.SkinnedMeshRenderer = facialSkinnedMeshRenderer;
+        modelController.FaceController.SkinnedMeshRenderer = facialSkinnedMeshRenderer;
         EditorUtility.SetDirty(modelController);
 
         // Configure uLipSyncHelper
@@ -78,7 +79,7 @@ public class FaceClipEditor : Editor
             // Set facial skinned mesh renderer if VRC Avator
             if (faceProxy != null)
             {
-                faceProxy.SkinnedMeshRenderer = modelController.SkinnedMeshRenderer;
+                faceProxy.SkinnedMeshRenderer = modelController.FaceController.SkinnedMeshRenderer;
             }
             EditorUtility.SetDirty(faceProxy);
         }

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -9,30 +8,11 @@ using Cysharp.Threading.Tasks;
 
 namespace ChatdollKit.Model
 {
-    public enum VoicePrefetchMode
-    {
-        Parallel,
-        Sequential,
-        Disabled
-    }
-
     public class ModelController : MonoBehaviour
     {
         // Avator
         [Header("Avatar")]
         public GameObject AvatarModel;
-
-        // Audio
-        [Header("Voice")]
-        public AudioSource AudioSource;
-        public Func<string, Dictionary<string, object>, CancellationToken, UniTask<AudioClip>> SpeechSynthesizerFunc;
-        public Action<Voice, CancellationToken> OnSayStart;
-        public Action OnSayEnd;
-        public VoicePrefetchMode VoicePrefetchMode = VoicePrefetchMode.Parallel;
-        private ConcurrentQueue<Voice> voicePrefetchQueue = new ConcurrentQueue<Voice>();
-        private CancellationTokenSource voicePrefetchCancellationTokenSource;
-        private ILipSyncHelper lipSyncHelper;
-        public Action<float[]> HandlePlayingSamples;
 
         // Animation
         [Header("Animation")]
@@ -57,16 +37,20 @@ namespace ChatdollKit.Model
         private Func<Animation> GetAnimation;
         private Dictionary<string, Animation> registeredAnimations { get; set; } = new Dictionary<string, Animation>();
 
-        // Face Expression
-        [Header("Face")]
-        public SkinnedMeshRenderer SkinnedMeshRenderer;
-        [SerializeField]
-        private float defaultFaceExpressionDuration = 7.0f;
-        private IFaceExpressionProxy faceExpressionProxy;
-        private List<FaceExpression> faceQueue = new List<FaceExpression>();
-        private float faceStartAt { get; set; }
-        private FaceExpression currentFace { get; set; }
+        // Speech
+        public SpeechController SpeechController { get; set; }
+        public Func<string, Dictionary<string, object>, CancellationToken, UniTask<AudioClip>> SpeechSynthesizerFunc
+        {
+            get { return SpeechController.SpeechSynthesizerFunc; }
+            set { SpeechController.SpeechSynthesizerFunc = value; }
+        }
+
+        // Face
+        public FaceController FaceController { get; set; }
+
+        // Helpers
         private IBlink blinker { get; set; }
+        private ILipSyncHelper lipSyncHelper;
 
         // History recorder for debug and test
         public ActionHistoryRecorder History;
@@ -75,11 +59,12 @@ namespace ChatdollKit.Model
         {
             GetAnimation = GetIdleAnimation;
 
+            // Sub Controllers
+            SpeechController = gameObject.GetComponent<SpeechController>();
+            FaceController = gameObject.GetComponent<FaceController>();
+
             // LipSyncHelper
             lipSyncHelper = gameObject.GetComponent<ILipSyncHelper>();
-
-            // Face expression proxy
-            faceExpressionProxy = gameObject.GetComponent<IFaceExpressionProxy>();
 
             // Blinker
             blinker = gameObject.GetComponent<IBlink>();
@@ -107,14 +92,11 @@ namespace ChatdollKit.Model
 
             // NOTE: Do not start idling here to prevent overwrite the animation that user invokes at Start() in other module.
             // Don't worry, idling will be started at UpdateAnimation() if user doesn't invoke their custom animation.
-
-            StartVoicePrefetchTask().Forget();
         }
 
         private void Update()
         {
             UpdateAnimation();
-            UpdateFace();
         }
 
         private void LateUpdate()
@@ -123,20 +105,18 @@ namespace ChatdollKit.Model
             gameObject.transform.position = AvatarModel.transform.position;
         }
 
-        private void OnDestroy()
-        {
-            voicePrefetchCancellationTokenSource?.Cancel();
-            voicePrefetchCancellationTokenSource?.Dispose();
-        }
-
 #region Idling
         // Start idling
         public void StartIdling(bool resetStartTime = true)
         {
-            GetAnimation = GetIdleAnimation;
-            if (resetStartTime)
+            // Only switch to idle if not already idling or if forced reset
+            if (GetAnimation != GetIdleAnimation || resetStartTime)
             {
-                animationStartAt = 0;
+                GetAnimation = GetIdleAnimation;
+                if (resetStartTime)
+                {
+                    animationStartAt = 0;
+                }
             }
         }
 
@@ -188,11 +168,11 @@ namespace ChatdollKit.Model
 
             if (idleFaces.ContainsKey(mode))
             {
-                SetFace(new List<FaceExpression>() { idleFaces[mode] });
+                FaceController.SetFace(new List<FaceExpression>() { idleFaces[mode] });
             }
             else if (mode == "normal")
             {
-                SetFace(new List<FaceExpression>() { new FaceExpression("Neutral", 0.0f, string.Empty) });
+                FaceController.SetFace(new List<FaceExpression>() { new FaceExpression("Neutral", 0.0f, string.Empty) });
             }
             IdlingModeStartAt = DateTime.UtcNow;
 
@@ -220,22 +200,37 @@ namespace ChatdollKit.Model
                 // Face
                 if (animatedVoice.Faces != null && animatedVoice.Faces.Count > 0)
                 {
-                    SetFace(animatedVoice.Faces);
+                    FaceController.SetFace(animatedVoice.Faces);
                 }
 
                 // Speech
                 if (animatedVoice.Voices.Count > 0)
                 {
                     // Wait for the requested voices end
-                    await Say(animatedVoice.Voices, token);
+                    await SpeechController.Say(animatedVoice.Voices, token);
                 }
             }
 
             if (request.StartIdlingOnEnd && !token.IsCancellationRequested)
             {
-                // Stop running animation not to keep the current state to the next turn (prompting)
-                // Do not start idling when cancel requested because the next animated voice request may include animations
-                StartIdling();
+                // Only reset to idle if we're not already idling
+                // This prevents interrupting ongoing idle animations
+                if (GetAnimation != GetIdleAnimation)
+                {
+                    // Wait for current animation to complete before starting idle
+                    if (currentAnimation != null)
+                    {
+                        var remainingTime = currentAnimation.Duration - (Time.realtimeSinceStartup - animationStartAt);
+                        if (remainingTime > 0)
+                        {
+                            await UniTask.Delay((int)(remainingTime * 1000), cancellationToken: token);
+                        }
+                    }
+                    // Stop running animation not to keep the current state to the next turn (prompting)
+                    // Do not start idling when cancel requested because the next animated voice request may include animations
+                    StartIdling();
+                }
+                // If already idling, don't interrupt the current idle animation
             }
         }
 
@@ -257,7 +252,7 @@ namespace ChatdollKit.Model
                 if (parsedText.StartsWith("[face:"))
                 {
                     var face = parsedText.Substring(6, parsedText.Length - 7);
-                    avreq.AddFace(face, duration: defaultFaceExpressionDuration);
+                    avreq.AddFace(face, duration: FaceController.DefaultFaceExpressionDuration);
                     ttsConfig.Params["style"] = face;
                 }
                 else if (parsedText.StartsWith("[anim:"))
@@ -295,199 +290,6 @@ namespace ChatdollKit.Model
 
             return avreq;
         }
-
-#region Speech
-        // Speak
-        public async UniTask Say(List<Voice> voices, CancellationToken token)
-        {
-            // Stop speech
-            StopSpeech();
-
-            // Prefetch Web/TTS voice
-            if (VoicePrefetchMode != VoicePrefetchMode.Disabled)
-            {
-                PrefetchVoices(voices, token);
-            }
-
-            // Speak sequentially
-            foreach (var v in voices)
-            {
-                if (token.IsCancellationRequested)
-                {
-                    return;
-                }
-
-                OnSayStart?.Invoke(v, token);
-
-                try
-                {
-                    // Download voice from web or TTS service
-                    var downloadStartTime = Time.time;
-                    AudioClip clip = null;
-
-                    var parameters = v.TTSConfig != null ? v.TTSConfig.Params : new Dictionary<string, object>();
-                    clip = await SpeechSynthesizerFunc(v.Text, parameters, token);
-
-                    if (clip != null)
-                    {
-                        // Wait for PreGap remains after download
-                        var preGap = v.PreGap - (Time.time - downloadStartTime);
-                        if (preGap > 0)
-                        {
-                            if (!token.IsCancellationRequested)
-                            {
-                                try
-                                {
-                                    await UniTask.Delay((int)(preGap * 1000), cancellationToken: token);
-                                }
-                                catch (OperationCanceledException)
-                                {
-                                    // OperationCanceledException raises
-                                    Debug.Log("Task canceled in waiting PreGap");
-                                }
-                            }
-                        }
-                        History?.Add(v);
-
-                        if (HandlePlayingSamples != null)
-                        {
-                            // Wait while voice playing with processing LipSync
-                            var startTime = Time.realtimeSinceStartup;
-                            var bufferSize = clip.channels == 2 ? 2048 : 1024;  // Optimized for 44100Hz / 30FPS
-                            var sampleBuffer = new float[bufferSize];
-                            var nextPosition = 0;
-                            var samples = new float[clip.samples * clip.channels];
-
-                            if (!clip.GetData(samples, 0))
-                            {
-                                Debug.LogWarning("Failed to get audio data from clip");
-                            }
-                            else
-                            {
-                                // Play audio
-                                AudioSource.PlayOneShot(clip);
-
-                                // Process samples by estimating current playing position by time
-                                while (Time.realtimeSinceStartup - startTime < clip.length && !token.IsCancellationRequested)
-                                {
-                                    var elapsedTime = Time.realtimeSinceStartup - startTime;
-                                    var currentPosition = Mathf.FloorToInt(elapsedTime * clip.frequency) * clip.channels;
-
-                                    while (nextPosition + bufferSize <= currentPosition &&
-                                        nextPosition + bufferSize <= samples.Length)
-                                    {
-                                        System.Array.Copy(samples, nextPosition, sampleBuffer, 0, bufferSize);
-                                        HandlePlayingSamples(sampleBuffer);
-                                        nextPosition += bufferSize;
-                                    }
-
-                                    await UniTask.Delay(33, cancellationToken: token);  // 30FPS
-                                }
-
-                                // Remaining samples
-                                if (nextPosition < samples.Length)
-                                {
-                                    var remaining = samples.Length - nextPosition;
-                                    var lastBuffer = new float[remaining];
-                                    System.Array.Copy(samples, nextPosition, lastBuffer, 0, remaining);
-                                    HandlePlayingSamples(lastBuffer);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            // Play audio
-                            AudioSource.PlayOneShot(clip);
-
-                            // Wait while voice playing
-                            while (AudioSource.isPlaying && !token.IsCancellationRequested)
-                            {
-                                await UniTask.Delay(33, cancellationToken: token);  // 30FPS
-                            }
-                        }
-
-                        if (!token.IsCancellationRequested)
-                        {
-                            try
-                            {
-                                // Wait for PostGap
-                                await UniTask.Delay((int)(v.PostGap * 1000), cancellationToken: token);
-                            }
-                            catch (OperationCanceledException)
-                            {
-                                Debug.Log("Task canceled in waiting PostGap");
-                            }
-                        }
-
-                    }
-                }
-
-                catch (Exception ex)
-                {
-                    Debug.LogError($"Error at Say: {ex.Message}\n{ex.StackTrace}");
-                }
-
-                finally
-                {
-                    OnSayEnd?.Invoke();
-                }
-            }
-
-            // Reset viseme
-            lipSyncHelper?.ResetViseme();
-        }
-
-        // Start downloading voices from web/TTS
-        public void PrefetchVoices(List<Voice> voices, CancellationToken token)
-        {
-            foreach (var voice in voices)
-            {
-                if (VoicePrefetchMode == VoicePrefetchMode.Sequential)
-                {
-                    voicePrefetchQueue.Enqueue(voice);
-                }
-                else
-                {
-                    var parameters = voice.TTSConfig != null ? voice.TTSConfig.Params : new Dictionary<string, object>();
-                    SpeechSynthesizerFunc(voice.Text, parameters, token);
-                }
-            }
-        }
-
-        private async UniTaskVoid StartVoicePrefetchTask()
-        {
-            voicePrefetchCancellationTokenSource = new CancellationTokenSource();
-            var token = voicePrefetchCancellationTokenSource.Token;
-
-            try
-            {
-                while (!token.IsCancellationRequested)
-                {
-                    if (VoicePrefetchMode == VoicePrefetchMode.Sequential && voicePrefetchQueue.TryDequeue(out var voice))
-                    {
-                        var parameters = voice.TTSConfig != null ? voice.TTSConfig.Params : new Dictionary<string, object>();
-                        await SpeechSynthesizerFunc(voice.Text, parameters, token);
-                    }
-                    else
-                    {
-                        await UniTask.Delay(10, cancellationToken: token);
-                    }
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                // Ignore OperationCanceledException
-            }
-        }
-
-        // Stop speech
-        public void StopSpeech()
-        {
-            History?.Add("Stop speech");
-            AudioSource.Stop();
-        }
-#endregion
-
 
 #region Animation
         // Set animations to queue
@@ -542,13 +344,20 @@ namespace ChatdollKit.Model
         {
             if (animationQueue.Count == 0) return default;
 
-            if (animationStartAt > 0 && Time.realtimeSinceStartup - animationStartAt > currentAnimation.Duration)
+            if (animationStartAt > 0 && currentAnimation != null && Time.realtimeSinceStartup - animationStartAt > currentAnimation.Duration)
             {
                 // Remove the first animation and reset animationStartAt when:
                 // - Not right after the Animate() called (animationStartAt > 0)
                 // - Animation is timeout (Time.realtimeSinceStartup - animationStartAt > currentAnimation.Duration)
                 animationQueue.RemoveAt(0);
                 animationStartAt = 0;
+
+                // If queue is empty after removing, ensure smooth transition
+                if (animationQueue.Count == 0)
+                {
+                    // Let the current animation finish naturally before transitioning
+                    return default;
+                }
             }
 
             if (animationQueue.Count == 0) return default;
@@ -615,52 +424,6 @@ namespace ChatdollKit.Model
 #endregion
 
 
-#region Face Expression
-        // Set face expressions
-        public void SetFace(List<FaceExpression> faces)
-        {
-            faceQueue.Clear();
-            faceQueue = new List<FaceExpression>(faces);    // Copy faces not to change original list
-            faceStartAt = 0;
-        }
-
-        private void UpdateFace()
-        {
-            // This method will be called every frames in `Update()`
-            var faceToSet = GetFaceExpression();
-            if (faceToSet == null)
-            {
-                // Set neutral instead when faceToSet is null
-                SetFace(new List<FaceExpression>() { new FaceExpression("Neutral", 0.0f, string.Empty) });
-                return;
-            }
-
-            if (currentFace == null || faceToSet.Name != currentFace.Name || faceToSet.Duration != currentFace.Duration)
-            {
-                // Set new face
-                faceExpressionProxy.SetExpressionSmoothly(faceToSet.Name, 1.0f);
-                currentFace = faceToSet;
-                faceStartAt = Time.realtimeSinceStartup;
-            }
-        }
-
-        public FaceExpression GetFaceExpression()
-        {
-            if (faceQueue.Count == 0) return default;
-
-            if (faceStartAt > 0 && Time.realtimeSinceStartup - faceStartAt > currentFace.Duration)
-            {
-                // Remove the first face after the duration passed
-                faceQueue.RemoveAt(0);
-                faceStartAt = 0;
-            }
-
-            if (faceQueue.Count == 0) return default;
-
-            return faceQueue.First();
-        }
-#endregion
-
 #region Avatar
         public void ActivateAvatar(GameObject avatarObject = null, bool configureViseme = false)
         {
@@ -672,7 +435,7 @@ namespace ChatdollKit.Model
 
             // Blink (Blink at first because FaceExpression depends blink)
             blinker.Setup(AvatarModel);
-            faceExpressionProxy.Setup(AvatarModel);
+            FaceController.Setup(AvatarModel);
 
             if (configureViseme)
             {

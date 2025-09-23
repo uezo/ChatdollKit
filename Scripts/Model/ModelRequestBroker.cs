@@ -17,6 +17,7 @@ namespace ChatdollKit.Model
         [SerializeField]
         private int maxLengthBeforeOptionalSplit = 0;
         private ModelController modelController;
+        private SpeechController speechController;
         private Queue<AnimatedVoiceRequest> modelRequestQueue = new Queue<AnimatedVoiceRequest>();
 
         private bool isCancelled = false;
@@ -68,7 +69,7 @@ namespace ChatdollKit.Model
             modelTokenSource?.Cancel();
             modelTokenSource?.Dispose();
             modelRequestQueue.Clear();
-            modelController.StopSpeech();
+            speechController.StopSpeech();
 
             // Start new speech
             modelTokenSource = new CancellationTokenSource();
@@ -107,7 +108,7 @@ namespace ChatdollKit.Model
                             {
                                 if (v.Text.Trim() == string.Empty) continue;
 
-                                modelController.PrefetchVoices(new List<Voice>(){new Voice(
+                                speechController.PrefetchVoices(new List<Voice>(){new Voice(
                                     v.Text, 0.0f, 0.0f, v.TTSConfig, true, string.Empty
                                 )}, modelTokenSource.Token);
                             }
