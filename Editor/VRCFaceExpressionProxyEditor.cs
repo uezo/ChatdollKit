@@ -147,7 +147,7 @@ public class VRCFaceExpressionProxyEditor : Editor
 
         if (proxy.SkinnedMeshRenderer == null)
         {
-            proxy.SkinnedMeshRenderer = proxy.gameObject.GetComponent<ModelController>().SkinnedMeshRenderer;
+            proxy.SkinnedMeshRenderer = proxy.gameObject.GetComponent<FaceController>().SkinnedMeshRenderer;
         }
 
         if (proxy.FaceClipConfiguration == null)

@@ -87,7 +87,7 @@ namespace ChatdollKit.Demo
 
             var faceOnStart = new List<FaceExpression>();
             faceOnStart.Add(new FaceExpression("Joy", 3.0f));
-            modelController.SetFace(faceOnStart);
+            gameObject.GetComponent<FaceController>().SetFace(faceOnStart);
 
             // // Long-Term Memory Manager (e.g. ChatMemory https://github.com/uezo/chatmemory)
             // // 1. Add ChatMemoryIntegrator to this game object

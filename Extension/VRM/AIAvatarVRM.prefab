@@ -90,6 +90,8 @@ GameObject:
   - component: {fileID: 4234857022457540485}
   - component: {fileID: 7546526134413884081}
   - component: {fileID: 3082384663952346143}
+  - component: {fileID: 6629216756742056284}
+  - component: {fileID: 3855954833474088151}
   - component: {fileID: 8527211872230696717}
   - component: {fileID: 3322979063469237806}
   - component: {fileID: 6103327943189844944}
@@ -189,15 +191,38 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   AvatarModel: {fileID: 0}
-  AudioSource: {fileID: 3492972881459660374}
-  VoicePrefetchMode: 0
   IdleAnimationDefaultDuration: 10
   IdleAnimationKey: BaseParam
   IdleAnimationValue: 6
   layeredAnimationDefaultState: Default
   AnimationFadeLength: 0.5
+--- !u!114 &6629216756742056284
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2779731071012727286}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0900f394aa0ff429e850f58a737a5cde, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
   SkinnedMeshRenderer: {fileID: 0}
-  defaultFaceExpressionDuration: 7
+  DefaultFaceExpressionDuration: 7
+--- !u!114 &3855954833474088151
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2779731071012727286}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4331bda1bffcc4c3285dacb74feff190, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  AudioSource: {fileID: 3492972881459660374}
 --- !u!114 &8527211872230696717
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -255,6 +280,7 @@ MonoBehaviour:
   NoiseGateThresholdDb: -50
   AutoStart: 1
   IsDebug: 1
+  useMallocInWebGL: 1
   IsRecording: 0
   CurrentVolumeDb: 0
   CurrentSamples: 0

@@ -131,7 +131,7 @@ namespace ChatdollKit
             MicrophoneManager.SetNoiseGateThresholdDb(VoiceRecognitionThresholdDB);
 
             // Setup ModelController
-            ModelController.OnSayStart = async (voice, token) =>
+            ModelController.SpeechController.OnSayStart = async (voice, token) =>
             {
                 if (!string.IsNullOrEmpty(voice.Text))
                 {
@@ -145,7 +145,7 @@ namespace ChatdollKit
                     }
                 }
             };
-            ModelController.OnSayEnd = () =>
+            ModelController.SpeechController.OnSayEnd = () =>
             {
                 CharacterMessageWindow?.Hide();
             };
@@ -178,7 +178,7 @@ namespace ChatdollKit
                     var animAndFace = ProcessingPresentations[UnityEngine.Random.Range(0, ProcessingPresentations.Count)];
                     ModelController.StopIdling();
                     ModelController.Animate(animAndFace.Animations);
-                    ModelController.SetFace(animAndFace.Faces);
+                    ModelController.FaceController.SetFace(animAndFace.Faces);
                 }
 
                 // Show user message
@@ -199,7 +199,7 @@ namespace ChatdollKit
                 }
 
                 // Restore face to neutral
-                ModelController.SetFace(neutralFaceRequest);
+                ModelController.FaceController.SetFace(neutralFaceRequest);
             };
 
 #pragma warning disable CS1998
@@ -241,7 +241,7 @@ namespace ChatdollKit
             DialogProcessor.OnStopAsync = async (forSuccessiveDialog) =>
             {
                 // Stop speaking immediately
-                ModelController.StopSpeech();
+                ModelController.SpeechController.StopSpeech();
 
                 // Start idling only when no successive dialogs are allocated
                 if (!forSuccessiveDialog)
@@ -282,7 +282,7 @@ namespace ChatdollKit
                         {
                             if (v.Text.Trim() == string.Empty) continue;
 
-                            ModelController.PrefetchVoices(new List<Voice>(){new Voice(
+                            ModelController.SpeechController.PrefetchVoices(new List<Voice>(){new Voice(
                                 v.Text, 0.0f, 0.0f, v.TTSConfig, true, string.Empty
                             )}, token);
                         }
@@ -326,19 +326,19 @@ namespace ChatdollKit
                 if (speechSynthesizer.IsEnabled)
                 {
                     Debug.Log($"SpeechSynthesizer: {speechSynthesizer.GetType().Name}");
-                    ModelController.SpeechSynthesizerFunc = speechSynthesizer.GetAudioClipAsync;
+                    ModelController.SpeechController.SpeechSynthesizerFunc = speechSynthesizer.GetAudioClipAsync;
                     break;
                 }
             }
-            if (ModelController.SpeechSynthesizerFunc == null)
+            if (ModelController.SpeechController.SpeechSynthesizerFunc == null)
             {
                 Debug.LogWarning("Enabled SpeechSynthesizer not found.");
             }
 
             // Character speech volume
-            if (ModelController.AudioSource.outputAudioMixerGroup != null)
+            if (ModelController.SpeechController.AudioSource.outputAudioMixerGroup != null)
             {
-                characterAudioMixer = ModelController.AudioSource.outputAudioMixerGroup.audioMixer;
+                characterAudioMixer = ModelController.SpeechController.AudioSource.outputAudioMixerGroup.audioMixer;
             }
         }
 

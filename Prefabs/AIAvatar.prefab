@@ -11,6 +11,8 @@ GameObject:
   - component: {fileID: 4011437065312461287}
   - component: {fileID: 580097151081313993}
   - component: {fileID: 9064564424377879766}
+  - component: {fileID: 8392414429664201075}
+  - component: {fileID: 8482206516309677263}
   - component: {fileID: 3573099332671133356}
   - component: {fileID: 277623319411621424}
   - component: {fileID: 6056985643406791538}
@@ -103,15 +105,38 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   AvatarModel: {fileID: 0}
-  AudioSource: {fileID: 5450990503545936203}
-  VoicePrefetchMode: 0
   IdleAnimationDefaultDuration: 10
   IdleAnimationKey: BaseParam
   IdleAnimationValue: 6
   layeredAnimationDefaultState: Default
   AnimationFadeLength: 0.5
+--- !u!114 &8392414429664201075
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3429620897720333282}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0900f394aa0ff429e850f58a737a5cde, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
   SkinnedMeshRenderer: {fileID: 0}
-  defaultFaceExpressionDuration: 7
+  DefaultFaceExpressionDuration: 7
+--- !u!114 &8482206516309677263
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3429620897720333282}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4331bda1bffcc4c3285dacb74feff190, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  AudioSource: {fileID: 5450990503545936203}
 --- !u!114 &3573099332671133356
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -169,6 +194,7 @@ MonoBehaviour:
   NoiseGateThresholdDb: -50
   AutoStart: 1
   IsDebug: 0
+  useMallocInWebGL: 1
   IsRecording: 0
   CurrentVolumeDb: 0
   CurrentSamples: 0
@@ -359,6 +385,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   skinnedMeshRenderer: {fileID: 0}
   blinkBlendShapeName: 
+  blinkKeywords:
+  - blink
+  - eye
+  - close
   minBlinkIntervalToClose: 3
   maxBlinkIntervalToClose: 5
   minBlinkIntervalToOpen: 0.05
