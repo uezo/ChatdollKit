@@ -6,6 +6,7 @@ namespace ChatdollKit.LLM
 {
     public interface ITool
     {
+        bool IsEnabled { get; set; }
         ILLMTool GetToolSpec();
         UniTask<ILLMSession> ProcessAsync(ILLMService llmService, ILLMSession llmSession, Dictionary<string, object> payloads, CancellationToken token);
         UniTask<ToolResponse> ExecuteAsync(string argumentsJsonString, CancellationToken token);
