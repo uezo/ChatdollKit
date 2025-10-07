@@ -111,9 +111,12 @@ namespace ChatdollKit.Dialog
             toolSpecs.Clear();
             foreach (var tool in gameObject.GetComponents<ITool>())
             {
-                var toolSpec = tool.GetToolSpec();
-                toolResolver.Add(toolSpec.name, tool);
-                toolSpecs.Add(toolSpec);
+                if (tool.IsEnabled)
+                {
+                    var toolSpec = tool.GetToolSpec();
+                    toolResolver.Add(toolSpec.name, tool);
+                    toolSpecs.Add(toolSpec);
+                }
             }            
         }
 

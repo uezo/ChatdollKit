@@ -8,6 +8,17 @@ namespace ChatdollKit.LLM
 {
     public class ToolBase : MonoBehaviour, ITool
     {
+        public bool _IsEnabled = true;
+        public bool IsEnabled {
+            get {
+                return _IsEnabled;
+            }
+            set
+            {
+                _IsEnabled = value;
+            }
+        }
+
         public virtual ILLMTool GetToolSpec()
         {
             throw new NotImplementedException("ToolBase.GetToolSpec must be implemented");
