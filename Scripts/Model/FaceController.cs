@@ -6,18 +6,12 @@ namespace ChatdollKit.Model
 {
     public class FaceController : MonoBehaviour
     {
-        [Header("Face")]
         public SkinnedMeshRenderer SkinnedMeshRenderer;
         public float DefaultFaceExpressionDuration = 7.0f;
         private IFaceExpressionProxy faceExpressionProxy;
         private List<FaceExpression> faceQueue = new List<FaceExpression>();
         private float faceStartAt { get; set; }
         private FaceExpression currentFace { get; set; }
-
-        private void Awake()
-        {
-            faceExpressionProxy = gameObject.GetComponent<IFaceExpressionProxy>();
-        }
 
         private void Update()
         {
@@ -26,10 +20,10 @@ namespace ChatdollKit.Model
 
         public void Setup(GameObject avatarModel)
         {
+            faceExpressionProxy = gameObject.GetComponent<IFaceExpressionProxy>();
             faceExpressionProxy.Setup(avatarModel);
         }
 
-#region Face Expression
         // Set face expressions
         public void SetFace(List<FaceExpression> faces)
         {
@@ -40,6 +34,8 @@ namespace ChatdollKit.Model
 
         private void UpdateFace()
         {
+            if (faceExpressionProxy == null) return;    // Do nothing if not setup yet
+
             // This method will be called every frames in `Update()`
             var faceToSet = GetFaceExpression();
             if (faceToSet == null)
@@ -73,6 +69,5 @@ namespace ChatdollKit.Model
 
             return faceQueue.First();
         }
-#endregion
     }
 }
