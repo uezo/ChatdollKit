@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 using Newtonsoft.Json;
 using Cysharp.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace ChatdollKit.SpeechListener
 {
@@ -12,6 +13,7 @@ namespace ChatdollKit.SpeechListener
         [Header("Azure Settings")]
         public string EndpointUrl;
         public string ApiKey = string.Empty;
+        public Func<SpeechRecognitionResponse, string> PostProcess;
 
         protected override async UniTask<string> ProcessTranscriptionAsync(float[] samples, int sampleRate, CancellationToken token)
         {
@@ -26,7 +28,14 @@ namespace ChatdollKit.SpeechListener
                 {
                     await request.SendWebRequest().ToUniTask();
                     var response = JsonConvert.DeserializeObject<SpeechRecognitionResponse>(request.downloadHandler.text);
-                    return response.text;
+                    if (PostProcess != null)
+                    {
+                        return PostProcess(response);
+                    }
+                    else
+                    {
+                        return response.text;
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -36,9 +45,26 @@ namespace ChatdollKit.SpeechListener
             }
         }
 
-        class SpeechRecognitionResponse
+        public class Candidate
+        {
+            public string speaker_id;
+            public float similarity;
+            public Dictionary<string, object> metadata;
+            public bool is_new = false;
+        }
+
+        public class MatchTopKResult
+        {
+            public Candidate chosen;
+            public List<Candidate> candidates;
+        }
+
+        public class SpeechRecognitionResponse
         {
             public string text;
+            public Dictionary<string, object> preprocess_metadata;
+            public Dictionary<string, object> postprocess_metadata;
+            public MatchTopKResult speakers;
         }
     }   
 }
