@@ -5,7 +5,6 @@ using UnityEngine;
 using Cysharp.Threading.Tasks;
 using ChatdollKit.IO;
 using ChatdollKit.Network;
-using UnityEngine.UIElements.Experimental;
 
 namespace ChatdollKit.SpeechSynthesizer
 {
