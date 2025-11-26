@@ -107,7 +107,10 @@ namespace ChatdollKit.SpeechSynthesizer
                 www.method = "POST";
 
                 www.SetRequestHeader("Content-Type", headers["Content-Type"]);
-                www.SetRequestHeader("Authorization", headers["Authorization"]);
+                if (headers.ContainsKey("Authorization"))
+                {
+                    www.SetRequestHeader("Authorization", headers["Authorization"]);
+                }
 
                 www.uploadHandler = new UploadHandlerRaw(data);
 
