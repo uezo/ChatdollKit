@@ -22,7 +22,10 @@ namespace ChatdollKit.SpeechListener
 
             using (UnityWebRequest request = UnityWebRequest.Post(EndpointUrl, form))
             {
-                request.SetRequestHeader("Authorization", $"Bearer {ApiKey}");
+                if (!string.IsNullOrEmpty(ApiKey))
+                {
+                    request.SetRequestHeader("Authorization", $"Bearer {ApiKey}");
+                }
 
                 try
                 {
