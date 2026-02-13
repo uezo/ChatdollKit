@@ -1,7 +1,7 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 #if UNITY_WEBGL && !UNITY_EDITOR
-using System;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -51,6 +51,7 @@ namespace ChatdollKit.SpeechListener
         public int CurrentSamples;
 
         public bool IsMuted { get; private set; } = false;
+        public event Action<float[]> OnSamplesReceived;
         private AudioClip microphoneClip;
         private int lastSamplePosition;
         private float linearNoiseGateThreshold;
@@ -81,6 +82,12 @@ namespace ChatdollKit.SpeechListener
         {
             var samples = GetAmplitudeData();
             CurrentVolumeDb = GetCurrentMicVolumeDb(samples);
+
+            // Stream samples to registered handler
+            if (samples.Length > 0)
+            {
+                OnSamplesReceived?.Invoke(samples);
+            }
 
             // NOTE: ProcessSamples may trigger OnRecordingComplete callback which calls StopRecording,
             // modifying activeSessions during iteration. Reverse loop prevents Collection modified exception. 
