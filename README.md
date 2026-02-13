@@ -584,12 +584,62 @@ You’ll find the **Target Sample Rate** (int) field exposed in the Inspector of
 - Set to a positive integer (e.g., `16000`) to downsample input to that rate (in Hz).
 
 
+### Using AIAvatarKitStreamSpeechListener
+
+[AIAvatarKit](https://github.com/uezo/aiavatarkit) is a framework that provides a Speech-to-Speech pipeline, and it also offers a streaming speech recognition server. By combining Silero VAD (also used in ChatdollKit) for turn-end detection with any speech recognition engine, you can build a real-time speech recognition server tailored to your use case.
+
+To use this, attach the `AIAvatarKitStreamSpeechListener` component to your AIAvatar object and configure the connection URL. Then add the following speech display handling to your main logic initialization (in `Start()`, or any process that runs after `Awake()`).
+
+```csharp
+// Show AI message partially with AIAvatarKitStreamSpeechListener
+var aiavatarKitStreamSpeechListener = gameObject.GetComponent<AIAvatarKitStreamSpeechListener>();
+if (aiavatarKitStreamSpeechListener != null)
+{
+    var userMessageWindow = (SimpleMessageWindow)aiAvatar.UserMessageWindow;
+
+    // Disable text animation since partial results are streamed in real-time
+    userMessageWindow.IsTextAnimated = false;
+    // Shorter PostGap is fine for streaming display; prioritize responsiveness
+    userMessageWindow.PostGap = 0.2f;
+
+    // Manually hide user message window after PostGap on the first turn,
+    // because the user message window is not managed by the normal dialog flow
+    var originalOnRecognized = aiavatarKitStreamSpeechListener.OnRecognized;
+    aiavatarKitStreamSpeechListener.OnRecognized = async (text) => {
+        if (originalOnRecognized != null)
+        {
+            await originalOnRecognized(text);
+        }
+        if (aiAvatar.Mode != AIAvatar.AvatarMode.Conversation)
+        {
+            await UniTask.Delay((int)(userMessageWindow.PostGap * 1000));
+            aiAvatar.UserMessageWindow?.Hide();
+        }
+    };
+
+    // Display partial recognition results
+    aiavatarKitStreamSpeechListener.OnPartialRecognized = (partialText) => {
+        if (!string.IsNullOrEmpty(partialText))
+        {
+            aiAvatar.UserMessageWindow.Show(partialText);
+        }
+    };
+}
+```
+
+**NOTE**: Using Silero VAD in WebGL builds can cause high browser processing overhead. We recommend using `AIAvatarKitStreamSpeechListener` to offload VAD processing to the server side.
+
+**NOTE**: To use `AIAvatarKitStreamSpeechListener` in WebGL builds, add the NativeWebSocket package via Package Manager: `https://github.com/endel/NativeWebSocket.git#upm`. Unity's built-in WebSocket client (`System.Net.WebSockets`) is not supported on WebGL.
+
+
 ### Using AzureStreamSpeechListener
 
 To use `AzureStreamSpeechListener`, some settings differ from other SpeechListeners. This is because `AzureStreamSpeechListener` controls the microphone internally through the SDK and performs transcription incrementally.
 
 **Microphone Mute By**: Select `Stop Listener`. If this is not set, the character will listen to its own speech, disrupting the conversation.
+
 **User Message Window**: Uncheck `Is Text Animated`, and set `Pre Gap` to `0` and `Post Gap` to around `0.2`.
+
 **Update()**: To display the recognized text incrementally, add the following code inside the Update() method:
 
 
