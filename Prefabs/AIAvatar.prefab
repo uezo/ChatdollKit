@@ -69,6 +69,7 @@ MonoBehaviour:
   idleMaxRecordingDuration: 3
   showMessageWindowOnWake: 1
   MicrophoneMuteBy: 2
+  StopResponseOnBargeIn: 1
   WakeWords: []
   CancelWords: []
   InterruptWords: []
@@ -81,8 +82,6 @@ MonoBehaviour:
   BackgroundRequestPrefix: $
   characterVolumeParameter: CharacterVolume
   maxCharacterVolumeDb: 0
-  characterVolumeSmoothTime: 0.2
-  characterVolumeChangeDelay: 0.2
   ModelController: {fileID: 9064564424377879766}
   DialogProcessor: {fileID: 3573099332671133356}
   LLMContentProcessor: {fileID: 0}
@@ -207,7 +206,7 @@ AudioSource:
   m_GameObject: {fileID: 3429620897720333282}
   m_Enabled: 1
   serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: 0}
+  OutputAudioMixerGroup: {fileID: 24300002, guid: a77b782b889a943579507334e1133815, type: 2}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 0
@@ -490,7 +489,7 @@ MonoBehaviour:
   PreGap: 0.1
   PostGap: 0.7
   autoHide: 0
-  isTextAnimated: 1
+  IsTextAnimated: 1
 --- !u!1 &6913102872196139015
 GameObject:
   m_ObjectHideFlags: 0
@@ -689,7 +688,7 @@ MonoBehaviour:
   PreGap: 0.1
   PostGap: 0.7
   autoHide: 1
-  isTextAnimated: 1
+  IsTextAnimated: 1
 --- !u!1 &7110852688282348833
 GameObject:
   m_ObjectHideFlags: 0
