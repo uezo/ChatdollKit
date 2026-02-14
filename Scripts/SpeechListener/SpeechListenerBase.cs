@@ -42,6 +42,12 @@ namespace ChatdollKit.SpeechListener
         public bool IsVoiceDetected { get; private set; }
 
         public Func<string, UniTask> OnRecognized { get; set; }
+        public Action OnBargeIn { get; set; }
+        public Func<string, float, bool> BargeInCondition { get; set; }
+
+        [Header("Barge-in Settings")]
+        public float BargeInMinDuration = 1.5f;
+        private bool bargeInTriggered = false;
 
         protected MicrophoneManager microphoneManager;
         private RecordingSession session;
@@ -61,6 +67,20 @@ namespace ChatdollKit.SpeechListener
         {
             IsRecording = session != null && session.IsRecording;
             IsVoiceDetected = session != null && !session.IsSilent;
+
+            // Barge-in check
+            if (IsRecording && !bargeInTriggered && session != null)
+            {
+                var shouldBargeIn = BargeInCondition != null
+                    ? BargeInCondition(null, session.RecordDuration)
+                    : session.RecordDuration >= BargeInMinDuration;
+
+                if (shouldBargeIn)
+                {
+                    bargeInTriggered = true;
+                    OnBargeIn?.Invoke();
+                }
+            }
         }
 
         public void StartListening(bool stopBeforeStart = false)
@@ -73,6 +93,8 @@ namespace ChatdollKit.SpeechListener
             }
 
             if (session != null) return;
+
+            bargeInTriggered = false;
 
             cancellationTokenSource = new CancellationTokenSource();
 

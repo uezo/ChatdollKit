@@ -7,6 +7,8 @@ namespace ChatdollKit.SpeechListener
     {
         bool IsEnabled { get; set; }
         Func<string, UniTask> OnRecognized { get; set; }
+        Action OnBargeIn { get; set; }
+        Func<string, float, bool> BargeInCondition { get; set; }
         bool IsRecording{ get; }
         bool IsVoiceDetected { get; }
         void StartListening(bool stopBeforeStart = false);

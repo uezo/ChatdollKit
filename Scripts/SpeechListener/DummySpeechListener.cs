@@ -21,6 +21,8 @@ namespace ChatdollKit.SpeechListener
         }
 
         public Func<string, UniTask> OnRecognized { get; set; }
+        public Action OnBargeIn { get; set; }
+        public Func<string, float, bool> BargeInCondition { get; set; }
         public bool IsRecording { get; }
         public bool IsVoiceDetected { get; }
         public void ChangeSessionConfig(float silenceDurationThreshold = float.MinValue, float minRecordingDuration = float.MinValue, float maxRecordingDuration = float.MinValue)

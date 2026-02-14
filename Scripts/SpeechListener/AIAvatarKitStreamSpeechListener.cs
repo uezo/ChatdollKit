@@ -28,10 +28,16 @@ namespace ChatdollKit.SpeechListener
 
         // Recognizer
         public Func<string, UniTask> OnRecognized { get; set; }
+        public Action OnBargeIn { get; set; }
+        public Func<string, float, bool> BargeInCondition { get; set; }
         public Action<string> OnPartialRecognized { get; set; }
         public Action OnVoiced { get; set; }
         public bool IsRecording { get; private set; }
         public bool IsVoiceDetected { get; private set; }
+
+        [Header("Barge-in Settings")]
+        public int BargeInMinTextLength = 2;
+        private bool bargeInTriggered = false;
         // MicrophoneManager
         protected MicrophoneManager microphoneManager;
 
@@ -288,6 +294,20 @@ namespace ChatdollKit.SpeechListener
                             Debug.Log($"Partial: {msg.text}");
                         }
                         OnPartialRecognized?.Invoke(msg.text);
+
+                        // Barge-in check
+                        if (!bargeInTriggered && !string.IsNullOrEmpty(msg.text))
+                        {
+                            var shouldBargeIn = BargeInCondition != null
+                                ? BargeInCondition(msg.text, 0f)
+                                : msg.text.Length >= BargeInMinTextLength;
+
+                            if (shouldBargeIn)
+                            {
+                                bargeInTriggered = true;
+                                OnBargeIn?.Invoke();
+                            }
+                        }
                         break;
 
                     case "final":
@@ -299,6 +319,7 @@ namespace ChatdollKit.SpeechListener
                         {
                             OnRecognized?.Invoke(msg.text);
                         }
+                        bargeInTriggered = false;
                         break;
 
                     case "voiced":
