@@ -62,6 +62,7 @@ namespace ChatdollKit
         public MicrophoneMuteStrategy MicrophoneMuteBy = MicrophoneMuteStrategy.Mute;
 
         [Header("Conversation settings")]
+        public bool StopResponseOnBargeIn = true;
         public List<WordWithAllowance> WakeWords;
         public List<string> CancelWords;
         public List<WordWithAllowance> InterruptWords;
@@ -78,16 +79,6 @@ namespace ChatdollKit
             get { return maxCharacterVolumeDb; }
             set { SetCharacterMaxVolumeDb(value); }
         }
-        [SerializeField]
-        private float characterVolumeSmoothTime = 0.2f;
-        [SerializeField]
-        private float characterVolumeChangeDelay = 0.2f;
-        private float targetCharacterVolumeDb;
-        private float currentCharacterVolumeDb;
-        private float currentCharacterVelocity;
-        private bool isPreviousRecording = false;
-        private float recordingStartTime = 0f;
-        private bool isVolumeChangePending = false;
         private bool isCharacterMuted;
         public bool IsCharacterMuted
         {
@@ -307,6 +298,7 @@ namespace ChatdollKit
                     Debug.Log($"SpeechListener: {speechListener.GetType().Name}");
                     SpeechListener = speechListener;
                     SpeechListener.OnRecognized = OnSpeechListenerRecognized;
+                    SpeechListener.OnBargeIn = OnBargeIn;
                     SpeechListener.ChangeSessionConfig(
                         silenceDurationThreshold: idleSilenceDurationThreshold,
                         minRecordingDuration: idleMinRecordingDuration,
@@ -342,10 +334,17 @@ namespace ChatdollKit
             }
         }
 
+        private void Start()
+        {
+            if (characterAudioMixer != null)
+            {
+                characterAudioMixer.SetFloat(characterVolumeParameter, maxCharacterVolumeDb);
+            }
+        }
+
         private void Update()
         {
             UpdateMode();
-            UpdateCharacterVolume();
 
             // User message window (Listening...)
             if (DialogProcessor.Status == DialogProcessor.DialogStatus.Idling)
@@ -424,70 +423,22 @@ namespace ChatdollKit
             }
         }
 
-        private void UpdateCharacterVolume()
-        {
-            if (characterAudioMixer == null || isCharacterMuted || SpeechListener == null) return;
-
-            // Handle recording state changes
-            if (SpeechListener.IsRecording && !isPreviousRecording)
-            {
-                // Recording just started - mark the time and set pending flag
-                recordingStartTime = Time.time;
-                isVolumeChangePending = true;
-            }
-            else if (!SpeechListener.IsRecording && isPreviousRecording)
-            {
-                // Recording stopped - immediately restore volume
-                targetCharacterVolumeDb = maxCharacterVolumeDb; // Unmute
-                isVolumeChangePending = false;
-            }
-            
-            // Check if we should start muting after delay
-            if (isVolumeChangePending && SpeechListener.IsRecording)
-            {
-                if (Time.time - recordingStartTime >= characterVolumeChangeDelay)
-                {
-                    // Delay has passed and still recording - start muting
-                    targetCharacterVolumeDb = -80.0f;   // Mute
-                    isVolumeChangePending = false;
-                }
-            }
-            
-            isPreviousRecording = SpeechListener.IsRecording;
-
-            // Smoothing
-            currentCharacterVolumeDb = Mathf.SmoothDamp(
-                currentCharacterVolumeDb,
-                targetCharacterVolumeDb,
-                ref currentCharacterVelocity,
-                characterVolumeSmoothTime
-            );
-
-            // Apply to mixer
-            characterAudioMixer.SetFloat(characterVolumeParameter, currentCharacterVolumeDb);
-        }
-
         private void MuteCharacter(bool mute)
         {
             if (characterAudioMixer == null) return;
-
-            currentCharacterVelocity = 0.0f;
-            // Update currentCharacterVolumeDb and targetCharacterVolumeDb to stop smoothing
-            currentCharacterVolumeDb = mute ? -80.0f : maxCharacterVolumeDb;
-            targetCharacterVolumeDb = currentCharacterVolumeDb;
-            characterAudioMixer.SetFloat(characterVolumeParameter, currentCharacterVolumeDb);
+            characterAudioMixer.SetFloat(characterVolumeParameter, mute ? -80.0f : maxCharacterVolumeDb);
             isCharacterMuted = mute;
         }
 
         private void SetCharacterMaxVolumeDb(float volumeDb)
         {
             if (characterAudioMixer == null) return;
-
-            maxCharacterVolumeDb = volumeDb > 0 ? 0.0f : volumeDb < -80.0f ? -80.0f : volumeDb;
-            // Update currentCharacterVolumeDb and targetCharacterVolumeDb to stop smoothing
-            currentCharacterVolumeDb = maxCharacterVolumeDb;
-            targetCharacterVolumeDb = currentCharacterVolumeDb;
-            characterAudioMixer.SetFloat(characterVolumeParameter, currentCharacterVolumeDb);
+            maxCharacterVolumeDb = Mathf.Clamp(volumeDb, -80.0f, 0.0f);
+            // Don't apply to mixer while muted to keep mixer at -80dB
+            if (!isCharacterMuted)
+            {
+                characterAudioMixer.SetFloat(characterVolumeParameter, maxCharacterVolumeDb);
+            }
         }
 
         private string ExtractWakeWord(string text)
@@ -678,11 +629,22 @@ namespace ChatdollKit
             }
         }
 
+        private void OnBargeIn()
+        {
+            if (!StopResponseOnBargeIn) return;
+
+            if (Mode >= AvatarMode.Conversation && DialogProcessor.Status == DialogProcessor.DialogStatus.Responding)
+            {
+                _ = StopChatAsync(continueDialog: true);
+            }
+        }
+
         public void ChangeSpeechListener(ISpeechListener speechListener)
         {
             SpeechListener.StopListening();
             SpeechListener = speechListener;
             SpeechListener.OnRecognized = OnSpeechListenerRecognized;
+            SpeechListener.OnBargeIn = OnBargeIn;
         }
 
         public class ProcessingPresentation

@@ -154,6 +154,9 @@ To run the demo for version 0.8, please follow the steps below after importing t
   - [Downsampling](#downsampling)
   - [Using AzureStreamSpeechListener](#using-azurestreamspeechlistener)
   - [Using Silero VAD](#using-silero-vad)
+  - [Using Multiple VADs Combination](#using-multiple-vads-combination)
+  - [Echo Cancelling](#echo-cancelling)
+  - [Custom Barge-in Condition](#custom-barge-in-condition)
 - [⏰ Wake Word Detection](#-wake-word-detection)
   - [Wake Words](#wake-words)
   - [Cancel Words](#cancel-words)
@@ -569,6 +572,7 @@ Most of the settings related to the SpeechListener are configured in the inspect
 |**Idle Min Recording Duration**|The minimum recording duration during Idle mode. A smaller value is set compared to conversation mode to smoothly detect short phrases.|
 |**Idle Max Recording Duration**|The maximum recording duration during Idle mode. Since wake words are usually short, a shorter value is set compared to conversation mode.|
 |**Microphone Mute By**|The method used to prevent the avatar's speech from being recognized during speech. <br><br>- None: Does nothing.<br>- Threshold: Raises the voice recognition threshold to `Voice Recognition Raised Threshold DB`.<br>- Mute: Ignores input sound from the microphone.<br>- Stop Device: Stops the microphone device.<br>- Stop Listener: Stops the listener. **Select this when you use AzureStreamSpeechListener**|
+|**Stop Response On Barge In**|When enabled (default: true), the AI's speech is automatically stopped when the SpeechListener detects that the user has started speaking (barge-in). The trigger condition depends on the SpeechListener type: for non-stream listeners, it fires when voice recording exceeds a minimum duration (default: 1.5 seconds); for stream listeners (AIAvatarKitStream, AzureStream), it fires when recognized text reaches a minimum length (default: 2 characters). You can override the trigger condition by setting `BargeInCondition` on the SpeechListener. Set to false to disable this feature.|
 
 
 **NOTE: **`AzureStreamSpeechListener` doesn't have some properties above because that control microphone by SDK DLL internally.
@@ -717,6 +721,32 @@ With echo cancelling enabled, you can allow users to interrupt the AI while it's
 2. Set `MicrophoneMuteBy` to `None`
 
 This configuration allows the microphone to remain active during AI speech, enabling natural conversation interruptions while the echo cancelling prevents the AI's voice from being picked up by the microphone.
+
+
+### Custom Barge-in Condition
+
+By default, barge-in is triggered based on the type of SpeechListener:
+
+- **Non-stream listeners** (OpenAI, Google, AIAvatarKit): Fires when the user has been recording for at least `BargeInMinDuration` seconds (default: 1.5s).
+- **Stream listeners** (AzureStream, AIAvatarKitStream): Fires when the partially recognized text reaches `BargeInMinTextLength` characters (default: 2).
+
+You can override this logic by setting `BargeInCondition` on the SpeechListener. The delegate signature is `Func<string, float, bool>` where:
+
+- `text` — Partially recognized text (`null` for non-stream listeners)
+- `recordDuration` — Elapsed recording time in seconds (`0f` for stream listeners)
+- Return `true` to trigger barge-in
+
+```csharp
+// Example: Require at least 3 characters for stream listeners
+aiAvatar.SpeechListener.BargeInCondition = (text, recordDuration) =>
+{
+    if (text != null)
+    {
+        return text.Length >= 3;
+    }
+    return recordDuration >= 2.0f;
+};
+```
 
 
 ## ⏰ Wake Word Detection

@@ -35,8 +35,15 @@ namespace ChatdollKit.SpeechListener
 
         // Recognizer
         public Func<string, UniTask> OnRecognized { get; set; }
+        public Action OnBargeIn { get; set; }
+        public Func<string, float, bool> BargeInCondition { get; set; }
         public bool IsRecording { get; }        // TODO: Implement
         public bool IsVoiceDetected { get; }    // TODO: Implement
+
+        [Header("Barge-in Settings")]
+        public int BargeInMinTextLength = 2;
+        private bool bargeInTriggered = false;
+        private volatile bool bargeInPending = false;
         private SpeechRecognizer recognizer { get; set; }
         private EventHandler<SpeechRecognitionEventArgs> OnRecognizerRecognizing { get; set; }
         private EventHandler<SpeechRecognitionEventArgs> OnRecognizerRecognized { get; set; }
@@ -58,6 +65,20 @@ namespace ChatdollKit.SpeechListener
             OnRecognizerRecognizing = (sender, e) =>
             {
                 RecognizedTextBuffer = e.Result.Text;
+
+                // Barge-in check (runs on background thread)
+                if (!bargeInTriggered && !string.IsNullOrEmpty(e.Result.Text))
+                {
+                    var shouldBargeIn = BargeInCondition != null
+                        ? BargeInCondition(e.Result.Text, 0f)
+                        : e.Result.Text.Length >= BargeInMinTextLength;
+
+                    if (shouldBargeIn)
+                    {
+                        bargeInTriggered = true;
+                        bargeInPending = true;
+                    }
+                }
             };
             OnRecognizerRecognized = (sender, e) =>
             {
@@ -71,6 +92,7 @@ namespace ChatdollKit.SpeechListener
                     // Just enqueue to process OnRecognized in main thread
                     recognizedTextQueue.Enqueue(e.Result.Text);
                 }
+                bargeInTriggered = false;
             };
         }
 
@@ -84,6 +106,13 @@ namespace ChatdollKit.SpeechListener
 
         private void Update()
         {
+            // Fire barge-in on main thread
+            if (bargeInPending)
+            {
+                bargeInPending = false;
+                OnBargeIn?.Invoke();
+            }
+
             if (recognizedTextQueue.Count > 0)
             {
                 var recognizedText = recognizedTextQueue.Dequeue();

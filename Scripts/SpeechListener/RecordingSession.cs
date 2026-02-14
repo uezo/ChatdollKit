@@ -20,6 +20,7 @@ namespace ChatdollKit.SpeechListener
         private int prerollCount = 0;
         public bool IsRecording { get; private set; }
         public bool IsSilent { get; private set; }
+        public float RecordDuration => IsRecording ? Time.time - recordingStartTime : 0f;
         private bool isCompleted = false;
         private float silenceDuration = 0.0f;
         private float recordingStartTime;
