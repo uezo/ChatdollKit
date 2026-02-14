@@ -23,6 +23,7 @@ namespace ChatdollKit.SpeechListener
 
         [Header("WebSocket Settings")]
         public string WebSocketUrl = "ws://localhost:8000/ws/stt";
+        public string ApiKey;
         public int SamplesPerMessage = 512;
         public int TargetSampleRate = 16000;
 
@@ -142,7 +143,15 @@ namespace ChatdollKit.SpeechListener
             {
                 webSocketAdapter = new WebSocketClient();
                 webSocketAdapter.OnMessage += HandleMessage;
-                await webSocketAdapter.ConnectAsync(WebSocketUrl, CancellationToken.None);
+                Dictionary<string, string> headers = null;
+                if (!string.IsNullOrEmpty(ApiKey))
+                {
+                    headers = new Dictionary<string, string>
+                    {
+                        { "Authorization", $"Bearer {ApiKey}" }
+                    };
+                }
+                await webSocketAdapter.ConnectAsync(WebSocketUrl, CancellationToken.None, headers);
                 Debug.Log($"WebSocket connected to {WebSocketUrl}");
 
                 // Send start message
