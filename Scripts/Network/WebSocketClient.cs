@@ -33,7 +33,30 @@ namespace ChatdollKit.Network
 
         public async UniTask ConnectAsync(string url, CancellationToken token, Dictionary<string, string> headers = null)
         {
-            webSocket = headers != null && headers.Count > 0 ? new WebSocket(url, headers) : new WebSocket(url);
+            if (headers != null && headers.Count > 0)
+            {
+                // Browser WebSocket API doesn't support custom headers.
+                // Encode headers as subprotocols: {Key}.{Base64URL(Value)}
+                // Server must echo back one of these in Sec-WebSocket-Protocol response header.
+                var subprotocols = new List<string>();
+                foreach (var header in headers)
+                {
+                    var value = header.Value;
+                    if (value.StartsWith("Bearer "))
+                    {
+                        value = value.Substring(7);
+                    }
+                    var encoded = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(value))
+                        .Replace('+', '-').Replace('/', '_').TrimEnd('=');
+                    subprotocols.Add($"{header.Key}.{encoded}");
+                }
+                webSocket = new WebSocket(url, subprotocols);
+            }
+            else
+            {
+                webSocket = new WebSocket(url);
+            }
+
             webSocket.OnMessage += (data) =>
             {
                 OnMessage?.Invoke(System.Text.Encoding.UTF8.GetString(data));
