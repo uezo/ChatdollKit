@@ -143,6 +143,8 @@ To run the demo for version 0.8, please follow the steps below after importing t
   - [User Defined Tag](#user-defined-tag)
   - [Multi Modal](#multi-modal)
   - [Chain of Thought Prompting](#chain-of-thought-prompting)
+  - [Consecutive Request Merging](#consecutive-request-merging)
+  - [Timestamp Insertion](#timestamp-insertion)
   - [Long-Term Memory](#long-term-memory)
 - [🗣️ Speech Synthesizer (Text-to-Speech)](#%EF%B8%8F-speech-synthesizer-text-to-speech)
   - [Voice Prefetch Mode](#voice-prefetch-mode)
@@ -461,6 +463,34 @@ Chain of Thought (CoT) prompting is a technique to enhance AI performance. For m
 ChatdollKit supports Chain of Thought by excluding sentences wrapped in `<thinking> ~ </thinking>` tags from speech synthesis.
 
 You can customize the tag by setting a preferred word (e.g., "reason") as the `ThinkTag` in the inspector of `LLMContentProcessor`.
+
+
+### Consecutive Request Merging
+
+When a user speaks in short bursts, the system may receive multiple rapid requests in quick succession, causing the AI to respond to each fragment separately. Consecutive Request Merging combines these fragmented inputs into a single request, so the AI can respond to the full intent at once.
+
+Configure the following settings on the `DialogProcessor` component in the inspector:
+
+|Item|Description|
+|----|----|
+|**Merge Request Threshold**|The time window (in seconds) for merging consecutive requests. If a new request arrives within this interval after the previous one, the requests are merged. Set to `0` to disable (default: `0`).|
+|**Merge Request Prefix**|The prefix text prepended to the merged request to instruct the AI to disregard the previous incomplete response (default: `"Previous user's request and your response have been canceled. Please respond again to the following request:"`).|
+
+When a merge occurs, the previous request text and the new request text are concatenated, and the prefix is prepended to inform the AI that the prior response was canceled. The merged text is not displayed in the user message window — the user sees only their latest utterance.
+
+
+### Timestamp Insertion
+
+You can automatically insert the current date and time into requests sent to the LLM at regular intervals. This allows the AI character to be aware of the current time without relying on tool calls, enabling time-aware responses such as greetings appropriate to the time of day.
+
+Configure the following settings on the `DialogProcessor` component in the inspector:
+
+|Item|Description|
+|----|----|
+|**Timestamp Insertion Interval**|The interval (in seconds) between timestamp insertions. Set to `0` to disable this feature (default: `0`).|
+|**Timestamp Prefix**|The prefix text prepended to the timestamp (default: `"Current date and time: "`).|
+
+When enabled, the current date and time is prepended to the user's request text in the format `Current date and time: 2026/02/14 14:30:00` before it is sent to the LLM. The timestamp is not displayed in the user message window.
 
 
 ### Long-Term Memory

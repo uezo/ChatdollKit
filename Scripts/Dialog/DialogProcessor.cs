@@ -49,6 +49,13 @@ namespace ChatdollKit.Dialog
         private string previousRequestText;
         private DateTime previousRequestAt = DateTime.MinValue;
 
+        // Insert timestamp
+        [SerializeField]
+        private float timestampInsertionInterval = 0.0f;
+        [SerializeField]
+        private string timestampPrefix = "Current date and time: ";
+        private DateTime lastTimestampInsertedAt = DateTime.MinValue;
+
         private void Awake()
         {
             // Select enabled LLMService
@@ -180,6 +187,18 @@ namespace ChatdollKit.Dialog
                     }
                     previousRequestText = text;
                     previousRequestAt = now;
+                }
+
+                // Insert timestamp
+                if (timestampInsertionInterval > 0)
+                {
+                    var now = DateTime.UtcNow;
+                    if ((now - lastTimestampInsertedAt).TotalSeconds > timestampInsertionInterval)
+                    {
+                        var nowStr = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss");
+                        text = $"{timestampPrefix}{nowStr}\n\n{text}";
+                        lastTimestampInsertedAt = now;
+                    }
                 }
 
                 // Call LLM
