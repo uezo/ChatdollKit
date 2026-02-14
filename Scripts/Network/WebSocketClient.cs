@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 
@@ -15,7 +16,7 @@ namespace ChatdollKit.Network
     {
         bool IsConnected { get; }
         event Action<string> OnMessage;
-        UniTask ConnectAsync(string url, CancellationToken token);
+        UniTask ConnectAsync(string url, CancellationToken token, Dictionary<string, string> headers = null);
         UniTask SendTextAsync(string message, CancellationToken token);
         UniTask CloseAsync();
     }
@@ -30,9 +31,9 @@ namespace ChatdollKit.Network
         public bool IsConnected => webSocket?.State == WebSocketState.Open;
         public event Action<string> OnMessage;
 
-        public async UniTask ConnectAsync(string url, CancellationToken token)
+        public async UniTask ConnectAsync(string url, CancellationToken token, Dictionary<string, string> headers = null)
         {
-            webSocket = new WebSocket(url);
+            webSocket = headers != null && headers.Count > 0 ? new WebSocket(url, headers) : new WebSocket(url);
             webSocket.OnMessage += (data) =>
             {
                 OnMessage?.Invoke(System.Text.Encoding.UTF8.GetString(data));
@@ -74,7 +75,7 @@ namespace ChatdollKit.Network
         public bool IsConnected => false;
         public event Action<string> OnMessage;
 
-        public UniTask ConnectAsync(string url, CancellationToken token)
+        public UniTask ConnectAsync(string url, CancellationToken token, Dictionary<string, string> headers = null)
         {
             UnityEngine.Debug.LogWarning(
                 "WebSocketClient requires NativeWebSocket for WebGL builds. " +
@@ -106,9 +107,16 @@ namespace ChatdollKit.Network
         public bool IsConnected => webSocket?.State == WebSocketState.Open;
         public event Action<string> OnMessage;
 
-        public async UniTask ConnectAsync(string url, CancellationToken token)
+        public async UniTask ConnectAsync(string url, CancellationToken token, Dictionary<string, string> headers = null)
         {
             webSocket = new ClientWebSocket();
+            if (headers != null)
+            {
+                foreach (var header in headers)
+                {
+                    webSocket.Options.SetRequestHeader(header.Key, header.Value);
+                }
+            }
             await webSocket.ConnectAsync(new Uri(url), token);
 
             receiveCts = new CancellationTokenSource();
