@@ -176,7 +176,8 @@ namespace ChatdollKit.LLM.Gemini
                 topP = TopP,
                 topK = TopK,
                 maxOutputTokens = MaxOutputTokens,
-                stopSequences = StopSequences
+                stopSequences = StopSequences,
+                thinkingConfig = new() {{ "thinkingLevel", "minimal" }}
             };
 
             // Make request data
@@ -594,6 +595,7 @@ namespace ChatdollKit.LLM.Gemini
         {
             return stopSequences != null && stopSequences.Count > 0;
         }
+        public Dictionary<string, string> thinkingConfig { get; set; }
     }
 
     // Tool
