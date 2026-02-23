@@ -32,6 +32,8 @@ namespace ChatdollKit.LLM.ChatGPT
         [SerializeField]
         protected float noDataResponseTimeoutSec = 5.0f;
 
+        public Action<UnityWebRequest, Dictionary<string, object>> EditChatCompletionRequest;
+
         protected JsonSerializerSettings messageSerializationSettings = new JsonSerializerSettings
         {
             TypeNameHandling = TypeNameHandling.All
@@ -246,6 +248,9 @@ namespace ChatdollKit.LLM.ChatGPT
             {
                 streamRequest.SetRequestHeader(h.Key, h.Value);
             }
+
+            // Edit request headers and data
+            EditChatCompletionRequest?.Invoke(streamRequest, data);
 
             if (DebugMode)
             {
