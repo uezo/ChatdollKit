@@ -11,19 +11,26 @@
 
 - **Generative AI Native**: Supports multiple LLMs like ChatGPT, Anthropic Claude, Google Gemini Pro, Dify, and others, with function calling (ChatGPT/Gemini) and multimodal capabilities.
 - **3D model expression**: Synchronizes speech and motion, controls facial expressions and animations autonomously, supports blinking and lip-sync.
-- **Dialog control**: Integrates Speech-to-Text and Text-to-Speech (OpenAI, Azure, Google, VOICEVOX / AivisSpeech, Aivis Cloud API, Style-Bert-VITS2, NijiVoice etc.), manages dialog state (context), extracts intents and routes topics, supports wakeword detection.
+- **Dialog control**: Integrates Speech-to-Text and Text-to-Speech (OpenAI, Azure, Google, VOICEVOX / AivisSpeech, Aivis Cloud API, Style-Bert-VITS2 etc.), manages dialog state (context), extracts intents and routes topics, supports wakeword detection.
 - **Multi platforms**: Compatible with Windows, Mac, Linux, iOS, Android, and other Unity-supported platforms, including VR, AR, and WebGL.
 
 
-## 💎 What's New in Version 0.8.15
+## 💎 What's New in Version 0.8.16
 
-- **🌏 WebGL Enhancements**: Add Silero VAD support, camera switching (front/rear) with correct aspect ratio handling, file upload for images, optimized microphone data transfer, and fixes for lip-sync when muted.  
-- **✨ UI Control Improvements**: Sleeker and more streamlined UI controls that work out-of-the-box with zero configuration—just drop them onto your scene’s Canvas.  
-- **🥁 Stronger Noise Resistance**: Combine multiple voice activity detection methods (e.g., Silero VAD + built-in energy-based VAD) to better capture user speech even in noisy environments like event venues.  
+- **🎙️ WebSocket Streaming STT**: WebSocket-based streaming speech recognition offloads VAD to the server and completes recognition during turn-end detection, reducing overall response latency by several hundred milliseconds.
+- **🗣️ Barge-in Support**: Users can now interrupt AI speech mid-sentence with their voice, making conversations feel more natural and responsive.
+- **💃 ModelController Refactoring**: Extracted speech handling into `SpeechController` and face expressions into `FaceController`, improving maintainability and extensibility.
 
 
 <details>
 <summary>🕰️ Previous Updates (click to expand)</summary>
+
+### 0.8.15
+
+- **🌏 WebGL Enhancements**: Add Silero VAD support, camera switching (front/rear) with correct aspect ratio handling, file upload for images, optimized microphone data transfer, and fixes for lip-sync when muted.  
+- **✨ UI Control Improvements**: Sleeker and more streamlined UI controls that work out-of-the-box with zero configuration—just drop them onto your scene’s Canvas.  
+- **🥁 Stronger Noise Resistance**: Combine multiple voice activity detection methods (e.g., Silero VAD + built-in energy-based VAD) to better capture user speech even in noisy environments like event venues.
+
 
 ### 0.8.14
 
@@ -521,7 +528,7 @@ To retrieve memories and include them in the conversation, simply add the `Exten
 
 ## 🗣️ Speech Synthesizer (Text-to-Speech)
 
-We support cloud-based speech synthesis services such as Google, Azure, OpenAI, and Watson, in addition to VOICEVOX / AivisSpeech, Aivis Cloud API, VOICEROID, Style-Bert-VITS2, and NijiVoice for more characterful and engaging voices. To use a speech synthesis service, attach `SpeechSynthesizer` from `ChatdollKit/Scripts/SpeechListener` to the AIAvatar object and check the `IsEnabled` box. If other `SpeechSynthesizer` components are attached, make sure to uncheck the `IsEnabled` box for those not in use.
+We support cloud-based speech synthesis services such as Google, Azure, OpenAI, and Watson, in addition to VOICEVOX / AivisSpeech, Aivis Cloud API, VOICEROID and Style-Bert-VITS2 for more characterful and engaging voices. To use a speech synthesis service, attach `SpeechSynthesizer` from `ChatdollKit/Scripts/SpeechListener` to the AIAvatar object and check the `IsEnabled` box. If other `SpeechSynthesizer` components are attached, make sure to uncheck the `IsEnabled` box for those not in use.
 
 You can configure parameters like API keys and endpoints on the attached `SpeechSynthesizer` in the inspector. For more details of these parameters, refer to the API references of TTS services.
 
@@ -960,7 +967,7 @@ Refer to the following tips for now. We are preparing demo for WebGL.
 - You also add the code below to your main script to enable uLipSync:
     ```
     var ul = gameObject.GetComponent<uLipSync.uLipSync>();
-    modelController.HandlePlayingSamples = (samples) =>
+    modelController.SpeechController.HandlePlayingSamples = (samples) =>
     {
         ul.OnDataReceived(samples, 1);
     };
