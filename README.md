@@ -152,6 +152,7 @@ To run the demo for version 0.8, please follow the steps below after importing t
   - [Chain of Thought Prompting](#chain-of-thought-prompting)
   - [Consecutive Request Merging](#consecutive-request-merging)
   - [Timestamp Insertion](#timestamp-insertion)
+  - [Edit Chat Completion Request](#edit-chat-completion-request)
   - [Long-Term Memory](#long-term-memory)
 - [🗣️ Speech Synthesizer (Text-to-Speech)](#%EF%B8%8F-speech-synthesizer-text-to-speech)
   - [Voice Prefetch Mode](#voice-prefetch-mode)
@@ -498,6 +499,63 @@ Configure the following settings on the `DialogProcessor` component in the inspe
 |**Timestamp Prefix**|The prefix text prepended to the timestamp (default: `"Current date and time: "`).|
 
 When enabled, the current date and time is prepended to the user's request text in the format `Current date and time: 2026/02/14 14:30:00` before it is sent to the LLM. The timestamp is not displayed in the user message window.
+
+
+### Edit Chat Completion Request
+
+You can customize the HTTP request headers and body of the ChatGPT API call by setting `EditChatCompletionRequest` on `ChatGPTService`. This delegate is invoked just before the request is serialized and sent, giving you full control over the `UnityWebRequest` and the request data dictionary.
+
+```csharp
+var chatGPTService = gameObject.GetComponent<ChatGPTService>();
+
+chatGPTService.EditChatCompletionRequest = (request, data) =>
+{
+    // Add or modify request headers
+    request.SetRequestHeader("X-Custom-Header", "my-value");
+
+    // Add or modify body parameters
+    data["custom_param"] = "some_value";
+
+    // Modify messages (e.g. remove history and keep only the last user message)
+    var messages = (List<ILLMMessage>)data["messages"];
+    messages.RemoveRange(0, messages.Count - 1);
+};
+```
+
+**Parameters:**
+
+|Parameter|Type|Description|
+|----|----|-----|
+|`request`|`UnityWebRequest`|The HTTP request object. Use `SetRequestHeader()` to add or override headers.|
+|`data`|`Dictionary<string, object>`|The request body dictionary. Modify it directly to change the JSON payload sent to the API.|
+
+**Example: OpenClaw integration**
+
+The following example adds a custom session header, strips the conversation history to send only the latest user message, and prepends a `[channel:voice]` tag to the text content:
+
+```csharp
+chatGPTService.EditChatCompletionRequest = (request, data) =>
+{
+    request.SetRequestHeader("x-openclaw-session-key", "agent:main:main");
+
+    var messages = (List<ILLMMessage>)data["messages"];
+    messages.RemoveRange(0, messages.Count - 1);
+
+    // Add [channel:voice] prefix to text content of user message
+    if (messages.Last() is ChatGPTUserMessage userMessage)
+    {
+        var textPart = userMessage.content.OfType<TextContentPart>().FirstOrDefault();
+        if (textPart != null)
+        {
+            textPart.text = "[channel:voice]" + textPart.text;
+        }
+        else
+        {
+            userMessage.content.Insert(0, new TextContentPart("[channel:voice]"));
+        }
+    }
+};
+```
 
 
 ### Long-Term Memory
