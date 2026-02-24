@@ -7,9 +7,24 @@ namespace ChatdollKit.Model
 {
     public class uLipSyncHelper : MonoBehaviour, ILipSyncHelper
     {
+        private uLipSync.uLipSync uLipSyncRef;
+        private float[] silentSamples;
+
         public void ResetViseme()
         {
-            // do nothing
+# if UNITY_WEBGL && !UNITY_EDITOR
+            if (uLipSyncRef == null)
+            {
+                uLipSyncRef = gameObject.GetComponent<uLipSync.uLipSync>();
+            }
+            if (uLipSyncRef == null) return;
+
+            if (silentSamples == null)
+            {
+                silentSamples = new float[4096];
+            }
+            uLipSyncRef.OnDataReceived(silentSamples, 1);
+# endif
         }
 
         public virtual void ConfigureViseme(GameObject avatarObject)
