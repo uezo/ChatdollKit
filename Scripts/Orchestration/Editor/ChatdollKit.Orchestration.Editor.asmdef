@@ -1,0 +1,12 @@
+{
+    "name": "ChatdollKit.Orchestration.Editor",
+    "references": [
+        "ChatdollKit.Orchestration",
+        "UniTask"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "autoReferenced": true,
+    "rootNamespace": "ChatdollKit.Orchestration.Editor"
+}

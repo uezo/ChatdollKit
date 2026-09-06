@@ -1,0 +1,13 @@
+{
+    "name": "ChatdollKit.Avatar.LipSync.Editor",
+    "rootNamespace": "ChatdollKit.Avatar.LipSync.Editor",
+    "references": [
+        "ChatdollKit",
+        "ChatdollKit.Avatar",
+        "UniTask"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "autoReferenced": true
+}

@@ -1,0 +1,11 @@
+{
+    "name": "ChatdollKit.Avatar",
+    "rootNamespace": "ChatdollKit.Avatar",
+    "references": [
+        "ChatdollKit",
+        "ChatdollKit.SpeechPipeline",
+        "UniTask"
+    ],
+    "autoReferenced": true,
+    "noEngineReferences": false
+}

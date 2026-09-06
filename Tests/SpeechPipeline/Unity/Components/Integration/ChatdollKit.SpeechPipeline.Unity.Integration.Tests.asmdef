@@ -1,0 +1,26 @@
+{
+    "name": "ChatdollKit.SpeechPipeline.Unity.Integration.Tests",
+    "references": [
+        "ChatdollKit.SpeechPipeline",
+        "ChatdollKit.Orchestration",
+        "ChatdollKit.Avatar",
+        "ChatdollKit.SpeechPipeline.Unity.Integration.Support",
+        "UniTask"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll",
+        "Newtonsoft.Json.dll"
+    ],
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "autoReferenced": false,
+    "noEngineReferences": false
+}

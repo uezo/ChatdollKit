@@ -1,0 +1,15 @@
+{
+    "name": "ChatdollKit.Avatar.VRM.Tests",
+    "references": [
+        "ChatdollKit.Extension.VRM.Mfcc",
+        "ChatdollKit.Avatar",
+        "ChatdollKit",
+        "VRM",
+        "UniTask"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "autoReferenced": false,
+    "noEngineReferences": false
+}

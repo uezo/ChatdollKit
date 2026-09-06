@@ -1,0 +1,12 @@
+{
+    "name": "ChatdollKit.SpeechPipeline.Editor",
+    "references": [
+        "ChatdollKit.SpeechPipeline",
+        "UniTask"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "autoReferenced": true,
+    "rootNamespace": "ChatdollKit.SpeechPipeline.Editor"
+}

@@ -1,0 +1,11 @@
+{
+    "name": "ChatdollKit.Extension.VRM.Mfcc.Editor",
+    "references": [
+        "ChatdollKit.Extension.VRM.Mfcc",
+        "ChatdollKit.Avatar"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "autoReferenced": true
+}

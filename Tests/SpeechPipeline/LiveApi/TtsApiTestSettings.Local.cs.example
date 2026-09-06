@@ -1,0 +1,26 @@
+namespace ChatdollKit.Tests.SpeechPipeline.LiveApi
+{
+    // Copy to TtsApiTestSettings.Local.cs (ignored by Git).
+    public static partial class TtsApiTestSettings
+    {
+        static partial void ConfigureLocal()
+        {
+            // Blank: reuse SpeechApiTestSettings (STT / LLM) credentials.
+            OpenAIApiKey = "";
+            AzureApiKey = "";
+            AzureRegion = "";
+
+            GoogleApiKey = "";
+            GoogleSpeaker = "ja-JP-Neural2-B";
+
+            // Set the URL after starting your VOICEVOX engine, for example http://127.0.0.1:50021.
+            // Blank: do not run the VOICEVOX live test.
+            VoicevoxBaseUrl = "";
+            VoicevoxSpeaker = 46;
+
+            OpenAIModel = "gpt-4o-mini-tts";
+            OpenAISpeaker = "sage";
+            AzureSpeaker = "ja-JP-NanamiNeural";
+        }
+    }
+}

@@ -1,0 +1,13 @@
+{
+    "name": "ChatdollKit.Avatar.Editor",
+    "rootNamespace": "ChatdollKit.Avatar.Editor",
+    "references": [
+        "ChatdollKit",
+        "ChatdollKit.Avatar",
+        "UniTask"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "autoReferenced": true
+}

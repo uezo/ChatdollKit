@@ -1,0 +1,10 @@
+{
+    "name": "ChatdollKit.Extension.VRM.Mfcc",
+    "rootNamespace": "ChatdollKit.Extension.VRM",
+    "references": [
+        "ChatdollKit.Avatar",
+        "ChatdollKit",
+        "VRM"
+    ],
+    "autoReferenced": true
+}

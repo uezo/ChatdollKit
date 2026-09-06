@@ -49,13 +49,16 @@ public class FaceClipEditor : Editor
         // Set skinned mesh renderer before configure facial expression and lipsync
         var facialSkinnedMeshRenderer = AvatarUtility.GetFacialSkinnedMeshRenderer(modelController.AvatarModel);
         // TODO: Remove SkinnedMeshRenderer from ModelController
-        modelController.FaceController.SkinnedMeshRenderer = facialSkinnedMeshRenderer;
+        if (modelController.FaceController != null)
+            modelController.FaceController.SkinnedMeshRenderer = facialSkinnedMeshRenderer;
         EditorUtility.SetDirty(modelController);
 
-        // Configure uLipSyncHelper
-        var lipSyncHelper = modelController.gameObject.GetComponent<uLipSyncHelper>();
-        lipSyncHelper.ConfigureViseme(modelController.AvatarModel);
-        EditorUtility.SetDirty(modelController.gameObject.GetComponent<uLipSyncBlendShape>());
+        // Each engine's helper owns its avatar-specific mapping and serialized configuration.
+        var lipSyncHelper = modelController.gameObject.GetComponent<ILipSyncHelper>();
+        lipSyncHelper?.ConfigureViseme(modelController.AvatarModel);
+        if (lipSyncHelper is UnityEngine.Object helperObject) EditorUtility.SetDirty(helperObject);
+        var legacyBlendShape = modelController.gameObject.GetComponent<uLipSyncBlendShape>();
+        if (legacyBlendShape != null) EditorUtility.SetDirty(legacyBlendShape);
 
         // Blink and FaceExpression
         var blinker = modelController.gameObject.GetComponent<Blink>();
@@ -79,9 +82,9 @@ public class FaceClipEditor : Editor
             // Set facial skinned mesh renderer if VRC Avator
             if (faceProxy != null)
             {
-                faceProxy.SkinnedMeshRenderer = modelController.FaceController.SkinnedMeshRenderer;
+                faceProxy.SkinnedMeshRenderer = facialSkinnedMeshRenderer;
             }
-            EditorUtility.SetDirty(faceProxy);
+            if (faceProxy != null) EditorUtility.SetDirty(faceProxy);
         }
         else
         {

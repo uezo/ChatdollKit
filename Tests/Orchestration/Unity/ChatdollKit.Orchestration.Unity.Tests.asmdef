@@ -1,0 +1,26 @@
+{
+    "name": "ChatdollKit.Orchestration.Unity.Tests",
+    "references": [
+        "ChatdollKit",
+        "ChatdollKit.Avatar",
+        "ChatdollKit.Orchestration",
+        "ChatdollKit.SpeechPipeline",
+        "UniTask"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll",
+        "Newtonsoft.Json.dll"
+    ],
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "autoReferenced": false,
+    "noEngineReferences": false
+}

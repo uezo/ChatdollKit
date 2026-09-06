@@ -1,0 +1,18 @@
+{
+    "name": "ChatdollKit.SpeechPipeline.Unity.Tests",
+    "references": [
+        "ChatdollKit.SpeechPipeline",
+        "UniTask"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "autoReferenced": false,
+    "noEngineReferences": false
+}

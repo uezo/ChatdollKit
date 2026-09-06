@@ -1,0 +1,15 @@
+namespace ChatdollKit.Tests.SpeechPipeline.LiveApi
+{
+    // Copy this file to SpeechApiTestSettings.Local.cs. The .cs file is ignored by Git.
+    public static partial class SpeechApiTestSettings
+    {
+        static partial void ConfigureLocal()
+        {
+            OpenAIApiKey = "";
+            AzureApiKey = "";
+            AzureRegion = "";
+            AudioFilePath = "";
+            ExpectedTextContains = "";
+        }
+    }
+}

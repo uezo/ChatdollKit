@@ -53,6 +53,20 @@ namespace ChatdollKit.SpeechListener
         public bool IsMuted { get; private set; } = false;
         public event Action<float[]> OnSamplesReceived;
         private AudioClip microphoneClip;
+
+        /// <summary>Channel count of the captured samples. Zero before native capture starts.</summary>
+        public int Channels
+        {
+            get
+            {
+#if UNITY_WEBGL && !UNITY_EDITOR
+                return 1;
+#else
+                return microphoneClip != null ? microphoneClip.channels : 0;
+#endif
+            }
+        }
+
         private int lastSamplePosition;
         private float linearNoiseGateThreshold;
         private List<RecordingSession> activeSessions = new List<RecordingSession>();

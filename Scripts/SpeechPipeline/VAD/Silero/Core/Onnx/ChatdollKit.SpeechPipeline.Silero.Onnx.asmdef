@@ -1,0 +1,25 @@
+{
+    "name": "ChatdollKit.SpeechPipeline.Silero.Onnx",
+    "rootNamespace": "ChatdollKit.SpeechPipeline.VAD.Silero.Onnx",
+    "references": [
+        "ChatdollKit.SpeechPipeline",
+        "com.github.asus4.onnxruntime",
+        "UniTask"
+    ],
+    "excludePlatforms": [
+        "WebGL"
+    ],
+    "defineConstraints": [
+        "CHATDOLLKIT_ONNXRUNTIME",
+        "UNITY_EDITOR || !UNITY_WEBGL"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.github.asus4.onnxruntime",
+            "expression": "0.0.0",
+            "define": "CHATDOLLKIT_ONNXRUNTIME"
+        }
+    ],
+    "autoReferenced": true,
+    "noEngineReferences": true
+}

@@ -1,0 +1,14 @@
+{
+    "name": "ChatdollKit.Avatar.Tests",
+    "references": [
+        "ChatdollKit",
+        "ChatdollKit.Avatar",
+        "ChatdollKit.SpeechPipeline",
+        "UniTask"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "autoReferenced": false,
+    "noEngineReferences": false
+}

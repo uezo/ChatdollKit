@@ -1,0 +1,17 @@
+{
+    "name": "ChatdollKit.SpeechPipeline.Silero",
+    "rootNamespace": "ChatdollKit.SpeechPipeline.VAD.Silero",
+    "references": [
+        "ChatdollKit.SpeechPipeline",
+        "ChatdollKit.SpeechPipeline.Silero.Onnx",
+        "UniTask"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.github.asus4.onnxruntime",
+            "expression": "0.0.0",
+            "define": "CHATDOLLKIT_ONNXRUNTIME"
+        }
+    ],
+    "autoReferenced": true
+}

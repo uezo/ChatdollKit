@@ -1,0 +1,125 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &6073906055606262414
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 126839882702291610, guid: 16cf8b99392524f49b8ed34a30031f54, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 126839882702291610, guid: 16cf8b99392524f49b8ed34a30031f54, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.7929622
+      objectReference: {fileID: 0}
+    - target: {fileID: 126839882702291610, guid: 16cf8b99392524f49b8ed34a30031f54, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.040593565
+      objectReference: {fileID: 0}
+    - target: {fileID: 126839882702291610, guid: 16cf8b99392524f49b8ed34a30031f54, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 126839882702291610, guid: 16cf8b99392524f49b8ed34a30031f54, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 126839882702291610, guid: 16cf8b99392524f49b8ed34a30031f54, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 126839882702291610, guid: 16cf8b99392524f49b8ed34a30031f54, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 126839882702291610, guid: 16cf8b99392524f49b8ed34a30031f54, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 126839882702291610, guid: 16cf8b99392524f49b8ed34a30031f54, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 126839882702291610, guid: 16cf8b99392524f49b8ed34a30031f54, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1844137583980264457, guid: 16cf8b99392524f49b8ed34a30031f54, type: 3}
+      propertyPath: LipSyncHelper
+      value: 
+      objectReference: {fileID: 6286609810302941788}
+    - target: {fileID: 5726152346414370990, guid: 16cf8b99392524f49b8ed34a30031f54, type: 3}
+      propertyPath: m_Name
+      value: ChatdollCoreVRM
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 5726152346414370990, guid: 16cf8b99392524f49b8ed34a30031f54, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6286609810302941788}
+    - targetCorrespondingSourceObject: {fileID: 5726152346414370990, guid: 16cf8b99392524f49b8ed34a30031f54, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2943201486388641162}
+    - targetCorrespondingSourceObject: {fileID: 5726152346414370990, guid: 16cf8b99392524f49b8ed34a30031f54, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3845012568773610887}
+  m_SourcePrefab: {fileID: 100100000, guid: 16cf8b99392524f49b8ed34a30031f54, type: 3}
+--- !u!1 &1962927701007075872 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5726152346414370990, guid: 16cf8b99392524f49b8ed34a30031f54, type: 3}
+  m_PrefabInstance: {fileID: 6073906055606262414}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &6286609810302941788
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1962927701007075872}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c54ddc4e8bd409199c2b84b0a89b9a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  BlendShapeNameForMouthA: vrc.v_aa
+  BlendShapeNameForMouthI: vrc.v_ih
+  BlendShapeNameForMouthU: vrc.v_ou
+  BlendShapeNameForMouthE: vrc.v_e
+  BlendShapeNameForMouthO: vrc.v_oh
+--- !u!114 &2943201486388641162
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1962927701007075872}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 252be1f57986f4579bbb91344a55343b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  minBlinkIntervalToClose: 3
+  maxBlinkIntervalToClose: 5
+  minBlinkIntervalToOpen: 0.05
+  maxBlinkIntervalToOpen: 0.1
+  blinkTransitionToClose: 0.01
+  blinkTransitionToOpen: 0.02
+--- !u!114 &3845012568773610887
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1962927701007075872}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d14b9123c692b40e6b74db421d8d7fdf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  smoothTime: 0.2

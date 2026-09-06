@@ -1,0 +1,138 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>8.0</LangVersion>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <NuGetAudit>false</NuGetAudit>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Core folders group implementation by feature and can include Unity types.
+         Keep this explicit source list limited to the Unity-independent test surface. -->
+    <Compile Include="../../Scripts/Avatar/Core/AvatarControl.cs" />
+    <Compile Include="../../Scripts/Avatar/Core/AvatarRequest.cs" />
+    <Compile Include="../../Scripts/Avatar/Core/IAvatarController.cs" />
+    <Compile Include="../../Scripts/Avatar/Core/WaveAudio.cs" />
+
+    <Compile Include="../../Scripts/Avatar/LipSync/Core/LipSyncResult.cs" />
+    <Compile Include="../../Scripts/Avatar/LipSync/Core/MfccLipSyncEngine.cs" />
+    <Compile Include="../../Scripts/Avatar/LipSync/Core/MfccProfile.cs" />
+
+    <Compile Include="../../Scripts/Orchestration/Core/AvatarControlParser.cs" />
+    <Compile Include="../../Scripts/Orchestration/Core/ChatdollOrchestratorEngine.cs" />
+    <Compile Include="../../Scripts/Orchestration/Core/ChatdollOrchestratorOptions.cs" />
+    <Compile Include="../../Scripts/Orchestration/Core/OrchestratorMicrophoneInput.cs" />
+
+    <Compile Include="../../Scripts/SpeechPipeline/Core/Async/SpeechAsync.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/Core/Async/SpeechAsyncSemaphore.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/Core/Async/SpeechCallbackGuard.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/Core/Async/SpeechCompletionSource.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/Core/ISpeechPipeline.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/Core/Performance/IPipelinePerformanceRecorder.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/Core/Performance/JsonlPerformanceRecorder.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/Core/Performance/PipelinePerformanceRecord.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/Core/SpeechPipelineMessages.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/Core/SpeechPipelineOptions.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/Core/SpeechToSpeechPipeline.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/Core/StreamingPcm16Converter.cs" />
+
+    <Compile Include="../../Scripts/SpeechPipeline/LLM/Core/ChatCompletionsClient.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/LLM/Core/HttpLlmServiceBase.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/LLM/Core/ILlmGuardrail.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/LLM/Core/ILlmService.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/LLM/Core/ILlmWebSocketConnection.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/LLM/Core/InMemoryContextManager.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/LLM/Core/LlmConversation.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/LLM/Core/LlmErrorParser.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/LLM/Core/LlmRequest.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/LLM/Core/LlmRequestBuilder.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/LLM/Core/LlmResponse.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/LLM/Core/LlmServiceBase.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/LLM/Core/LlmServiceOptions.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/LLM/Core/LlmSseReader.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/LLM/Core/LlmTextProcessor.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/LLM/Core/LlmTool.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/LLM/Core/LlmWebSocketPool.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/LLM/Core/NativeLlmWebSocketConnection.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/LLM/Core/OpenAIResponsesClient.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/LLM/Core/OpenAIResponsesWebSocketClient.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/LLM/Core/ResponsesStreamState.cs" />
+
+    <Compile Include="../../Scripts/SpeechPipeline/Remote/Core/AIAvatarProtocol.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/Remote/Core/AIAvatarSpeechPipelineClient.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/Remote/Core/AIAvatarSpeechPipelineOptions.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/Remote/Core/IAIAvatarConnection.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/Remote/Core/NativeAIAvatarConnection.cs" />
+
+    <Compile Include="../../Scripts/SpeechPipeline/STT/Core/AzureSpeechRecognizerClient.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/STT/Core/DummySpeechRecognizer.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/STT/Core/HttpSpeechRecognizerBase.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/STT/Core/ISpeechRecognizer.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/STT/Core/OpenAISpeechRecognizerClient.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/STT/Core/Pcm16Audio.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/STT/Core/SpeechPostprocessResult.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/STT/Core/SpeechPreprocessResult.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/STT/Core/SpeechRecognitionResult.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/STT/Core/SpeechRecognizerBase.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/STT/Core/SpeechRecognizerOptions.cs" />
+
+    <Compile Include="../../Scripts/SpeechPipeline/TTS/Core/AzureSpeechSynthesizerClient.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/TTS/Core/GoogleSpeechSynthesizerClient.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/TTS/Core/HttpSpeechSynthesizerBase.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/TTS/Core/ISpeechSynthesizer.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/TTS/Core/ITtsPostprocessor.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/TTS/Core/ITtsPreprocessor.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/TTS/Core/OpenAISpeechSynthesizerClient.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/TTS/Core/Preprocessing/AlphaToKanaPreprocessor.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/TTS/Core/SpeechSynthesisRequest.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/TTS/Core/SpeechSynthesizer.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/TTS/Core/SpeechSynthesizerBase.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/TTS/Core/SpeechSynthesizerOptions.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/TTS/Core/SpeechSynthesizerRouter.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/TTS/Core/VoicevoxSpeechSynthesizerClient.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/TTS/Core/WavResampler.cs" />
+
+    <Compile Include="../../Scripts/SpeechPipeline/VAD/Core/Filters/IAudioFilter.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/VAD/Core/ISpeechDetector.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/VAD/Core/RecordingSession.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/VAD/Core/SpeechDetectorBase.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/VAD/Core/SpeechDetectorOptions.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/VAD/Core/StandardSpeechDetectorEngine.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/VAD/Core/TurnEndGates/ITurnEndGate.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/VAD/Core/TurnEndGates/TurnEndDecision.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/VAD/Core/TurnEndGates/TurnEndGateContext.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/VAD/Core/TurnEndGates/TurnEndGateManager.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/VAD/Core/TurnEndGates/TurnEndGateState.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/VAD/Core/TurnEndGates/TurnEndRequest.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/VAD/Silero/Core/ISileroVadModel.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/VAD/Silero/Core/SileroRecordingSession.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/VAD/Silero/Core/SileroSpeechDetectorEngine.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/VAD/Silero/Core/SileroSpeechDetectorOptions.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/VAD/Silero/Core/SileroStreamRecordingSession.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/VAD/Silero/Core/SileroStreamSpeechDetectorEngine.cs" />
+
+    <Compile Include="../SpeechPipeline/**/*.cs" Exclude="../SpeechPipeline/Onnx/**/*.cs;../SpeechPipeline/Unity/**/*.cs" />
+    <Compile Include="../SpeechPipeline/Unity/StreamingPcm16ConverterTests.cs" />
+    <Compile Include="../Avatar/WaveAudioTests.cs" />
+    <Compile Include="../Avatar/MfccLipSyncEngineTests.cs" />
+    <Compile Include="../Avatar/MfccLipSyncJsFixtures.cs" />
+    <Compile Include="../Orchestration/**/*.cs" Exclude="../Orchestration/Unity/**/*.cs" />
+    <Compile Include="../Orchestration/Unity/OrchestratorMicrophoneInputTests.cs" />
+    <Compile Include="SpeechAsyncTestRuntime.cs" />
+    <PackageReference Include="UniTask" Version="2.5.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
+    <PackageReference Include="NUnit" Version="3.13.3" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+  <PropertyGroup Condition="'$(EnableOnnxTests)' == 'true'">
+    <DefineConstants>$(DefineConstants);CHATDOLLKIT_ONNX_TESTS</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(EnableOnnxTests)' == 'true'">
+    <Compile Include="../../Scripts/SpeechPipeline/VAD/Silero/Core/Onnx/OnnxSileroVadModel.cs" />
+    <Compile Include="../SpeechPipeline/Onnx/**/*.cs" />
+    <Compile Include="OnnxTestRuntime.cs" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.21.0" />
+  </ItemGroup>
+</Project>
