@@ -1,0 +1,27 @@
+{
+    "name": "ChatdollKit.SpeechPipeline.Unity.Silero.OnnxRuntime.Tests",
+    "references": [
+        "ChatdollKit.SpeechPipeline",
+        "ChatdollKit.Extension.SileroOnnxRuntime",
+        "ChatdollKit.SpeechPipeline.Unity.Silero.OnnxRuntime.Support",
+        "UniTask"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.github.asus4.onnxruntime",
+            "expression": "0.0.0",
+            "define": "CHATDOLLKIT_ONNXRUNTIME"
+        }
+    ],
+    "autoReferenced": false,
+    "noEngineReferences": false
+}

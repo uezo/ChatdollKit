@@ -1,18 +1,12 @@
 {
-    "name": "ChatdollKit.SpeechPipeline.Unity.Silero.Components.Tests",
+    "name": "ChatdollKit.SpeechPipeline.Silero.Sentis",
+    "rootNamespace": "ChatdollKit.SpeechPipeline.VAD.Silero.Sentis",
     "references": [
         "ChatdollKit.SpeechPipeline",
-        "ChatdollKit.SpeechPipeline.Silero",
-        "UniTask"
-    ],
-    "includePlatforms": [
-        "Editor"
-    ],
-    "optionalUnityReferences": [
-        "TestAssemblies"
+        "UniTask",
+        "Unity.InferenceEngine"
     ],
     "defineConstraints": [
-        "UNITY_INCLUDE_TESTS",
         "CHATDOLLKIT_SENTIS",
         "UNITY_6000_0_OR_NEWER"
     ],
@@ -23,6 +17,6 @@
             "define": "CHATDOLLKIT_SENTIS"
         }
     ],
-    "autoReferenced": false,
+    "autoReferenced": true,
     "noEngineReferences": false
 }

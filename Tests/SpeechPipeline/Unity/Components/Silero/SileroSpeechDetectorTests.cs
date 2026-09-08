@@ -1,15 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using ChatdollKit.SpeechPipeline.Async;
 using NUnitTask = System.Threading.Tasks.Task;
 using ChatdollKit.SpeechPipeline.STT;
-using ChatdollKit.SpeechPipeline.VAD.Silero;
-using ChatdollKit.SpeechPipeline.VAD.Silero.WebGL;
 using ChatdollKit.SpeechPipeline.VAD;
+using ChatdollKit.SpeechPipeline.VAD.Silero;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -19,27 +15,22 @@ namespace ChatdollKit.Tests.SpeechPipeline.Unity.Silero
     {
         [TestCase(false)]
         [TestCase(true)]
-        public async NUnitTask NativeProviderLoadsSuppliedModelProcessesPcmAndAppliesLiveSettings(bool stream)
+        public async NUnitTask BundledSentisModelProcessesPcmAndAppliesLiveSettings(bool stream)
         {
-#if !CHATDOLLKIT_ONNXRUNTIME
-            Assert.Ignore("Install com.github.asus4.onnxruntime to run the native provider integration test.");
-#endif
-            if (!File.Exists(Path.Combine(Application.streamingAssetsPath, "silero_vad.onnx")))
-                Assert.Ignore("Supply StreamingAssets/silero_vad.onnx to run the native provider integration test.");
-            var owner = new GameObject("Silero provider integration test");
+            var owner = new GameObject("Silero Sentis integration test");
             SpeechDetectorLease lease = null;
             var recognizer = new BorrowedRecognizer();
             try
             {
-                SileroSpeechDetector component = stream
-                    ? owner.AddComponent<SileroStreamSpeechDetector>()
-                    : owner.AddComponent<SileroSpeechDetector>();
-                if (stream) component.ModelFileName = Path.Combine(Application.streamingAssetsPath, "silero_vad.onnx");
+                var component = AddDetector(owner, stream);
                 component.SpeechProbabilityThreshold = 1;
                 component.UseVolumeThreshold = true;
                 component.VolumeDbThreshold = -40;
                 lease = await component.CreateDetectorAsync(recognizer, CancellationToken.None);
                 Assert.That(lease.Detector, stream ? Is.TypeOf<SileroStreamSpeechDetectorEngine>() : Is.TypeOf<SileroSpeechDetectorEngine>());
+                Assert.That(lease.Detector.SampleRate, Is.EqualTo(16000));
+                Assert.That(lease.Detector.Channels, Is.EqualTo(1));
+                Assert.That(((SileroSpeechDetectorOptions)lease.Detector.GetOptions()).ChunkSize, Is.EqualTo(512));
                 if (stream)
                     Assert.That(((SileroStreamSpeechDetectorEngine)lease.Detector).SpeechRecognizer, Is.SameAs(recognizer));
                 var errors = new List<Exception>();
@@ -47,13 +38,16 @@ namespace ChatdollKit.Tests.SpeechPipeline.Unity.Silero
                 Assert.That(await lease.Detector.ProcessSamplesAsync(new byte[1024]), Is.False);
 
                 component.UseVolumeThreshold = false;
+                component.SpeechProbabilityThreshold = 0.75f;
                 component.Settings.SilenceDurationThreshold = 0.25f;
                 if (stream) ((SileroStreamSpeechDetector)component).SegmentSilenceThreshold = 0.125f;
                 await component.ApplyDetectorOptionsAsync(lease.Detector, component.BuildOptions(), CancellationToken.None);
-                Assert.That(((SileroSpeechDetectorOptions)lease.Detector.GetOptions()).VolumeDbThreshold, Is.Null);
-                Assert.That(lease.Detector.GetOptions().SilenceDurationThreshold, Is.EqualTo(0.25));
+                var actualOptions = (SileroSpeechDetectorOptions)lease.Detector.GetOptions();
+                Assert.That(actualOptions.VolumeDbThreshold, Is.Null);
+                Assert.That(actualOptions.SpeechProbabilityThreshold, Is.EqualTo(0.75));
+                Assert.That(actualOptions.SilenceDurationThreshold, Is.EqualTo(0.25));
                 if (stream)
-                    Assert.That(((SileroStreamSpeechDetectorOptions)lease.Detector.GetOptions()).SegmentSilenceThreshold, Is.EqualTo(0.125));
+                    Assert.That(((SileroStreamSpeechDetectorOptions)actualOptions).SegmentSilenceThreshold, Is.EqualTo(0.125));
                 Assert.That(await lease.Detector.ProcessSamplesAsync(new byte[1024]), Is.False);
                 Assert.That(errors, Is.Empty);
                 await lease.DisposeAsync();
@@ -69,124 +63,147 @@ namespace ChatdollKit.Tests.SpeechPipeline.Unity.Silero
             }
         }
 
-        [Test]
-        public void ProviderRestartKeyIncludesModelRuntimeIteratorModeAndPcmFormat()
+        [TestCase(false)]
+        [TestCase(true)]
+        public void RestartKeyIncludesIteratorModeAndPrerollButAllowsLiveThresholdEdits(bool stream)
         {
             var owner = new GameObject("Silero restart settings test");
             try
             {
-                var component = owner.AddComponent<SileroSpeechDetector>();
+                var component = AddDetector(owner, stream);
                 var original = component.GetRestartKey();
-                component.ModelFileName = "alternate.onnx";
-                Assert.That(component.GetRestartKey(), Is.Not.EqualTo(original));
-                component.ModelFileName = "silero_vad.onnx";
-                var originalRuntimeScript = component.WebGLRuntimeScriptUrl;
-                Assert.That(originalRuntimeScript, Is.EqualTo(WebGLSileroVadModel.DefaultRuntimeScriptUrl));
-                component.WebGLRuntimeScriptUrl = "onnxruntime/ort.wasm.min.js";
-                Assert.That(component.GetRestartKey(), Is.Not.EqualTo(original));
-                component.WebGLRuntimeScriptUrl = originalRuntimeScript;
                 component.UseVadIterator = true;
                 Assert.That(component.GetRestartKey(), Is.Not.EqualTo(original));
                 component.UseVadIterator = false;
-                component.Settings.SampleRate = 8000;
+                var originalPreroll = component.Settings.PrerollBufferCount;
+                component.Settings.PrerollBufferCount++;
                 Assert.That(component.GetRestartKey(), Is.Not.EqualTo(original));
-                Assert.That(((SileroSpeechDetectorOptions)component.BuildOptions()).ChunkSize, Is.EqualTo(256));
-                component.Settings.SampleRate = 16000;
-                component.SpeechProbabilityThreshold = 0.8f;
+                component.Settings.PrerollBufferCount = originalPreroll;
+
+                component.SpeechProbabilityThreshold = 0.75f;
                 component.UseVolumeThreshold = true;
+                component.VolumeDbThreshold = -30;
+                component.Settings.SilenceDurationThreshold = 0.25f;
+                if (stream) ((SileroStreamSpeechDetector)component).SegmentSilenceThreshold = 0.125f;
                 Assert.That(component.GetRestartKey(), Is.EqualTo(original), "Threshold edits apply to the current detector.");
             }
             finally { UnityEngine.Object.DestroyImmediate(owner); }
         }
 
-        [Test]
-        public async NUnitTask NativeProviderRejectsRelativeTraversalBeforeReadingTheModel()
+        [TestCase(false, 8000)]
+        [TestCase(true, 8000)]
+        [TestCase(false, 48000)]
+        [TestCase(true, 48000)]
+        public async NUnitTask UnsupportedSampleRateIsRejectedWhenBuildingOptionsAndCreatingTheDetector(bool stream, int sampleRate)
         {
-#if !CHATDOLLKIT_ONNXRUNTIME
-            Assert.Ignore("Install com.github.asus4.onnxruntime to exercise native model loading.");
-#endif
-            var owner = new GameObject("Silero model path test");
+            var owner = new GameObject("Silero unsupported format test");
+            var recognizer = new BorrowedRecognizer();
             try
             {
-                var component = owner.AddComponent<SileroSpeechDetector>();
-                component.ModelFileName = "../outside.onnx";
-                await ExpectExceptionAsync<ArgumentException>(async () => await component.CreateDetectorAsync(null, CancellationToken.None));
+                var component = AddDetector(owner, stream);
+                component.Settings.SampleRate = sampleRate;
+                var optionsError = Assert.Throws<NotSupportedException>(() => component.BuildOptions());
+                Assert.That(optionsError.Message, Does.Contain("16000"));
+                var creationError = await ExpectExceptionAsync<NotSupportedException>(async () =>
+                    await component.CreateDetectorAsync(recognizer, CancellationToken.None));
+                Assert.That(creationError.Message, Does.Contain("16000"));
+                Assert.That(recognizer.Disposals, Is.Zero);
             }
-            finally { UnityEngine.Object.DestroyImmediate(owner); }
+            finally
+            {
+                recognizer.Dispose();
+                UnityEngine.Object.DestroyImmediate(owner);
+            }
         }
 
-        [Test]
-        public void WebGLUrlsUseStreamingAssetsAndAcceptAnHttpsRuntime()
+        [TestCase(false)]
+        [TestCase(true)]
+        public async NUnitTask CanceledCreationCanBeRetriedWithoutDisposingTheBorrowedRecognizer(bool stream)
         {
-            var expectedModelUrl = new Uri(Application.streamingAssetsPath.TrimEnd('/') + "/models/silero_vad.onnx").AbsoluteUri;
-            var expectedRuntimeUrl = new Uri(Application.streamingAssetsPath.TrimEnd('/') + "/onnxruntime/ort.wasm.min.js").AbsoluteUri;
-            Assert.That(ResolveUrl("ResolveModelUrl", "models/silero_vad.onnx", true), Is.EqualTo(expectedModelUrl));
-            Assert.That(ResolveUrl("ResolveModelUrl", "models\\silero_vad.onnx", true), Is.EqualTo(expectedModelUrl));
-            Assert.That(ResolveUrl("ResolveWebGLRuntimeScriptUrl", "onnxruntime/ort.wasm.min.js"), Is.EqualTo(expectedRuntimeUrl));
-            Assert.That(ResolveUrl("ResolveWebGLRuntimeScriptUrl", WebGLSileroVadModel.DefaultRuntimeScriptUrl),
-                Is.EqualTo(WebGLSileroVadModel.DefaultRuntimeScriptUrl));
-        }
-
-        [Test]
-        public void NativeAbsoluteModelPathsRemainSupportedButWebGLRequiresStreamingAssets()
-        {
-            var path = Path.Combine(Application.temporaryCachePath, "silero_vad.onnx");
-            Assert.That(ResolveUrl("ResolveModelUrl", path, false), Is.EqualTo(new Uri(path).AbsoluteUri));
-            Assert.Throws<ArgumentException>(() => ResolveUrl("ResolveModelUrl", path, true));
-        }
-
-        [TestCase("")]
-        [TestCase("  ")]
-        [TestCase("../outside.onnx")]
-        [TestCase("models\\..\\outside.onnx")]
-        [TestCase("https://example.com/silero_vad.onnx")]
-        public void InvalidRelativeModelPathsAreRejected(string path)
-        {
-            Assert.Throws<ArgumentException>(() => ResolveUrl("ResolveModelUrl", path, false));
-            Assert.Throws<ArgumentException>(() => ResolveUrl("ResolveModelUrl", path, true));
-        }
-
-        [TestCase("")]
-        [TestCase("  ")]
-        [TestCase("../ort.wasm.min.js")]
-        [TestCase("onnxruntime\\..\\ort.wasm.min.js")]
-        [TestCase("http://example.com/ort.wasm.min.js")]
-        [TestCase("//example.com/ort.wasm.min.js")]
-        [TestCase("file:///tmp/ort.wasm.min.js")]
-        [TestCase("javascript:alert(1)")]
-        public void RuntimeScriptRejectsInvalidLocations(string path)
-            => Assert.Throws<ArgumentException>(() => ResolveUrl("ResolveWebGLRuntimeScriptUrl", path));
-
-#if !CHATDOLLKIT_ONNXRUNTIME
-        [Test]
-        public async NUnitTask NativeProviderWithoutOnnxReportsTheDependencyBeforeReadingTheModel()
-        {
-            var owner = new GameObject("Silero missing native runtime test");
+            var owner = new GameObject("Silero canceled creation test");
+            SpeechDetectorLease lease = null;
+            var recognizer = new BorrowedRecognizer();
             try
             {
-                var component = owner.AddComponent<SileroSpeechDetector>();
-                component.ModelFileName = "does-not-exist.onnx";
-                var error = await ExpectExceptionAsync<NotSupportedException>(async () =>
-                    await component.CreateDetectorAsync(null, CancellationToken.None));
-                Assert.That(error.Message, Does.Contain("com.github.asus4.onnxruntime"));
-                Assert.That(error.Message, Does.Contain("WebGL build"));
+                var component = AddDetector(owner, stream);
+                await ExpectExceptionAsync<OperationCanceledException>(async () =>
+                    await component.CreateDetectorAsync(recognizer, new CancellationToken(true)));
+                Assert.That(recognizer.Disposals, Is.Zero);
+                lease = await component.CreateDetectorAsync(recognizer, CancellationToken.None);
+                var errors = new List<Exception>();
+                lease.Detector.Error += errors.Add;
+                Assert.That(await lease.Detector.ProcessSamplesAsync(new byte[1024]), Is.False);
+                Assert.That(errors, Is.Empty);
             }
-            finally { UnityEngine.Object.DestroyImmediate(owner); }
+            finally
+            {
+                if (lease != null) await lease.DisposeAsync();
+                recognizer.Dispose();
+                UnityEngine.Object.DestroyImmediate(owner);
+            }
         }
-#endif
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public async NUnitTask CanceledInputDoesNotPreventFollowingPcmFromBeingProcessed(bool stream)
+        {
+            var owner = new GameObject("Silero canceled input test");
+            SpeechDetectorLease lease = null;
+            var recognizer = new BorrowedRecognizer();
+            try
+            {
+                var component = AddDetector(owner, stream);
+                lease = await component.CreateDetectorAsync(recognizer, CancellationToken.None);
+                var errors = new List<Exception>();
+                lease.Detector.Error += errors.Add;
+                await ExpectExceptionAsync<OperationCanceledException>(async () =>
+                    await lease.Detector.ProcessSamplesAsync(new byte[1024], cancellationToken: new CancellationToken(true)));
+                Assert.That(await lease.Detector.ProcessSamplesAsync(new byte[1024]), Is.False);
+                Assert.That(errors, Is.Empty);
+            }
+            finally
+            {
+                if (lease != null) await lease.DisposeAsync();
+                recognizer.Dispose();
+                UnityEngine.Object.DestroyImmediate(owner);
+            }
+        }
 
         [Test]
-        public void StreamProviderRejectsMissingRecognizerBeforeReadingTheModel()
+        public async NUnitTask StandardDetectorCanBeCreatedWithoutARecognizer()
         {
-            var owner = new GameObject("Silero stream dependency test");
+            var owner = new GameObject("Silero standard recognizer dependency test");
+            SpeechDetectorLease lease = null;
+            try
+            {
+                lease = await owner.AddComponent<SileroSpeechDetector>().CreateDetectorAsync(null, CancellationToken.None);
+                var errors = new List<Exception>();
+                lease.Detector.Error += errors.Add;
+                Assert.That(await lease.Detector.ProcessSamplesAsync(new byte[1024]), Is.False);
+                Assert.That(errors, Is.Empty);
+            }
+            finally
+            {
+                if (lease != null) await lease.DisposeAsync();
+                UnityEngine.Object.DestroyImmediate(owner);
+            }
+        }
+
+        [Test]
+        public async NUnitTask StreamDetectorRequiresARecognizerBeforeLoadingTheModel()
+        {
+            var owner = new GameObject("Silero stream recognizer dependency test");
             try
             {
                 var component = owner.AddComponent<SileroStreamSpeechDetector>();
-                component.ModelFileName = "does-not-exist.onnx";
-                Assert.Throws<ArgumentNullException>(() => component.CreateDetectorAsync(null, CancellationToken.None));
+                await ExpectExceptionAsync<ArgumentNullException>(async () =>
+                    await component.CreateDetectorAsync(null, CancellationToken.None));
             }
             finally { UnityEngine.Object.DestroyImmediate(owner); }
         }
+
+        private static SileroSpeechDetector AddDetector(GameObject owner, bool stream)
+            => stream ? owner.AddComponent<SileroStreamSpeechDetector>() : owner.AddComponent<SileroSpeechDetector>();
 
         private sealed class BorrowedRecognizer : ISpeechRecognizer, IDisposable
         {
@@ -194,13 +211,6 @@ namespace ChatdollKit.Tests.SpeechPipeline.Unity.Silero
             public UniTask<SpeechRecognitionResult> RecognizeAsync(string sessionId, byte[] audio, CancellationToken cancellationToken = default)
                 => throw new InvalidOperationException("Silent input should not request recognition.");
             public void Dispose() => Disposals++;
-        }
-
-        private static string ResolveUrl(string methodName, params object[] arguments)
-        {
-            var method = typeof(SileroSpeechDetector).GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Static);
-            try { return (string)method.Invoke(null, arguments); }
-            catch (TargetInvocationException error) when (error.InnerException != null) { throw error.InnerException; }
         }
 
         private static async UniTask<T> ExpectExceptionAsync<T>(Func<UniTask> operation) where T : Exception
@@ -214,6 +224,5 @@ namespace ChatdollKit.Tests.SpeechPipeline.Unity.Silero
             Assert.Fail("Expected " + typeof(T).Name);
             return null;
         }
-
     }
 }

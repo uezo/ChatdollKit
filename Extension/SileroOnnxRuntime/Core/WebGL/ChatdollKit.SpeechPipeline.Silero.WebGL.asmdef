@@ -1,0 +1,10 @@
+{
+    "name": "ChatdollKit.SpeechPipeline.Silero.WebGL",
+    "rootNamespace": "ChatdollKit.SpeechPipeline.VAD.Silero.WebGL",
+    "references": [
+        "ChatdollKit.SpeechPipeline",
+        "UniTask"
+    ],
+    "autoReferenced": true,
+    "noEngineReferences": false
+}

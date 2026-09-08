@@ -1,9 +1,10 @@
 {
-    "name": "ChatdollKit.SpeechPipeline.Unity.Silero.Components.Tests",
+    "name": "ChatdollKit.SpeechPipeline.Unity.Silero.Sentis.Tests",
     "references": [
         "ChatdollKit.SpeechPipeline",
-        "ChatdollKit.SpeechPipeline.Silero",
-        "UniTask"
+        "ChatdollKit.SpeechPipeline.Silero.Sentis",
+        "UniTask",
+        "Unity.InferenceEngine"
     ],
     "includePlatforms": [
         "Editor"

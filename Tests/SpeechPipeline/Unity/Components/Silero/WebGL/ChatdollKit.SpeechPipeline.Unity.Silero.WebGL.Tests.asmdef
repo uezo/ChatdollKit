@@ -1,0 +1,19 @@
+{
+    "name": "ChatdollKit.SpeechPipeline.Unity.Silero.WebGL.Tests",
+    "references": [
+        "ChatdollKit.SpeechPipeline",
+        "ChatdollKit.SpeechPipeline.Silero.WebGL",
+        "UniTask"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "autoReferenced": false,
+    "noEngineReferences": false
+}

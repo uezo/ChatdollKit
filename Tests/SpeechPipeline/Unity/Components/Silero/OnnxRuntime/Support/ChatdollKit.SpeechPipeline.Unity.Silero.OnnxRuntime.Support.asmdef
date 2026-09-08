@@ -1,0 +1,16 @@
+{
+    "name": "ChatdollKit.SpeechPipeline.Unity.Silero.OnnxRuntime.Support",
+    "references": [
+        "ChatdollKit.SpeechPipeline",
+        "ChatdollKit.Extension.SileroOnnxRuntime",
+        "UniTask"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "autoReferenced": false,
+    "noEngineReferences": false
+}

@@ -2,16 +2,16 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
-#if UNITY_ANDROID && !UNITY_EDITOR
+#if CHATDOLLKIT_ONNXRUNTIME && UNITY_ANDROID && !UNITY_EDITOR
 using System;
 using UnityEngine.Networking;
 #endif
 #if UNITY_WEBGL && !UNITY_EDITOR
 using System.Runtime.InteropServices;
-#else
+#elif CHATDOLLKIT_ONNXRUNTIME
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
-# endif
+#endif
 
 namespace ChatdollKit.Extension.SileroVAD
 {
@@ -35,6 +35,7 @@ namespace ChatdollKit.Extension.SileroVAD
         [SerializeField]
         private string onnxModelName = "silero_vad.onnx";
 
+#if CHATDOLLKIT_ONNXRUNTIME
         // The chunk size for SireloVAD is 512.
         private int sampleSize = 512;
 
@@ -43,6 +44,7 @@ namespace ChatdollKit.Extension.SileroVAD
         private InferenceSession session;
         private float[] state = new float[256];
         private readonly List<float> audioBuffer = new List<float>();
+#endif
 #endif
         [Tooltip("Confidence threshold for detecting speech (0.0 to 1.0).")]
         [SerializeField]
@@ -65,7 +67,7 @@ namespace ChatdollKit.Extension.SileroVAD
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
             // Do nothing on WebGL runtime
-#else
+#elif CHATDOLLKIT_ONNXRUNTIME
             try
             {
 #if UNITY_ANDROID && !UNITY_EDITOR
@@ -96,6 +98,10 @@ namespace ChatdollKit.Extension.SileroVAD
             {
                 Debug.LogError($"VAD initialization failed: {ex.Message}\n{ex.StackTrace}");
             }
+#else
+            throw new System.NotSupportedException(
+                "The legacy SileroVADProcessor requires the com.github.asus4.onnxruntime package in the Unity Editor and native builds. " +
+                "Install ONNX Runtime, or use Speech Pipeline's SileroSpeechDetector with Sentis.");
 #endif
         }
 
@@ -113,7 +119,7 @@ namespace ChatdollKit.Extension.SileroVAD
             lastProbability = GetVoiceProbability();
 
             return IsVoiceDetectedJS() == 1;
-#else
+#elif CHATDOLLKIT_ONNXRUNTIME
             if (session == null || newSamples == null) return false;
 
             audioBuffer.AddRange(newSamples);
@@ -138,6 +144,8 @@ namespace ChatdollKit.Extension.SileroVAD
             }
 
             return false;
+#else
+            return false;
 #endif
         }
 
@@ -146,7 +154,7 @@ namespace ChatdollKit.Extension.SileroVAD
         {
             IsMuted = mute;
         }
-#else
+#elif CHATDOLLKIT_ONNXRUNTIME
         private bool RunInference(float[] audioSamples)
         {
             try
@@ -197,6 +205,11 @@ namespace ChatdollKit.Extension.SileroVAD
         void OnDestroy()
         {
             session?.Dispose();
+        }
+#else
+        public void ResetStates()
+        {
+            lastProbability = 0f;
         }
 #endif
     }

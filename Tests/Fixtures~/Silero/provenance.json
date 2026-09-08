@@ -1,0 +1,48 @@
+{
+  "preparedOn": "2026-09-07",
+  "provider": "Silero Team",
+  "sourceRepository": "https://github.com/snakers4/silero-vad",
+  "license": "MIT",
+  "sourceModel": {
+    "projectPath": "Assets/StreamingAssets/silero_vad.onnx",
+    "sha256": "a4a068cd6cf1ea8355b84327595838ca748ec29a25bc91fc82e6c299ccdc5808",
+    "bytes": 2243022,
+    "modelRelease": null,
+    "versionNote": "Existing project model; upstream model release not established. Existing test reference used Silero 6.0.0 Python wrapper, which does not establish the model release."
+  },
+  "conversion": {
+    "upstreamPath": "examples/openvino/convert.py",
+    "revision": "d67558bf3ca7a12256c625c6889d761e93e5f7cd",
+    "localScript": "convert_silero.py",
+    "scriptSha256": "4ed304326aebcffacfbbf9a342a0812953e89acfc76335299af39e5275c8cc6b",
+    "sampleRate": 16000,
+    "batchSize": 1,
+    "newSamplesPerFrame": 512,
+    "contextSamples": 64,
+    "fixedModelSha256": "eaeb815b91d3451b822817521dd7cc21ecef440e564daeb8a11560d8df378e03",
+    "fixedModelBytes": 1255728,
+    "nodeCount": 39,
+    "ifNodeCount": 0
+  },
+  "serialization": {
+    "unity": "6000.0.58f2",
+    "package": "com.unity.ai.inference",
+    "packageVersion": "2.6.1",
+    "api": "ModelWriter.Save(path, ModelLoader.Load(importedModelAsset))",
+    "resourcePath": "Scripts/SpeechPipeline/VAD/Silero/Resources/ChatdollKit/Silero/silero_vad_16k.sentis.bytes",
+    "resourceKey": "ChatdollKit/Silero/silero_vad_16k.sentis",
+    "sha256": "01e098b879e31c6a63368e29d25fbb147ae51db379bf226ef429bc8a8c5789f1",
+    "bytes": 1248036
+  },
+  "validation": {
+    "frames": 12,
+    "input": "float32(0.2*sin(2*pi*220*t/16000)+0.05*sin(2*pi*577*t/16000)); t=0..6143; 64-sample carried context; zero initial state",
+    "referenceRuntime": "ONNX Runtime 1.29.0 CPU",
+    "fixedVsOriginalMaximumProbabilityError": 0.0,
+    "fixedVsOriginalMaximumStateError": 0.0,
+    "serializedUnityVsOriginalMaximumProbabilityError": 6.146728992462158e-08,
+    "serializedUnityVsOriginalMaximumStateError": 2.86102294921875e-06,
+    "scope": "Numerical smoke test on macOS arm64; not exhaustive speech-quality, long-session, mobile or WebGL validation.",
+    "editorDiagnostic": "Unity 6000.0.58f2 with Inference Engine 2.6.1 logged one Persistent allocation diagnostic at domain reload / editor shutdown, both in the standalone serialization smoke test (without this adapter) and adapter validation. Source not yet established; this is separate from compilation/import errors and inference comparisons."
+  }
+}

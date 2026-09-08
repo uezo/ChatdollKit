@@ -130,7 +130,7 @@
     <DefineConstants>$(DefineConstants);CHATDOLLKIT_ONNX_TESTS</DefineConstants>
   </PropertyGroup>
   <ItemGroup Condition="'$(EnableOnnxTests)' == 'true'">
-    <Compile Include="../../Scripts/SpeechPipeline/VAD/Silero/Core/Onnx/OnnxSileroVadModel.cs" />
+    <Compile Include="../../Extension/SileroOnnxRuntime/Core/Onnx/OnnxSileroVadModel.cs" />
     <Compile Include="../SpeechPipeline/Onnx/**/*.cs" />
     <Compile Include="OnnxTestRuntime.cs" />
     <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.21.0" />

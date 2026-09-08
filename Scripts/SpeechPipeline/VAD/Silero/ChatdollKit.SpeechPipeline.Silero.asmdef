@@ -3,15 +3,19 @@
     "rootNamespace": "ChatdollKit.SpeechPipeline.VAD.Silero",
     "references": [
         "ChatdollKit.SpeechPipeline",
-        "ChatdollKit.SpeechPipeline.Silero.Onnx",
+        "ChatdollKit.SpeechPipeline.Silero.Sentis",
         "UniTask"
     ],
     "versionDefines": [
         {
-            "name": "com.github.asus4.onnxruntime",
-            "expression": "0.0.0",
-            "define": "CHATDOLLKIT_ONNXRUNTIME"
+            "name": "com.unity.ai.inference",
+            "expression": "[2.6.1,3.0.0)",
+            "define": "CHATDOLLKIT_SENTIS"
         }
     ],
-    "autoReferenced": true
+    "autoReferenced": true,
+    "defineConstraints": [
+        "CHATDOLLKIT_SENTIS",
+        "UNITY_6000_0_OR_NEWER"
+    ]
 }
