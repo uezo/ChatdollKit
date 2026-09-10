@@ -1,0 +1,7 @@
+{
+    "name": "ChatdollKit.Orchestration.Events",
+    "rootNamespace": "ChatdollKit.Orchestration",
+    "references": [],
+    "autoReferenced": true,
+    "noEngineReferences": true
+}

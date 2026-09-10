@@ -27,6 +27,8 @@ namespace ChatdollKit.Tests.Orchestration
             rig.Orchestrator.ResponseReceived += response => rig.Responses.Enqueue(response.Copy());
             rig.Orchestrator.PresentationStarted += presentation => rig.Started.Enqueue(presentation.Copy());
             rig.Orchestrator.PresentationCompleted += presentation => rig.Completed.Enqueue(presentation.Copy());
+            rig.Orchestrator.TurnEnded += rig.Ended.Enqueue;
+            rig.Orchestrator.LifecycleChanged += rig.Lifecycle.Enqueue;
             rig.Orchestrator.Error += error => rig.Errors.Enqueue(error);
             rigs.Add(rig); return rig;
         }
@@ -78,9 +80,228 @@ namespace ChatdollKit.Tests.Orchestration
             Assert.That(rig.Pipeline.Invocations.Single().Text, Is.EqualTo("hello"));
             Assert.That(rig.Orchestrator.IsPresenting, Is.True);
             Assert.That(rig.Completed, Is.Empty);
+            Assert.That(rig.Ended, Is.Empty);
             release.TrySetResult(true); await Within(rig.Orchestrator.DrainAsync());
             Assert.That(rig.Orchestrator.IsPresenting, Is.False);
             Assert.That(rig.Completed.Count, Is.EqualTo(1));
+            Assert.That(rig.Ended.Single().Reason, Is.EqualTo(OrchestratorTurnEndReason.Completed));
+        }
+
+        [TestCase(SpeechPipelineResponseType.Final, OrchestratorTurnEndReason.Completed)]
+        [TestCase(SpeechPipelineResponseType.Canceled, OrchestratorTurnEndReason.Canceled)]
+        [TestCase(SpeechPipelineResponseType.Error, OrchestratorTurnEndReason.Failed)]
+        public async NUnitTask TerminalWithoutPlaybackNotifiesResponseBeforeEndingExactlyOnce(
+            SpeechPipelineResponseType terminal, OrchestratorTurnEndReason reason)
+        {
+            var rig = Create(); var order = new ConcurrentQueue<string>();
+            rig.Orchestrator.ResponseReceived += response => { if (response.Type == terminal) order.Enqueue("response"); };
+            rig.Orchestrator.ResponseObserved += observed => { if (observed.Response.Type == terminal) order.Enqueue("observed"); };
+            rig.Orchestrator.TurnEnded += result => order.Enqueue("end");
+            await Begin(rig, "turn");
+            await rig.Pipeline.EmitAsync(Response(terminal, "turn"));
+            await Within(rig.Orchestrator.DrainAsync());
+            Assert.That(order, Is.EqualTo(new[] { "response", "observed", "end" }));
+            await rig.Pipeline.EmitAsync(Response(terminal, "turn"));
+            await Within(rig.Orchestrator.DrainAsync());
+            var result = rig.Ended.Single();
+            Assert.That(result.Source, Is.SameAs(rig.Orchestrator));
+            Assert.That(result.SessionId, Is.EqualTo("session"));
+            Assert.That(result.ContextId, Is.EqualTo("context"));
+            Assert.That(result.TransactionId, Is.EqualTo("turn"));
+            Assert.That(result.Generation, Is.Zero);
+            Assert.That(result.Reason, Is.EqualTo(reason));
+        }
+
+        [Test]
+        public async NUnitTask QueuedResponseObservationKeepsItsOriginatingGenerationAfterReset()
+        {
+            var rig = Create(); var resetAccepted = new SpeechCompletionSource<UniTask>();
+            var observed = new ConcurrentQueue<OrchestratorResponseEvent>();
+            var currentAtOldFinal = -1L;
+            rig.Orchestrator.ResponseReceived += response =>
+            {
+                // Accept a boundary before the corresponding queued observation reaches its subscriber.
+                if (response.Type == SpeechPipelineResponseType.Final && response.TransactionId == "old")
+                    resetAccepted.TrySetResult(rig.Orchestrator.ResetAsync());
+            };
+            rig.Orchestrator.ResponseObserved += item =>
+            {
+                observed.Enqueue(item);
+                if (item.Response.Type == SpeechPipelineResponseType.Final && item.Response.TransactionId == "old")
+                    currentAtOldFinal = rig.Orchestrator.Generation;
+            };
+            await Begin(rig, "old");
+            await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Final, "old"));
+            await Within(await Within(resetAccepted.Task));
+            await Begin(rig, "new");
+            await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Final, "new"));
+            await Within(rig.Orchestrator.DrainAsync());
+            Assert.That(currentAtOldFinal, Is.EqualTo(1));
+            Assert.That(observed.Count, Is.EqualTo(6));
+            Assert.That(observed.Where(item => item.Response.TransactionId == "old").Select(item => item.Generation), Is.EqualTo(new long[] { 0, 0, 0 }));
+            Assert.That(observed.Where(item => item.Response.TransactionId == "new").Select(item => item.Generation), Is.EqualTo(new long[] { 1, 1, 1 }));
+            Assert.That(observed.Select(item => item.Source), Is.All.SameAs(rig.Orchestrator));
+        }
+
+        [Test]
+        public async NUnitTask ActivePresentationContextSurvivesFinalButRejectsStoppedAndHistoricalTurns()
+        {
+            var rig = Create(); var entered = Signal(); var release = Release();
+            rig.Avatar.Handler = async (request, token) => { entered.TrySetResult(true); await release.Task; };
+            await Begin(rig, "turn");
+            Assert.That(rig.Orchestrator.TryGetActivePresentationContext("turn", out _, out _), Is.False);
+            await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Chunk, "turn", "playing"));
+            await Within(entered.Task);
+            await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Final, "turn"));
+            Assert.That(rig.Orchestrator.TryGetActivePresentationContext("turn", out var generation, out var order), Is.True);
+            Assert.That(generation, Is.Zero);
+            Assert.That(order, Is.EqualTo(1));
+            // A preceding Avatar observer can accept this boundary before subsequent observers run.
+            var interrupt = rig.Orchestrator.InterruptAsync();
+            Assert.That(rig.Orchestrator.TryGetActivePresentationContext("turn", out _, out _), Is.False);
+            release.TrySetResult(true);
+            await Within(interrupt);
+            await Within(rig.Orchestrator.DrainAsync());
+            Assert.That(rig.Orchestrator.TryGetTurnOrder("turn", out _), Is.True, "The stop cutoff remains available independently.");
+            Assert.That(rig.Orchestrator.TryGetActivePresentationContext("turn", out _, out _), Is.False);
+            Assert.That(rig.Orchestrator.TryGetActivePresentationContext(null, out _, out _), Is.False);
+        }
+
+        [Test]
+        public async NUnitTask ResponseObservationsKeepAuthoritativeStartOrderAndPlaybackCanResolveIt()
+        {
+            var rig = Create(); var observed = new ConcurrentQueue<OrchestratorResponseEvent>();
+            rig.Orchestrator.ResponseObserved += observed.Enqueue;
+            await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Accepted, "second"));
+            await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Accepted, "first"));
+            Assert.That(rig.Orchestrator.TryGetTurnOrder("first", out _), Is.False);
+            await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Start, "first"));
+            Assert.That(rig.Orchestrator.TryGetTurnOrder("first", out var first), Is.True);
+            Assert.That(first, Is.EqualTo(1));
+            await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Start, "second"));
+            Assert.That(rig.Orchestrator.TryGetTurnOrder("second", out var second), Is.True);
+            Assert.That(second, Is.EqualTo(2));
+            await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Final, "first"));
+            await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Final, "second"));
+            await Within(rig.Orchestrator.DrainAsync());
+            Assert.That(observed.Where(item => item.Response.Type == SpeechPipelineResponseType.Accepted).Select(item => item.TurnOrder), Is.EqualTo(new long[] { 0, 0 }));
+            Assert.That(observed.Where(item => item.Response.Type == SpeechPipelineResponseType.Start).Select(item => item.TurnOrder), Is.EqualTo(new long[] { 1, 2 }));
+            Assert.That(observed.Where(item => item.Response.Type == SpeechPipelineResponseType.Final).Select(item => item.Copy().TurnOrder), Is.EqualTo(new long[] { 1, 2 }));
+            Assert.That(rig.Orchestrator.TryGetTurnOrder("missing", out _), Is.False);
+            Assert.That(rig.Orchestrator.TryGetTurnOrder(null, out _), Is.False);
+        }
+
+        [Test]
+        public async NUnitTask ResponseObservationsOwnTheirSnapshotsAndIsolateObservers()
+        {
+            var rig = Create(); var received = new ConcurrentQueue<OrchestratorResponseEvent>();
+            Action<SpeechPipelineResponse> mutate = response =>
+            {
+                if (response.Type != SpeechPipelineResponseType.Chunk) return;
+                response.Text = "mutated"; response.AudioData[0] = 99; response.Metadata["value"] = "mutated";
+            };
+            rig.Orchestrator.ResponseReceived += mutate;
+            rig.Orchestrator.ResponseObserved += observed => mutate(observed.Response);
+            rig.Orchestrator.ResponseObserved += received.Enqueue;
+            await Begin(rig, "turn");
+            var original = Response(SpeechPipelineResponseType.Chunk, "turn", "original");
+            original.Metadata = new JObject { ["value"] = "original" };
+            await rig.Pipeline.EmitAsync(original);
+            mutate(original);
+            await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Final, "turn"));
+            await Within(rig.Orchestrator.DrainAsync());
+            var snapshot = received.Single(item => item.Response.Type == SpeechPipelineResponseType.Chunk);
+            mutate(snapshot.Response);
+            Assert.That(snapshot.Response.Text, Is.EqualTo("original"));
+            Assert.That(snapshot.Response.AudioData[0], Is.EqualTo(1));
+            Assert.That((string)snapshot.Response.Metadata["value"], Is.EqualTo("original"));
+        }
+
+        [Test]
+        public async NUnitTask TurnEndsAfterEveryChunkAndTheFinalNotification()
+        {
+            var rig = Create(); var entered = Signal(); var release = Release();
+            var order = new ConcurrentQueue<string>();
+            rig.Avatar.Handler = async (request, token) =>
+            { if (request.Text == "first") { entered.TrySetResult(true); await release.Task; } };
+            rig.Orchestrator.ResponseReceived += response => { if (response.Type == SpeechPipelineResponseType.Final) order.Enqueue("final"); };
+            rig.Orchestrator.PresentationCompleted += request => order.Enqueue(request.Text);
+            rig.Orchestrator.TurnEnded += result => order.Enqueue("ended");
+            await Begin(rig, "turn");
+            await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Chunk, "turn", "first"));
+            await Within(entered.Task);
+            await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Chunk, "turn", "second"));
+            await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Final, "turn"));
+            Assert.That(rig.Ended, Is.Empty);
+            release.TrySetResult(true);
+            await Within(rig.Orchestrator.DrainAsync());
+            Assert.That(order, Is.EqualTo(new[] { "final", "first", "second", "ended" }));
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public async NUnitTask EmptyControlBoundaryAdvancesGenerationAndLabelsSubsequentTurns(bool reset)
+        {
+            var rig = Create();
+            await Within(reset ? rig.Orchestrator.ResetAsync("next-context") : rig.Orchestrator.InterruptAsync());
+            await Begin(rig, "new");
+            await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Final, "new"));
+            await Within(rig.Orchestrator.DrainAsync());
+            var boundary = rig.Lifecycle.Single();
+            Assert.That(boundary.Source, Is.SameAs(rig.Orchestrator));
+            Assert.That(boundary.SessionId, Is.EqualTo("session"));
+            Assert.That(boundary.Kind, Is.EqualTo(reset ? OrchestratorLifecycleKind.Reset : OrchestratorLifecycleKind.Interrupted));
+            Assert.That(boundary.ContextId, Is.EqualTo(reset ? "next-context" : null));
+            Assert.That(boundary.Generation, Is.EqualTo(1));
+            Assert.That(rig.Orchestrator.Generation, Is.EqualTo(1));
+            Assert.That(rig.Ended.Single().Generation, Is.EqualTo(1));
+        }
+
+        [Test]
+        public async NUnitTask AcceptedControlPublishesBoundaryBeforeOldTurnEndEvenWhenControlFails()
+        {
+            var rig = Create(); var order = new ConcurrentQueue<string>();
+            rig.Orchestrator.LifecycleChanged += boundary => order.Enqueue("boundary");
+            rig.Orchestrator.TurnEnded += result => order.Enqueue("ended");
+            rig.Pipeline.ResetHandler = (context, token) => throw new InvalidOperationException("reset failed");
+            await Begin(rig, "old");
+            await ExpectExceptionAsync<InvalidOperationException>(async () => await Within(rig.Orchestrator.ResetAsync("new-context")));
+            await Within(rig.Orchestrator.DrainAsync());
+            Assert.That(order, Is.EqualTo(new[] { "boundary", "ended" }));
+            Assert.That(rig.Lifecycle.Single().Generation, Is.EqualTo(1));
+            Assert.That(rig.Ended.Single().Generation, Is.Zero);
+            Assert.That(rig.Ended.Single().Reason, Is.EqualTo(OrchestratorTurnEndReason.Canceled));
+        }
+
+        [Test]
+        public async NUnitTask CanceledControlBeforeAcceptanceDoesNotAdvanceGenerationOrNotify()
+        {
+            var rig = Create();
+            using (var canceled = new CancellationTokenSource())
+            {
+                canceled.Cancel();
+                Assert.Throws<OperationCanceledException>(() => rig.Orchestrator.InterruptAsync(canceled.Token));
+            }
+            await Within(rig.Orchestrator.DrainAsync());
+            Assert.That(rig.Orchestrator.Generation, Is.Zero);
+            Assert.That(rig.Lifecycle, Is.Empty);
+        }
+
+        [Test]
+        public async NUnitTask NewLifecycleObserversAreIsolatedFromEachOthersFailures()
+        {
+            var rig = Create(); var failure = new InvalidOperationException("observer failed");
+            var boundaries = 0; var endings = 0;
+            rig.Orchestrator.LifecycleChanged += boundary => throw failure;
+            rig.Orchestrator.LifecycleChanged += boundary => boundaries++;
+            rig.Orchestrator.TurnEnded += result => throw failure;
+            rig.Orchestrator.TurnEnded += result => endings++;
+            await Begin(rig, "old");
+            await Within(rig.Orchestrator.InterruptAsync());
+            await Within(rig.Orchestrator.DrainAsync());
+            Assert.That(boundaries, Is.EqualTo(1));
+            Assert.That(endings, Is.EqualTo(1));
+            Assert.That(rig.Errors.Count(error => ReferenceEquals(error, failure)), Is.EqualTo(2));
         }
 
         [Test]
@@ -458,6 +679,7 @@ namespace ChatdollKit.Tests.Orchestration
             await Begin(rig, "next"); await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Chunk, "next", "next"));
             await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Final, "next")); await Within(rig.Orchestrator.DrainAsync());
             Assert.That(rig.Avatar.Presentations.Select(item => item.Text), Is.EqualTo(new[] { "playing", "next" }));
+            Assert.That(rig.Ended.Single(item => item.TransactionId == "overflow").Reason, Is.EqualTo(OrchestratorTurnEndReason.Failed));
         }
 
         [Test]
@@ -471,6 +693,7 @@ namespace ChatdollKit.Tests.Orchestration
             await Within(rig.Orchestrator.DrainAsync());
             Assert.That(rig.Errors, Does.Contain(failure)); Assert.That(rig.Avatar.Presentations.Count, Is.EqualTo(1));
             Assert.That(rig.Completed, Is.Empty);
+            Assert.That(rig.Ended.Single().Reason, Is.EqualTo(OrchestratorTurnEndReason.Failed));
         }
 
         [Test]
@@ -676,6 +899,8 @@ namespace ChatdollKit.Tests.Orchestration
             Assert.That(rig.Pipeline.InterruptCount, Is.EqualTo(1));
             Assert.That(rig.Avatar.Presentations.Select(item => item.Text), Is.EqualTo(new[] { "old", "new" }));
             Assert.That(rig.Orchestrator.IsInputSuppressed, Is.False);
+            Assert.That(rig.Ended.Single(item => item.TransactionId == "old").Reason, Is.EqualTo(OrchestratorTurnEndReason.Canceled));
+            Assert.That(rig.Ended.Single(item => item.TransactionId == "new").Generation, Is.EqualTo(1));
         }
 
         [Test]
@@ -768,6 +993,8 @@ namespace ChatdollKit.Tests.Orchestration
             public readonly ConcurrentQueue<SpeechPipelineResponse> Responses = new ConcurrentQueue<SpeechPipelineResponse>();
             public readonly ConcurrentQueue<AvatarRequest> Started = new ConcurrentQueue<AvatarRequest>();
             public readonly ConcurrentQueue<AvatarRequest> Completed = new ConcurrentQueue<AvatarRequest>();
+            public readonly ConcurrentQueue<OrchestratorTurnResult> Ended = new ConcurrentQueue<OrchestratorTurnResult>();
+            public readonly ConcurrentQueue<OrchestratorLifecycleEvent> Lifecycle = new ConcurrentQueue<OrchestratorLifecycleEvent>();
             public readonly ConcurrentQueue<Exception> Errors = new ConcurrentQueue<Exception>();
         }
         private sealed class FakeAvatar : IAvatarController

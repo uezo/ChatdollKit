@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
@@ -8,6 +9,9 @@ namespace ChatdollKit.SpeechPipeline.VAD.Silero
     public sealed class SileroStreamRecordingSession : SileroRecordingSession
     {
         internal ISpeechRecognizer SpeechRecognizerOverride;
+        internal string RecognitionId;
+        internal bool RecognitionClosed, RecognitionNotified;
+        internal Action RecognitionReset;
         internal UniTask? PendingRecognitionTask;
         internal CancellationTokenSource PendingRecognitionCancellation;
         // Ordinary utterance resets retain these tasks; an explicit audio reset cancels all of them.
@@ -25,6 +29,9 @@ namespace ChatdollKit.SpeechPipeline.VAD.Silero
 
         protected internal override void Reset()
         {
+            RecognitionReset?.Invoke();
+            RecognitionId = Guid.NewGuid().ToString("N");
+            RecognitionClosed = RecognitionNotified = false;
             base.Reset();
             SegmentDuration = SegmentSilenceDuration = 0;
             SegmentFired = false;

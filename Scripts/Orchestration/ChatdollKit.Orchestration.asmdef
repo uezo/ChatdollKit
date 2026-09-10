@@ -5,7 +5,8 @@
         "ChatdollKit",
         "ChatdollKit.Avatar",
         "ChatdollKit.SpeechPipeline",
-        "UniTask"
+        "UniTask",
+        "ChatdollKit.Orchestration.Events"
     ],
     "autoReferenced": true,
     "noEngineReferences": false

@@ -15,7 +15,7 @@ namespace ChatdollKit.SpeechPipeline.Remote
     /// Interrupt/reset end local delivery and replace the connection; the current server protocol
     /// does not guarantee cancellation of work already running on the server.
     /// </summary>
-    public sealed class AIAvatarSpeechPipelineClient : ISpeechPipeline
+    public sealed class AIAvatarSpeechPipelineClient : ISpeechPipeline, ISpeechRecognitionSource
     {
         private sealed class Turn
         {
@@ -23,6 +23,7 @@ namespace ChatdollKit.SpeechPipeline.Remote
             internal readonly SpeechCompletionSource<SpeechPipelineResponse> Completion = new SpeechCompletionSource<SpeechPipelineResponse>();
             internal readonly CancellationTokenSource Deadline = new CancellationTokenSource();
             internal bool Terminal;
+            internal string RecognitionId;
         }
 
         private sealed class Connection
@@ -34,11 +35,13 @@ namespace ChatdollKit.SpeechPipeline.Remote
             internal UniTask Receiving;
             internal bool Connected, Failed;
             internal Turn Turn;
+            internal SpeechRecognitionUpdate Recognition;
         }
 
         private readonly object sync = new object();
         private readonly AIAvatarSpeechPipelineOptions options;
         private readonly Func<IAIAvatarConnection> connectionFactory;
+        private readonly ISpeechPipelineClock clock;
         private readonly SpeechAsyncSemaphore lifecycle = new SpeechAsyncSemaphore(1, 1);
         private readonly SpeechAsyncSemaphore delivery = new SpeechAsyncSemaphore(1, 1);
         private readonly SpeechCallbackGuard callbacks = new SpeechCallbackGuard();
@@ -56,13 +59,16 @@ namespace ChatdollKit.SpeechPipeline.Remote
         public event Action<Exception> Error;
         /// <summary>Optional server info event containing metadata.partial_request_text.</summary>
         public event Action<string> SpeechDetecting;
+        public event Action<SpeechRecognitionUpdate> RecognitionUpdated;
         public event Action Voiced;
 
-        public AIAvatarSpeechPipelineClient(AIAvatarSpeechPipelineOptions options = null, Func<IAIAvatarConnection> connectionFactory = null)
+        public AIAvatarSpeechPipelineClient(AIAvatarSpeechPipelineOptions options = null,
+            Func<IAIAvatarConnection> connectionFactory = null, ISpeechPipelineClock clock = null)
         {
             this.options = (options ?? new AIAvatarSpeechPipelineOptions()).Copy();
             this.options.Validate();
             this.connectionFactory = connectionFactory ?? (() => new NativeAIAvatarConnection());
+            this.clock = clock ?? new SpeechPipelineClock();
             SessionId = this.options.SessionId ?? Guid.NewGuid().ToString("N");
             contextId = this.options.ContextId;
         }
@@ -222,12 +228,58 @@ namespace ChatdollKit.SpeechPipeline.Remote
             if (type == "info")
             {
                 var text = (message["metadata"] as JObject)?["partial_request_text"];
-                if (text?.Type == JTokenType.String) Notify(() => SpeechDetecting?.Invoke((string)text));
+                if (text?.Type == JTokenType.String)
+                {
+                    lock (sync)
+                    {
+                        if (!ReferenceEquals(connection, current) || disposing || current.Failed) return;
+                        current.Recognition = current.Recognition ?? new SpeechRecognitionUpdate
+                        { RecognitionId = Guid.NewGuid().ToString("N"), SessionId = SessionId };
+                        current.Recognition.Kind = SpeechRecognitionUpdateKind.Partial;
+                        current.Recognition.Text = (string)text;
+                        current.Recognition.IsSpeechActive = null;
+                        current.Recognition.AudioDurationSeconds = null;
+                        current.Recognition.ObservedAtSeconds = clock.ElapsedSeconds;
+                        PublishRecognition(current.Recognition);
+                        Notify(() => SpeechDetecting?.Invoke((string)text));
+                    }
+                }
                 return;
             }
-            if (type == "voiced") { Notify(() => Voiced?.Invoke()); return; }
+            if (type == "voiced")
+            {
+                lock (sync)
+                {
+                    if (!ReferenceEquals(connection, current) || disposing || current.Failed) return;
+                    var now = clock.ElapsedSeconds;
+                    if (current.Recognition == null)
+                    {
+                        current.Recognition = new SpeechRecognitionUpdate
+                        {
+                            RecognitionId = Guid.NewGuid().ToString("N"), SessionId = SessionId,
+                            Kind = SpeechRecognitionUpdateKind.Started, IsSpeechActive = true,
+                            AudioDurationSeconds = null, ObservedAtSeconds = now
+                        };
+                        PublishRecognition(current.Recognition);
+                    }
+                    else if (current.Recognition.TransactionId == null)
+                    {
+                        // Activity is a separate fact: retain any recognition hypothesis and its
+                        // kind until the server confirms or cancels that recognition.
+                        PublishRecognition(new SpeechRecognitionUpdate
+                        {
+                            RecognitionId = current.Recognition.RecognitionId, SessionId = SessionId,
+                            Kind = SpeechRecognitionUpdateKind.Activity, IsSpeechActive = true,
+                            AudioDurationSeconds = null, ObservedAtSeconds = now
+                        });
+                    }
+                    Notify(() => Voiced?.Invoke());
+                }
+                return;
+            }
             if (type == "stop")
             {
+                lock (sync) CloseRecognition(current, SpeechRecognitionUpdateKind.Canceled);
                 await PublishAsync(current, AIAvatarProtocol.Response(message, SessionId, null, options.MaxResponseAudioBytes));
                 return;
             }
@@ -235,12 +287,18 @@ namespace ChatdollKit.SpeechPipeline.Remote
             lock (sync) turn = current.Turn;
             if (type == "accepted")
             {
+                lock (sync)
+                {
+                    if (!ReferenceEquals(connection, current) || disposing || current.Failed) return;
+                }
                 if (turn != null) await CompleteTurnAsync(current, turn, Canceled(turn, "superseded"));
                 turn = new Turn();
                 lock (sync)
                 {
                     if (!ReferenceEquals(connection, current) || disposing) return;
                     current.Turn = turn;
+                    turn.RecognitionId = current.Recognition?.RecognitionId;
+                    if (current.Recognition != null) current.Recognition.TransactionId = turn.Id;
                 }
                 WatchTurnAsync(current, turn, turn.Deadline.Token).Forget();
             }
@@ -251,7 +309,22 @@ namespace ChatdollKit.SpeechPipeline.Remote
                 throw new FormatException("AIAvatarKit sent " + type + " without an accepted response turn.");
             }
             var response = AIAvatarProtocol.Response(message, SessionId, turn.Id, options.MaxResponseAudioBytes);
-            if (type == "start" && response.ContextId != null) lock (sync) contextId = response.ContextId;
+            if (type == "start")
+            {
+                lock (sync)
+                {
+                    if (!ReferenceEquals(connection, current) || disposing) return;
+                    if (response.ContextId != null) contextId = response.ContextId;
+                    if (current.Recognition?.RecognitionId == turn.RecognitionId)
+                    {
+                        var recognized = response.Metadata?["recognized_text"];
+                        // request_text can contain timestamps, merged requests or internal instructions.
+                        if (recognized?.Type == JTokenType.String)
+                            CloseRecognition(current, SpeechRecognitionUpdateKind.Confirmed, (string)recognized);
+                        else CloseRecognition(current, SpeechRecognitionUpdateKind.Canceled);
+                    }
+                }
+            }
             if (response.IsTerminal)
             {
                 if (response.Type == SpeechPipelineResponseType.Final && response.Metadata?.Value<bool?>("interrupted") == true)
@@ -263,7 +336,12 @@ namespace ChatdollKit.SpeechPipeline.Remote
 
         private async UniTask CompleteTurnAsync(Connection current, Turn turn, SpeechPipelineResponse response)
         {
-            lock (sync) turn.Terminal = true;
+            lock (sync)
+            {
+                turn.Terminal = true;
+                if (ReferenceEquals(connection, current) && current.Recognition?.RecognitionId == turn.RecognitionId)
+                    CloseRecognition(current, SpeechRecognitionUpdateKind.Canceled);
+            }
             turn.Deadline.Cancel();
             await PublishAsync(current, response);
             lock (sync)
@@ -297,6 +375,7 @@ namespace ChatdollKit.SpeechPipeline.Remote
                 if (!ReferenceEquals(connection, current) || disposing || current.Failed) return;
                 if (expectedTurn != null && (!ReferenceEquals(current.Turn, expectedTurn) || expectedTurn.Terminal)) return;
                 current.Connected = false; current.Failed = true; turn = current.Turn; current.Turn = null;
+                CloseRecognition(current, SpeechRecognitionUpdateKind.Canceled);
             }
             current.Ready.TrySetException(error);
             current.Lifetime.Cancel();
@@ -322,6 +401,7 @@ namespace ChatdollKit.SpeechPipeline.Remote
             {
                 if (ReferenceEquals(connection, current)) connection = null;
                 current.Connected = false; turn = current.Turn; current.Turn = null;
+                CloseRecognition(current, SpeechRecognitionUpdateKind.Canceled);
             }
             current.Ready.TrySetCanceled();
             var failures = new List<Exception>();
@@ -361,6 +441,29 @@ namespace ChatdollKit.SpeechPipeline.Remote
                 }
             }
             finally { delivery.Release(); }
+        }
+
+        // Called under sync so a connection/control boundary cannot overtake a partial notification.
+        private void CloseRecognition(Connection current, SpeechRecognitionUpdateKind kind, string text = null)
+        {
+            var update = current.Recognition;
+            if (update == null) return;
+            current.Recognition = null;
+            update.Kind = kind;
+            if (text != null) update.Text = text;
+            update.IsSpeechActive = null;
+            update.AudioDurationSeconds = null;
+            update.ObservedAtSeconds = clock.ElapsedSeconds;
+            PublishRecognition(update);
+        }
+
+        private void PublishRecognition(SpeechRecognitionUpdate update)
+        {
+            var handlers = RecognitionUpdated;
+            if (handlers == null) return;
+            var snapshot = update.Copy();
+            foreach (Action<SpeechRecognitionUpdate> handler in handlers.GetInvocationList())
+                Notify(() => handler(snapshot.Copy()));
         }
 
         private void Notify(Action notification)

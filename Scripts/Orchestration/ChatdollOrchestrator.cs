@@ -19,9 +19,10 @@ using UnityEngine;
 namespace ChatdollKit.Orchestration
 {
     /// <summary>Unity entry point for one conversation. Configure dependencies before StartAsync.
-    /// Lifecycle methods run on Unity's main thread; notifications are delivered from Update.</summary>
+    /// Lifecycle methods run on Unity's main thread; engine notifications are delivered from Update.
+    /// Run start/stop boundaries are delivered immediately, including when disabled.</summary>
     [DisallowMultipleComponent, AddComponentMenu("ChatdollKit/Orchestration/Chatdoll Orchestrator")]
-    public sealed class ChatdollOrchestrator : MonoBehaviour
+    public sealed partial class ChatdollOrchestrator : MonoBehaviour
     {
         public bool AutoStart;
         [Tooltip("Inspector configuration for the pipeline. A single component on this GameObject is selected automatically. Code injection takes precedence.")]
@@ -52,8 +53,11 @@ namespace ChatdollKit.Orchestration
             }
         }
         public event Action<SpeechPipelineResponse> ResponseReceived;
+        public event Action<OrchestratorResponseEvent> ResponseObserved;
         public event Action<AvatarRequest> PresentationStarted;
         public event Action<AvatarRequest> PresentationCompleted;
+        public event Action<OrchestratorTurnResult> TurnEnded;
+        public event Action<OrchestratorLifecycleEvent> LifecycleChanged;
         public event Action<Exception> Error;
 
         private sealed class Run
@@ -66,10 +70,21 @@ namespace ChatdollKit.Orchestration
             internal int InputSampleRate, SamplesPerMessage;
             internal bool Accepting = true;
             internal bool AppliedAllowBargeIn;
+            internal bool LifecycleStarted, LifecycleStopped;
             internal Action<float[]> SamplesHandler;
             internal Action<SpeechPipelineResponse> ResponseHandler;
+            internal Action<OrchestratorResponseEvent> ObservedHandler;
+            internal Action<OrchestratorPresentationEvent> DispatchedHandler;
             internal Action<AvatarRequest> StartedHandler, CompletedHandler;
+            internal Action<OrchestratorTurnResult> TurnEndedHandler;
+            internal Action<OrchestratorLifecycleEvent> LifecycleHandler;
             internal Action SuppressionHandler;
+            internal AvatarController MessageAvatar;
+            internal Action<AvatarRequest> MessageStartedHandler;
+            internal ISpeechRecognitionSource RecognitionSource;
+            internal Action<SpeechRecognitionUpdate> RecognitionHandler;
+            internal long MessageGeneration;
+            internal readonly string ConversationRunId = Guid.NewGuid().ToString("N");
             internal Action<Exception> ErrorHandler;
         }
 
@@ -82,6 +97,8 @@ namespace ChatdollKit.Orchestration
         private readonly SpeechAsyncSemaphore lifecycle = new SpeechAsyncSemaphore(1, 1);
         private readonly SpeechCallbackGuard lifecycleCallbacks = new SpeechCallbackGuard();
         private readonly ConcurrentQueue<Action> notifications = new ConcurrentQueue<Action>();
+        private readonly Queue<OrchestratorLifecycleEvent> lifecycleNotifications = new Queue<OrchestratorLifecycleEvent>();
+        private bool publishingLifecycle;
         private Run active;
         private IAvatarController avatarOverride;
         private ISpeechPipeline configuredPipeline;
@@ -113,8 +130,10 @@ namespace ChatdollKit.Orchestration
         {
             // Read Inspector changes on the main thread, without running core logic from OnValidate.
             ApplyAllowBargeIn();
+            RefreshConversationState();
             while (notifications.TryDequeue(out var notification))
                 try { notification(); } catch (Exception error) { Report(error); }
+            RefreshConversationState();
         }
 
         /// <summary>Bind a UI Toggle's dynamic bool event here. May also configure the policy before startup.</summary>
@@ -291,6 +310,9 @@ namespace ChatdollKit.Orchestration
                         core.BeforeRequestAsync = (request, token) => DispatchHookAsync(run, beforeRequest, request, token);
                     Attach(run);
                     core.InputEnabled = inputEnabled;
+                    run.LifecycleStarted = true;
+                    PublishLifecycle(new OrchestratorLifecycleEvent(core,
+                        OrchestratorLifecycleKind.Started, core.SessionId, core.Generation));
                 }
                 catch { await StopRunCoreAsync(); throw; }
             }
@@ -347,7 +369,7 @@ namespace ChatdollKit.Orchestration
         private UniTask BeginStopAsync()
         {
             ++version; Cancel(starting);
-            if (active != null) DetachInput(active);
+            if (active != null) { DetachInput(active); NotifyRunStopped(active); }
             return StopCoreAsync();
         }
 
@@ -361,15 +383,45 @@ namespace ChatdollKit.Orchestration
         private void Attach(Run run)
         {
             run.ResponseHandler = response => Post(run, () => Publish(ResponseReceived, response, value => value.Copy()));
+            run.ObservedHandler = observed => Post(run, () =>
+            {
+                UpdateResponseConversation(run, observed);
+                Publish(ResponseObserved, observed, value => value.Copy());
+            });
             run.StartedHandler = request => Post(run, () => Publish(PresentationStarted, request, value => value.Copy()));
+            run.DispatchedHandler = dispatched => Post(run, () =>
+            {
+                if (run.MessageAvatar != null || !IsCurrentConversationRun(run) || dispatched.Generation != run.Core.Generation) return;
+                RefreshConversationState();
+                ChangeConversation(() => conversation.OnPresentationStarted(dispatched.Request, dispatched.TurnOrder, true));
+            });
             run.CompletedHandler = request => Post(run, () => Publish(PresentationCompleted, request, value => value.Copy()));
-            run.ErrorHandler = error => Post(run, () => Report(error));
+            run.TurnEndedHandler = result => Post(run, () =>
+            {
+                UpdateEndedConversation(run, result);
+                Publish(TurnEnded, result, value => value);
+            });
+            run.LifecycleHandler = boundary => Post(run, () =>
+            {
+                RefreshConversationState();
+                PublishLifecycle(boundary);
+            });
+            run.ErrorHandler = error => Post(run, () =>
+            {
+                ChangeConversation(() => conversation.OnError(error));
+                Report(error);
+            });
             run.SuppressionHandler = () => run.Input?.RequestReset();
             run.Core.ResponseReceived += run.ResponseHandler;
+            run.Core.ResponseObserved += run.ObservedHandler;
             run.Core.PresentationStarted += run.StartedHandler;
+            run.Core.PresentationDispatched += run.DispatchedHandler;
             run.Core.PresentationCompleted += run.CompletedHandler;
+            run.Core.TurnEnded += run.TurnEndedHandler;
+            run.Core.LifecycleChanged += run.LifecycleHandler;
             run.Core.Error += run.ErrorHandler;
             run.Core.InputSuppressionChanged += run.SuppressionHandler;
+            AttachConversationSource(run);
             if (run.Microphone != null)
             {
                 run.SamplesHandler = samples => ReceiveSamples(run, samples);
@@ -397,6 +449,7 @@ namespace ChatdollKit.Orchestration
         private void DetachInput(Run run)
         {
             run.Accepting = false;
+            DetachConversationSource(run);
             if (run.Microphone != null) run.Microphone.OnSamplesReceived -= run.SamplesHandler;
             run.Input?.Reset();
         }
@@ -406,6 +459,7 @@ namespace ChatdollKit.Orchestration
             var run = active; active = null;
             if (run == null) return;
             DetachInput(run);
+            NotifyRunStopped(run);
             var errors = new List<Exception>();
             try
             {
@@ -421,8 +475,12 @@ namespace ChatdollKit.Orchestration
             finally
             {
                 run.Core.ResponseReceived -= run.ResponseHandler;
+                run.Core.ResponseObserved -= run.ObservedHandler;
                 run.Core.PresentationStarted -= run.StartedHandler;
+                run.Core.PresentationDispatched -= run.DispatchedHandler;
                 run.Core.PresentationCompleted -= run.CompletedHandler;
+                run.Core.TurnEnded -= run.TurnEndedHandler;
+                run.Core.LifecycleChanged -= run.LifecycleHandler;
                 run.Core.Error -= run.ErrorHandler;
                 run.Core.InputSuppressionChanged -= run.SuppressionHandler;
                 while (notifications.TryDequeue(out _)) { }
@@ -430,12 +488,51 @@ namespace ChatdollKit.Orchestration
             if (errors.Count > 0) throw new AggregateException(errors);
         }
 
+        private void NotifyRunStopped(Run run)
+        {
+            if (!run.LifecycleStarted || run.LifecycleStopped) return;
+            run.LifecycleStopped = true;
+            // Update will no longer run after OnDisable. Deliver this boundary on the lifecycle caller's
+            // main thread, before old run notifications are discarded by shutdown.
+            PublishLifecycle(new OrchestratorLifecycleEvent(run.Core,
+                OrchestratorLifecycleKind.Stopped, run.Core.SessionId, run.Core.Generation));
+        }
+
+        private void PublishLifecycle(OrchestratorLifecycleEvent boundary)
+        {
+            lifecycleNotifications.Enqueue(boundary);
+            if (publishingLifecycle) return;
+            publishingLifecycle = true;
+            try
+            {
+                // A Started subscriber may synchronously stop/disable the run. Finish notifying Started
+                // to every subscriber before delivering that nested Stopped boundary on this same call stack.
+                while (lifecycleNotifications.Count > 0)
+                {
+                    var next = lifecycleNotifications.Dequeue();
+                    UpdateConversationLifecycle(next);
+                    Publish(LifecycleChanged, next, value => value);
+                }
+            }
+            finally { publishingLifecycle = false; }
+        }
+
         public UniTask<SpeechPipelineResponse> SendTextAsync(string text, CancellationToken cancellationToken = default) =>
             GetRunning().SendTextAsync(text, cancellationToken);
         public UniTask<SpeechPipelineResponse> InvokeAsync(SpeechPipelineRequest request, CancellationToken cancellationToken = default) =>
             GetRunning().InvokeAsync(request, cancellationToken);
-        public UniTask InterruptAsync(CancellationToken cancellationToken = default) => GetRunning().InterruptAsync(cancellationToken);
-        public UniTask ResetAsync(string contextId = null, CancellationToken cancellationToken = default) => GetRunning().ResetAsync(contextId, cancellationToken);
+        public UniTask InterruptAsync(CancellationToken cancellationToken = default)
+        {
+            var operation = GetRunning().InterruptAsync(cancellationToken);
+            RefreshConversationState();
+            return operation;
+        }
+        public UniTask ResetAsync(string contextId = null, CancellationToken cancellationToken = default)
+        {
+            var operation = GetRunning().ResetAsync(contextId, cancellationToken);
+            RefreshConversationState();
+            return operation;
+        }
         public UniTask DrainAsync() => GetRunning().DrainAsync();
 
         private ChatdollOrchestratorEngine GetRunning()
@@ -480,10 +577,11 @@ namespace ChatdollKit.Orchestration
         private UniTask DisposeCoreDetachedAsync(ChatdollOrchestratorEngine core)
             => SpeechAsync.Run(core.DisposeAsync);
         private void Post(Run run, Action notification) => notifications.Enqueue(() => { if (ReferenceEquals(active, run)) notification(); });
-        private static void Publish<T>(Action<T> handlers, T value, Func<T, T> copy)
+        private void Publish<T>(Action<T> handlers, T value, Func<T, T> copy)
         {
             if (handlers == null) return;
-            foreach (Action<T> handler in handlers.GetInvocationList()) handler(copy(value));
+            foreach (Action<T> handler in handlers.GetInvocationList())
+                try { handler(copy(value)); } catch (Exception error) { Report(error); }
         }
         private void Cancel(CancellationTokenSource cancellation)
         { try { cancellation?.Cancel(); } catch (ObjectDisposedException) { } catch (Exception error) { Report(error); } }

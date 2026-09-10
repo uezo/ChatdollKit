@@ -16,11 +16,12 @@ namespace ChatdollKit.SpeechPipeline.VAD.Silero
     /// Silero VAD with cumulative batch recognition at short pauses. Partial text
     /// replaces the previous hypothesis; this is not a streaming STT transport.
     /// </summary>
-    public sealed class SileroStreamSpeechDetectorEngine : SileroSpeechDetectorEngine
+    public sealed class SileroStreamSpeechDetectorEngine : SileroSpeechDetectorEngine, ISpeechRecognitionSource
     {
         public ISpeechRecognizer SpeechRecognizer { get; }
         public event Func<string, SileroStreamRecordingSession, UniTask> SpeechDetecting;
         public event Func<Exception, string, UniTask> SpeechRecognitionError;
+        public event Action<SpeechRecognitionUpdate> RecognitionUpdated;
         /// <summary>Returns a nonempty rejection reason to discard a final transcript.</summary>
         public Func<string, string> ValidateRecognizedText { get; set; }
 
@@ -51,8 +52,10 @@ namespace ChatdollKit.SpeechPipeline.VAD.Silero
         protected override RecordingSession CreateSession(string sessionId)
         {
             var options = (SileroSpeechDetectorOptions)Options;
-            return new SileroStreamRecordingSession(sessionId, options.PrerollBufferCount,
+            var session = new SileroStreamRecordingSession(sessionId, options.PrerollBufferCount,
                 new SileroVadIterator(GetModel(sessionId), options.SampleRate, options.SpeechProbabilityThreshold));
+            session.RecognitionReset = () => CloseRecognition(session, SpeechRecognitionUpdateKind.Canceled);
+            return session;
         }
 
         public UniTask SetSpeechRecognizerAsync(string sessionId, ISpeechRecognizer speechRecognizer,
@@ -96,6 +99,44 @@ namespace ChatdollKit.SpeechPipeline.VAD.Silero
             lock (session.SyncRoot) return session.SpeechRecognizerOverride ?? SpeechRecognizer;
         }
 
+        protected override async UniTask<bool> ProcessSamplesCoreAsync(byte[] samples,
+            RecordingSession recordingSession, CancellationToken cancellationToken)
+        {
+            var session = (SileroStreamRecordingSession)recordingSession;
+            bool wasRecording;
+            lock (session.SyncRoot) wasRecording = session.IsRecording;
+            bool recording;
+            try { recording = await base.ProcessSamplesCoreAsync(samples, session, cancellationToken); }
+            catch
+            {
+                lock (session.SyncRoot) CloseRecognition(session, SpeechRecognitionUpdateKind.Canceled);
+                throw;
+            }
+            if (!wasRecording && recording)
+            {
+                // The base handles the onset separately from OnRecordingChunkAsync.
+                lock (session.SyncRoot)
+                {
+                    session.RecognitionNotified = true;
+                    PublishSpeechActivity(session, SpeechRecognitionUpdateKind.Started, true, SampleDuration(samples));
+                }
+            }
+            return recording;
+        }
+
+        // Called under the session lock. These are audio facts; consumers decide when
+        // to display them. Partial recognition does not end recording activity.
+        private void PublishSpeechActivity(SileroStreamRecordingSession session,
+            SpeechRecognitionUpdateKind kind, bool voiced, double duration)
+        {
+            if (session.RecognitionClosed || session.RecognitionId == null) return;
+            PublishRecognition(new SpeechRecognitionUpdate
+            {
+                RecognitionId = session.RecognitionId, SessionId = session.SessionId,
+                Kind = kind, IsSpeechActive = voiced, AudioDurationSeconds = duration
+            });
+        }
+
         protected override UniTask OnRecordingChunkAsync(SileroRecordingSession recordingSession,
             byte[] samples, bool voiced, double duration, CancellationToken cancellationToken)
         {
@@ -103,6 +144,7 @@ namespace ChatdollKit.SpeechPipeline.VAD.Silero
             var session = (SileroStreamRecordingSession)recordingSession;
             lock (session.SyncRoot)
             {
+                PublishSpeechActivity(session, SpeechRecognitionUpdateKind.Activity, voiced, duration);
                 session.SegmentDuration += duration;
                 if (voiced)
                 {
@@ -118,18 +160,19 @@ namespace ChatdollKit.SpeechPipeline.VAD.Silero
                     session.SegmentFired = true;
                     var audio = session.Buffer.ToArray();
                     var sequence = ++session.RecognitionSequence;
+                    var recognitionId = session.RecognitionId;
                     var cancellation = CancellationTokenSource.CreateLinkedTokenSource(LifetimeToken);
                     session.RecognitionCancellations.Add(cancellation);
                     session.PendingRecognitionCancellation = cancellation;
                     session.PendingRecognitionTask = TrackBackground(
-                        () => RunSegmentRecognitionAsync(session, audio, sequence, cancellation));
+                        () => RunSegmentRecognitionAsync(session, audio, sequence, recognitionId, cancellation));
                 }
             }
             return UniTask.CompletedTask;
         }
 
         private async UniTask RunSegmentRecognitionAsync(SileroStreamRecordingSession session,
-            byte[] audio, int sequence, CancellationTokenSource cancellation)
+            byte[] audio, int sequence, string recognitionId, CancellationTokenSource cancellation)
         {
             var token = cancellation.Token;
             try
@@ -144,6 +187,19 @@ namespace ChatdollKit.SpeechPipeline.VAD.Silero
                     // This retains AIAvatarKit's documented late-result behavior.
                     if (string.IsNullOrEmpty(text) || sequence != session.RecognitionSequence) return;
                     session.LastRecognizedText = text;
+                }
+                lock (session.SyncRoot)
+                {
+                    // Keep legacy late-result behavior above, but never revive an old common recognition.
+                    if (recognitionId == session.RecognitionId && !session.RecognitionClosed && !token.IsCancellationRequested)
+                    {
+                        session.RecognitionNotified = true;
+                        PublishRecognition(new SpeechRecognitionUpdate
+                        {
+                            RecognitionId = recognitionId, SessionId = session.SessionId,
+                            Text = text, Kind = SpeechRecognitionUpdateKind.Partial
+                        });
+                    }
                 }
                 var handlers = SpeechDetecting;
                 if (handlers != null)
@@ -269,8 +325,32 @@ namespace ChatdollKit.SpeechPipeline.VAD.Silero
             SpeechDetectionResult detection;
             lock (session.SyncRoot)
                 detection = new SpeechDetectionResult(session.Buffer.ToArray(), finalText,
-                    BuildVadPerformanceMetadata(session), recordedDuration, session.SessionId);
+                    BuildVadPerformanceMetadata(session), recordedDuration, session.SessionId, session.RecognitionId);
+            lock (session.SyncRoot) CloseRecognition(session, SpeechRecognitionUpdateKind.Confirmed, finalText);
             PublishSpeechDetected(detection);
+        }
+
+        private void CloseRecognition(SileroStreamRecordingSession session, SpeechRecognitionUpdateKind kind, string text = null)
+        {
+            if (session.RecognitionClosed || session.RecognitionId == null) return;
+            session.RecognitionClosed = true;
+            if (kind == SpeechRecognitionUpdateKind.Canceled && !session.RecognitionNotified) return;
+            PublishRecognition(new SpeechRecognitionUpdate
+            {
+                RecognitionId = session.RecognitionId, SessionId = session.SessionId,
+                Text = text ?? session.LastRecognizedText, Kind = kind
+            });
+        }
+
+        private void PublishRecognition(SpeechRecognitionUpdate update)
+        {
+            var handlers = RecognitionUpdated;
+            if (handlers == null) return;
+            var snapshot = update.Copy();
+            snapshot.ObservedAtSeconds = Clock.ElapsedSeconds;
+            foreach (Action<SpeechRecognitionUpdate> handler in handlers.GetInvocationList())
+                try { InvokeExtension(() => { handler(snapshot.Copy()); return true; }); }
+                catch (Exception error) { ReportError(error); }
         }
 
         protected override void ResetSessionAudioStateCore(RecordingSession recordingSession, bool clearPreroll)

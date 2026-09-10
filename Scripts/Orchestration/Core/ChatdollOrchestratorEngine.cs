@@ -20,8 +20,10 @@ namespace ChatdollKit.Orchestration
         private sealed class Turn
         {
             internal string Id;
-            internal long Order;
-            internal bool Started, Terminal, Stopped, BlockInput;
+            internal string SessionId, ContextId;
+            internal long Order, Generation;
+            internal bool Started, Terminal, Stopped, BlockInput, Ended;
+            internal OrchestratorTurnEndReason EndReason;
             internal int Pending;
             internal readonly CancellationTokenSource Source = new CancellationTokenSource();
         }
@@ -60,23 +62,70 @@ namespace ChatdollKit.Orchestration
         private CancellationTokenSource activeAudio;
         private bool inputEnabled = true, inputFaulted, inputSuppressed;
         private bool controlling, disposing, notificationsClosing;
-        private long nextStartOrder;
+        private long nextStartOrder, generation;
         private string lastStartedId;
         private UniTask controlTask;
         private UniTask? disposalTask;
         private UniTask lastSubmission = UniTask.CompletedTask;
 
         public event Action<SpeechPipelineResponse> ResponseReceived;
+        /// <summary>ResponseReceived with its originating run and generation, safe to retain across controls.
+        /// Delivered immediately after ResponseReceived for the same response.</summary>
+        public event Action<OrchestratorResponseEvent> ResponseObserved;
         public event Action<AvatarRequest> PresentationStarted;
+        internal event Action<OrchestratorPresentationEvent> PresentationDispatched;
         public event Action<AvatarRequest> PresentationCompleted;
+        /// <summary>Raised once when a terminal or stopped turn has no remaining presentations.
+        /// The response that terminates the turn, when present, is notified first.</summary>
+        public event Action<OrchestratorTurnResult> TurnEnded;
+        /// <summary>Accepted interrupt/reset boundaries, including when no turn is active.</summary>
+        public event Action<OrchestratorLifecycleEvent> LifecycleChanged;
         public event Action<Exception> Error;
         public event Action InputSuppressionChanged;
 
         /// <summary>Optional application customization before submitting a text/image/audio request.</summary>
         public Func<SpeechPipelineRequest, CancellationToken, UniTask> BeforeRequestAsync { get; set; }
         public string SessionId => pipeline.SessionId;
+        /// <summary>The actual presentation target selected for this run, including code injection.</summary>
+        public IAvatarController Avatar => avatar;
+        /// <summary>Increments when an interrupt/reset is accepted. A new engine begins at zero.</summary>
+        public long Generation => Interlocked.Read(ref generation);
+        /// <summary>Returns the original start order for an active or retained presentation cutoff.</summary>
+        public bool TryGetTurnOrder(string transactionId, out long order)
+        {
+            lock (sync)
+            {
+                if (transactionId != null)
+                {
+                    if (turns.TryGetValue(transactionId, out var turn) && turn.Started)
+                    { order = turn.Order; return true; }
+                    if (startOrders.TryGetValue(transactionId, out order)) return true;
+                }
+                order = 0; return false;
+            }
+        }
+        /// <summary>Identifies an active presentation's originating generation and start order.
+        /// A terminal turn may still have pending playback; stopped turns and earlier generations are rejected.</summary>
+        public bool TryGetActivePresentationContext(string transactionId, out long turnGeneration, out long turnOrder)
+        {
+            lock (sync)
+            {
+                if (transactionId != null && turns.TryGetValue(transactionId, out var turn) &&
+                    turn.Started && !turn.Stopped && !turn.Ended && turn.Pending > 0 && turn.Generation == generation)
+                {
+                    turnGeneration = turn.Generation; turnOrder = turn.Order; return true;
+                }
+                turnGeneration = 0; turnOrder = 0; return false;
+            }
+        }
+        /// <summary>Includes accepted requests, generation, and queued or active playback.</summary>
+        public bool HasActiveTurns { get { lock (sync) return turns.Values.Any(turn => !turn.Ended && !turn.Stopped); } }
         public bool IsPresenting { get { lock (sync) return playing?.Request != null; } }
         public bool IsInputSuppressed { get { lock (sync) return inputSuppressed; } }
+        // Recognition callbacks can run while a provider holds its lock. Never acquire the core
+        // lock from that path: request submission may hold it while calling back into the provider.
+        internal bool AdmitsRecognition => Volatile.Read(ref inputEnabled) && !Volatile.Read(ref controlling) &&
+            !Volatile.Read(ref disposing) && !Volatile.Read(ref inputFaulted) && !Volatile.Read(ref inputSuppressed);
         /// <summary>Controls forwarding only. Use InterruptAsync to also discard already submitted VAD/recognition work.</summary>
         public bool InputEnabled
         {
@@ -212,16 +261,23 @@ namespace ChatdollKit.Orchestration
             if (response == null || (response.SessionId != null && response.SessionId != SessionId)) return UniTask.CompletedTask;
             var copy = response.Copy();
             var cancel = new List<CancellationTokenSource>();
+            var ended = new List<OrchestratorTurnResult>();
             lock (sync)
             {
                 if (disposing || controlling) return UniTask.CompletedTask;
                 Turn turn = null;
                 if (copy.TransactionId != null) turns.TryGetValue(copy.TransactionId, out turn);
+                if (turn != null && copy.ContextId != null) turn.ContextId = copy.ContextId;
                 switch (copy.Type)
                 {
                     case SpeechPipelineResponseType.Accepted:
                         if (string.IsNullOrEmpty(copy.TransactionId) || turn != null) return UniTask.CompletedTask;
-                        turn = new Turn { Id = copy.TransactionId, BlockInput = copy.Metadata?.Value<bool?>("block_barge_in") == true };
+                        turn = new Turn
+                        {
+                            Id = copy.TransactionId, SessionId = copy.SessionId ?? SessionId,
+                            ContextId = copy.ContextId, Generation = generation,
+                            BlockInput = copy.Metadata?.Value<bool?>("block_barge_in") == true
+                        };
                         turns.Add(turn.Id, turn);
                         break;
                     case SpeechPipelineResponseType.Start:
@@ -233,7 +289,7 @@ namespace ChatdollKit.Orchestration
                         if (turn == null || !turn.Started || turn.Terminal || turn.Stopped) return UniTask.CompletedTask;
                         if (playbackQueue.Count(item => item.Request != null) >= options.MaxPendingPresentations)
                         {
-                            StopTurnsLocked(item => ReferenceEquals(item, turn), cancel);
+                            StopTurnsLocked(item => ReferenceEquals(item, turn), cancel, OrchestratorTurnEndReason.Failed, ended);
                             ReportErrorLocked(new InvalidOperationException("Avatar presentation queue overflowed. The affected turn was discarded."));
                             break;
                         }
@@ -245,7 +301,7 @@ namespace ChatdollKit.Orchestration
                         }
                         catch (Exception error)
                         {
-                            StopTurnsLocked(item => ReferenceEquals(item, turn), cancel);
+                            StopTurnsLocked(item => ReferenceEquals(item, turn), cancel, OrchestratorTurnEndReason.Failed, ended);
                             ReportErrorLocked(error);
                         }
                         break;
@@ -253,34 +309,48 @@ namespace ChatdollKit.Orchestration
                         long cutoff;
                         if (copy.TransactionId == null) cutoff = nextStartOrder;
                         else if (!startOrders.TryGetValue(copy.TransactionId, out cutoff)) return UniTask.CompletedTask;
-                        StopTurnsLocked(item => item.Started && item.Order <= cutoff, cancel);
+                        StopTurnsLocked(item => item.Started && item.Order <= cutoff, cancel, ended: ended);
                         break;
                     case SpeechPipelineResponseType.Canceled:
                     case SpeechPipelineResponseType.Error:
                         if (turn != null)
                         {
                             turn.Terminal = true;
-                            StopTurnsLocked(item => ReferenceEquals(item, turn), cancel);
+                            StopTurnsLocked(item => ReferenceEquals(item, turn), cancel,
+                                copy.Type == SpeechPipelineResponseType.Error ? OrchestratorTurnEndReason.Failed : OrchestratorTurnEndReason.Canceled, ended);
                         }
                         break;
                     case SpeechPipelineResponseType.Final:
-                        if (turn != null) { turn.Terminal = true; CleanupTurnLocked(turn); }
+                        if (turn != null) { turn.Terminal = true; CleanupTurnLocked(turn, ended); }
                         break;
                     case SpeechPipelineResponseType.ToolCall:
                         if (turn == null || turn.Stopped || turn.Terminal) return UniTask.CompletedTask;
                         break;
                 }
                 UpdateSuppressionLocked();
-                NotifyLocked(() => Publish(ResponseReceived, copy, item => item.Copy()));
+                var observed = new OrchestratorResponseEvent(this, turn?.Generation ?? generation, copy, turn?.Order ?? 0);
+                NotifyLocked(() =>
+                {
+                    Publish(ResponseReceived, copy, item => item.Copy());
+                    Publish(ResponseObserved, observed, item => item.Copy());
+                });
+                // Even a text-only terminal response must be delivered before its turn end.
+                foreach (var result in ended) NotifyTurnEndedLocked(result);
             }
             foreach (var source in cancel) Cancel(source);
             return UniTask.CompletedTask;
         }
 
-        private void StopTurnsLocked(Func<Turn, bool> predicate, List<CancellationTokenSource> cancel)
+        private void StopTurnsLocked(Func<Turn, bool> predicate, List<CancellationTokenSource> cancel,
+            OrchestratorTurnEndReason reason = OrchestratorTurnEndReason.Canceled, List<OrchestratorTurnResult> ended = null)
         {
             var affected = turns.Values.Where(predicate).ToArray();
-            foreach (var turn in affected) { turn.Stopped = true; cancel.Add(turn.Source); }
+            foreach (var turn in affected)
+            {
+                turn.Stopped = true;
+                if (turn.EndReason != OrchestratorTurnEndReason.Failed) turn.EndReason = reason;
+                cancel.Add(turn.Source);
+            }
             for (var node = playbackQueue.First; node != null;)
             {
                 var next = node.Next;
@@ -293,7 +363,7 @@ namespace ChatdollKit.Orchestration
             // An old stop must not stop a newer presentation. The fence precedes all remaining queued work.
             if (playing == null || (playing.Turn != null && predicate(playing.Turn)))
                 EnqueuePlaybackLocked(new Playback { StopCompletion = CompletionSource<bool>() }, first: true);
-            foreach (var turn in affected) CleanupTurnLocked(turn);
+            foreach (var turn in affected) CleanupTurnLocked(turn, ended);
         }
 
         private void EnqueuePlaybackLocked(Playback item, bool first = false)
@@ -328,7 +398,15 @@ namespace ChatdollKit.Orchestration
                     {
                         var token = item.Turn.Source.Token;
                         token.ThrowIfCancellationRequested();
-                        lock (sync) NotifyLocked(() => Publish(PresentationStarted, item.Request, request => request.Copy()));
+                        lock (sync)
+                        {
+                            var dispatched = new OrchestratorPresentationEvent(this, item.Turn.Generation, item.Turn.Order, item.Request);
+                            NotifyLocked(() =>
+                            {
+                                Publish(PresentationStarted, item.Request, request => request.Copy());
+                                Publish(PresentationDispatched, dispatched, value => value.Copy());
+                            });
+                        }
                         await avatar.PresentAsync(item.Request.Copy(), token);
                         token.ThrowIfCancellationRequested();
                         lock (sync) NotifyLocked(() => Publish(PresentationCompleted, item.Request, request => request.Copy()));
@@ -342,7 +420,7 @@ namespace ChatdollKit.Orchestration
                     if (item.Turn != null)
                     {
                         var cancel = new List<CancellationTokenSource>();
-                        lock (sync) StopTurnsLocked(turn => ReferenceEquals(turn, item.Turn), cancel);
+                        lock (sync) StopTurnsLocked(turn => ReferenceEquals(turn, item.Turn), cancel, OrchestratorTurnEndReason.Failed);
                         foreach (var source in cancel) Cancel(source);
                     }
                 }
@@ -403,6 +481,10 @@ namespace ChatdollKit.Orchestration
             lock (sync)
             {
                 CheckAvailable(); controlling = true;
+                var boundary = new OrchestratorLifecycleEvent(this,
+                    reset ? OrchestratorLifecycleKind.Reset : OrchestratorLifecycleKind.Interrupted,
+                    SessionId, Interlocked.Increment(ref generation), contextId);
+                NotifyLocked(() => Publish(LifecycleChanged, boundary, value => value));
                 completion = CompletionSource<bool>(); controlTask = completion.Task;
                 cancel = invocations.Select(item => item.Source).ToList();
                 if (activeAudio != null) cancel.Add(activeAudio);
@@ -526,11 +608,14 @@ namespace ChatdollKit.Orchestration
             if (failures.Count == 0) completion.TrySetResult(true); else completion.TrySetException(new AggregateException(failures));
         }
 
-        private void CleanupTurnLocked(Turn turn)
+        private void CleanupTurnLocked(Turn turn, List<OrchestratorTurnResult> ended = null)
         {
-            if (turn.Pending == 0 && (turn.Terminal || turn.Stopped))
+            if (!turn.Ended && turn.Pending == 0 && (turn.Terminal || turn.Stopped))
             {
+                turn.Ended = true;
                 turns.Remove(turn.Id); turn.Source.Dispose();
+                var result = new OrchestratorTurnResult(this, turn.SessionId, turn.ContextId, turn.Id, turn.Generation, turn.EndReason);
+                if (ended != null) ended.Add(result); else NotifyTurnEndedLocked(result);
             }
             // Retain stopped-generation cutoffs while any earlier audio still exists, including after Final.
             var pending = turns.Values.Where(item => item.Started && item.Pending > 0).Select(item => item.Order);
@@ -538,6 +623,9 @@ namespace ChatdollKit.Orchestration
             foreach (var id in startOrders.Where(item => item.Value < minimum && item.Key != lastStartedId).Select(item => item.Key).ToArray())
                 startOrders.Remove(id);
         }
+
+        private void NotifyTurnEndedLocked(OrchestratorTurnResult result) =>
+            NotifyLocked(() => Publish(TurnEnded, result, value => value));
 
         private void UpdateSuppressionLocked()
         {

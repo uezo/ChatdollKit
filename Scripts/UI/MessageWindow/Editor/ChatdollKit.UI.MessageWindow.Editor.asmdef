@@ -1,0 +1,11 @@
+{
+    "name": "ChatdollKit.UI.MessageWindow.Editor",
+    "references": [
+        "ChatdollKit.UI.MessageWindow",
+        "ChatdollKit.Orchestration.Events"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "autoReferenced": true
+}

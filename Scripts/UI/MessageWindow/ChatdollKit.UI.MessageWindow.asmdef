@@ -1,0 +1,10 @@
+{
+    "name": "ChatdollKit.UI.MessageWindow",
+    "rootNamespace": "ChatdollKit.UI.MessageWindow",
+    "references": [
+        "UnityEngine.UI",
+        "ChatdollKit.Orchestration.Events"
+    ],
+    "autoReferenced": true,
+    "noEngineReferences": false
+}

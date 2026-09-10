@@ -1,0 +1,15 @@
+{
+    "name": "ChatdollKit.UI.ConversationControls",
+    "rootNamespace": "ChatdollKit.UI.ConversationControls",
+    "references": [
+        "ChatdollKit",
+        "ChatdollKit.Orchestration",
+        "ChatdollKit.Orchestration.Events",
+        "ChatdollKit.Avatar",
+        "ChatdollKit.SpeechPipeline",
+        "UniTask",
+        "UnityEngine.UI"
+    ],
+    "autoReferenced": true,
+    "noEngineReferences": false
+}

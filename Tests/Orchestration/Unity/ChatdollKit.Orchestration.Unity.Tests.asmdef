@@ -5,7 +5,12 @@
         "ChatdollKit.Avatar",
         "ChatdollKit.Orchestration",
         "ChatdollKit.SpeechPipeline",
-        "UniTask"
+        "ChatdollKit.UI.MessageWindow",
+        "UniTask",
+        "UnityEngine.UI",
+        "ChatdollKit.Orchestration.Events",
+        "ChatdollKit.UI.MessageWindow.Editor",
+        "ChatdollKit.UI.ConversationControls"
     ],
     "includePlatforms": [
         "Editor"

@@ -39,13 +39,15 @@ namespace ChatdollKit.SpeechPipeline.VAD
         /// <summary>Excludes pre-roll and, on silence completion, trailing silence. Audio includes both.</summary>
         public double RecordedDuration { get; }
         public string SessionId { get; }
-        public SpeechDetectionResult(byte[] audio, string text, IReadOnlyDictionary<string, object> metadata, double recordedDuration, string sessionId)
+        public string RecognitionId { get; }
+        public SpeechDetectionResult(byte[] audio, string text, IReadOnlyDictionary<string, object> metadata, double recordedDuration, string sessionId, string recognitionId = null)
         {
             Audio = audio;
             Text = text;
             Metadata = metadata;
             RecordedDuration = recordedDuration;
             SessionId = sessionId;
+            RecognitionId = recognitionId;
         }
     }
 

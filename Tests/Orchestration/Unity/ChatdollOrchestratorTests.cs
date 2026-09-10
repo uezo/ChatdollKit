@@ -79,6 +79,102 @@ namespace ChatdollKit.Tests.Orchestration.Unity
         }
 
         [UnityTest]
+        public IEnumerator StoppingFromStartedObserverPreservesLifecycleOrderForLaterObservers()
+        {
+            orchestrator.ConfigurePipeline(new FakePipeline());
+            var boundaries = new List<OrchestratorLifecycleKind>();
+            UniTask? stop = null;
+            orchestrator.LifecycleChanged += boundary =>
+            {
+                if (boundary.Kind == OrchestratorLifecycleKind.Started) stop = orchestrator.StopAsync();
+            };
+            orchestrator.LifecycleChanged += boundary => boundaries.Add(boundary.Kind);
+            yield return Wait(orchestrator.StartAsync());
+            Assert.That(boundaries, Is.EqualTo(new[] { OrchestratorLifecycleKind.Started, OrchestratorLifecycleKind.Stopped }),
+                "A nested stop must reach later subscribers after their Started notification, without waiting for Update.");
+            Assert.That(stop.HasValue, Is.True);
+            yield return Wait(stop.Value);
+            Assert.That(orchestrator.IsRunning, Is.False);
+            Assert.That(boundaries.Count, Is.EqualTo(2));
+        }
+
+        [UnityTest]
+        public IEnumerator LifecycleBoundariesReachMainThreadAndDisableDeliversStopImmediately()
+        {
+            var pipeline = new FakePipeline();
+            orchestrator.ConfigurePipeline(pipeline);
+            var boundaries = new List<OrchestratorLifecycleEvent>();
+            var threads = new List<int>();
+            var mainThread = Thread.CurrentThread.ManagedThreadId;
+            orchestrator.LifecycleChanged += boundary =>
+            { boundaries.Add(boundary); threads.Add(Thread.CurrentThread.ManagedThreadId); };
+            yield return Wait(orchestrator.StartAsync());
+            var first = orchestrator.Orchestrator;
+            Assert.That(boundaries.Count, Is.EqualTo(1));
+            Assert.That(boundaries[0].Kind, Is.EqualTo(OrchestratorLifecycleKind.Started));
+            yield return Wait(orchestrator.InterruptAsync());
+            yield return Wait(orchestrator.DrainAsync());
+            yield return null;
+            Assert.That(boundaries[1].Kind, Is.EqualTo(OrchestratorLifecycleKind.Interrupted));
+            Assert.That(boundaries[1].Generation, Is.EqualTo(1));
+            orchestrator.enabled = false;
+            Assert.That(boundaries.Count, Is.EqualTo(3), "OnDisable must publish stop without requiring another Update.");
+            Assert.That(boundaries[2].Kind, Is.EqualTo(OrchestratorLifecycleKind.Stopped));
+            Assert.That(boundaries[2].Source, Is.SameAs(first));
+            yield return Wait(orchestrator.StopAsync());
+            Assert.That(boundaries.Count, Is.EqualTo(3));
+            orchestrator.enabled = true;
+            yield return Wait(orchestrator.StartAsync());
+            Assert.That(boundaries.Count, Is.EqualTo(4));
+            Assert.That(boundaries[3].Kind, Is.EqualTo(OrchestratorLifecycleKind.Started));
+            Assert.That(boundaries[3].Source, Is.Not.SameAs(first));
+            Assert.That(threads, Is.All.EqualTo(mainThread));
+        }
+
+        [UnityTest]
+        public IEnumerator TurnEndIsForwardedAfterFinalOnMainThreadAndObserversAreIsolated()
+        {
+            var pipeline = new FakePipeline();
+            orchestrator.ConfigurePipeline(pipeline);
+            var order = new List<string>();
+            var threads = new List<int>();
+            var errors = new List<Exception>();
+            var failure = new InvalidOperationException("observer failed");
+            var mainThread = Thread.CurrentThread.ManagedThreadId;
+            orchestrator.Error += errors.Add;
+            orchestrator.LifecycleChanged += boundary => throw failure;
+            orchestrator.LifecycleChanged += boundary => order.Add(boundary.Kind.ToString());
+            orchestrator.ResponseReceived += response =>
+            { if (response.Type == SpeechPipelineResponseType.Final) order.Add("Final"); };
+            orchestrator.ResponseObserved += observed =>
+            {
+                if (observed.Response.Type != SpeechPipelineResponseType.Final) return;
+                Assert.That(observed.Source, Is.SameAs(orchestrator.Orchestrator));
+                Assert.That(observed.Generation, Is.Zero);
+                order.Add("Observed"); threads.Add(Thread.CurrentThread.ManagedThreadId);
+            };
+            orchestrator.TurnEnded += result => throw failure;
+            orchestrator.TurnEnded += result =>
+            {
+                Assert.That(result.Reason, Is.EqualTo(OrchestratorTurnEndReason.Completed));
+                Assert.That(result.Source, Is.SameAs(orchestrator.Orchestrator));
+                order.Add("Ended"); threads.Add(Thread.CurrentThread.ManagedThreadId);
+            };
+            yield return Wait(orchestrator.StartAsync());
+            yield return Wait(Background(async () =>
+            {
+                foreach (var type in new[] { SpeechPipelineResponseType.Accepted, SpeechPipelineResponseType.Start, SpeechPipelineResponseType.Final })
+                    await pipeline.EmitAsync(new SpeechPipelineResponse
+                    { Type = type, SessionId = "default", TransactionId = "text-only" });
+            }));
+            yield return Wait(orchestrator.DrainAsync());
+            yield return null;
+            Assert.That(order, Is.EqualTo(new[] { "Started", "Final", "Observed", "Ended" }));
+            Assert.That(threads, Is.EqualTo(new[] { mainThread, mainThread }));
+            Assert.That(errors, Is.EqualTo(new[] { failure, failure }));
+        }
+
+        [UnityTest]
         public IEnumerator BorrowedPipelineCanBeReusedAfterStop()
         {
             var pipeline = new FakePipeline();

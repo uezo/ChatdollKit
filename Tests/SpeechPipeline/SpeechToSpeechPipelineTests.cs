@@ -11,6 +11,7 @@ using ChatdollKit.SpeechPipeline;
 using ChatdollKit.SpeechPipeline.LLM;
 using ChatdollKit.SpeechPipeline.STT;
 using ChatdollKit.SpeechPipeline.TTS;
+using ChatdollKit.SpeechPipeline.VAD;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 
@@ -25,13 +26,13 @@ namespace ChatdollKit.Tests.SpeechPipeline
         private static SpeechPipelineRequest Request(string text = "hello", string id = null) => new SpeechPipelineRequest
         { Text = text, TransactionId = id ?? Guid.NewGuid().ToString("N"), UserId = "user", Channel = "voice" };
 
-        private Rig Create(SpeechPipelineOptions options = null, bool ownsComponents = false)
+        private Rig Create(SpeechPipelineOptions options = null, bool ownsComponents = false, ISpeechDetector vad = null)
         {
             options = options ?? new SpeechPipelineOptions();
             options.SessionId = "session";
             options.ContextId = options.ContextId ?? "context";
             var rig = new Rig();
-            rig.Pipeline = new SpeechToSpeechPipeline(rig.Stt, rig.Llm, rig.Tts, options,
+            rig.Pipeline = new SpeechToSpeechPipeline(rig.Stt, rig.Llm, rig.Tts, options, vad,
                 performanceRecorder: rig.Performance, clock: rig.Clock, ownsComponents: ownsComponents,
                 historyFormat: LlmHistoryFormat.ChatCompletions);
             rig.Pipeline.ResponseReceived += response => { rig.Responses.Enqueue(response.Copy()); return UniTask.CompletedTask; };
@@ -63,6 +64,166 @@ namespace ChatdollKit.Tests.SpeechPipeline
         }
         private static SpeechPipelineResponse[] For(Rig rig, string id) => rig.Responses.Where(response => response.TransactionId == id).ToArray();
         private static SpeechPipelineResponseType[] Types(Rig rig, string id) => For(rig, id).Select(response => response.Type).ToArray();
+
+        [Test]
+        public async NUnitTask CommonRecognitionWaitsForValidatedStartAndKeepsRecognizedText()
+        {
+            var vad = new RecognizingDetector();
+            var accepted = Signal();
+            var release = ReleaseGate();
+            var rig = Create(new SpeechPipelineOptions
+            {
+                TimestampIntervalSeconds = 1,
+                OnAcceptedAsync = async (request, token) => { accepted.TrySetResult(true); await release.Task; }
+            }, vad: vad);
+            var updates = new ConcurrentQueue<SpeechRecognitionUpdate>();
+            rig.Pipeline.RecognitionUpdated += updates.Enqueue;
+            vad.Emit("recognition", null, SpeechRecognitionUpdateKind.Started);
+            vad.Emit("recognition", "hel");
+            vad.Emit("recognition", "hello");
+            vad.Emit("recognition", "hello!", SpeechRecognitionUpdateKind.Confirmed);
+            vad.Final("recognition", "hello!");
+            await Within(accepted.Task);
+            Assert.That(updates.Select(item => item.Kind), Is.EqualTo(new[]
+            { SpeechRecognitionUpdateKind.Started, SpeechRecognitionUpdateKind.Partial, SpeechRecognitionUpdateKind.Partial }));
+            release.TrySetResult(true);
+            await Within(rig.Pipeline.DrainAsync());
+            var confirmed = updates.Last();
+            Assert.That(confirmed.Kind, Is.EqualTo(SpeechRecognitionUpdateKind.Confirmed));
+            Assert.That(confirmed.RecognitionId, Is.EqualTo("recognition"));
+            Assert.That(confirmed.Text, Is.EqualTo("hello!"));
+            Assert.That(confirmed.TransactionId, Is.EqualTo(rig.Responses.Single(item => item.Type == SpeechPipelineResponseType.Start).TransactionId));
+            Assert.That(rig.Llm.Calls.Single().Text, Is.Not.EqualTo("hello!"));
+            await vad.DisposeAsync();
+        }
+
+        [Test]
+        public async NUnitTask CommonActivityPreservesTheLastTranscriptAndRequiresAnOpenRecognition()
+        {
+            var vad = new RecognizingDetector();
+            var rig = Create(vad: vad);
+            var updates = new ConcurrentQueue<SpeechRecognitionUpdate>();
+            rig.Pipeline.RecognitionUpdated += updates.Enqueue;
+            vad.Emit("unknown", null, SpeechRecognitionUpdateKind.Activity, active: true, duration: 10);
+            Assert.That(updates, Is.Empty);
+            vad.Emit("speech", null, SpeechRecognitionUpdateKind.Started, active: true, duration: 0.032, observedAt: 10);
+            Assert.That(updates.Single().Kind, Is.EqualTo(SpeechRecognitionUpdateKind.Started),
+                "The pipeline forwards speech onset without a presentation delay.");
+            Assert.That(updates.Single().AudioDurationSeconds, Is.EqualTo(0.032));
+            vad.Emit("speech", null, SpeechRecognitionUpdateKind.Activity, active: false, duration: 0.032, observedAt: 10.032);
+            vad.Emit("speech", "recognized text");
+            vad.Emit("speech", null, SpeechRecognitionUpdateKind.Activity, active: true, observedAt: 10.064);
+            vad.Emit("speech", null, SpeechRecognitionUpdateKind.Canceled);
+            vad.Emit("speech", null, SpeechRecognitionUpdateKind.Activity, active: true, duration: 10);
+            var actual = updates.ToArray();
+            Assert.That(actual.Select(item => item.Kind), Is.EqualTo(new[]
+            {
+                SpeechRecognitionUpdateKind.Started, SpeechRecognitionUpdateKind.Activity,
+                SpeechRecognitionUpdateKind.Partial, SpeechRecognitionUpdateKind.Activity, SpeechRecognitionUpdateKind.Canceled
+            }));
+            Assert.That(actual[1].IsSpeechActive, Is.False);
+            Assert.That(actual[1].AudioDurationSeconds, Is.EqualTo(0.032));
+            Assert.That(actual[1].ObservedAtSeconds, Is.EqualTo(10.032));
+            Assert.That(actual[3].IsSpeechActive, Is.True);
+            Assert.That(actual[3].AudioDurationSeconds, Is.Null);
+            Assert.That(actual[3].ObservedAtSeconds, Is.EqualTo(10.064));
+            Assert.That(actual[4].Text, Is.EqualTo("recognized text"), "Activity must not replace the stored partial transcript.");
+            Assert.That(actual[4].IsSpeechActive, Is.Null);
+            Assert.That(actual[4].AudioDurationSeconds, Is.Null);
+            await vad.DisposeAsync();
+        }
+
+        [Test]
+        public async NUnitTask DetectorConfirmationEndsActivityWhileAwaitingValidatedRequestStart()
+        {
+            var vad = new RecognizingDetector();
+            var accepted = Signal();
+            var release = ReleaseGate();
+            var rig = Create(new SpeechPipelineOptions
+            {
+                OnAcceptedAsync = async (request, token) => { accepted.TrySetResult(true); await release.Task; }
+            }, vad: vad);
+            var updates = new ConcurrentQueue<SpeechRecognitionUpdate>();
+            rig.Pipeline.RecognitionUpdated += updates.Enqueue;
+            vad.Emit("speech", null, SpeechRecognitionUpdateKind.Started);
+            vad.Emit("speech", "yes", SpeechRecognitionUpdateKind.Confirmed);
+            vad.Final("speech", "yes");
+            await Within(accepted.Task);
+            vad.Emit("speech", null, SpeechRecognitionUpdateKind.Activity, active: true, duration: 10);
+            vad.Emit("speech", "late partial");
+            vad.Emit("speech", null, SpeechRecognitionUpdateKind.Activity, active: true, duration: 10);
+            Assert.That(updates.Select(item => item.Kind), Is.EqualTo(new[] { SpeechRecognitionUpdateKind.Started }));
+            release.TrySetResult(true);
+            await Within(rig.Pipeline.DrainAsync());
+            vad.Emit("speech", null, SpeechRecognitionUpdateKind.Activity, active: true, duration: 10);
+            Assert.That(updates.Select(item => item.Kind), Is.EqualTo(new[]
+                { SpeechRecognitionUpdateKind.Started, SpeechRecognitionUpdateKind.Confirmed }));
+            Assert.That(updates.Last().Text, Is.EqualTo("yes"));
+            await vad.DisposeAsync();
+        }
+
+        [Test]
+        public async NUnitTask CommonRecognitionGatesSleepingInputAndCancelsRejectedFinal()
+        {
+            var vad = new RecognizingDetector();
+            var rig = Create(new SpeechPipelineOptions
+            {
+                Wakewords = new[] { "robot" },
+                ValidateRequestAsync = (request, token) => UniTask.FromResult("rejected")
+            }, vad: vad);
+            var updates = new ConcurrentQueue<SpeechRecognitionUpdate>();
+            rig.Pipeline.RecognitionUpdated += updates.Enqueue;
+            vad.Emit("utterance", null, SpeechRecognitionUpdateKind.Started);
+            vad.Emit("utterance", null, SpeechRecognitionUpdateKind.Activity, active: true, duration: 2);
+            vad.Emit("utterance", "hello");
+            Assert.That(updates, Is.Empty);
+            vad.Emit("utterance", "hello robot");
+            vad.Final("utterance", "hello robot");
+            await Within(rig.Pipeline.DrainAsync());
+            Assert.That(updates.Select(item => item.Kind), Is.EqualTo(new[] { SpeechRecognitionUpdateKind.Partial, SpeechRecognitionUpdateKind.Canceled }));
+            await vad.DisposeAsync();
+        }
+
+        [Test]
+        public async NUnitTask CommonRecognitionClosesSpeechOnsetWithoutPartialAndDoesNotReviveCanceledId()
+        {
+            var vad = new RecognizingDetector();
+            var rig = Create(vad: vad);
+            var updates = new ConcurrentQueue<SpeechRecognitionUpdate>();
+            rig.Pipeline.RecognitionUpdated += updates.Enqueue;
+            vad.Emit("discarded", null, SpeechRecognitionUpdateKind.Started);
+            vad.Emit("discarded", null, SpeechRecognitionUpdateKind.Canceled);
+            vad.Emit("discarded", "late result");
+            Assert.That(updates.Select(item => item.Kind), Is.EqualTo(new[]
+            { SpeechRecognitionUpdateKind.Started, SpeechRecognitionUpdateKind.Canceled }));
+            vad.Emit("reset", null, SpeechRecognitionUpdateKind.Started);
+            await rig.Pipeline.ResetAsync();
+            Assert.That(updates.Last().Kind, Is.EqualTo(SpeechRecognitionUpdateKind.Canceled));
+            Assert.That(updates.Last().RecognitionId, Is.EqualTo("reset"));
+            vad.Emit("reset", "late result");
+            Assert.That(updates.Count, Is.EqualTo(4));
+            await vad.DisposeAsync();
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public async NUnitTask CommonRecognitionControlCancelsAndDoesNotReviveOldId(bool reset)
+        {
+            var vad = new RecognizingDetector();
+            var rig = Create(vad: vad);
+            var updates = new ConcurrentQueue<SpeechRecognitionUpdate>();
+            rig.Pipeline.RecognitionUpdated += updates.Enqueue;
+            vad.Emit("old", "pending");
+            if (reset) await rig.Pipeline.ResetAsync(); else await rig.Pipeline.InterruptAsync();
+            vad.Emit("old", "stale");
+            Assert.That(updates.Select(item => item.Kind), Is.EqualTo(new[] { SpeechRecognitionUpdateKind.Partial, SpeechRecognitionUpdateKind.Canceled }));
+            vad.Emit("new", "current");
+            Assert.That(updates.Last().Text, Is.EqualTo("current"));
+            await rig.Pipeline.DisposeAsync();
+            vad.Emit("newer", "after disposal");
+            Assert.That(updates.Last().Kind, Is.EqualTo(SpeechRecognitionUpdateKind.Canceled));
+            await vad.DisposeAsync();
+        }
 
         [Test]
         public async NUnitTask TextTakesPriorityOverAudioAndStreamsOneTerminalWithIdentifiers()
@@ -664,6 +825,24 @@ namespace ChatdollKit.Tests.SpeechPipeline
             InputItems = new JArray(new JObject { ["role"] = "user", ["content"] = request.Text ?? "" }),
             OutputItems = new JArray(new JObject { ["role"] = "assistant", ["content"] = text })
         };
+
+        private sealed class RecognizingDetector : SpeechDetectorBase, ISpeechRecognitionSource
+        {
+            public event Action<SpeechRecognitionUpdate> RecognitionUpdated;
+            public RecognizingDetector() : base(new SpeechDetectorOptions()) { }
+            public void Emit(string id, string text, SpeechRecognitionUpdateKind kind = SpeechRecognitionUpdateKind.Partial,
+                bool? active = null, double? duration = null, double observedAt = 0)
+                => RecognitionUpdated?.Invoke(new SpeechRecognitionUpdate
+                {
+                    RecognitionId = id, SessionId = "session", Text = text, Kind = kind,
+                    IsSpeechActive = active, AudioDurationSeconds = duration, ObservedAtSeconds = observedAt
+                });
+            public void Final(string id, string text)
+                => PublishSpeechDetected(new SpeechDetectionResult(null, text, null, 0.5, "session", id));
+            protected override RecordingSession CreateSession(string sessionId) => new RecordingSession(sessionId);
+            protected override UniTask<bool> ProcessSamplesCoreAsync(byte[] samples, RecordingSession session, CancellationToken token)
+                => UniTask.FromResult(false);
+        }
 
         private sealed class Rig
         {

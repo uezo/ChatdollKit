@@ -19,6 +19,17 @@
     <Compile Include="../../Scripts/Avatar/LipSync/Core/MfccLipSyncEngine.cs" />
     <Compile Include="../../Scripts/Avatar/LipSync/Core/MfccProfile.cs" />
 
+    <Compile Include="../../Scripts/UI/MessageWindow/Core/IMessageWindow.cs" />
+    <Compile Include="../../Scripts/UI/MessageWindow/Core/MessageWindowMessage.cs" />
+    <Compile Include="../../Scripts/Orchestration/Core/Events/*.cs" />
+    <Compile Include="../../Scripts/Orchestration/Core/ConversationMessageContext.cs" />
+    <Compile Include="../../Scripts/Orchestration/Core/ConversationDisplayOptions.cs" />
+    <Compile Include="../../Scripts/Orchestration/Core/OrchestratorConversationState.cs" />
+    <Compile Include="../../Scripts/Orchestration/Core/OrchestratorTurnResult.cs" />
+    <Compile Include="../../Scripts/Orchestration/Core/OrchestratorLifecycleEvent.cs" />
+    <Compile Include="../../Scripts/Orchestration/Core/OrchestratorResponseEvent.cs" />
+    <Compile Include="../../Scripts/Orchestration/Core/OrchestratorPresentationEvent.cs" />
+
     <Compile Include="../../Scripts/Orchestration/Core/AvatarControlParser.cs" />
     <Compile Include="../../Scripts/Orchestration/Core/ChatdollOrchestratorEngine.cs" />
     <Compile Include="../../Scripts/Orchestration/Core/ChatdollOrchestratorOptions.cs" />
@@ -29,6 +40,8 @@
     <Compile Include="../../Scripts/SpeechPipeline/Core/Async/SpeechCallbackGuard.cs" />
     <Compile Include="../../Scripts/SpeechPipeline/Core/Async/SpeechCompletionSource.cs" />
     <Compile Include="../../Scripts/SpeechPipeline/Core/ISpeechPipeline.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/Core/ISpeechRecognitionSource.cs" />
+    <Compile Include="../../Scripts/SpeechPipeline/Core/SpeechRecognitionUpdate.cs" />
     <Compile Include="../../Scripts/SpeechPipeline/Core/Performance/IPipelinePerformanceRecorder.cs" />
     <Compile Include="../../Scripts/SpeechPipeline/Core/Performance/JsonlPerformanceRecorder.cs" />
     <Compile Include="../../Scripts/SpeechPipeline/Core/Performance/PipelinePerformanceRecord.cs" />

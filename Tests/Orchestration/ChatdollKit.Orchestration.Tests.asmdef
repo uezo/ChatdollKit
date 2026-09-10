@@ -4,7 +4,8 @@
         "ChatdollKit.Avatar",
         "ChatdollKit.Orchestration",
         "ChatdollKit.SpeechPipeline",
-        "UniTask"
+        "UniTask",
+        "ChatdollKit.Orchestration.Events"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"

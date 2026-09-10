@@ -18,7 +18,7 @@ using Newtonsoft.Json.Linq;
 namespace ChatdollKit.SpeechPipeline
 {
     /// <summary>Single-session orchestration. Playback, microphone muting, and wire protocols belong to the frontend.</summary>
-    public sealed class SpeechToSpeechPipeline : ISpeechPipeline
+    public sealed class SpeechToSpeechPipeline : ISpeechPipeline, ISpeechRecognitionSource
     {
         private static readonly Regex LanguagePattern = new Regex(@"\[(?:lang|language):([a-zA-Z-]+)\]|<(?:lang|language)\s[^>]*code=[""']([a-zA-Z-]+)[""']", RegexOptions.CultureInvariant);
         private readonly object sync = new object();
@@ -36,6 +36,10 @@ namespace ChatdollKit.SpeechPipeline
         private readonly bool ownsConversation;
         private readonly ISpeechSynthesizer tts;
         private readonly ISpeechDetector vad;
+        private readonly ISpeechRecognitionSource recognitionSource;
+        private readonly Dictionary<string, SpeechRecognitionUpdate> recognitions = new Dictionary<string, SpeechRecognitionUpdate>();
+        private readonly HashSet<string> closedRecognitions = new HashSet<string>();
+        private readonly Queue<string> closedRecognitionOrder = new Queue<string>();
         private readonly IPipelinePerformanceRecorder performanceRecorder;
         private readonly ISpeechPipelineClock clock;
         private readonly bool ownsComponents;
@@ -53,6 +57,7 @@ namespace ChatdollKit.SpeechPipeline
         public string SessionId { get; }
         public event Func<SpeechPipelineResponse, UniTask> ResponseReceived;
         public event Action<Exception> Error;
+        public event Action<SpeechRecognitionUpdate> RecognitionUpdated;
 
         public SpeechToSpeechPipeline(ISpeechRecognizer stt, ILlmService llm, ISpeechSynthesizer tts,
             SpeechPipelineOptions options = null, ISpeechDetector vad = null,
@@ -64,6 +69,7 @@ namespace ChatdollKit.SpeechPipeline
             suppliedLlm = llm ?? throw new ArgumentNullException(nameof(llm));
             this.tts = tts ?? throw new ArgumentNullException(nameof(tts));
             this.vad = vad;
+            recognitionSource = vad as ISpeechRecognitionSource;
             this.performanceRecorder = performanceRecorder;
             this.clock = clock ?? new SpeechPipelineClock();
             this.ownsComponents = ownsComponents;
@@ -79,6 +85,7 @@ namespace ChatdollKit.SpeechPipeline
                 throw new ArgumentException("The supplied conversation has a different context. Reset it before attaching it.");
             contextId = savedContext ?? this.options.ContextId ?? Guid.NewGuid().ToString("N");
             if (vad != null) { vad.SpeechDetected += OnSpeechDetectedAsync; vad.Error += ReportError; }
+            if (recognitionSource != null) recognitionSource.RecognitionUpdated += OnRecognitionUpdated;
             if (stt is HttpSpeechRecognizerBase httpStt) httpStt.Error += ReportError;
         }
 
@@ -106,7 +113,7 @@ namespace ChatdollKit.SpeechPipeline
         public UniTask<SpeechPipelineResponse> InvokeAsync(SpeechPipelineRequest request, CancellationToken cancellationToken = default)
         { RejectReentry(); return StartInvoke(request, cancellationToken, false); }
 
-        private UniTask<SpeechPipelineResponse> StartInvoke(SpeechPipelineRequest request, CancellationToken caller, bool detached)
+        private UniTask<SpeechPipelineResponse> StartInvoke(SpeechPipelineRequest request, CancellationToken caller, bool detached, string recognitionId = null)
         {
             var copy = request?.Copy() ?? throw new ArgumentNullException(nameof(request));
             if (copy.SessionId != null && copy.SessionId != SessionId) throw new ArgumentException("This pipeline handles only its configured SessionId.");
@@ -123,7 +130,7 @@ namespace ChatdollKit.SpeechPipeline
                 copy.SessionId = SessionId; copy.ContextId = contextId;
                 work = new Work
                 {
-                    Request = copy, TransactionId = copy.TransactionId, ContextId = contextId,
+                    Request = copy, TransactionId = copy.TransactionId, ContextId = contextId, RecognitionId = recognitionId,
                     Sequence = ++nextSequence, Settings = options.Copy(), Caller = caller,
                     WaitInQueue = copy.WaitInQueue,
                     Source = CancellationTokenSource.CreateLinkedTokenSource(caller, lifetime.Token),
@@ -365,7 +372,17 @@ namespace ChatdollKit.SpeechPipeline
                     }
                 }
                 else if (current != null && !terminal) EnsureActive(current, current.Source.Token);
-                if (response.Type == SpeechPipelineResponseType.Start) lock (sync) presentedTransactionId = response.TransactionId;
+                lock (sync)
+                {
+                    if (response.Type == SpeechPipelineResponseType.Start)
+                    {
+                        presentedTransactionId = response.TransactionId;
+                        CloseRecognition(current?.RecognitionId, SpeechRecognitionUpdateKind.Confirmed,
+                            (string)response.Metadata?["recognized_text"], response.TransactionId);
+                    }
+                    else if (terminal)
+                        CloseRecognition(current?.RecognitionId, SpeechRecognitionUpdateKind.Canceled, transactionId: response.TransactionId);
+                }
                 var handlers = ResponseReceived;
                 if (handlers != null)
                     foreach (Func<SpeechPipelineResponse, UniTask> handler in handlers.GetInvocationList())
@@ -427,10 +444,95 @@ namespace ChatdollKit.SpeechPipeline
                 {
                     SessionId = SessionId, Text = result.Text, AudioData = result.Audio, AudioDuration = result.RecordedDuration,
                     Metadata = result.Metadata == null ? null : JObject.FromObject(result.Metadata)
-                }, CancellationToken.None, true);
+                }, CancellationToken.None, true, result.RecognitionId);
             }
             catch (Exception error) { lock (sync) if (disposing || controlling) return UniTask.CompletedTask; ReportError(error); }
             return UniTask.CompletedTask;
+        }
+
+        private void OnRecognitionUpdated(SpeechRecognitionUpdate update)
+        {
+            if (update == null || string.IsNullOrEmpty(update.RecognitionId) || update.SessionId != SessionId) return;
+            lock (sync)
+            {
+                if (disposing || controlling || closedRecognitions.Contains(update.RecognitionId)) return;
+                if (update.Kind == SpeechRecognitionUpdateKind.Canceled)
+                {
+                    CloseRecognition(update.RecognitionId, SpeechRecognitionUpdateKind.Canceled);
+                    return;
+                }
+                // A detector's confirmation is not yet a validated/awake pipeline request.
+                // Keep it pending until Start supplies the final request identity.
+                if (update.Kind == SpeechRecognitionUpdateKind.Confirmed)
+                {
+                    if (recognitions.TryGetValue(update.RecognitionId, out var completed))
+                        completed.Kind = SpeechRecognitionUpdateKind.Confirmed;
+                    return;
+                }
+                // Activity never creates a recognition or replaces its last transcript. A
+                // detector's terminal update also ends activity while request validation runs.
+                if (update.Kind == SpeechRecognitionUpdateKind.Activity)
+                {
+                    if (recognitions.TryGetValue(update.RecognitionId, out var observed) &&
+                        observed.Kind != SpeechRecognitionUpdateKind.Confirmed)
+                        PublishRecognition(update);
+                    return;
+                }
+                if (recognitions.TryGetValue(update.RecognitionId, out var terminal) &&
+                    terminal.Kind == SpeechRecognitionUpdateKind.Confirmed) return;
+                var now = clock.UtcNow;
+                var awake = options.Wakewords.Length == 0 ||
+                    (lastConversationAt.HasValue && (now - lastConversationAt.Value).TotalSeconds < options.WakewordTimeoutSeconds) ||
+                    options.Wakewords.Any(word => (update.Text ?? "").IndexOf(word, StringComparison.Ordinal) >= 0);
+                if (!awake)
+                {
+                    if (recognitions.TryGetValue(update.RecognitionId, out var previous))
+                    {
+                        recognitions.Remove(update.RecognitionId);
+                        previous.Kind = SpeechRecognitionUpdateKind.Canceled;
+                        PublishRecognition(previous);
+                    }
+                    return;
+                }
+                var copy = update.Copy();
+                recognitions[copy.RecognitionId] = copy;
+                PublishRecognition(copy);
+            }
+        }
+
+        // Called under sync: control cannot complete and then receive a partial from this generation.
+        private void CloseRecognition(string recognitionId, SpeechRecognitionUpdateKind kind, string text = null, string transactionId = null)
+        {
+            if (recognitionId == null || closedRecognitions.Contains(recognitionId)) return;
+            recognitions.TryGetValue(recognitionId, out var update);
+            recognitions.Remove(recognitionId);
+            closedRecognitions.Add(recognitionId);
+            closedRecognitionOrder.Enqueue(recognitionId);
+            if (closedRecognitionOrder.Count > 256) closedRecognitions.Remove(closedRecognitionOrder.Dequeue());
+            if (update == null && kind == SpeechRecognitionUpdateKind.Canceled) return;
+            update = update ?? new SpeechRecognitionUpdate { RecognitionId = recognitionId, SessionId = SessionId };
+            update.Kind = kind;
+            update.TransactionId = transactionId;
+            if (text != null) update.Text = text;
+            update.IsSpeechActive = null;
+            update.AudioDurationSeconds = null;
+            update.ObservedAtSeconds = 0;
+            PublishRecognition(update);
+        }
+
+        private void CancelRecognitions()
+        {
+            foreach (var id in recognitions.Keys.ToArray()) CloseRecognition(id, SpeechRecognitionUpdateKind.Canceled);
+        }
+
+        private void PublishRecognition(SpeechRecognitionUpdate update)
+        {
+            var handlers = RecognitionUpdated;
+            if (handlers == null) return;
+            var snapshot = update.Copy();
+            foreach (Action<SpeechRecognitionUpdate> handler in handlers.GetInvocationList())
+                try { callbacks.Invoke(() => handler(snapshot.Copy())); }
+                catch (Exception error) { ReportError(error); }
         }
 
         public UniTask InterruptAsync(CancellationToken cancellationToken = default) => BeginControl(false, null, cancellationToken);
@@ -445,6 +547,7 @@ namespace ChatdollKit.SpeechPipeline
             {
                 CheckAvailable(); token.ThrowIfCancellationRequested();
                 controlling = true; controlTask = completion.Task;
+                CancelRecognitions();
                 pending = requests.ToArray(); inputs = audioTasks.ToArray(); oldAudio = audioLifetime;
             }
             _ = RunControlAsync(reset, nextContext, pending, inputs, oldAudio, completion);
@@ -531,9 +634,11 @@ namespace ChatdollKit.SpeechPipeline
             {
                 if (disposeTask != null) return disposeTask.Value;
                 disposing = true; disposeTask = completion.Task;
+                CancelRecognitions();
                 pending = requests.ToArray(); inputs = audioTasks.Concat(drainTasks).ToArray(); control = controlTask;
             }
             if (vad != null) { vad.SpeechDetected -= OnSpeechDetectedAsync; vad.Error -= ReportError; }
+            if (recognitionSource != null) recognitionSource.RecognitionUpdated -= OnRecognitionUpdated;
             if (stt is HttpSpeechRecognizerBase httpStt) httpStt.Error -= ReportError;
             _ = DisposeCoreAsync(pending, inputs, control, completion);
             return disposeTask.Value;
@@ -639,7 +744,7 @@ namespace ChatdollKit.SpeechPipeline
         {
             internal SpeechPipelineRequest Request;
             internal SpeechPipelineOptions Settings;
-            internal string TransactionId, ContextId, CancelReason;
+            internal string TransactionId, ContextId, CancelReason, RecognitionId;
             internal long Sequence;
             internal bool WaitInQueue;
             internal double StartTime;
