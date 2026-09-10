@@ -580,6 +580,7 @@ namespace ChatdollKit.Tests.Orchestration.Unity
                     foreach (Func<SpeechPipelineResponse, UniTask> handler in handlers.GetInvocationList()) await handler(response);
             }
             public UniTask ProcessAudioSamplesAsync(byte[] samples, CancellationToken cancellationToken = default) => UniTask.CompletedTask;
+            public UniTask ResetSpeechInputAsync(CancellationToken cancellationToken = default) => UniTask.CompletedTask;
             public UniTask InterruptAsync(CancellationToken cancellationToken = default) => UniTask.CompletedTask;
             public UniTask ResetAsync(string contextId = null, CancellationToken cancellationToken = default) => UniTask.CompletedTask;
             public UniTask DrainAsync() => UniTask.CompletedTask;

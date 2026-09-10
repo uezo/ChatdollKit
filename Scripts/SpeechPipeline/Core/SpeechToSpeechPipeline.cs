@@ -535,6 +535,14 @@ namespace ChatdollKit.SpeechPipeline
                 catch (Exception error) { ReportError(error); }
         }
 
+        public UniTask ResetSpeechInputAsync(CancellationToken cancellationToken = default)
+        {
+            lock (sync) ThrowIfDisposed();
+            cancellationToken.ThrowIfCancellationRequested();
+            return vad == null ? UniTask.CompletedTask
+                : callbacks.InvokeAsync(() => vad.ResetSpeechInputAsync(SessionId, cancellationToken: cancellationToken));
+        }
+
         public UniTask InterruptAsync(CancellationToken cancellationToken = default) => BeginControl(false, null, cancellationToken);
         public UniTask ResetAsync(string contextId = null, CancellationToken cancellationToken = default) => BeginControl(true, contextId, cancellationToken);
         private UniTask BeginControl(bool reset, string nextContext, CancellationToken token)
@@ -565,7 +573,7 @@ namespace ChatdollKit.SpeechPipeline
                 try { await SpeechAsync.WhenAll(inputs.Concat(pending.Select(work => (UniTask)work.Completion.Task))); } catch { }
                 if (vad != null)
                 {
-                    await callbacks.InvokeAsync(() => vad.ResetSessionAudioStateAsync(SessionId, cancellationToken: lifetime.Token));
+                    await callbacks.InvokeAsync(() => vad.ResetSpeechInputAsync(SessionId, cancellationToken: lifetime.Token));
                     await WaitAsync(callbacks.InvokeAsync(vad.DrainAsync), lifetime.Token);
                 }
                 await StopPlaybackAsync();

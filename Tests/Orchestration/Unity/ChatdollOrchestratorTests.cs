@@ -960,6 +960,7 @@ namespace ChatdollKit.Tests.Orchestration.Unity
             }
             public UniTask ProcessAudioSamplesAsync(byte[] samples, CancellationToken cancellationToken = default)
             { Audio.Add((byte[])samples.Clone()); return UniTask.CompletedTask; }
+            public UniTask ResetSpeechInputAsync(CancellationToken cancellationToken = default) => UniTask.CompletedTask;
             public UniTask InterruptAsync(CancellationToken cancellationToken = default)
             { InterruptCount++; return InterruptHandler?.Invoke() ?? UniTask.CompletedTask; }
             public UniTask ResetAsync(string contextId = null, CancellationToken cancellationToken = default) => UniTask.CompletedTask;

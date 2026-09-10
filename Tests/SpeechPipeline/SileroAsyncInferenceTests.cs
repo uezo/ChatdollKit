@@ -41,33 +41,46 @@ namespace ChatdollKit.Tests.SpeechPipeline
             finally { await detector.DisposeAsync(); }
         }
 
-        [Test]
-        public async NUnitTask ResetWaitsForPendingInferenceBeforeResettingModelState()
+        [TestCase(true)]
+        [TestCase(false)]
+        public async NUnitTask SpeechInputResetWaitsForPendingInferenceBeforeResettingModelState(bool honorCancellation)
         {
-            var model = new DelayedModel();
+            var model = new DelayedModel { HonorCancellation = honorCancellation };
             var detector = new SileroSpeechDetectorEngine(model);
+            var voiced = 0;
+            detector.Voiced += _ => { voiced++; return UniTask.CompletedTask; };
             try
             {
                 var processing = detector.ProcessSamplesAsync(Pcm(1000));
                 var request = await model.NextAsync();
                 var resets = model.Resets;
-                var resetting = detector.ResetSessionAudioStateAsync();
-                await SpeechAsync.Yield();
-                Assert.That(resetting.Status.IsCompleted(), Is.False);
-                Assert.That(model.Resets, Is.EqualTo(resets));
+                var resetting = detector.ResetSpeechInputAsync();
+                Assert.That(request.Token.IsCancellationRequested, Is.True);
+                if (!honorCancellation)
+                {
+                    await SpeechAsync.Yield();
+                    Assert.That(resetting.Status.IsCompleted(), Is.False);
+                    Assert.That(model.Resets, Is.EqualTo(resets));
+                    Assert.That(model.ActivePredictions, Is.EqualTo(1));
+                    request.Completion.TrySetResult(1);
+                }
 
-                request.Completion.TrySetResult(0);
-                Assert.That(await Within(processing), Is.False);
+                Assert.That(await Within(processing), Is.False, "Explicit audio reset discards the input without stopping capture.");
                 await Within(resetting);
                 Assert.That(model.Resets, Is.EqualTo(resets + 1));
+                Assert.That(model.ActivePredictions, Is.Zero);
+                Assert.That(model.ResetsDuringPrediction, Is.Zero);
+                Assert.That(voiced, Is.Zero, "An ignored cancellation must not turn the old probability into speech.");
 
                 var next = detector.ProcessSamplesAsync(Pcm(2000));
                 var nextRequest = await model.NextAsync();
                 Assert.That(nextRequest.Samples[0], Is.EqualTo(2000 / 32768f));
                 nextRequest.Completion.TrySetResult(1);
                 Assert.That(await Within(next), Is.True);
+                Assert.That(voiced, Is.EqualTo(1));
+                Assert.That(model.ResetsDuringPrediction, Is.Zero);
             }
-            finally { await detector.DisposeAsync(); }
+            finally { model.ReleasePending(); await detector.DisposeAsync(); }
         }
 
         [Test]
@@ -164,7 +177,7 @@ namespace ChatdollKit.Tests.SpeechPipeline
             private readonly ConcurrentQueue<Prediction> requests = new ConcurrentQueue<Prediction>();
             private readonly ConcurrentBag<Prediction> allRequests = new ConcurrentBag<Prediction>();
             public bool HonorCancellation = true;
-            public int Calls, Resets, Disposals;
+            public int Calls, Resets, Disposals, ActivePredictions, ResetsDuringPrediction;
 
             public UniTask<float> PredictAsync(float[] samples, int sampleRate, CancellationToken cancellationToken = default)
             {
@@ -172,15 +185,20 @@ namespace ChatdollKit.Tests.SpeechPipeline
                 var request = new Prediction { Samples = (float[])samples.Clone(), Token = cancellationToken };
                 allRequests.Add(request);
                 Interlocked.Increment(ref Calls);
+                Interlocked.Increment(ref ActivePredictions);
                 requests.Enqueue(request);
                 return CompleteAsync(request);
             }
 
             private async UniTask<float> CompleteAsync(Prediction request)
             {
-                if (!HonorCancellation) return await request.Completion.Task;
-                using (request.Token.Register(() => request.Completion.TrySetCanceled(request.Token)))
-                    return await request.Completion.Task;
+                try
+                {
+                    if (!HonorCancellation) return await request.Completion.Task;
+                    using (request.Token.Register(() => request.Completion.TrySetCanceled(request.Token)))
+                        return await request.Completion.Task;
+                }
+                finally { Interlocked.Decrement(ref ActivePredictions); }
             }
 
             public async UniTask<Prediction> NextAsync()
@@ -198,7 +216,11 @@ namespace ChatdollKit.Tests.SpeechPipeline
             {
                 foreach (var request in allRequests) request.Completion.TrySetResult(0);
             }
-            public void ResetStates() => Interlocked.Increment(ref Resets);
+            public void ResetStates()
+            {
+                if (Volatile.Read(ref ActivePredictions) != 0) Interlocked.Increment(ref ResetsDuringPrediction);
+                Interlocked.Increment(ref Resets);
+            }
             public void Dispose() => Interlocked.Increment(ref Disposals);
         }
 

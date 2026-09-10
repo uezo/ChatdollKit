@@ -21,7 +21,9 @@ namespace ChatdollKit.SpeechPipeline.VAD
         UniTask<bool> ProcessSamplesAsync(byte[] samples, string sessionId = "default", CancellationToken cancellationToken = default);
         UniTask ProcessStreamAsync(IAsyncEnumerable<byte[]> stream, string sessionId = "default", CancellationToken cancellationToken = default);
         UniTask ResetSessionAsync(string sessionId = "default", CancellationToken cancellationToken = default);
-        UniTask ResetSessionAudioStateAsync(string sessionId = "default", bool clearPreroll = true, CancellationToken cancellationToken = default);
+        /// <summary>Resets captured audio, detection state and unfinished recognition, including partial text.
+        /// Preserves session identity and data. Clears pre-roll unless clearPreroll is false.</summary>
+        UniTask ResetSpeechInputAsync(string sessionId = "default", bool clearPreroll = true, CancellationToken cancellationToken = default);
         UniTask FinalizeSessionAsync(string sessionId = "default", CancellationToken cancellationToken = default);
         UniTask<bool> IsRecordingAsync(string sessionId = "default", CancellationToken cancellationToken = default);
         UniTask<object> GetSessionDataAsync(string sessionId, string key, CancellationToken cancellationToken = default);

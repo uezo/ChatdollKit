@@ -146,6 +146,14 @@ namespace ChatdollKit.SpeechPipeline.Remote
             }
         }
 
+        public UniTask ResetSpeechInputAsync(CancellationToken cancellationToken = default)
+        {
+            // AIAvatarKit owns the VAD and clears it on Accepted when barge_in_enabled is false.
+            // No additional reset command is needed on this connection.
+            cancellationToken.ThrowIfCancellationRequested();
+            return UniTask.CompletedTask;
+        }
+
         public UniTask InterruptAsync(CancellationToken cancellationToken = default) => ReconnectAsync(false, null, cancellationToken);
         public UniTask ResetAsync(string contextId = null, CancellationToken cancellationToken = default)
         {

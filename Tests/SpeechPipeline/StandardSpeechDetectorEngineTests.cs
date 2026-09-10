@@ -301,7 +301,7 @@ namespace ChatdollKit.Tests.SpeechPipeline
                 {
                     await detector.ProcessSamplesAsync(preroll);
                     if (resetMode == 0) await detector.ResetSessionAsync();
-                    else await detector.ResetSessionAudioStateAsync(clearPreroll: resetMode == 2);
+                    else await detector.ResetSpeechInputAsync(clearPreroll: resetMode == 2);
                     await detector.ProcessSamplesAsync(onset);
                     await detector.ProcessSamplesAsync(tail);
                     await detector.DrainAsync();
@@ -323,7 +323,7 @@ namespace ChatdollKit.Tests.SpeechPipeline
                 Assert.That(await detector.GetSessionDataAsync("data", "key"), Is.Null);
                 await detector.SetSessionDataAsync("data", "key", 2, createSession: true);
                 await detector.ResetSessionAsync("data");
-                await detector.ResetSessionAudioStateAsync("data");
+                await detector.ResetSpeechInputAsync("data");
                 Assert.That(await detector.GetSessionDataAsync("data", "key"), Is.EqualTo(2));
                 await detector.ProcessSamplesAsync(Pcm(1000, 3), "data");
                 await detector.FinalizeSessionAsync("data");

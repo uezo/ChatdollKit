@@ -448,6 +448,64 @@ namespace ChatdollKit.Tests.Orchestration
             Assert.That(rig.Orchestrator.IsInputSuppressed, Is.False);
         }
 
+        [TestCase(false, false, 1)]
+        [TestCase(true, false, 0)]
+        [TestCase(true, true, 1)]
+        [TestCase(false, true, 1)]
+        public async NUnitTask AcceptedResetsSpeechInputOnlyWhenInputIsSuppressed(
+            bool allowBargeIn, bool blockBargeIn, int expectedSpeechInputResets)
+        {
+            var rig = Create(new ChatdollOrchestratorOptions { AllowBargeIn = allowBargeIn });
+            Assert.That(rig.Pipeline.ResetSpeechInputCount, Is.Zero);
+
+            await Within(rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Accepted, "turn", block: blockBargeIn)));
+            Assert.That(rig.Pipeline.ResetSpeechInputCount, Is.EqualTo(expectedSpeechInputResets));
+            Assert.That(rig.Orchestrator.IsInputSuppressed, Is.EqualTo(expectedSpeechInputResets != 0));
+
+            // Duplicate Accepted and later response events must not repeat input cleanup.
+            await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Accepted, "turn", block: blockBargeIn));
+            await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Start, "turn"));
+            await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Chunk, "turn", "answer"));
+            await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Final, "turn", "answer"));
+            await Within(rig.Orchestrator.DrainAsync());
+
+            Assert.That(rig.Pipeline.ResetSpeechInputCount, Is.EqualTo(expectedSpeechInputResets));
+            Assert.That(rig.Pipeline.InterruptCount, Is.Zero);
+            Assert.That(rig.Pipeline.ResetContexts, Is.Empty);
+            Assert.That(rig.Completed.Single().Text, Is.EqualTo("answer"));
+            Assert.That(rig.Ended.Single().Reason, Is.EqualTo(OrchestratorTurnEndReason.Completed));
+        }
+
+        [Test]
+        public async NUnitTask AcceptedWaitsForSpeechInputResetThenContinuesTheSameResponse()
+        {
+            var rig = Create(new ChatdollOrchestratorOptions { AllowBargeIn = false });
+            var entered = Signal(); var release = Release();
+            rig.Pipeline.ResetSpeechInputHandler = async token =>
+            {
+                entered.TrySetResult(true);
+                await release.Task;
+            };
+
+            var invoking = SpeechAsync.Share(rig.Orchestrator.SendTextAsync("answer"));
+            await Within(entered.Task);
+            Assert.That(invoking.Status.IsCompleted(), Is.False);
+            Assert.That(rig.Orchestrator.IsInputSuppressed, Is.True);
+            Assert.That(rig.Orchestrator.SubmitAudio(new byte[] { 1, 0 }), Is.False);
+            Assert.That(rig.Pipeline.InterruptCount, Is.Zero);
+            Assert.That(rig.Pipeline.ResetContexts, Is.Empty);
+
+            release.TrySetResult(true);
+            var final = await Within(invoking);
+            await Within(rig.Orchestrator.DrainAsync());
+            Assert.That(final.Type, Is.EqualTo(SpeechPipelineResponseType.Final));
+            Assert.That(final.Text, Is.EqualTo("answer"));
+            Assert.That(final.TransactionId, Is.EqualTo(rig.Pipeline.Invocations.Single().TransactionId));
+            Assert.That(rig.Pipeline.ResetSpeechInputCount, Is.EqualTo(1));
+            Assert.That(rig.Ended.Single().Reason, Is.EqualTo(OrchestratorTurnEndReason.Completed));
+            Assert.That(rig.Orchestrator.IsInputSuppressed, Is.False);
+        }
+
         [TestCase(false)]
         [TestCase(true)]
         public async NUnitTask AllowBargeInCanChangeDuringGenerationAndAfterFinal(bool initiallyAllowed)
@@ -1023,7 +1081,8 @@ namespace ChatdollKit.Tests.Orchestration
             public Func<byte[], CancellationToken, UniTask> AudioHandler;
             public Func<CancellationToken, UniTask> InterruptHandler;
             public Func<string, CancellationToken, UniTask> ResetHandler;
-            public int InterruptCount, DisposeCount;
+            public Func<CancellationToken, UniTask> ResetSpeechInputHandler;
+            public int InterruptCount, DisposeCount, ResetSpeechInputCount;
             public async UniTask EmitAsync(SpeechPipelineResponse response)
             {
                 var handlers = ResponseReceived;
@@ -1046,6 +1105,11 @@ namespace ChatdollKit.Tests.Orchestration
             { Interlocked.Increment(ref InterruptCount); return InterruptHandler == null ? UniTask.CompletedTask : InterruptHandler(cancellationToken); }
             public UniTask ResetAsync(string contextId = null, CancellationToken cancellationToken = default)
             { ResetContexts.Enqueue(contextId); return ResetHandler == null ? UniTask.CompletedTask : ResetHandler(contextId, cancellationToken); }
+            public UniTask ResetSpeechInputAsync(CancellationToken cancellationToken = default)
+            {
+                Interlocked.Increment(ref ResetSpeechInputCount);
+                return ResetSpeechInputHandler == null ? UniTask.CompletedTask : ResetSpeechInputHandler(cancellationToken);
+            }
             public UniTask DrainAsync() => UniTask.CompletedTask;
             public UniTask DisposeAsync() { Interlocked.Increment(ref DisposeCount); return UniTask.CompletedTask; }
         }

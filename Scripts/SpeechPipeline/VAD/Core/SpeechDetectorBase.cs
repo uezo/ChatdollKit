@@ -16,6 +16,13 @@ namespace ChatdollKit.SpeechPipeline.VAD
         private readonly Dictionary<string, RecordingSession> sessions = new Dictionary<string, RecordingSession>();
         private readonly SpeechAsyncSemaphore operations = new SpeechAsyncSemaphore(1, 1);
         private readonly CancellationTokenSource lifetime = new CancellationTokenSource();
+        // One detector instance owns one input lifetime. Ordinary utterance resets
+        // do not advance it; explicit audio reset does.
+        protected readonly object AudioSync = new object();
+        protected long AudioGeneration;
+        protected long CurrentInputGeneration;
+        private CancellationTokenSource inputCancellation = new CancellationTokenSource();
+        protected CancellationToken AudioToken { get { lock (AudioSync) return inputCancellation.Token; } }
         private readonly HashSet<UniTask> background = new HashSet<UniTask>();
         private readonly HashSet<UniTask> streams = new HashSet<UniTask>();
         private readonly SpeechCallbackGuard callbacks = new SpeechCallbackGuard();
@@ -94,18 +101,38 @@ namespace ChatdollKit.SpeechPipeline.VAD
         {
             if (samples == null) throw new ArgumentNullException(nameof(samples));
             ValidateSessionId(sessionId);
+            RejectCallbackReentry();
             var ownedSamples = (byte[])samples.Clone();
-            return WithOperationAsync(async operationToken =>
+            lock (AudioSync)
+                return SpeechAsync.Share(ProcessAudioAsync(ownedSamples, sessionId, cancellationToken,
+                    AudioGeneration, inputCancellation.Token));
+        }
+
+        private async UniTask<bool> ProcessAudioAsync(byte[] ownedSamples, string sessionId, CancellationToken token,
+            long generation, CancellationToken audioToken)
+        {
+            using (var linked = CancellationTokenSource.CreateLinkedTokenSource(token, audioToken))
+            try
             {
-                var pcm = ToLinear16 == null ? ownedSamples : InvokeExtension(() => ToLinear16(ownedSamples));
-                pcm = InvokeExtension(() => PrepareSamples(pcm, sessionId));
-                if (pcm == null) throw new InvalidOperationException("Audio conversion/filter returned null.");
-                if (pcm.Length % (Channels * 2) != 0) throw new ArgumentException("PCM must contain complete PCM16 frames.", nameof(samples));
-                // Filters may reuse an output buffer on their next call; own retained pre-roll bytes.
-                if (!ReferenceEquals(pcm, ownedSamples)) pcm = (byte[])pcm.Clone();
-                var session = GetSessionCore(sessionId);
-                return await ProcessSamplesCoreAsync(pcm, session, operationToken);
-            }, cancellationToken);
+                return await WithOperationAsync(async operationToken =>
+                {
+                    lock (AudioSync)
+                    {
+                        if (generation != AudioGeneration) throw new OperationCanceledException(audioToken);
+                        CurrentInputGeneration = generation;
+                    }
+                    var pcm = ToLinear16 == null ? ownedSamples : InvokeExtension(() => ToLinear16(ownedSamples));
+                    pcm = InvokeExtension(() => PrepareSamples(pcm, sessionId));
+                    if (pcm == null) throw new InvalidOperationException("Audio conversion/filter returned null.");
+                    if (pcm.Length % (Channels * 2) != 0) throw new ArgumentException("PCM must contain complete PCM16 frames.", "samples");
+                    // Filters may reuse an output buffer on their next call; own retained pre-roll bytes.
+                    if (!ReferenceEquals(pcm, ownedSamples)) pcm = (byte[])pcm.Clone();
+                    var session = GetSessionCore(sessionId);
+                    return await ProcessSamplesCoreAsync(pcm, session, operationToken);
+                }, linked.Token);
+            }
+            catch (OperationCanceledException) when (!token.IsCancellationRequested &&
+                !LifetimeToken.IsCancellationRequested && generation != Interlocked.Read(ref AudioGeneration)) { return false; }
         }
 
         protected virtual byte[] PrepareSamples(byte[] samples, string sessionId) => samples;
@@ -235,14 +262,33 @@ namespace ChatdollKit.SpeechPipeline.VAD
             lock (session.SyncRoot) session.Reset();
         }
 
-        public UniTask ResetSessionAudioStateAsync(string sessionId = "default", bool clearPreroll = true, CancellationToken cancellationToken = default) => WithOperationAsync(() =>
+        public UniTask ResetSpeechInputAsync(string sessionId = "default", bool clearPreroll = true, CancellationToken cancellationToken = default)
         {
             ValidateSessionId(sessionId);
-            if (sessions.TryGetValue(sessionId, out var session)) ResetSessionAudioStateCore(session, clearPreroll);
-            return UniTask.FromResult(true);
-        }, cancellationToken);
+            RejectCallbackReentry();
+            cancellationToken.ThrowIfCancellationRequested();
+            if (disposing) throw new ObjectDisposedException(GetType().Name);
+            CancellationTokenSource previous;
+            UniTask reset;
+            lock (AudioSync)
+            {
+                previous = inputCancellation;
+                inputCancellation = new CancellationTokenSource();
+                AudioGeneration++;
+                // Enqueue cleanup before new input; actual model inference remains serialized.
+                reset = WithOperationAsync(() =>
+                {
+                    if (sessions.TryGetValue(sessionId, out var session)) ResetSpeechInputCore(session, clearPreroll);
+                    return UniTask.FromResult(true);
+                }).AsUniTask();
+            }
+            try { callbacks.Invoke(previous.Cancel); }
+            catch (Exception error) { ReportError(error is AggregateException aggregate ? aggregate.Flatten() : error); }
+            finally { previous.Dispose(); }
+            return reset;
+        }
 
-        protected virtual void ResetSessionAudioStateCore(RecordingSession session, bool clearPreroll)
+        protected virtual void ResetSpeechInputCore(RecordingSession session, bool clearPreroll)
         {
             ResetSessionCore(session);
             lock (session.SyncRoot) if (clearPreroll) session.PrerollBuffer.Clear();
@@ -460,6 +506,7 @@ namespace ChatdollKit.SpeechPipeline.VAD
             catch (OperationCanceledException) { }
             catch (Exception ex) { ReportError(ex); }
             await DrainAsync();
+            inputCancellation.Dispose();
             // Injected models, recognizers and filters remain caller-owned.
         }
     }

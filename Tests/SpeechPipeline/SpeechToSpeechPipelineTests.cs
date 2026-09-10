@@ -66,6 +66,38 @@ namespace ChatdollKit.Tests.SpeechPipeline
         private static SpeechPipelineResponseType[] Types(Rig rig, string id) => For(rig, id).Select(response => response.Type).ToArray();
 
         [Test]
+        public async NUnitTask AcceptedResetsUnfinishedRecordingAndKeepsTheResponseAndNextShortReply()
+        {
+            var vad = new StandardSpeechDetectorEngine(new StandardSpeechDetectorOptions
+                { MinDuration = 0.01, SilenceDurationThreshold = 0.05 });
+            var rig = Create(new SpeechPipelineOptions { MergeRequestThresholdSeconds = 0 }, vad: vad);
+            rig.Stt.Handler = (session, audio, token) => UniTask.FromResult(new SpeechRecognitionResult { Text = "はい" });
+            rig.Pipeline.ResponseReceived += response => response.Type == SpeechPipelineResponseType.Accepted
+                ? rig.Pipeline.ResetSpeechInputAsync() : UniTask.CompletedTask;
+            var voiced = new byte[3200]; // 100 ms at 16 kHz, mono PCM16, amplitude 1000.
+            for (var i = 0; i < voiced.Length; i += 2) { voiced[i] = 0xe8; voiced[i + 1] = 0x03; }
+            var silence = new byte[voiced.Length];
+
+            // A request is accepted while the detector is still recording trailing audio.
+            await rig.Pipeline.ProcessAudioSamplesAsync(voiced);
+            Assert.That(await vad.IsRecordingAsync("session"), Is.True);
+            var response = await Within(rig.Pipeline.InvokeAsync(Request("こんにちは")));
+            Assert.That(response.Type, Is.EqualTo(SpeechPipelineResponseType.Final));
+            Assert.That(await vad.IsRecordingAsync("session"), Is.False);
+            await rig.Pipeline.ProcessAudioSamplesAsync(silence);
+            await Within(rig.Pipeline.DrainAsync());
+            Assert.That(rig.Stt.Calls, Is.Empty, "Discarded recording must not become another request.");
+
+            await rig.Pipeline.ProcessAudioSamplesAsync(voiced);
+            await rig.Pipeline.ProcessAudioSamplesAsync(silence);
+            await Within(rig.Pipeline.DrainAsync());
+            Assert.That(rig.Llm.Calls.Select(call => call.Text), Is.EqualTo(new[] { "こんにちは", "はい" }));
+            Assert.That(rig.Llm.Calls.Last().History.ToString(), Does.Contain("こんにちは"));
+            Assert.That(rig.Errors, Is.Empty);
+            await rig.Pipeline.DisposeAsync(); await vad.DisposeAsync();
+        }
+
+        [Test]
         public async NUnitTask CommonRecognitionWaitsForValidatedStartAndKeepsRecognizedText()
         {
             var vad = new RecognizingDetector();

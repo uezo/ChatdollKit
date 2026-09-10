@@ -136,7 +136,7 @@ namespace ChatdollKit.Tests.SpeechPipeline
             var terminalCount = updates.Count;
             await Feed(detector, "a", 1000);
             Assert.That(updates.Count, Is.EqualTo(terminalCount));
-            await detector.ResetSessionAudioStateAsync("a");
+            await detector.ResetSpeechInputAsync("a");
             await Feed(detector, "a", 1000);
             Assert.That(updates.Last().Kind, Is.EqualTo(SpeechRecognitionUpdateKind.Started));
         }
@@ -195,7 +195,7 @@ namespace ChatdollKit.Tests.SpeechPipeline
             var updates = CaptureRecognitionState(detector);
             await Feed(detector, "a", 1000, 1000);
             Assert.That(updates.Single().Kind, Is.EqualTo(SpeechRecognitionUpdateKind.Started));
-            if (boundary == "reset") await detector.ResetSessionAudioStateAsync("a");
+            if (boundary == "reset") await detector.ResetSpeechInputAsync("a");
             else if (boundary == "mute")
             {
                 detector.ShouldMute = () => true;
@@ -237,7 +237,7 @@ namespace ChatdollKit.Tests.SpeechPipeline
             current.Complete("current turn");
             await detector.DrainAsync();
             Assert.That(updates.Where(item => item.Kind == SpeechRecognitionUpdateKind.Partial).Select(item => item.Text), Is.EqualTo(new[] { "current turn" }));
-            await detector.ResetSessionAudioStateAsync("a");
+            await detector.ResetSpeechInputAsync("a");
             Assert.That(updates.Last().Kind, Is.EqualTo(SpeechRecognitionUpdateKind.Canceled));
             Assert.That(updates.Last().RecognitionId, Is.EqualTo(updates.Single(item => item.Kind == SpeechRecognitionUpdateKind.Partial).RecognitionId));
         }
@@ -351,30 +351,86 @@ namespace ChatdollKit.Tests.SpeechPipeline
         }
 
         [Test]
-        public async NUnitTask ExplicitAudioResetCancelsEveryRecognitionAndSuppressesLateResults()
+        public async NUnitTask ExplicitSpeechInputResetInterruptsFinalRecognitionAndDiscardsItsLateResult()
+        {
+            var recognizer = Controlled();
+            var detector = Create(recognizer, FinalOnlyOptions());
+            var updates = CaptureRecognitionState(detector);
+            var results = CaptureFinals(detector);
+            await Feed(detector, "a", 1000, 1000, 0);
+            var finishing = detector.ProcessSamplesAsync(Pcm(0), "a");
+            var old = await recognizer.RequestAsync(0);
+            var oldId = updates.First().RecognitionId;
+
+            await Within(detector.ResetSpeechInputAsync("a"));
+            await Within(finishing);
+            Assert.That(await finishing, Is.False);
+            Assert.That(old.Token.IsCancellationRequested, Is.True);
+            Assert.That(old.Completion.Task.Status.IsCompleted(), Is.False,
+                "Reset must finish before a non-cooperative recognizer returns.");
+            Assert.That(await detector.IsRecordingAsync("a"), Is.False);
+            Assert.That(updates.Last().Kind, Is.EqualTo(SpeechRecognitionUpdateKind.Canceled));
+            Assert.That(updates.Last().RecognitionId, Is.EqualTo(oldId));
+
+            await Feed(detector, "a", 3000, 3000, 0);
+            var currentFinishing = detector.ProcessSamplesAsync(Pcm(0), "a");
+            var current = await recognizer.RequestAsync(1);
+            CollectionAssert.AreEqual(new[] { 3000, 3000, 3000, 0, 0 }.SelectMany(Pcm).ToArray(), current.Audio);
+            current.Complete("fresh final");
+            await Within(currentFinishing);
+            await Within(detector.DrainAsync());
+            Assert.That(old.Completion.Task.Status.IsCompleted(), Is.False);
+
+            old.Complete("stale final");
+            await Within(detector.DrainAsync());
+            Assert.That(results.Single().Text, Is.EqualTo("fresh final"));
+            CollectionAssert.AreEqual(current.Audio, results.Single().Audio);
+            Assert.That(results.Single().RecognitionId, Is.Not.EqualTo(oldId));
+            Assert.That(updates.Last().Kind, Is.EqualTo(SpeechRecognitionUpdateKind.Confirmed));
+            Assert.That(updates.Last().RecognitionId, Is.EqualTo(results.Single().RecognitionId));
+        }
+
+        [Test]
+        public async NUnitTask ExplicitSpeechInputResetCancelsEveryRecognitionAndSuppressesLateResults()
         {
             var recognizer = Controlled();
             var detector = Create(recognizer);
             var partials = new ConcurrentQueue<string>();
-            detector.SpeechDetecting += (text, session) => { partials.Enqueue(text); return UniTask.CompletedTask; };
+            var currentReceived = NewSignal();
+            var results = CaptureFinals(detector);
+            var updates = CaptureRecognitionState(detector);
+            detector.SpeechDetecting += (text, session) =>
+            {
+                partials.Enqueue(text);
+                if (text == "current") currentReceived.TrySetResult(true);
+                return UniTask.CompletedTask;
+            };
             await Feed(detector, "a", 1000, 1000, 0);
             var first = await recognizer.RequestAsync(0);
             await Feed(detector, "a", 2000, 0);
             var latest = await recognizer.RequestAsync(1);
-            await detector.ResetSessionAudioStateAsync("a");
+            await Within(detector.ResetSpeechInputAsync("a"));
             Assert.That(first.Token.IsCancellationRequested, Is.True);
             Assert.That(latest.Token.IsCancellationRequested, Is.True);
             await Feed(detector, "a", 3000, 3000, 0);
             var current = await recognizer.RequestAsync(2);
+            current.Complete("current");
+            await Within(currentReceived.Task);
+            var currentId = updates.Last().RecognitionId;
+            CollectionAssert.AreEqual(new[] { 3000, 3000, 3000, 0 }.SelectMany(Pcm).ToArray(), current.Audio);
             latest.Complete("cancelled");
             first.Complete("old sequence one");
-            current.Complete("current");
+            await Within(detector.DrainAsync());
+            await Feed(detector, "a", 0, 0, 0, 0);
             await Within(detector.DrainAsync());
             CollectionAssert.AreEqual(new[] { "current" }, partials.ToArray());
+            Assert.That(results.Single().Text, Is.EqualTo("current"));
+            Assert.That(results.Single().RecognitionId, Is.EqualTo(currentId));
+            CollectionAssert.AreEqual(new[] { 3000, 3000, 3000, 0, 0, 0, 0, 0 }.SelectMany(Pcm).ToArray(), results.Single().Audio);
         }
 
         [Test]
-        public async NUnitTask ExplicitAudioResetCancelsOverlappingRecognitionsAndAllowsDrainToFinish()
+        public async NUnitTask ExplicitSpeechInputResetCancelsOverlappingRecognitionsAndAllowsDrainToFinish()
         {
             var recognizer = Controlled(honorCancellation: true);
             var detector = Create(recognizer);
@@ -385,7 +441,7 @@ namespace ChatdollKit.Tests.SpeechPipeline
             var drain = detector.DrainAsync();
             Assert.That(drain.Status.IsCompleted(), Is.False);
 
-            await Within(detector.ResetSessionAudioStateAsync("a"));
+            await Within(detector.ResetSpeechInputAsync("a"));
             await Within(drain);
 
             Assert.That(first.Token.IsCancellationRequested, Is.True);
@@ -396,7 +452,7 @@ namespace ChatdollKit.Tests.SpeechPipeline
         }
 
         [Test]
-        public async NUnitTask NormalResetKeepsAllRecognitionsRunningUntilExplicitAudioReset()
+        public async NUnitTask NormalResetKeepsAllRecognitionsRunningUntilExplicitSpeechInputReset()
         {
             var recognizer = Controlled(honorCancellation: true);
             var detector = Create(recognizer);
@@ -413,7 +469,7 @@ namespace ChatdollKit.Tests.SpeechPipeline
 
             await Feed(detector, "a", 3000, 3000, 0);
             var current = await recognizer.RequestAsync(2);
-            await Within(detector.ResetSessionAudioStateAsync("a"));
+            await Within(detector.ResetSpeechInputAsync("a"));
             await Within(detector.DrainAsync());
             Assert.That(first.Token.IsCancellationRequested, Is.True);
             Assert.That(second.Token.IsCancellationRequested, Is.True);
@@ -421,28 +477,30 @@ namespace ChatdollKit.Tests.SpeechPipeline
         }
 
         [Test]
-        public async NUnitTask ExplicitAudioResetLeavesOtherSessionsRecognitionRunning()
+        public async NUnitTask ExplicitSpeechInputResetLeavesAnotherDetectorsRecognitionRunning()
         {
             var recognizer = Controlled(honorCancellation: true);
             var detector = Create(recognizer);
+            var otherDetector = Create(recognizer);
             await Feed(detector, "a", 1000, 1000, 0);
             var first = await recognizer.RequestAsync(0);
             await Feed(detector, "a", 2000, 0);
             var second = await recognizer.RequestAsync(1);
-            await Feed(detector, "b", 3000, 3000, 0);
+            await Feed(otherDetector, "b", 3000, 3000, 0);
             var other = await recognizer.RequestAsync(2);
 
-            await Within(detector.ResetSessionAudioStateAsync("a"));
+            await Within(detector.ResetSpeechInputAsync("a"));
             Assert.That(first.Token.IsCancellationRequested, Is.True);
             Assert.That(second.Token.IsCancellationRequested, Is.True);
             Assert.That(other.Token.IsCancellationRequested, Is.False);
             Assert.That(other.Completion.Task.Status.IsCompleted(), Is.False);
             other.Complete("other session");
             await Within(detector.DrainAsync());
+            await Within(otherDetector.DrainAsync());
         }
 
         [Test]
-        public async NUnitTask ExplicitAudioResetContinuesWhenACancellationCallbackThrows()
+        public async NUnitTask ExplicitSpeechInputResetContinuesWhenACancellationCallbackThrows()
         {
             var recognizer = Controlled(honorCancellation: true);
             var detector = Create(recognizer);
@@ -455,7 +513,7 @@ namespace ChatdollKit.Tests.SpeechPipeline
             var failure = new InvalidOperationException("Cancellation observer failed.");
             using (first.Token.Register(() => throw failure))
             {
-                await Within(detector.ResetSessionAudioStateAsync("a"));
+                await Within(detector.ResetSpeechInputAsync("a"));
                 await Within(detector.DrainAsync());
             }
             Assert.That(first.Token.IsCancellationRequested, Is.True);

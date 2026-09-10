@@ -180,7 +180,7 @@ namespace ChatdollKit.Tests.SpeechPipeline
 
         [TestCase("process")]
         [TestCase("reset")]
-        [TestCase("audio-reset")]
+        [TestCase("speech-input-reset")]
         [TestCase("finalize")]
         [TestCase("drain")]
         [TestCase("dispose")]
@@ -303,7 +303,7 @@ namespace ChatdollKit.Tests.SpeechPipeline
             {
                 case "process": return detector.ProcessSamplesAsync(Pcm(1000), id);
                 case "reset": return detector.ResetSessionAsync(id);
-                case "audio-reset": return detector.ResetSessionAudioStateAsync(id);
+                case "speech-input-reset": return detector.ResetSpeechInputAsync(id);
                 case "finalize": return detector.FinalizeSessionAsync(id);
                 case "drain": return detector.DrainAsync();
                 case "dispose": return detector.DisposeAsync();

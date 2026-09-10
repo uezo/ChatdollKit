@@ -238,9 +238,9 @@ namespace ChatdollKit.SpeechPipeline.VAD.Silero
             gateManager.ResetSession(session.SessionId);
             base.ResetSessionCore(session);
         }
-        protected override void ResetSessionAudioStateCore(RecordingSession session, bool clearPreroll)
+        protected override void ResetSpeechInputCore(RecordingSession session, bool clearPreroll)
         {
-            base.ResetSessionAudioStateCore(session, clearPreroll);
+            base.ResetSpeechInputCore(session, clearPreroll);
             lock (session.SyncRoot) ((SileroRecordingSession)session).VadBuffer.Clear();
         }
         protected override void OnSessionDeleted(string sessionId)

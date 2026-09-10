@@ -262,6 +262,7 @@ namespace ChatdollKit.Orchestration
             var copy = response.Copy();
             var cancel = new List<CancellationTokenSource>();
             var ended = new List<OrchestratorTurnResult>();
+            bool resetSpeechInput;
             lock (sync)
             {
                 if (disposing || controlling) return UniTask.CompletedTask;
@@ -328,6 +329,7 @@ namespace ChatdollKit.Orchestration
                         break;
                 }
                 UpdateSuppressionLocked();
+                resetSpeechInput = copy.Type == SpeechPipelineResponseType.Accepted && inputSuppressed;
                 var observed = new OrchestratorResponseEvent(this, turn?.Generation ?? generation, copy, turn?.Order ?? 0);
                 NotifyLocked(() =>
                 {
@@ -338,7 +340,7 @@ namespace ChatdollKit.Orchestration
                 foreach (var result in ended) NotifyTurnEndedLocked(result);
             }
             foreach (var source in cancel) Cancel(source);
-            return UniTask.CompletedTask;
+            return resetSpeechInput ? pipeline.ResetSpeechInputAsync() : UniTask.CompletedTask;
         }
 
         private void StopTurnsLocked(Func<Turn, bool> predicate, List<CancellationTokenSource> cancel,

@@ -28,7 +28,7 @@ namespace ChatdollKit.SpeechPipeline.VAD
         {
             if (InvokeExtension(ShouldMute))
             {
-                ResetSessionAudioStateCore(session, true);
+                ResetSpeechInputCore(session, true);
                 return false;
             }
             var duration = SampleDuration(samples);

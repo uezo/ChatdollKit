@@ -466,7 +466,7 @@ namespace ChatdollKit.Tests.SpeechPipeline
                 => ProcessHandler == null ? UniTask.FromResult(false) : ProcessHandler(samples, sessionId, cancellationToken);
             public UniTask ProcessStreamAsync(IAsyncEnumerable<byte[]> stream, string sessionId = "default", CancellationToken cancellationToken = default) => throw new NotSupportedException();
             public UniTask ResetSessionAsync(string sessionId = "default", CancellationToken cancellationToken = default) => UniTask.CompletedTask;
-            public UniTask ResetSessionAudioStateAsync(string sessionId = "default", bool clearPreroll = true, CancellationToken cancellationToken = default) => UniTask.CompletedTask;
+            public UniTask ResetSpeechInputAsync(string sessionId = "default", bool clearPreroll = true, CancellationToken cancellationToken = default) => UniTask.CompletedTask;
             public UniTask FinalizeSessionAsync(string sessionId = "default", CancellationToken cancellationToken = default) => UniTask.CompletedTask;
             public UniTask<bool> IsRecordingAsync(string sessionId = "default", CancellationToken cancellationToken = default) => UniTask.FromResult(false);
             public UniTask<object> GetSessionDataAsync(string sessionId, string key, CancellationToken cancellationToken = default) { SessionDataAccesses++; throw new InvalidOperationException("Unexpected VAD session access."); }

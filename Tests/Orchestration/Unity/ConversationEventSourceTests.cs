@@ -666,6 +666,7 @@ namespace ChatdollKit.Tests.Orchestration.Unity
             public UniTask<SpeechPipelineResponse> InvokeAsync(SpeechPipelineRequest request, CancellationToken cancellationToken = default)
                 => UniTask.FromResult(Final("invoke", request.Text));
             public UniTask ProcessAudioSamplesAsync(byte[] samples, CancellationToken cancellationToken = default) => UniTask.CompletedTask;
+            public UniTask ResetSpeechInputAsync(CancellationToken cancellationToken = default) => UniTask.CompletedTask;
             public UniTask InterruptAsync(CancellationToken cancellationToken = default)
             { InterruptCount++; return UniTask.CompletedTask; }
             public UniTask ResetAsync(string contextId = null, CancellationToken cancellationToken = default)
