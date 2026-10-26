@@ -12,6 +12,8 @@ namespace ChatdollKit.SpeechPipeline
         event Action<Exception> Error;
         UniTask<SpeechPipelineResponse> InvokeAsync(SpeechPipelineRequest request, CancellationToken cancellationToken = default);
         UniTask ProcessAudioSamplesAsync(byte[] samples, CancellationToken cancellationToken = default);
+        /// <summary>Communicates the microphone interruption policy to the backend, when applicable.</summary>
+        UniTask SetAllowBargeInAsync(bool allowBargeIn, CancellationToken cancellationToken = default);
         /// <summary>Resets current speech input, including captured audio and unfinished recognition.
         /// Retains requests already delivered to the pipeline, responses and conversation history.
         /// May be awaited from ResponseReceived; waits for input reset, not requests or response delivery.

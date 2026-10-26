@@ -25,6 +25,8 @@ namespace ChatdollKit.Orchestration
     public sealed partial class ChatdollOrchestrator : MonoBehaviour
     {
         public bool AutoStart;
+        [Tooltip("Log response boundaries, microphone suppression, and audio counts. Can be changed while running.")]
+        public bool DebugLogEnabled;
         [Tooltip("Inspector configuration for the pipeline. A single component on this GameObject is selected automatically. Code injection takes precedence.")]
         public SpeechPipelineComponent PipelineComponent;
         public ChatdollKit.Avatar.AvatarController Avatar;
@@ -129,6 +131,8 @@ namespace ChatdollKit.Orchestration
         private void Update()
         {
             // Read Inspector changes on the main thread, without running core logic from OnValidate.
+            if (active != null && active.Core.DebugLogEnabled != DebugLogEnabled)
+                active.Core.DebugLogEnabled = DebugLogEnabled;
             ApplyAllowBargeIn();
             RefreshConversationState();
             while (notifications.TryDequeue(out var notification))
@@ -283,7 +287,7 @@ namespace ChatdollKit.Orchestration
                 else
                 {
                     var component = ResolvePipelineComponent();
-                    pendingLease = await lifecycleCallbacks.InvokeAsync(() => component.CreatePipelineAsync(startup.Token));
+                    pendingLease = await lifecycleCallbacks.InvokeAsync(() => component.CreatePipelineAsync(settings.AllowBargeIn, startup.Token));
                     if (pendingLease == null) throw new InvalidOperationException("The pipeline component returned no run.");
                     pending = pendingLease.Pipeline;
                     inputSampleRate = pendingLease.InputSampleRate;
@@ -292,9 +296,30 @@ namespace ChatdollKit.Orchestration
                 startup.Token.ThrowIfCancellationRequested();
                 if (requestVersion != version) throw new OperationCanceledException(startup.Token);
                 if (pending == null) throw new InvalidOperationException("The pipeline factory returned null.");
-                // Provider creation can yield while the UI changes this live setting.
-                settings.AllowBargeIn = AllowBargeIn;
-                var core = new ChatdollOrchestratorEngine(pending, avatar, settings, ownsPending, lifecycleCallbacks);
+                // Creation and configuration can both yield while the UI changes this setting.
+                // Finish applying the latest choice before exposing the core or attaching input.
+                do
+                {
+                    settings.AllowBargeIn = AllowBargeIn;
+                    TraceStartupSetting(pending, "start", settings.AllowBargeIn);
+                    try
+                    {
+                        await lifecycleCallbacks.InvokeAsync(() => pending.SetAllowBargeInAsync(settings.AllowBargeIn, startup.Token));
+                        TraceStartupSetting(pending, "success", settings.AllowBargeIn);
+                    }
+                    catch (Exception error)
+                    {
+                        TraceStartupSetting(pending, "failure", settings.AllowBargeIn, error);
+                        throw;
+                    }
+                    startup.Token.ThrowIfCancellationRequested();
+                    if (requestVersion != version) throw new OperationCanceledException(startup.Token);
+                } while (settings.AllowBargeIn != AllowBargeIn);
+                var core = new ChatdollOrchestratorEngine(pending, avatar, settings, ownsPending, lifecycleCallbacks)
+                {
+                    DebugLog = message => Debug.Log(message),
+                    DebugLogEnabled = DebugLogEnabled
+                };
                 var run = new Run
                 {
                     Core = core, Pipeline = pending, Lease = pendingLease, Microphone = microphone,
@@ -330,6 +355,16 @@ namespace ChatdollKit.Orchestration
                     if (acquired) lifecycle.Release();
                 }
             }
+        }
+
+        private void TraceStartupSetting(ISpeechPipeline pipeline, string stage, bool allowBargeIn, Exception error = null)
+        {
+            if (!DebugLogEnabled) return;
+            try
+            {
+                Debug.Log($"[ChatdollOrchestrator] utc={DateTime.UtcNow:O} session={ChatdollOrchestratorEngine.DebugId(pipeline.SessionId)} transaction=- startup.barge_in.{stage} allow_barge_in={allowBargeIn} error_type={error?.GetType().Name ?? "-"}");
+            }
+            catch { }
         }
 
         public UniTask StopAsync()
@@ -440,7 +475,9 @@ namespace ChatdollKit.Orchestration
                         run.InputSampleRate, run.SamplesPerMessage);
                 if (run.Microphone.Channels != run.Input.InputChannels)
                     throw new InvalidOperationException("Microphone channel count changed. Stop and restart the orchestrator.");
-                foreach (var frame in run.Input.Convert(samples, run.Microphone.SampleRate, run.Core.IsInputSuppressed))
+                var suppressed = run.Core.IsInputSuppressed;
+                run.Core.RecordMicrophoneInput(samples?.Length ?? 0, suppressed);
+                foreach (var frame in run.Input.Convert(samples, run.Microphone.SampleRate, suppressed))
                     if (!run.Core.SubmitAudio(frame)) { run.Input.Reset(); break; }
             }
             catch (Exception error) { Report(error); _ = ObserveAsync(StopAsync); }

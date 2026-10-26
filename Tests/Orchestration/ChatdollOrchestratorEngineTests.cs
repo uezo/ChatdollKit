@@ -70,6 +70,65 @@ namespace ChatdollKit.Tests.Orchestration
         }
 
         [Test]
+        public async NUnitTask DebugLogIsOptInAndIsolatesFailingCallbacks()
+        {
+            var rig = Create(new ChatdollOrchestratorOptions { AllowBargeIn = false });
+            var calls = 0;
+            rig.Orchestrator.DebugLog = message => { Interlocked.Increment(ref calls); throw new InvalidOperationException("logger failure"); };
+            await Begin(rig, "quiet");
+            await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Final, "quiet"));
+            await Within(rig.Orchestrator.DrainAsync());
+            Assert.That(calls, Is.Zero);
+
+            rig.Orchestrator.DebugLogEnabled = true;
+            await Begin(rig, "logged");
+            Assert.That(rig.Orchestrator.IsInputSuppressed, Is.True);
+            await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Final, "logged"));
+            await Within(rig.Orchestrator.DrainAsync());
+            Assert.That(calls, Is.GreaterThan(0));
+            Assert.That(rig.Orchestrator.IsInputSuppressed, Is.False);
+            Assert.That(rig.Errors, Is.Empty);
+
+            rig.Orchestrator.DebugLogEnabled = false;
+            var before = calls;
+            await Begin(rig, "quiet-again");
+            await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Final, "quiet-again"));
+            await Within(rig.Orchestrator.DrainAsync());
+            Assert.That(calls, Is.EqualTo(before));
+        }
+
+        [Test]
+        public async NUnitTask DebugLogShowsQueuedAudioDiscardAndAnAlreadyActiveSendAtAccepted()
+        {
+            var rig = Create(new ChatdollOrchestratorOptions { AllowBargeIn = false });
+            var logs = new ConcurrentQueue<string>(); var entered = Signal(); var release = Release();
+            rig.Orchestrator.DebugLog = logs.Enqueue;
+            rig.Orchestrator.DebugLogEnabled = true;
+            rig.Pipeline.AudioHandler = async (audio, token) => { entered.TrySetResult(true); await release.Task; };
+            Assert.That(rig.Orchestrator.SubmitAudio(new byte[] { 1, 0 }), Is.True);
+            await Within(entered.Task);
+            Assert.That(rig.Orchestrator.SubmitAudio(new byte[] { 2, 0 }), Is.True);
+            Assert.That(rig.Orchestrator.SubmitAudio(new byte[] { 3, 0 }), Is.True);
+            var accepted = Response(SpeechPipelineResponseType.Accepted, "logged-turn", "private request text");
+            accepted.Metadata["api_key"] = "private metadata";
+            await rig.Pipeline.EmitAsync(accepted);
+            for (var i = 0; i < 20; i++) Assert.That(rig.Orchestrator.SubmitAudio(new byte[] { 4, 0 }), Is.False);
+            await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Final, "logged-turn"));
+            release.TrySetResult(true);
+            await Within(rig.Orchestrator.DrainAsync());
+
+            Assert.That(logs.Any(line => line.Contains("response.Accepted") && line.Contains("session=session transaction=logged-turn")), Is.True);
+            Assert.That(logs.Any(line => line.Contains("input.suppressed cause=Accepted") &&
+                line.Contains("cleared_queued_frames=2") && line.Contains("send_in_flight=True")), Is.True);
+            Assert.That(logs.Any(line => line.Contains("input.resumed cause=Final")), Is.True);
+            Assert.That(logs.Count(line => line.Contains("audio.drop.first")), Is.EqualTo(1), "Rejected frames must not produce one log per frame.");
+            Assert.That(logs.Any(line => line.Contains("audio.summary") && line.Contains("rejected_frames=")), Is.True);
+            Assert.That(logs.All(line => line.Contains(" utc=") && !line.Contains("private") && !line.Contains("api_key")), Is.True);
+            Assert.That(rig.Pipeline.Audio.Count, Is.EqualTo(1), "Diagnostics must preserve the existing Accepted input boundary.");
+            Assert.That(rig.Errors, Is.Empty);
+        }
+
+        [Test]
         public async NUnitTask FinalCompletesInvocationBeforeAvatarPlaybackCompletes()
         {
             var rig = Create(); var entered = Signal(); var release = Release();
@@ -446,6 +505,46 @@ namespace ChatdollKit.Tests.Orchestration
             Assert.That(rig.Orchestrator.IsInputSuppressed, Is.EqualTo(!allowBargeIn));
             release.TrySetResult(true); await Within(rig.Orchestrator.DrainAsync());
             Assert.That(rig.Orchestrator.IsInputSuppressed, Is.False);
+        }
+
+        [Test]
+        public async NUnitTask BargeInPolicyReachesPipelineInitiallyAndOnlyWhenChanged()
+        {
+            var rig = Create(new ChatdollOrchestratorOptions { AllowBargeIn = false });
+            Assert.That(rig.Pipeline.BargeInSettings, Is.EqualTo(new[] { false }));
+            await Begin(rig, "turn");
+            Assert.That(rig.Orchestrator.IsInputSuppressed, Is.True);
+
+            rig.Orchestrator.AllowBargeIn = false;
+            rig.Orchestrator.AllowBargeIn = true;
+            rig.Orchestrator.AllowBargeIn = true;
+            Assert.That(rig.Orchestrator.IsInputSuppressed, Is.False);
+            var replacement = rig.Orchestrator.GetOptions();
+            replacement.AllowBargeIn = false;
+            rig.Orchestrator.UpdateOptions(replacement);
+            Assert.That(rig.Orchestrator.IsInputSuppressed, Is.True);
+            replacement.MaxPendingAudioFrames++;
+            rig.Orchestrator.UpdateOptions(replacement);
+
+            Assert.That(rig.Pipeline.BargeInSettings, Is.EqualTo(new[] { false, true, false }));
+            await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Final, "turn"));
+            await Within(rig.Orchestrator.DrainAsync());
+            Assert.That(rig.Orchestrator.IsInputSuppressed, Is.False);
+            Assert.That(rig.Pipeline.InterruptCount, Is.Zero);
+            Assert.That(rig.Pipeline.ResetContexts, Is.Empty);
+        }
+
+        [Test]
+        public async NUnitTask BargeInSettingFailureUsesTheExistingErrorNotification()
+        {
+            var rig = Create(); var reported = new SpeechCompletionSource<Exception>();
+            var failure = new InvalidOperationException("barge-in config failed");
+            rig.Pipeline.BargeInHandler = (allowed, token) => throw failure;
+            rig.Orchestrator.Error += error => reported.TrySetResult(error);
+            Assert.DoesNotThrow(() => rig.Orchestrator.AllowBargeIn = false);
+            Assert.That(await Within(reported.Task), Is.SameAs(failure));
+            Assert.That(rig.Orchestrator.AllowBargeIn, Is.False);
+            Assert.That(rig.Errors, Is.EqualTo(new[] { failure }));
         }
 
         [TestCase(false, false, 1)]
@@ -1078,10 +1177,12 @@ namespace ChatdollKit.Tests.Orchestration
             public readonly ConcurrentQueue<SpeechPipelineRequest> Invocations = new ConcurrentQueue<SpeechPipelineRequest>();
             public readonly ConcurrentQueue<byte[]> Audio = new ConcurrentQueue<byte[]>();
             public readonly ConcurrentQueue<string> ResetContexts = new ConcurrentQueue<string>();
+            public readonly ConcurrentQueue<bool> BargeInSettings = new ConcurrentQueue<bool>();
             public Func<byte[], CancellationToken, UniTask> AudioHandler;
             public Func<CancellationToken, UniTask> InterruptHandler;
             public Func<string, CancellationToken, UniTask> ResetHandler;
             public Func<CancellationToken, UniTask> ResetSpeechInputHandler;
+            public Func<bool, CancellationToken, UniTask> BargeInHandler;
             public int InterruptCount, DisposeCount, ResetSpeechInputCount;
             public async UniTask EmitAsync(SpeechPipelineResponse response)
             {
@@ -1109,6 +1210,11 @@ namespace ChatdollKit.Tests.Orchestration
             {
                 Interlocked.Increment(ref ResetSpeechInputCount);
                 return ResetSpeechInputHandler == null ? UniTask.CompletedTask : ResetSpeechInputHandler(cancellationToken);
+            }
+            public UniTask SetAllowBargeInAsync(bool allowBargeIn, CancellationToken cancellationToken = default)
+            {
+                BargeInSettings.Enqueue(allowBargeIn);
+                return BargeInHandler == null ? UniTask.CompletedTask : BargeInHandler(allowBargeIn, cancellationToken);
             }
             public UniTask DrainAsync() => UniTask.CompletedTask;
             public UniTask DisposeAsync() { Interlocked.Increment(ref DisposeCount); return UniTask.CompletedTask; }

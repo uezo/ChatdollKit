@@ -14,6 +14,9 @@ namespace ChatdollKit.SpeechPipeline
     public abstract class SpeechPipelineComponent : LiveSpeechComponent
     {
         public abstract UniTask<SpeechPipelineLease> CreatePipelineAsync(CancellationToken cancellationToken);
+        /// <summary>Supplies the interruption policy before connecting when the backend requires it.</summary>
+        public virtual UniTask<SpeechPipelineLease> CreatePipelineAsync(bool allowBargeIn, CancellationToken cancellationToken) =>
+            CreatePipelineAsync(cancellationToken);
     }
 
     /// <summary>Owns one run and its bindings. The orchestrator using Pipeline must set ownsPipeline=false.

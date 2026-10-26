@@ -2,6 +2,8 @@ using ChatdollKit.SpeechPipeline;
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 
 namespace ChatdollKit.SpeechPipeline.Remote
@@ -21,15 +23,34 @@ namespace ChatdollKit.SpeechPipeline.Remote
         [Min(1)] public int SamplesPerMessage = 512;
         [Min(0.01f)] public float ConnectTimeoutSeconds = 10;
         [Min(0.01f)] public float RequestTimeoutSeconds = 120;
+        [Tooltip("Log connection/configuration, server events and audio send summaries. Can be changed during Play Mode.")]
+        public bool DebugLogEnabled;
 
         public Func<IAIAvatarConnection> ConnectionFactory { get; set; }
         public Action<AIAvatarSpeechPipelineOptions> ConfigureOptions { get; set; }
         public AIAvatarSpeechPipelineClient Pipeline { get; private set; }
 
-        // Only serialized configuration participates; the active pipeline and code hooks are properties.
-        public override string GetRestartKey() => JsonUtility.ToJson(this);
+        // Diagnostics can change without replacing the connection.
+        public override string GetRestartKey()
+        {
+            var settings = JObject.Parse(JsonUtility.ToJson(this));
+            settings.Remove(nameof(DebugLogEnabled));
+            return settings.ToString(Formatting.None);
+        }
 
-        public override async UniTask<SpeechPipelineLease> CreatePipelineAsync(CancellationToken cancellationToken)
+        protected override void Update()
+        {
+            if (Pipeline != null) Pipeline.DebugLogEnabled = DebugLogEnabled;
+            base.Update();
+        }
+
+        public override UniTask<SpeechPipelineLease> CreatePipelineAsync(CancellationToken cancellationToken) =>
+            CreatePipelineAsync(null, cancellationToken);
+
+        public override UniTask<SpeechPipelineLease> CreatePipelineAsync(bool allowBargeIn, CancellationToken cancellationToken) =>
+            CreatePipelineAsync((bool?)allowBargeIn, cancellationToken);
+
+        private async UniTask<SpeechPipelineLease> CreatePipelineAsync(bool? allowBargeIn, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
             EnsureAvailable();
@@ -45,14 +66,26 @@ namespace ChatdollKit.SpeechPipeline.Remote
                 SessionId = EmptyToNull(SessionId),
                 UserId = EmptyToNull(UserId),
                 ContextId = EmptyToNull(ContextId),
+                SendSilenceWhenIdle = true,
+                InputSampleRate = sampleRate,
+                SamplesPerMessage = samplesPerMessage,
                 ConnectTimeout = TimeSpan.FromSeconds(ConnectTimeoutSeconds),
                 RequestTimeout = TimeSpan.FromSeconds(RequestTimeoutSeconds)
             };
             ConfigureOptions?.Invoke(options);
-            var created = new AIAvatarSpeechPipelineClient(options, ConnectionFactory ?? CreateDefaultConnection);
+            // The idle stream must use exactly the same PCM format as the microphone lease.
+            options.InputSampleRate = sampleRate;
+            options.SamplesPerMessage = samplesPerMessage;
+            var created = new AIAvatarSpeechPipelineClient(options, ConnectionFactory ?? CreateDefaultConnection)
+            {
+                DebugLogEnabled = DebugLogEnabled,
+                DebugLog = message => Debug.Log(message, this)
+            };
             SpeechPipelineLease lease = null;
             try
             {
+                if (allowBargeIn.HasValue)
+                    await created.SetAllowBargeInAsync(allowBargeIn.Value, cancellationToken);
                 await created.ConnectAsync(cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
                 // Another startup may have acquired this component while connecting.
@@ -61,6 +94,7 @@ namespace ChatdollKit.SpeechPipeline.Remote
                 BindSettingsSnapshot(() => token =>
                 {
                     token.ThrowIfCancellationRequested();
+                    created.DebugLogEnabled = DebugLogEnabled;
                     return UniTask.CompletedTask;
                 }, stamp, () =>
                 {

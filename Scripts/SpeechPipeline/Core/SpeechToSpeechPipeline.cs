@@ -535,6 +535,14 @@ namespace ChatdollKit.SpeechPipeline
                 catch (Exception error) { ReportError(error); }
         }
 
+        public UniTask SetAllowBargeInAsync(bool allowBargeIn, CancellationToken cancellationToken = default)
+        {
+            lock (sync) ThrowIfDisposed();
+            cancellationToken.ThrowIfCancellationRequested();
+            // Local input suppression and Accepted-time reset are controlled by the orchestrator.
+            return UniTask.CompletedTask;
+        }
+
         public UniTask ResetSpeechInputAsync(CancellationToken cancellationToken = default)
         {
             lock (sync) ThrowIfDisposed();

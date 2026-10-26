@@ -12,6 +12,11 @@ namespace ChatdollKit.SpeechPipeline.Remote
         public string UserId { get; set; }
         public string ContextId { get; set; }
         public JObject Metadata { get; set; }
+        /// <summary>Continue the remote audio stream with PCM silence when microphone input stops.
+        /// Enabled by the Unity component; opt in for standalone clients that stream audio.</summary>
+        public bool SendSilenceWhenIdle { get; set; }
+        public int InputSampleRate { get; set; } = 16000;
+        public int SamplesPerMessage { get; set; } = 512;
         public TimeSpan ConnectTimeout { get; set; } = TimeSpan.FromSeconds(10);
         public TimeSpan RequestTimeout { get; set; } = TimeSpan.FromSeconds(120);
         public int MaxPendingRequests { get; set; } = 16;
@@ -34,6 +39,9 @@ namespace ChatdollKit.SpeechPipeline.Remote
                 throw new ArgumentException("ContextId must be nonempty when supplied.", nameof(ContextId));
             if (ConnectTimeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(ConnectTimeout));
             if (RequestTimeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(RequestTimeout));
+            if (InputSampleRate <= 0) throw new ArgumentOutOfRangeException(nameof(InputSampleRate));
+            if (SamplesPerMessage <= 0 || SamplesPerMessage > int.MaxValue / 2)
+                throw new ArgumentOutOfRangeException(nameof(SamplesPerMessage));
             if (MaxPendingRequests <= 0) throw new ArgumentOutOfRangeException(nameof(MaxPendingRequests));
             if (MaxResponseAudioBytes <= 0) throw new ArgumentOutOfRangeException(nameof(MaxResponseAudioBytes));
         }

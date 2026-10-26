@@ -52,7 +52,12 @@ namespace ChatdollKit.Tests.SpeechPipeline.Unity
             component.ContextId = "test-context";
             component.InputSampleRate = 8000;
             component.SamplesPerMessage = 160;
+            AIAvatarSpeechPipelineOptions configured = null;
+            component.ConfigureOptions = options => configured = options.Copy();
             var lease = await CreateAsync();
+            Assert.That(configured.SendSilenceWhenIdle, Is.True);
+            Assert.That(configured.InputSampleRate, Is.EqualTo(8000));
+            Assert.That(configured.SamplesPerMessage, Is.EqualTo(160));
             Assert.That(lease.Pipeline, Is.SameAs(component.Pipeline));
             Assert.That(component.Pipeline.IsConnected, Is.True);
             Assert.That(component.Pipeline.SessionId, Is.EqualTo("logical-session"));
@@ -69,6 +74,49 @@ namespace ChatdollKit.Tests.SpeechPipeline.Unity
             Assert.That(component.Pipeline, Is.Null);
             Assert.That(connection.Disposals, Is.EqualTo(1));
             Assert.That(connection.IsOpen, Is.False);
+        });
+
+        [UnityTest]
+        public IEnumerator BargeInPolicyIsIncludedInStartWithoutLosingOtherMetadata() => Run(async () =>
+        {
+            foreach (var allowBargeIn in new[] { false, true })
+            {
+                var connection = new FakeConnection();
+                component.ConnectionFactory = () => connection;
+                component.ConfigureOptions = options => options.Metadata = new JObject
+                {
+                    ["barge_in_enabled"] = !allowBargeIn, ["custom"] = "preserved"
+                };
+                var lease = await component.CreatePipelineAsync(allowBargeIn, CancellationToken.None);
+                leases.Add(lease);
+                Assert.That((bool)connection.StartMessage["metadata"]["barge_in_enabled"], Is.EqualTo(allowBargeIn));
+                Assert.That((string)connection.StartMessage["metadata"]["custom"], Is.EqualTo("preserved"));
+                await lease.DisposeAsync();
+            }
+        });
+
+        [UnityTest]
+        public IEnumerator DebugLoggingCanBeToggledWithoutRestartingTheConnection() => Run(async () =>
+        {
+            var connection = new FakeConnection();
+            var connections = 0;
+            component.ConnectionFactory = () => { connections++; return connection; };
+            var lease = await CreateAsync();
+            var pipeline = component.Pipeline;
+            Assert.That(pipeline.DebugLogEnabled, Is.False);
+            var restartKey = component.GetRestartKey();
+            component.DebugLogEnabled = true;
+            // Inspector edits propagate on Update, even without ApplySettingsAsync.
+            component.SendMessage("Update");
+            Assert.That(pipeline.DebugLogEnabled, Is.True);
+            await component.ApplySettingsAsync();
+            Assert.That(component.GetRestartKey(), Is.EqualTo(restartKey));
+            Assert.That(component.NeedsRestart, Is.False);
+            Assert.That(component.Pipeline, Is.SameAs(lease.Pipeline));
+            Assert.That(connections, Is.EqualTo(1));
+            component.DebugLogEnabled = false;
+            await component.ApplySettingsAsync();
+            Assert.That(pipeline.DebugLogEnabled, Is.False);
         });
 
         [UnityTest]

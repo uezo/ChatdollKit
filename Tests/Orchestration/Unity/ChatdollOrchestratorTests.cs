@@ -331,11 +331,72 @@ namespace ChatdollKit.Tests.Orchestration.Unity
 
             // Observe completion synchronously so a later Update cannot hide a stale startup snapshot.
             var policyAtCompletion = SpeechAsync.Share(CaptureBargeInAfterStartAsync(starting));
-            result.SetResult(new FakePipeline());
+            var pipeline = new FakePipeline();
+            result.SetResult(pipeline);
             yield return Wait(policyAtCompletion);
             Assert.That(policyAtCompletion.GetAwaiter().GetResult(), Is.False);
             Assert.That(orchestrator.AllowBargeIn, Is.False);
             Assert.That(orchestrator.Options.AllowBargeIn, Is.False);
+            Assert.That(pipeline.BargeInSettings, Is.Not.Empty);
+            Assert.That(pipeline.BargeInSettings.TrueForAll(value => !value), Is.True);
+        }
+
+        [UnityTest]
+        public IEnumerator ComponentCreationReceivesBargeInBeforeOpeningItsPipeline()
+        {
+            var pipeline = new FakePipeline();
+            var component = gameObject.AddComponent<TestPipelineComponent>();
+            component.Lease = new SpeechPipelineLease(pipeline, 16000, 512);
+            orchestrator.PipelineComponent = component;
+            orchestrator.AllowBargeIn = false;
+            yield return Wait(orchestrator.StartAsync());
+            Assert.That(component.InitialAllowBargeIn, Is.False);
+            Assert.That(pipeline.BargeInSettings, Is.Not.Empty);
+            Assert.That(pipeline.BargeInSettings.TrueForAll(value => !value), Is.True);
+        }
+
+        [UnityTest]
+        public IEnumerator StartupWaitsForTheLatestBargeInSettingBeforeAttachingMicrophoneInput()
+        {
+            var microphone = ConfigureManualMicrophone();
+            var entered = new SpeechCompletionSource<bool>();
+            var release = new SpeechCompletionSource<bool>();
+            var pipeline = new FakePipeline();
+            var calls = 0;
+            pipeline.BargeInHandler = async (allowed, token) =>
+            {
+                if (++calls != 1) return;
+                entered.TrySetResult(true);
+                await SpeechAsync.WaitAsync(release.Task, token);
+            };
+            orchestrator.ConfigurePipeline(pipeline, samplesPerMessage: 2);
+            orchestrator.AllowBargeIn = false;
+            var starting = SpeechAsync.Share(orchestrator.StartAsync());
+            try
+            {
+                yield return Wait(entered.Task);
+                Assert.That(starting.Status.IsCompleted(), Is.False);
+                Assert.That(orchestrator.IsRunning, Is.False);
+                Assert.That(orchestrator.Orchestrator, Is.Null);
+                RaiseSamples(microphone, new[] { 0.5f, 0.5f });
+                Assert.That(pipeline.Audio, Is.Empty);
+
+                orchestrator.SetAllowBargeIn(true);
+                release.TrySetResult(true);
+                yield return Wait(starting);
+                Assert.That(orchestrator.Orchestrator.AllowBargeIn, Is.True);
+                Assert.That(pipeline.BargeInSettings[0], Is.False);
+                Assert.That(pipeline.BargeInSettings[pipeline.BargeInSettings.Count - 1], Is.True);
+
+                var configuredCalls = pipeline.BargeInSettings.Count;
+                orchestrator.SetAllowBargeIn(true);
+                yield return null;
+                Assert.That(pipeline.BargeInSettings.Count, Is.EqualTo(configuredCalls));
+                RaiseSamples(microphone, new[] { -0.5f, -0.5f });
+                yield return Wait(orchestrator.DrainAsync());
+                Assert.That(pipeline.Audio.Count, Is.EqualTo(1));
+            }
+            finally { release.TrySetResult(true); }
         }
 
         [UnityTest]
@@ -916,6 +977,12 @@ namespace ChatdollKit.Tests.Orchestration.Unity
         public sealed class TestPipelineComponent : SpeechPipelineComponent
         {
             public SpeechPipelineLease Lease;
+            public bool? InitialAllowBargeIn;
+            public override UniTask<SpeechPipelineLease> CreatePipelineAsync(bool allowBargeIn, CancellationToken cancellationToken)
+            {
+                InitialAllowBargeIn = allowBargeIn;
+                return CreatePipelineAsync(cancellationToken);
+            }
             public override UniTask<SpeechPipelineLease> CreatePipelineAsync(CancellationToken cancellationToken)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -951,6 +1018,8 @@ namespace ChatdollKit.Tests.Orchestration.Unity
             public Func<UniTask> InterruptHandler, DisposeHandler;
             public string LastText;
             public readonly List<byte[]> Audio = new List<byte[]>();
+            public readonly List<bool> BargeInSettings = new List<bool>();
+            public Func<bool, CancellationToken, UniTask> BargeInHandler;
             public event Func<SpeechPipelineResponse, UniTask> ResponseReceived;
             public event Action<Exception> Error { add { } remove { } }
             public UniTask<SpeechPipelineResponse> InvokeAsync(SpeechPipelineRequest request, CancellationToken cancellationToken = default)
@@ -961,6 +1030,11 @@ namespace ChatdollKit.Tests.Orchestration.Unity
             public UniTask ProcessAudioSamplesAsync(byte[] samples, CancellationToken cancellationToken = default)
             { Audio.Add((byte[])samples.Clone()); return UniTask.CompletedTask; }
             public UniTask ResetSpeechInputAsync(CancellationToken cancellationToken = default) => UniTask.CompletedTask;
+            public UniTask SetAllowBargeInAsync(bool allowBargeIn, CancellationToken cancellationToken = default)
+            {
+                BargeInSettings.Add(allowBargeIn);
+                return BargeInHandler?.Invoke(allowBargeIn, cancellationToken) ?? UniTask.CompletedTask;
+            }
             public UniTask InterruptAsync(CancellationToken cancellationToken = default)
             { InterruptCount++; return InterruptHandler?.Invoke() ?? UniTask.CompletedTask; }
             public UniTask ResetAsync(string contextId = null, CancellationToken cancellationToken = default) => UniTask.CompletedTask;

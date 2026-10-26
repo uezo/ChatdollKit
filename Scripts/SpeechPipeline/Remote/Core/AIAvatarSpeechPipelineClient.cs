@@ -33,9 +33,18 @@ namespace ChatdollKit.SpeechPipeline.Remote
             internal readonly SpeechCompletionSource<bool> Ready = new SpeechCompletionSource<bool>();
             internal IAIAvatarConnection Transport;
             internal UniTask Receiving;
+            internal UniTask SendingSilence;
+            internal double LastInputAudioAt;
             internal bool Connected, Failed;
             internal Turn Turn;
             internal SpeechRecognitionUpdate Recognition;
+            // Diagnostics only; these counters never participate in input control.
+            internal long AudioFramesSent, AudioBytesSent, SilenceFramesSent;
+            internal int AudioSending, AudioBoundary;
+            internal int LastSentBoundary = -1;
+            internal double LastAudioLog = double.NegativeInfinity;
+            internal double LastVoicedLog = double.NegativeInfinity;
+            internal int VoicedCount;
         }
 
         private readonly object sync = new object();
@@ -50,11 +59,15 @@ namespace ChatdollKit.SpeechPipeline.Remote
         private string contextId;
         private bool disposing;
         private UniTask? disposal;
+        private volatile bool debugLogEnabled;
+        private int pendingAudioSends;
 
         public string SessionId { get; }
         public string ContextId { get { lock (sync) return contextId; } }
         public string RemoteSessionId { get { lock (sync) return connection?.SessionId; } }
         public bool IsConnected { get { lock (sync) return !disposing && connection?.Connected == true && connection.Transport.IsOpen; } }
+        public bool DebugLogEnabled { get => debugLogEnabled; set => debugLogEnabled = value; }
+        public Action<string> DebugLog { get; set; }
         public event Func<SpeechPipelineResponse, UniTask> ResponseReceived;
         public event Action<Exception> Error;
         /// <summary>Optional server info event containing metadata.partial_request_text.</summary>
@@ -96,17 +109,23 @@ namespace ChatdollKit.SpeechPipeline.Remote
             {
                 current.Transport = connectionFactory() ?? throw new InvalidOperationException("The connection factory returned null.");
                 lock (sync) { CheckAlive(); connection = current; }
+                WriteDebug(current, "connect.begin");
                 using (var startup = CancellationTokenSource.CreateLinkedTokenSource(token, current.Lifetime.Token))
                 using (SpeechAsync.Timeout(startup, options.ConnectTimeout))
                 {
                     await current.Transport.ConnectAsync(new Uri(options.Url), options.ApiKey, startup.Token);
                     current.Receiving = SpeechAsync.Run(() => ReceiveAsync(current));
+                    WriteDebug(current, "start.send", "barge_in_enabled=" + DebugBoolean(options.Metadata?["barge_in_enabled"]));
                     await current.Transport.SendAsync(AIAvatarProtocol.Start(options, current.SessionId, ContextId).ToString(Formatting.None), startup.Token);
+                    WriteDebug(current, "start.sent");
                     await SpeechAsync.WaitAsync(current.Ready.Task, startup.Token);
                     startup.Token.ThrowIfCancellationRequested();
                     lock (sync)
                         if (!ReferenceEquals(connection, current) || !current.Connected)
                             throw new InvalidOperationException("The AIAvatarKit connection closed during initialization.");
+                    current.LastInputAudioAt = clock.ElapsedSeconds;
+                    if (options.SendSilenceWhenIdle)
+                        current.SendingSilence = SpeechAsync.Run(() => SendIdleSilenceAsync(current));
                 }
                 return current;
             }
@@ -131,16 +150,135 @@ namespace ChatdollKit.SpeechPipeline.Remote
             if (samples == null) throw new ArgumentNullException(nameof(samples));
             if ((samples.Length & 1) != 0) throw new ArgumentException("PCM16 input must contain complete samples.", nameof(samples));
             var encoded = Convert.ToBase64String(samples);
+            Interlocked.Increment(ref pendingAudioSends);
+            try
+            {
+                using (var source = Linked(cancellationToken))
+                {
+                    await lifecycle.WaitAsync(source.Token);
+                    try
+                    {
+                        CheckAlive();
+                        if (samples.Length == 0) return;
+                        var current = await ConnectLockedAsync(source.Token);
+                        var message = AudioMessage(current, encoded);
+                        await SendAudioLockedAsync(current, message, samples.Length, false, source.Token);
+                        current.LastInputAudioAt = clock.ElapsedSeconds;
+                    }
+                    finally { lifecycle.Release(); }
+                }
+            }
+            finally { Interlocked.Decrement(ref pendingAudioSends); }
+        }
+
+        private static string AudioMessage(Connection current, string encoded) => new JObject
+        {
+            ["type"] = "data", ["session_id"] = current.SessionId, ["audio_data"] = encoded
+        }.ToString(Formatting.None);
+
+        // Microphone suppression intentionally drops captured audio upstream. Keep the server's
+        // filters/VAD advancing even when capture is muted or absent, without retaining that audio.
+        private async UniTask SendIdleSilenceAsync(Connection current)
+        {
+            var token = current.Lifetime.Token;
+            var frameSeconds = (double)options.SamplesPerMessage / options.InputSampleRate;
+            var interval = TimeSpan.FromSeconds(frameSeconds);
+            // Allow for capture/player-loop jitter before substituting silence.
+            var idleThreshold = Math.Max(0.1, frameSeconds * 3);
+            try
+            {
+                var byteCount = options.SamplesPerMessage * 2;
+                var message = AudioMessage(current, Convert.ToBase64String(new byte[byteCount]));
+                while (true)
+                {
+                    // Schedule from the current tick; never replay a backlog after a stalled loop.
+                    await SpeechAsync.Delay(interval, token);
+                    await lifecycle.WaitAsync(token);
+                    try
+                    {
+                        lock (sync)
+                            if (disposing || !ReferenceEquals(connection, current) || !current.Connected ||
+                                current.Failed || !current.Transport.IsOpen) return;
+                        if (Volatile.Read(ref pendingAudioSends) != 0 ||
+                            clock.ElapsedSeconds - current.LastInputAudioAt < idleThreshold) continue;
+                        await SendAudioLockedAsync(current, message, byteCount, true, token);
+                    }
+                    finally { lifecycle.Release(); }
+                }
+            }
+            catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+            catch (Exception error) { await FailAsync(current, error); }
+        }
+
+        // All transport sends share lifecycle, including configuration and silent frames.
+        private async UniTask SendAudioLockedAsync(Connection current, string message, int byteCount,
+            bool silence, CancellationToken token)
+        {
+            var boundary = Volatile.Read(ref current.AudioBoundary);
+            Volatile.Write(ref current.AudioSending, 1);
+            try
+            {
+                await current.Transport.SendAsync(message, token);
+                Volatile.Write(ref current.AudioSending, 0);
+                Interlocked.Increment(ref current.AudioFramesSent);
+                Interlocked.Add(ref current.AudioBytesSent, byteCount);
+                if (silence) Interlocked.Increment(ref current.SilenceFramesSent);
+                if (DebugLogEnabled)
+                {
+                    if (boundary != Volatile.Read(ref current.AudioBoundary))
+                        WriteDebug(current, "audio.crossed_boundary", "bytes=" + byteCount + " " + DebugAudio(current));
+                    if (boundary != current.LastSentBoundary)
+                    {
+                        current.LastSentBoundary = boundary;
+                        WriteDebug(current, "audio.after_boundary", "boundary=" + boundary + " " + DebugAudio(current));
+                    }
+                    var now = clock.ElapsedSeconds;
+                    if (now - current.LastAudioLog >= 1)
+                    {
+                        current.LastAudioLog = now;
+                        WriteDebug(current, "audio.sent", DebugAudio(current));
+                    }
+                }
+            }
+            catch (Exception error)
+            {
+                WriteDebug(current, "audio.send_failed", "error=" + error.GetType().Name);
+                throw;
+            }
+            finally { Volatile.Write(ref current.AudioSending, 0); }
+        }
+
+        public async UniTask SetAllowBargeInAsync(bool allowBargeIn, CancellationToken cancellationToken = default)
+        {
+            RejectReentry();
             using (var source = Linked(cancellationToken))
             {
                 await lifecycle.WaitAsync(source.Token);
                 try
                 {
                     CheckAlive();
-                    if (samples.Length == 0) return;
-                    var current = await ConnectLockedAsync(source.Token);
-                    var message = new JObject { ["type"] = "data", ["session_id"] = current.SessionId, ["audio_data"] = encoded };
-                    await current.Transport.SendAsync(message.ToString(Formatting.None), source.Token);
+                    var previous = options.Metadata?["barge_in_enabled"];
+                    Connection current;
+                    lock (sync) current = connection;
+                    if (previous?.Type == JTokenType.Boolean && (bool)previous == allowBargeIn)
+                    {
+                        WriteDebug(current, "config.unchanged", "barge_in_enabled=" + allowBargeIn);
+                        return;
+                    }
+                    if (current?.Connected == true && current.Transport.IsOpen)
+                    {
+                        var message = new JObject
+                        {
+                            ["type"] = "config", ["session_id"] = current.SessionId,
+                            ["metadata"] = new JObject { ["barge_in_enabled"] = allowBargeIn }
+                        };
+                        WriteDebug(current, "config.send", "barge_in_enabled=" + allowBargeIn);
+                        await current.Transport.SendAsync(message.ToString(Formatting.None), source.Token);
+                        WriteDebug(current, "config.sent", "barge_in_enabled=" + allowBargeIn);
+                    }
+                    // Preserve the setting for the next start, including reconnections.
+                    (options.Metadata ??= new JObject())["barge_in_enabled"] = allowBargeIn;
+                    WriteDebug(current, "config.stored", "barge_in_enabled=" + allowBargeIn);
                 }
                 finally { lifecycle.Release(); }
             }
@@ -151,6 +289,7 @@ namespace ChatdollKit.SpeechPipeline.Remote
             // AIAvatarKit owns the VAD and clears it on Accepted when barge_in_enabled is false.
             // No additional reset command is needed on this connection.
             cancellationToken.ThrowIfCancellationRequested();
+            if (DebugLogEnabled) WriteDebug(connection, "input.reset_delegated_to_server");
             return UniTask.CompletedTask;
         }
 
@@ -222,6 +361,19 @@ namespace ChatdollKit.SpeechPipeline.Remote
         private async UniTask HandleMessageAsync(Connection current, JObject message)
         {
             var type = (string)message["type"];
+            if (type != "voiced" && DebugLogEnabled)
+            {
+                var metadata = message["metadata"] as JObject;
+                WriteDebug(current, "receive", "type=" + DebugText(type) +
+                    " block_barge_in=" + DebugBoolean(metadata?["block_barge_in"]) +
+                    " interrupted=" + DebugBoolean(metadata?["interrupted"]) + " " + DebugAudio(current) +
+                    (metadata?["partial_request_text"]?.Type == JTokenType.String
+                        ? " partial=" + DebugText((string)metadata["partial_request_text"]) : "") +
+                    (metadata?["recognized_text"]?.Type == JTokenType.String
+                        ? " recognized=" + DebugText((string)metadata["recognized_text"]) : ""));
+            }
+            if (type == "accepted" || type == "final" || type == "vision" || type == "stop" || type == "error")
+                Interlocked.Increment(ref current.AudioBoundary);
             if (type == "connected")
             {
                 lock (sync)
@@ -256,6 +408,12 @@ namespace ChatdollKit.SpeechPipeline.Remote
             }
             if (type == "voiced")
             {
+                current.VoicedCount++;
+                if (DebugLogEnabled && clock.ElapsedSeconds - current.LastVoicedLog >= 1)
+                {
+                    current.LastVoicedLog = clock.ElapsedSeconds;
+                    WriteDebug(current, "receive.voiced", "count=" + current.VoicedCount);
+                }
                 lock (sync)
                 {
                     if (!ReferenceEquals(connection, current) || disposing || current.Failed) return;
@@ -309,6 +467,7 @@ namespace ChatdollKit.SpeechPipeline.Remote
                     if (current.Recognition != null) current.Recognition.TransactionId = turn.Id;
                 }
                 WatchTurnAsync(current, turn, turn.Deadline.Token).Forget();
+                WriteDebug(current, "turn.accepted");
             }
             if (turn == null)
             {
@@ -317,6 +476,7 @@ namespace ChatdollKit.SpeechPipeline.Remote
                 throw new FormatException("AIAvatarKit sent " + type + " without an accepted response turn.");
             }
             var response = AIAvatarProtocol.Response(message, SessionId, turn.Id, options.MaxResponseAudioBytes);
+            WriteDebug(current, "response.publish", "type=" + response.Type);
             if (type == "start")
             {
                 lock (sync)
@@ -377,6 +537,7 @@ namespace ChatdollKit.SpeechPipeline.Remote
 
         private async UniTask FailAsync(Connection current, Exception error, Turn expectedTurn = null)
         {
+            WriteDebug(current, "connection.failed", "error=" + error.GetType().Name);
             Turn turn;
             lock (sync)
             {
@@ -404,6 +565,7 @@ namespace ChatdollKit.SpeechPipeline.Remote
 
         private async UniTask RetireLockedAsync(Connection current, string reason)
         {
+            WriteDebug(current, "connection.retired", "reason=" + reason + " " + DebugAudio(current));
             Turn turn;
             lock (sync)
             {
@@ -416,6 +578,7 @@ namespace ChatdollKit.SpeechPipeline.Remote
             try { current.Lifetime.Cancel(); } catch (Exception error) { failures.Add(error); }
             try { current.Transport.Abort(); } catch (Exception error) { failures.Add(error); }
             try { await current.Receiving; } catch (Exception error) { failures.Add(error); }
+            try { await current.SendingSilence; } catch (Exception error) { failures.Add(error); }
             try { current.Transport.Dispose(); } catch (Exception error) { failures.Add(error); }
             current.Lifetime.Dispose();
             if (turn != null)
@@ -487,6 +650,23 @@ namespace ChatdollKit.SpeechPipeline.Remote
             foreach (Action<Exception> handler in handlers.GetInvocationList())
                 try { callbacks.Invoke(() => handler(error)); } catch { }
         }
+
+        private void WriteDebug(Connection current, string eventName, string details = null)
+        {
+            var handler = DebugLog;
+            if (!DebugLogEnabled || handler == null) return;
+            var line = $"[AIAvatarSpeechPipeline] utc={clock.UtcNow:O} session={DebugText(SessionId)} remote={DebugText(current?.SessionId)} transaction={DebugText(current?.Turn?.Id)} {eventName} {details}";
+            // A diagnostic observer must not interrupt audio or response delivery.
+            try { callbacks.Invoke(() => handler(line)); } catch { }
+        }
+
+        private static string DebugAudio(Connection current) =>
+            $"sent_frames={Interlocked.Read(ref current.AudioFramesSent)} sent_bytes={Interlocked.Read(ref current.AudioBytesSent)} silence_frames={Interlocked.Read(ref current.SilenceFramesSent)} send_in_flight={Volatile.Read(ref current.AudioSending) != 0}";
+
+        private static string DebugBoolean(JToken value) => value?.Type == JTokenType.Boolean ? value.ToString(Formatting.None) : "unset";
+
+        private static string DebugText(string value) => value == null ? "-" :
+            JsonConvert.ToString(value.Length > 160 ? value.Substring(0, 160) + "…" : value);
 
         public UniTask DisposeAsync()
         {

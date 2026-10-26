@@ -67,6 +67,32 @@ namespace ChatdollKit.Orchestration
         private UniTask controlTask;
         private UniTask? disposalTask;
         private UniTask lastSubmission = UniTask.CompletedTask;
+        private volatile bool debugLogEnabled;
+        private string debugTransactionId;
+        private long debugQueuedFrames, debugSentFrames, debugDroppedFrames, debugDroppedCaptureSamples;
+        private bool debugFirstSend = true, debugFirstDrop = true;
+        private DateTime debugAudioWindow = DateTime.UtcNow;
+
+        /// <summary>Optional diagnostics. Callbacks are isolated and delivered outside engine locks.</summary>
+        public Action<string> DebugLog { get; set; }
+        public bool DebugLogEnabled
+        {
+            get => debugLogEnabled;
+            set
+            {
+                lock (sync)
+                {
+                    if (debugLogEnabled == value) return;
+                    debugLogEnabled = value;
+                    ResetDebugAudioLocked();
+                    if (value)
+                    {
+                        debugTransactionId = turns.Values.LastOrDefault()?.Id;
+                        TraceLocked($"debug.enabled allow_barge_in={options.AllowBargeIn} suppressed={inputSuppressed} queued_frames={audioQueue.Count} send_in_flight={activeAudio != null}");
+                    }
+                }
+            }
+        }
 
         public event Action<SpeechPipelineResponse> ResponseReceived;
         /// <summary>ResponseReceived with its originating run and generation, safe to retain across controls.
@@ -130,13 +156,24 @@ namespace ChatdollKit.Orchestration
         public bool InputEnabled
         {
             get { lock (sync) return inputEnabled; }
-            set { lock (sync) { CheckAlive(); inputEnabled = value; UpdateSuppressionLocked(); } }
+            set { lock (sync) { CheckAlive(); inputEnabled = value; UpdateSuppressionLocked("InputEnabled"); } }
         }
         /// <summary>Changes microphone forwarding during active responses, including pending avatar playback.</summary>
         public bool AllowBargeIn
         {
             get { lock (sync) return options.AllowBargeIn; }
-            set { lock (sync) { CheckAlive(); options.AllowBargeIn = value; UpdateSuppressionLocked(); } }
+            set
+            {
+                lock (sync)
+                {
+                    CheckAlive();
+                    if (options.AllowBargeIn == value) return;
+                    options.AllowBargeIn = value;
+                    if (debugLogEnabled) TraceLocked($"policy.changed allow_barge_in={value}");
+                    UpdateSuppressionLocked("AllowBargeIn");
+                }
+                _ = SetPipelineBargeInAsync(value);
+            }
         }
 
         public ChatdollOrchestratorEngine(ISpeechPipeline pipeline, IAvatarController avatar,
@@ -157,6 +194,7 @@ namespace ChatdollKit.Orchestration
             playbackWorker = Detached(PlaybackLoopAsync);
             audioWorker = Detached(AudioLoopAsync);
             notificationWorker = Detached(NotificationLoopAsync);
+            _ = SetPipelineBargeInAsync(this.options.AllowBargeIn);
         }
 
         public ChatdollOrchestratorOptions GetOptions() { lock (sync) return options.Copy(); }
@@ -164,10 +202,30 @@ namespace ChatdollKit.Orchestration
         {
             var copy = replacement?.Copy() ?? throw new ArgumentNullException(nameof(replacement));
             copy.Validate();
+            bool bargeInChanged;
             lock (sync)
             {
                 CheckAvailable();
-                options = copy; UpdateSuppressionLocked();
+                bargeInChanged = options.AllowBargeIn != copy.AllowBargeIn;
+                options = copy;
+                if (bargeInChanged && debugLogEnabled) TraceLocked($"policy.changed allow_barge_in={copy.AllowBargeIn} source=UpdateOptions");
+                UpdateSuppressionLocked("UpdateOptions");
+            }
+            if (bargeInChanged) _ = SetPipelineBargeInAsync(copy.AllowBargeIn);
+        }
+
+        private async UniTask SetPipelineBargeInAsync(bool allowBargeIn)
+        {
+            if (debugLogEnabled) lock (sync) TraceLocked($"backend.barge_in.start allow_barge_in={allowBargeIn}");
+            try
+            {
+                await pipeline.SetAllowBargeInAsync(allowBargeIn);
+                if (debugLogEnabled) lock (sync) TraceLocked($"backend.barge_in.success allow_barge_in={allowBargeIn}");
+            }
+            catch (Exception error)
+            {
+                if (debugLogEnabled) lock (sync) TraceLocked($"backend.barge_in.failure allow_barge_in={allowBargeIn} error_type={error.GetType().Name}");
+                ReportError(error);
             }
         }
 
@@ -178,24 +236,30 @@ namespace ChatdollKit.Orchestration
             if ((samples.Length & 1) != 0) throw new ArgumentException("PCM16 input must contain complete samples.", nameof(samples));
             lock (sync)
             {
-                if (inputSuppressed || disposing) return false;
+                if (inputSuppressed || disposing)
+                {
+                    RecordDebugAudioLocked(droppedFrames: 1);
+                    return false;
+                }
                 if (samples.Length == 0) return true;
                 if (audioQueue.Count >= options.MaxPendingAudioFrames)
                 {
                     inputFaulted = true;
-                    UpdateSuppressionLocked();
+                    RecordDebugAudioLocked(droppedFrames: 1);
+                    UpdateSuppressionLocked("QueueOverflow");
                     ReportErrorLocked(new InvalidOperationException("Microphone input queue overflowed. Pending audio was discarded; resume input explicitly after addressing the producer rate."));
                     return false;
                 }
                 if (audioIdle.Task.Status.IsCompleted()) audioIdle = CompletionSource<bool>();
                 audioQueue.Enqueue((byte[])samples.Clone()); audioSignal.Release();
+                RecordDebugAudioLocked(queuedFrames: 1);
                 return true;
             }
         }
 
         public void ResumeAudioInput()
         {
-            lock (sync) { CheckAvailable(); inputFaulted = false; UpdateSuppressionLocked(); }
+            lock (sync) { CheckAvailable(); inputFaulted = false; UpdateSuppressionLocked("ResumeAudioInput"); }
         }
 
         public UniTask<SpeechPipelineResponse> SendTextAsync(string text, CancellationToken cancellationToken = default) =>
@@ -269,6 +333,12 @@ namespace ChatdollKit.Orchestration
                 Turn turn = null;
                 if (copy.TransactionId != null) turns.TryGetValue(copy.TransactionId, out turn);
                 if (turn != null && copy.ContextId != null) turn.ContextId = copy.ContextId;
+                if (debugLogEnabled && (copy.Type == SpeechPipelineResponseType.Final || copy.Type == SpeechPipelineResponseType.Canceled ||
+                    copy.Type == SpeechPipelineResponseType.Error || copy.Type == SpeechPipelineResponseType.Stop))
+                {
+                    TraceAudioSummaryLocked(copy.Type.ToString());
+                    TraceLocked($"response.{copy.Type} pending_presentations={turn?.Pending ?? 0} queued_frames={audioQueue.Count} send_in_flight={activeAudio != null}", copy.TransactionId);
+                }
                 switch (copy.Type)
                 {
                     case SpeechPipelineResponseType.Accepted:
@@ -280,6 +350,12 @@ namespace ChatdollKit.Orchestration
                             BlockInput = copy.Metadata?.Value<bool?>("block_barge_in") == true
                         };
                         turns.Add(turn.Id, turn);
+                        if (debugLogEnabled)
+                        {
+                            debugTransactionId = turn.Id;
+                            TraceAudioSummaryLocked("Accepted");
+                            TraceLocked($"response.Accepted allow_barge_in={options.AllowBargeIn} block_barge_in={turn.BlockInput} queued_frames={audioQueue.Count} send_in_flight={activeAudio != null}", turn.Id);
+                        }
                         break;
                     case SpeechPipelineResponseType.Start:
                         if (turn == null || turn.Stopped || turn.Terminal || turn.Started) return UniTask.CompletedTask;
@@ -328,8 +404,10 @@ namespace ChatdollKit.Orchestration
                         if (turn == null || turn.Stopped || turn.Terminal) return UniTask.CompletedTask;
                         break;
                 }
-                UpdateSuppressionLocked();
+                UpdateSuppressionLocked(debugLogEnabled ? copy.Type.ToString() : null, copy.TransactionId);
                 resetSpeechInput = copy.Type == SpeechPipelineResponseType.Accepted && inputSuppressed;
+                if (debugLogEnabled && copy.Type == SpeechPipelineResponseType.Accepted)
+                    TraceLocked($"input.reset_on_accepted requested={resetSpeechInput}", copy.TransactionId);
                 var observed = new OrchestratorResponseEvent(this, turn?.Generation ?? generation, copy, turn?.Order ?? 0);
                 NotifyLocked(() =>
                 {
@@ -433,7 +511,7 @@ namespace ChatdollKit.Orchestration
                         playing = null;
                         if (item.Turn != null) { item.Turn.Pending--; CleanupTurnLocked(item.Turn); }
                         if (playbackQueue.Count == 0) playbackIdle.TrySetResult(true);
-                        UpdateSuppressionLocked();
+                        UpdateSuppressionLocked("PresentationCompleted", item.Turn?.Id);
                         if (disposing) playbackSignal.Release();
                     }
                 }
@@ -451,12 +529,18 @@ namespace ChatdollKit.Orchestration
                 {
                     if (audioQueue.Count == 0) { if (disposing) return; continue; }
                     frame = audioQueue.Dequeue(); activeAudio = source = new CancellationTokenSource();
+                    RecordDebugAudioLocked(sentFrames: 1);
                 }
                 try { await pipeline.ProcessAudioSamplesAsync(frame, source.Token); }
                 catch (OperationCanceledException) when (source.IsCancellationRequested) { }
                 catch (Exception error)
                 {
-                    lock (sync) { inputFaulted = true; UpdateSuppressionLocked(); ReportErrorLocked(error); }
+                    lock (sync)
+                    {
+                        inputFaulted = true;
+                        if (debugLogEnabled) TraceLocked($"audio.send.failure error_type={error.GetType().Name}");
+                        UpdateSuppressionLocked("AudioSendFailure"); ReportErrorLocked(error);
+                    }
                 }
                 finally
                 {
@@ -492,7 +576,8 @@ namespace ChatdollKit.Orchestration
                 if (activeAudio != null) cancel.Add(activeAudio);
                 StopTurnsLocked(item => true, cancel);
                 stop = EnqueueStopBarrierLocked();
-                UpdateSuppressionLocked();
+                if (debugLogEnabled) TraceLocked($"control.started kind={(reset ? "Reset" : "Interrupt")}");
+                UpdateSuppressionLocked(reset ? "Reset" : "Interrupt");
             }
             foreach (var source in cancel) Cancel(source);
             _ = Detached(() => ControlCoreAsync(contextId, reset, stop, completion));
@@ -524,7 +609,8 @@ namespace ChatdollKit.Orchestration
                     controlling = false; controlTask = default;
                     // A failed control boundary needs an explicit retry before more microphone data is accepted.
                     if (failure != null) inputFaulted = true;
-                    UpdateSuppressionLocked();
+                    if (debugLogEnabled) TraceLocked($"control.completed kind={(reset ? "Reset" : "Interrupt")} success={failure == null}");
+                    UpdateSuppressionLocked("ControlCompleted");
                     if (failure == null) completion.TrySetResult(true); else completion.TrySetException(failure);
                 }
             }
@@ -575,7 +661,8 @@ namespace ChatdollKit.Orchestration
                 if (activeAudio != null) cancel.Add(activeAudio);
                 StopTurnsLocked(item => true, cancel);
                 EnqueueStopBarrierLocked();
-                UpdateSuppressionLocked(); audioSignal.Release(); playbackSignal.Release();
+                if (debugLogEnabled) { TraceAudioSummaryLocked("Dispose"); TraceLocked("engine.disposing"); }
+                UpdateSuppressionLocked("Dispose"); audioSignal.Release(); playbackSignal.Release();
             }
             pipeline.ResponseReceived -= OnResponseAsync;
             foreach (var source in cancel) Cancel(source);
@@ -615,6 +702,7 @@ namespace ChatdollKit.Orchestration
             if (!turn.Ended && turn.Pending == 0 && (turn.Terminal || turn.Stopped))
             {
                 turn.Ended = true;
+                if (debugLogEnabled) TraceLocked($"turn.ended reason={turn.EndReason}", turn.Id);
                 turns.Remove(turn.Id); turn.Source.Dispose();
                 var result = new OrchestratorTurnResult(this, turn.SessionId, turn.ContextId, turn.Id, turn.Generation, turn.EndReason);
                 if (ended != null) ended.Add(result); else NotifyTurnEndedLocked(result);
@@ -629,12 +717,19 @@ namespace ChatdollKit.Orchestration
         private void NotifyTurnEndedLocked(OrchestratorTurnResult result) =>
             NotifyLocked(() => Publish(TurnEnded, result, value => value));
 
-        private void UpdateSuppressionLocked()
+        private void UpdateSuppressionLocked(string cause, string transactionId = null)
         {
             var suppressed = !inputEnabled || inputFaulted || controlling || disposing ||
                 turns.Values.Any(turn => !turn.Stopped && (!turn.Terminal || turn.Pending > 0) &&
                     (turn.BlockInput || !options.AllowBargeIn));
             if (suppressed == inputSuppressed) return;
+            if (debugLogEnabled)
+            {
+                TraceAudioSummaryLocked("input_boundary");
+                var blocked = turns.Values.Any(turn => !turn.Stopped && (!turn.Terminal || turn.Pending > 0) && turn.BlockInput);
+                TraceLocked($"input.{(suppressed ? "suppressed" : "resumed")} cause={cause} input_enabled={inputEnabled} faulted={inputFaulted} controlling={controlling} disposing={disposing} allow_barge_in={options.AllowBargeIn} block_barge_in={blocked} cleared_queued_frames={(suppressed ? audioQueue.Count : 0)} send_in_flight={activeAudio != null}", transactionId);
+                ResetDebugAudioLocked();
+            }
             inputSuppressed = suppressed;
             if (suppressed)
             {
@@ -642,6 +737,63 @@ namespace ChatdollKit.Orchestration
                 if (activeAudio == null) audioIdle.TrySetResult(true);
             }
             NotifyLocked(() => Publish(InputSuppressionChanged));
+        }
+
+        // Microphone conversion discards suppressed capture before SubmitAudio is called.
+        // Record only its size; never retain or print the samples.
+        internal void RecordMicrophoneInput(int sampleCount, bool suppressed)
+        {
+            if (!debugLogEnabled || !suppressed) return;
+            lock (sync) RecordDebugAudioLocked(droppedCaptureSamples: sampleCount);
+        }
+
+        private void RecordDebugAudioLocked(int queuedFrames = 0, int sentFrames = 0,
+            int droppedFrames = 0, int droppedCaptureSamples = 0)
+        {
+            if (!debugLogEnabled) return;
+            debugQueuedFrames += queuedFrames; debugSentFrames += sentFrames;
+            debugDroppedFrames += droppedFrames; debugDroppedCaptureSamples += droppedCaptureSamples;
+            if (sentFrames > 0 && debugFirstSend)
+            {
+                debugFirstSend = false;
+                TraceLocked($"audio.send.first queued_frames={audioQueue.Count} suppressed={inputSuppressed}");
+            }
+            if ((droppedFrames > 0 || droppedCaptureSamples > 0) && debugFirstDrop)
+            {
+                debugFirstDrop = false;
+                TraceLocked($"audio.drop.first source={(droppedCaptureSamples > 0 ? "microphone_converter" : "SubmitAudio")} suppressed={inputSuppressed}");
+            }
+            if ((DateTime.UtcNow - debugAudioWindow).TotalSeconds >= 1) TraceAudioSummaryLocked("interval");
+        }
+
+        private void TraceAudioSummaryLocked(string reason)
+        {
+            if (debugQueuedFrames + debugSentFrames + debugDroppedFrames + debugDroppedCaptureSamples == 0) return;
+            TraceLocked($"audio.summary reason={reason} queued_frames={debugQueuedFrames} send_started_frames={debugSentFrames} rejected_frames={debugDroppedFrames} dropped_capture_samples={debugDroppedCaptureSamples} pending_frames={audioQueue.Count} send_in_flight={activeAudio != null}");
+            debugQueuedFrames = debugSentFrames = debugDroppedFrames = debugDroppedCaptureSamples = 0;
+            debugAudioWindow = DateTime.UtcNow;
+        }
+
+        private void ResetDebugAudioLocked()
+        {
+            debugQueuedFrames = debugSentFrames = debugDroppedFrames = debugDroppedCaptureSamples = 0;
+            debugFirstSend = debugFirstDrop = true;
+            debugAudioWindow = DateTime.UtcNow;
+        }
+
+        private void TraceLocked(string message, string transactionId = null)
+        {
+            var logger = DebugLog;
+            if (!debugLogEnabled || logger == null) return;
+            var entry = $"[ChatdollOrchestrator] utc={DateTime.UtcNow:O} session={DebugId(SessionId)} transaction={DebugId(transactionId ?? debugTransactionId)} {message}";
+            NotifyLocked(() => { if (debugLogEnabled) try { logger(entry); } catch { } });
+        }
+
+        internal static string DebugId(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return "-";
+            var bounded = value.Length > 128 ? value.Substring(0, 128) : value;
+            return new string(bounded.Select(character => char.IsControl(character) ? '_' : character).ToArray());
         }
 
         private void NotifyLocked(Action action)
