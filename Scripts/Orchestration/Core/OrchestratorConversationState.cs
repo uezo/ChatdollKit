@@ -57,7 +57,7 @@ namespace ChatdollKit.Orchestration
 
         public bool OnResponse(SpeechPipelineResponse response, long turnOrder, bool useResponseText = false)
         {
-            if (response == null) return false;
+            if (response == null || response.Type == SpeechPipelineResponseType.Backchannel) return false;
             switch (response.Type)
             {
                 case SpeechPipelineResponseType.Start:

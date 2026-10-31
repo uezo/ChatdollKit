@@ -62,6 +62,43 @@ namespace ChatdollKit.Tests.Avatar
         });
 
         [UnityTest]
+        public IEnumerator AudioOnlyPresentationWithoutTransactionPlaysAndReleasesClip() => Run(async () =>
+        {
+            var gameObject = Create(out var speech, out var avatar);
+            AudioClip clip = null;
+            var started = 0;
+            var sampleCalls = 0;
+            try
+            {
+                avatar.PresentationStarted += item =>
+                {
+                    Assert.That(item.TransactionId, Is.Null);
+                    Assert.That(item.Text, Is.Empty);
+                    Assert.That(item.VoiceText, Is.Empty);
+                    started++;
+                };
+                speech.PlayingSamples += (samples, channels, rate) =>
+                {
+                    clip = speech.AudioSource.clip;
+                    sampleCalls++;
+                };
+                var nod = Presentation(null, 0.2);
+                nod.Text = "";
+                nod.VoiceText = "";
+
+                await Background(() => avatar.PresentAsync(nod, CancellationToken.None));
+
+                Assert.That(started, Is.EqualTo(1));
+                Assert.That(sampleCalls, Is.GreaterThan(0));
+                Assert.That(speech.IsPlaying, Is.False);
+                Assert.That(speech.AudioSource.clip, Is.Null);
+                await SpeechAsync.Yield(); await SpeechAsync.Yield();
+                Assert.That(clip == null, Is.True, "The Nod AudioClip is destroyed after playback.");
+            }
+            finally { UnityEngine.Object.DestroyImmediate(gameObject); }
+        });
+
+        [UnityTest]
         public IEnumerator StopCannotCancelAPresentationRegisteredAfterIt() => Run(async () =>
         {
             var gameObject = Create(out var speech, out var avatar);

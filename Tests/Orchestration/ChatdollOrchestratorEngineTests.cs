@@ -68,6 +68,12 @@ namespace ChatdollKit.Tests.Orchestration
             await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Accepted, id, block: block));
             await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Start, id));
         }
+        private static SpeechPipelineResponse Backchannel(byte marker = 1) => new SpeechPipelineResponse
+        {
+            Type = SpeechPipelineResponseType.Backchannel, SessionId = "session", Text = "", VoiceText = "",
+            AudioData = new byte[] { marker, 2 },
+            Metadata = new JObject { ["nod"] = true, ["nod_id"] = "nod-" + marker, ["recording_id"] = "recording" }
+        };
 
         [Test]
         public async NUnitTask DebugLogIsOptInAndIsolatesFailingCallbacks()
@@ -932,6 +938,137 @@ namespace ChatdollKit.Tests.Orchestration
             await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Start, "valid"));
             await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Chunk, "valid", "late"));
             await Within(rig.Orchestrator.DrainAsync()); Assert.That(rig.Avatar.Presentations, Is.Empty);
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public async NUnitTask BackchannelBeforeAcceptedOrAfterFinalKeepsInputOpenWithoutCreatingATurn(bool afterFinal)
+        {
+            var rig = Create(new ChatdollOrchestratorOptions { AllowBargeIn = false });
+            if (afterFinal)
+            {
+                await Begin(rig, "finished");
+                await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Final, "finished"));
+                await Within(rig.Orchestrator.DrainAsync());
+            }
+            var responsesBefore = rig.Responses.Count; var endedBefore = rig.Ended.Count;
+            var resetsBefore = rig.Pipeline.ResetSpeechInputCount; var observations = 0;
+            rig.Orchestrator.ResponseObserved += item => Interlocked.Increment(ref observations);
+            var entered = Signal(); var release = Release(); var inputProcessed = Signal();
+            rig.Avatar.Handler = async (request, token) => { entered.TrySetResult(true); await release.Task; };
+            rig.Pipeline.AudioHandler = (samples, token) => { inputProcessed.TrySetResult(true); return UniTask.CompletedTask; };
+
+            await rig.Pipeline.EmitAsync(Backchannel()); await Within(entered.Task);
+            Assert.That(rig.Orchestrator.IsPresenting, Is.True);
+            Assert.That(rig.Orchestrator.HasActiveTurns, Is.False);
+            Assert.That(rig.Orchestrator.IsInputSuppressed, Is.False);
+            Assert.That(rig.Orchestrator.SubmitAudio(new byte[] { 3, 0 }), Is.True);
+            await Within(inputProcessed.Task);
+            Assert.That(rig.Avatar.Presentations.Single().TransactionId, Is.Null);
+            Assert.That(rig.Pipeline.Invocations, Is.Empty);
+            Assert.That(rig.Pipeline.ResetSpeechInputCount, Is.EqualTo(resetsBefore));
+
+            release.TrySetResult(true); await Within(rig.Orchestrator.DrainAsync());
+            Assert.That(rig.Responses.Count, Is.EqualTo(responsesBefore));
+            Assert.That(observations, Is.Zero);
+            Assert.That(rig.Ended.Count, Is.EqualTo(endedBefore));
+            Assert.That(rig.Started, Is.Empty); Assert.That(rig.Completed, Is.Empty);
+            Assert.That(rig.Errors, Is.Empty);
+        }
+
+        [Test]
+        public async NUnitTask NormalResponseDropsQueuedBackchannelAndWaitsForTheDispatchedOne()
+        {
+            var rig = Create(new ChatdollOrchestratorOptions { MaxPendingPresentations = 1 });
+            var entered = Signal(); var release = Release();
+            rig.Avatar.Handler = async (request, token) =>
+            { if (request.TransactionId == null) { entered.TrySetResult(true); await release.Task; } };
+            await rig.Pipeline.EmitAsync(Backchannel(1)); await Within(entered.Task);
+            await rig.Pipeline.EmitAsync(Backchannel(2));
+            await Begin(rig, "main");
+            await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Chunk, "main", "answer"));
+            await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Final, "main"));
+
+            Assert.That(rig.Avatar.Presentations.Count, Is.EqualTo(1));
+            Assert.That(rig.Avatar.CancellationTokens.Single().IsCancellationRequested, Is.False);
+            release.TrySetResult(true); await Within(rig.Orchestrator.DrainAsync());
+            Assert.That(rig.Avatar.Presentations.Select(item => item.Text), Is.EqualTo(new[] { null, "answer" }));
+            Assert.That(rig.Ended.Single().TransactionId, Is.EqualTo("main"));
+            Assert.That(rig.Ended.Single().Reason, Is.EqualTo(OrchestratorTurnEndReason.Completed));
+            Assert.That(rig.Errors, Is.Empty);
+        }
+
+        [Test]
+        public async NUnitTask BackchannelIsDiscardedWhileANormalTurnIsAcceptedGeneratingOrFinishingPlayback()
+        {
+            var rig = Create(); var entered = Signal(); var release = Release();
+            rig.Avatar.Handler = async (request, token) => { entered.TrySetResult(true); await release.Task; };
+            await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Accepted, "main"));
+            await rig.Pipeline.EmitAsync(Backchannel(1));
+            await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Start, "main"));
+            await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Chunk, "main", "answer")); await Within(entered.Task);
+            await rig.Pipeline.EmitAsync(Backchannel(2));
+            await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Final, "main"));
+            Assert.That(rig.Orchestrator.HasActiveTurns, Is.True);
+            await rig.Pipeline.EmitAsync(Backchannel(3));
+
+            release.TrySetResult(true); await Within(rig.Orchestrator.DrainAsync());
+            Assert.That(rig.Avatar.Presentations.Select(item => item.TransactionId), Is.EqualTo(new[] { "main" }));
+            Assert.That(rig.Ended.Single().Reason, Is.EqualTo(OrchestratorTurnEndReason.Completed));
+            Assert.That(rig.Errors, Is.Empty);
+        }
+
+        [Test]
+        public async NUnitTask StopKeepsDispatchedAndQueuedBackchannels()
+        {
+            var rig = Create(); var entered = Signal(); var release = Release();
+            rig.Avatar.Handler = async (request, token) =>
+            {
+                if (request.AudioData[0] != 1) return;
+                entered.TrySetResult(true);
+                await release.Task;
+            };
+            await rig.Pipeline.EmitAsync(Backchannel(1)); await Within(entered.Task);
+            await rig.Pipeline.EmitAsync(Backchannel(2));
+            await rig.Pipeline.EmitAsync(Response(SpeechPipelineResponseType.Stop, null));
+            Assert.That(rig.Avatar.CancellationTokens.First().IsCancellationRequested, Is.False);
+            release.TrySetResult(true); await Within(rig.Orchestrator.DrainAsync());
+            Assert.That(rig.Avatar.Presentations.Select(item => item.AudioData[0]), Is.EqualTo(new byte[] { 1, 2 }));
+
+            await rig.Pipeline.EmitAsync(Backchannel(3)); await Within(rig.Orchestrator.DrainAsync());
+            Assert.That(rig.Avatar.Presentations.Last().AudioData[0], Is.EqualTo(3));
+            Assert.That(rig.Ended, Is.Empty);
+            Assert.That(rig.Errors, Is.Empty);
+        }
+
+        [TestCase("interrupt")]
+        [TestCase("reset")]
+        [TestCase("dispose")]
+        public async NUnitTask ControlBoundariesCancelDispatchedAndQueuedBackchannels(string control)
+        {
+            var rig = Create(); var entered = Signal();
+            rig.Avatar.Handler = async (request, token) =>
+            { if (request.AudioData[0] == 1) { entered.TrySetResult(true); await WaitForCancellation(token); } };
+            await rig.Pipeline.EmitAsync(Backchannel(1)); await Within(entered.Task);
+            await rig.Pipeline.EmitAsync(Backchannel(2));
+            if (control == "interrupt") await Within(rig.Orchestrator.InterruptAsync());
+            else if (control == "reset") await Within(rig.Orchestrator.ResetAsync("new-context"));
+            else await Within(rig.Orchestrator.DisposeAsync());
+
+            Assert.That(rig.Avatar.CancellationTokens.First().IsCancellationRequested, Is.True);
+            Assert.That(rig.Avatar.Presentations.Count, Is.EqualTo(1));
+            Assert.That(rig.Avatar.StopCount, Is.GreaterThanOrEqualTo(1));
+            Assert.That(rig.Orchestrator.HasActiveTurns, Is.False);
+            await rig.Pipeline.EmitAsync(Backchannel(3));
+            if (control == "dispose") Assert.That(rig.Avatar.Presentations.Count, Is.EqualTo(1));
+            else
+            {
+                await Within(rig.Orchestrator.DrainAsync());
+                Assert.That(rig.Avatar.Presentations.Select(item => item.AudioData[0]), Is.EqualTo(new byte[] { 1, 3 }));
+                Assert.That(rig.Orchestrator.IsInputSuppressed, Is.False);
+            }
+            Assert.That(rig.Ended, Is.Empty);
+            Assert.That(rig.Errors, Is.Empty);
         }
 
         [Test]

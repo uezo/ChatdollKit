@@ -206,6 +206,145 @@ namespace ChatdollKit.Tests.SpeechPipeline
         private static List<JObject> AudioMessages(Connection transport) =>
             transport.Sent.FindAll(message => (string)message["type"] == "data");
 
+        private static JObject NodMessage(string id = "nod") => new JObject
+        {
+            ["type"] = "chunk", ["text"] = "", ["voice_text"] = "",
+            ["audio_data"] = "UklGRiYAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQIAAAAAAA==",
+            ["metadata"] = new JObject { ["nod"] = true, ["nod_id"] = id, ["recording_id"] = "recording" }
+        };
+
+        [TestCase("before_accepted")]
+        [TestCase("during_turn")]
+        [TestCase("after_final")]
+        public async NUnitTask NodIsIndependentOfResponseTurnsAndDoesNotChangeRecognitionOrAudioInput(string timing)
+        {
+            var clock = new FakeClock(); var transport = new Connection();
+            var pipeline = new AIAvatarSpeechPipelineClient(connectionFactory: () => transport, clock: clock);
+            var responses = new List<SpeechPipelineResponse>();
+            var updates = new List<SpeechRecognitionUpdate>();
+            var errors = new List<Exception>();
+            pipeline.ResponseReceived += response => { responses.Add(response); return UniTask.CompletedTask; };
+            pipeline.RecognitionUpdated += updates.Add;
+            pipeline.Error += errors.Add;
+            try
+            {
+                await pipeline.ConnectAsync();
+                SpeechPipelineResponse turn = null;
+                if (timing != "before_accepted")
+                    turn = await ReceiveResponseAsync(pipeline, transport, new JObject { ["type"] = "accepted" }, SpeechPipelineResponseType.Accepted);
+                if (timing == "after_final")
+                {
+                    await ReceiveResponseAsync(pipeline, transport, new JObject { ["type"] = "final" }, SpeechPipelineResponseType.Final);
+                    await pipeline.DrainAsync();
+                    turn = null;
+                }
+                await VoiceAsync(pipeline, transport, clock);
+                var recognitionCount = updates.Count;
+                var responseCount = responses.Count;
+                var nod = await ReceiveResponseAsync(pipeline, transport, NodMessage(), SpeechPipelineResponseType.Backchannel);
+                Assert.That(nod.TransactionId, Is.Null);
+                Assert.That(nod.IsTerminal, Is.False);
+                Assert.That((string)nod.Metadata["nod_id"], Is.EqualTo("nod"));
+                CollectionAssert.AreEqual(Convert.FromBase64String((string)NodMessage()["audio_data"]), nod.AudioData);
+                Assert.That(updates.Count, Is.EqualTo(recognitionCount));
+                Assert.That(responses.Count, Is.EqualTo(responseCount + 1));
+                Assert.That(pipeline.IsConnected, Is.True);
+                await pipeline.ProcessAudioSamplesAsync(new byte[] { 1, 2 });
+                Assert.That(AudioMessages(transport).Count, Is.EqualTo(1));
+                if (turn == null)
+                {
+                    await pipeline.DrainAsync();
+                    turn = await ReceiveResponseAsync(pipeline, transport, new JObject { ["type"] = "accepted" }, SpeechPipelineResponseType.Accepted);
+                }
+                var ordinary = NodMessage(); ordinary["metadata"] = null;
+                var chunk = await ReceiveResponseAsync(pipeline, transport, ordinary, SpeechPipelineResponseType.Chunk);
+                Assert.That(chunk.TransactionId, Is.EqualTo(turn.TransactionId));
+                CollectionAssert.AreEqual(nod.AudioData, chunk.AudioData);
+                var final = await ReceiveResponseAsync(pipeline, transport, new JObject { ["type"] = "final" }, SpeechPipelineResponseType.Final);
+                await pipeline.DrainAsync();
+                Assert.That(final.TransactionId, Is.EqualTo(turn.TransactionId));
+                Assert.That(errors, Is.Empty);
+            }
+            finally { await pipeline.DisposeAsync(); }
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public async NUnitTask ConnectionFailureAfterNodDoesNotPublishStopWithOrWithoutAnAcceptedTurn(bool hasTurn)
+        {
+            var transport = new Connection();
+            var pipeline = new AIAvatarSpeechPipelineClient(connectionFactory: () => transport);
+            var failed = new SpeechCompletionSource<Exception>();
+            var terminalEvents = new List<SpeechPipelineResponseType>();
+            pipeline.ResponseReceived += response =>
+            {
+                if (response.Type == SpeechPipelineResponseType.Error || response.Type == SpeechPipelineResponseType.Stop)
+                    terminalEvents.Add(response.Type);
+                return UniTask.CompletedTask;
+            };
+            pipeline.Error += error => failed.TrySetResult(error);
+            try
+            {
+                await pipeline.ConnectAsync();
+                if (hasTurn)
+                    await ReceiveResponseAsync(pipeline, transport, new JObject { ["type"] = "accepted" }, SpeechPipelineResponseType.Accepted);
+                await ReceiveResponseAsync(pipeline, transport, NodMessage(), SpeechPipelineResponseType.Backchannel);
+                var draining = hasTurn ? SpeechAsync.Share(pipeline.DrainAsync()) : UniTask.CompletedTask;
+                transport.Receive("invalid json");
+                Assert.That(await AwaitAsync(failed.Task), Is.TypeOf<JsonReaderException>());
+                if (hasTurn) await SpeechAsyncAssert.ThrowsAsync<JsonReaderException>(async () => await draining);
+                Assert.That(terminalEvents, Is.EqualTo(hasTurn
+                    ? new[] { SpeechPipelineResponseType.Error }
+                    : Array.Empty<SpeechPipelineResponseType>()));
+                Assert.That(pipeline.IsConnected, Is.False);
+            }
+            finally { await pipeline.DisposeAsync(); }
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public async NUnitTask ReplacingAConnectionPublishesOneStopAndRejectsItsLateNod(bool reset)
+        {
+            var transports = new List<Connection>();
+            var pipeline = new AIAvatarSpeechPipelineClient(connectionFactory: () =>
+            { var transport = new Connection(); transports.Add(transport); return transport; });
+            var responses = new List<SpeechPipelineResponse>();
+            pipeline.ResponseReceived += response => { responses.Add(response); return UniTask.CompletedTask; };
+            try
+            {
+                await pipeline.ConnectAsync();
+                await ReceiveResponseAsync(pipeline, transports[0], NodMessage(), SpeechPipelineResponseType.Backchannel);
+                if (reset) await pipeline.ResetAsync("replacement-context"); else await pipeline.InterruptAsync();
+                var stops = responses.FindAll(response => response.Type == SpeechPipelineResponseType.Stop);
+                Assert.That(stops.Count, Is.EqualTo(1));
+                Assert.That(stops[0].TransactionId, Is.Null);
+                Assert.That(stops[0].ContextId, Is.EqualTo(pipeline.ContextId));
+                if (reset) Assert.That(stops[0].ContextId, Is.EqualTo("replacement-context"));
+                transports[0].Receive(NodMessage("stale"));
+                await ReceiveResponseAsync(pipeline, transports[1], NodMessage("fresh"), SpeechPipelineResponseType.Backchannel);
+                Assert.That(responses.Exists(response => (string)response.Metadata?["nod_id"] == "stale"), Is.False);
+                Assert.That(pipeline.IsConnected, Is.True);
+            }
+            finally { await pipeline.DisposeAsync(); }
+        }
+
+        [Test]
+        public async NUnitTask WireStopAfterNodIsDeliveredWithoutDisconnecting()
+        {
+            var transport = new Connection();
+            var pipeline = new AIAvatarSpeechPipelineClient(connectionFactory: () => transport);
+            try
+            {
+                await pipeline.ConnectAsync();
+                await ReceiveResponseAsync(pipeline, transport, NodMessage(), SpeechPipelineResponseType.Backchannel);
+                var stop = await ReceiveResponseAsync(pipeline, transport, new JObject { ["type"] = "stop" }, SpeechPipelineResponseType.Stop);
+                Assert.That(stop.TransactionId, Is.Null);
+                Assert.That(stop.SessionId, Is.EqualTo(pipeline.SessionId));
+                Assert.That(pipeline.IsConnected, Is.True);
+            }
+            finally { await pipeline.DisposeAsync(); }
+        }
+
         [Test]
         public void StandaloneClientsDoNotSendIdleAudioByDefault()
         {

@@ -449,6 +449,11 @@ namespace ChatdollKit.SpeechPipeline.Remote
                 await PublishAsync(current, AIAvatarProtocol.Response(message, SessionId, null, options.MaxResponseAudioBytes));
                 return;
             }
+            if (AIAvatarProtocol.IsBackchannel(message))
+            {
+                await PublishAsync(current, AIAvatarProtocol.Response(message, SessionId, null, options.MaxResponseAudioBytes));
+                return;
+            }
             Turn turn;
             lock (sync) turn = current.Turn;
             if (type == "accepted")

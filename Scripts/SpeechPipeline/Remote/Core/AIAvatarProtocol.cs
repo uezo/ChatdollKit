@@ -37,7 +37,7 @@ namespace ChatdollKit.SpeechPipeline.Remote
             {
                 case "accepted": responseType = SpeechPipelineResponseType.Accepted; break;
                 case "start": responseType = SpeechPipelineResponseType.Start; break;
-                case "chunk": responseType = SpeechPipelineResponseType.Chunk; break;
+                case "chunk": responseType = IsBackchannel(message) ? SpeechPipelineResponseType.Backchannel : SpeechPipelineResponseType.Chunk; break;
                 case "tool_call": responseType = SpeechPipelineResponseType.ToolCall; break;
                 case "final": case "vision": responseType = SpeechPipelineResponseType.Final; break;
                 case "canceled": case "cancelled": responseType = SpeechPipelineResponseType.Canceled; break;
@@ -72,11 +72,16 @@ namespace ChatdollKit.SpeechPipeline.Remote
                 };
             return new SpeechPipelineResponse
             {
-                Type = responseType, SessionId = sessionId, TransactionId = transactionId,
+                Type = responseType, SessionId = sessionId,
+                TransactionId = responseType == SpeechPipelineResponseType.Backchannel ? null : transactionId,
                 UserId = (string)message["user_id"], ContextId = (string)message["context_id"],
                 Text = (string)message["text"], VoiceText = (string)message["voice_text"], Language = (string)message["language"],
                 AudioData = audio, Metadata = metadata, StructuredContent = (JObject)(message["structured_content"] as JObject)?.DeepClone(), ToolCall = tool
             };
         }
+
+        internal static bool IsBackchannel(JObject message) =>
+            (string)message["type"] == "chunk" && (message["metadata"] as JObject)?["nod"]?.Type == JTokenType.Boolean &&
+            (bool)message["metadata"]["nod"];
     }
 }

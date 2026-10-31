@@ -67,6 +67,27 @@ namespace ChatdollKit.Tests.Orchestration
             Assert.That(r.State.Current.Sequence, Is.GreaterThan(before.Sequence));
         }
 
+        [TestCase(null)]
+        [TestCase("turn")]
+        public void BackchannelDoesNotProduceConversationFactsOrChangeTheDisplayedConversation(string transactionId)
+        {
+            var r = new Rig(); r.Start("turn", "question"); r.Present("turn", "answer");
+            r.State.SetCanListen(true); r.State.DrainEvents(); var before = r.State.Current;
+            var response = Response(SpeechPipelineResponseType.Backchannel, transactionId, "");
+            response.AudioData = new byte[] { 1, 2 };
+            response.Metadata = new JObject { ["nod"] = true, ["nod_id"] = "nod", ["recording_id"] = "recording" };
+
+            Assert.That(r.State.OnResponse(response, 0), Is.False);
+            var after = r.State.Current;
+            Assert.That(after.Sequence, Is.EqualTo(before.Sequence));
+            Assert.That(after.CanListen, Is.True);
+            Assert.That(after.LatestUserUtterance.Id, Is.EqualTo(before.LatestUserUtterance.Id));
+            Assert.That(after.LatestAssistantUtterance.Id, Is.EqualTo(before.LatestAssistantUtterance.Id));
+            Assert.That(r.User.Text, Is.EqualTo("question"));
+            Assert.That(r.Assistant.DisplayText, Is.EqualTo("answer"));
+            Assert.That(r.State.DrainEvents(), Is.Empty);
+        }
+
         [Test]
         public void SameTurnAssistantHasPriorityOverDelayedUserStart()
         {

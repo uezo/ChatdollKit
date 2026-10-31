@@ -4,7 +4,7 @@ using Newtonsoft.Json.Linq;
 
 namespace ChatdollKit.SpeechPipeline
 {
-    public enum SpeechPipelineResponseType { Accepted, Start, Chunk, ToolCall, Final, Canceled, Error, Stop }
+    public enum SpeechPipelineResponseType { Accepted, Start, Chunk, ToolCall, Final, Canceled, Error, Stop, Backchannel }
 
     public sealed class SpeechPipelineRequest
     {

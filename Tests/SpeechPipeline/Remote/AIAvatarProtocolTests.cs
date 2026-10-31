@@ -78,6 +78,37 @@ namespace ChatdollKit.Tests.SpeechPipeline.Remote
             Assert.That((string)response.StructuredContent["answer"], Is.EqualTo("original"));
         }
 
+        [Test]
+        public void NodChunksAreBackchannelsWithoutATransactionAndPreserveOwnedAudioAndMetadata()
+        {
+            var audio = new byte[] { 0, 128, 255 };
+            var message = new JObject
+            {
+                ["type"] = "chunk", ["text"] = "", ["voice_text"] = "", ["audio_data"] = Convert.ToBase64String(audio),
+                ["metadata"] = new JObject { ["nod"] = true, ["nod_id"] = "nod", ["recording_id"] = "recording" }
+            };
+            var response = Decode(message);
+            Assert.That(response.Type, Is.EqualTo(SpeechPipelineResponseType.Backchannel));
+            Assert.That(response.TransactionId, Is.Null);
+            Assert.That(response.IsTerminal, Is.False);
+            Assert.That(response.Text, Is.Empty);
+            Assert.That(response.VoiceText, Is.Empty);
+            CollectionAssert.AreEqual(audio, response.AudioData);
+            message["metadata"]["nod_id"] = "changed";
+            Assert.That((string)response.Metadata["nod_id"], Is.EqualTo("nod"));
+            Assert.That((string)response.Metadata["recording_id"], Is.EqualTo("recording"));
+        }
+
+        [TestCase("chunk", false, SpeechPipelineResponseType.Chunk)]
+        [TestCase("start", true, SpeechPipelineResponseType.Start)]
+        [TestCase("final", true, SpeechPipelineResponseType.Final)]
+        public void OnlyNodChunksAreBackchannels(string type, bool nod, SpeechPipelineResponseType expected)
+        {
+            var response = Decode(new JObject { ["type"] = type, ["metadata"] = new JObject { ["nod"] = nod } });
+            Assert.That(response.Type, Is.EqualTo(expected));
+            Assert.That(response.TransactionId, Is.EqualTo("public-turn"));
+        }
+
         [TestCase(false)]
         [TestCase(true)]
         public void ToolArgumentsSupportBothJsonObjectsAndEncodedJsonStrings(bool asString)
@@ -99,11 +130,13 @@ namespace ChatdollKit.Tests.SpeechPipeline.Remote
             Assert.That(JToken.DeepEquals(JObject.Parse(response.ToolCall.Arguments), arguments), Is.True);
         }
 
-        [Test]
-        public void ResponseAudioAcceptsTheExactLimitAndRejectsEncodedAndDecodedOversize()
+        [TestCase(false)]
+        [TestCase(true)]
+        public void ResponseAudioAcceptsTheExactLimitAndRejectsEncodedAndDecodedOversize(bool nod)
         {
             var audio = new byte[] { 0, 128, 255 };
-            var message = new JObject { ["type"] = "chunk", ["audio_data"] = Convert.ToBase64String(audio) };
+            var message = new JObject
+            { ["type"] = "chunk", ["audio_data"] = Convert.ToBase64String(audio), ["metadata"] = new JObject { ["nod"] = nod } };
             CollectionAssert.AreEqual(audio, Decode(message, 3).AudioData);
             // Three decoded bytes and two decoded bytes both fit in four encoded characters.
             Assert.Throws<FormatException>(() => Decode(message, 2));
@@ -115,13 +148,15 @@ namespace ChatdollKit.Tests.SpeechPipeline.Remote
             Assert.That(Decode(message).AudioData, Is.Null);
         }
 
-        [Test]
-        public void RawPcmChunksAndUnknownEventsFailExplicitly()
+        [TestCase(false)]
+        [TestCase(true)]
+        public void RawPcmChunksAndUnknownEventsFailExplicitly(bool nod)
         {
             var message = JObject.Parse("{\"type\":\"chunk\",\"metadata\":{\"pcm_format\":{\"sample_rate\":16000}}}");
+            message["metadata"]["nod"] = nod;
             Assert.Throws<NotSupportedException>(() => Decode(message));
             message["metadata"]["pcm_format"] = null;
-            Assert.That(Decode(message).Type, Is.EqualTo(SpeechPipelineResponseType.Chunk));
+            Assert.That(Decode(message).Type, Is.EqualTo(nod ? SpeechPipelineResponseType.Backchannel : SpeechPipelineResponseType.Chunk));
             Assert.Throws<FormatException>(() => Decode(new JObject { ["type"] = "unknown-event" }));
         }
 

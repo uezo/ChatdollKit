@@ -30,6 +30,7 @@ namespace ChatdollKit.Orchestration
         private sealed class Playback
         {
             internal Turn Turn;
+            internal CancellationTokenSource BackchannelSource;
             internal AvatarRequest Request;
             internal SpeechCompletionSource<bool> StopCompletion;
         }
@@ -330,6 +331,23 @@ namespace ChatdollKit.Orchestration
             lock (sync)
             {
                 if (disposing || controlling) return UniTask.CompletedTask;
+                if (copy.Type == SpeechPipelineResponseType.Backchannel)
+                {
+                    // Backchannels are audio-only: no conversation turn, input suppression or normal response notifications.
+                    if (copy.AudioData == null || copy.AudioData.Length == 0 ||
+                        turns.Values.Any(item => !item.Stopped && (!item.Terminal || item.Pending > 0)) ||
+                        playbackQueue.Count(item => item.Request != null) >= options.MaxPendingPresentations)
+                        return UniTask.CompletedTask;
+                    EnqueuePlaybackLocked(new Playback
+                    {
+                        BackchannelSource = new CancellationTokenSource(),
+                        Request = new AvatarRequest { SessionId = copy.SessionId ?? SessionId, ContextId = copy.ContextId, AudioData = copy.AudioData }
+                    });
+                    return UniTask.CompletedTask;
+                }
+                if (copy.Type == SpeechPipelineResponseType.Accepted || copy.Type == SpeechPipelineResponseType.Start ||
+                    copy.Type == SpeechPipelineResponseType.Chunk)
+                    DiscardQueuedBackchannelsLocked();
                 Turn turn = null;
                 if (copy.TransactionId != null) turns.TryGetValue(copy.TransactionId, out turn);
                 if (turn != null && copy.ContextId != null) turn.ContextId = copy.ContextId;
@@ -456,6 +474,27 @@ namespace ChatdollKit.Orchestration
             playbackSignal.Release();
         }
 
+        private void DiscardQueuedBackchannelsLocked()
+        {
+            for (var node = playbackQueue.First; node != null;)
+            {
+                var next = node.Next;
+                if (node.Value.BackchannelSource != null)
+                {
+                    node.Value.BackchannelSource.Dispose();
+                    playbackQueue.Remove(node);
+                }
+                node = next;
+            }
+            if (playing == null && playbackQueue.Count == 0) playbackIdle.TrySetResult(true);
+        }
+
+        private void StopBackchannelsLocked(List<CancellationTokenSource> cancel)
+        {
+            DiscardQueuedBackchannelsLocked();
+            if (playing?.BackchannelSource != null) cancel.Add(playing.BackchannelSource);
+        }
+
         private async UniTask PlaybackLoopAsync()
         {
             while (true)
@@ -476,9 +515,10 @@ namespace ChatdollKit.Orchestration
                     }
                     else
                     {
-                        var token = item.Turn.Source.Token;
+                        // Dispatch is the backchannel start boundary. Preparation inside an avatar may still follow.
+                        var token = (item.Turn?.Source ?? item.BackchannelSource).Token;
                         token.ThrowIfCancellationRequested();
-                        lock (sync)
+                        if (item.Turn != null) lock (sync)
                         {
                             var dispatched = new OrchestratorPresentationEvent(this, item.Turn.Generation, item.Turn.Order, item.Request);
                             NotifyLocked(() =>
@@ -489,10 +529,10 @@ namespace ChatdollKit.Orchestration
                         }
                         await avatar.PresentAsync(item.Request.Copy(), token);
                         token.ThrowIfCancellationRequested();
-                        lock (sync) NotifyLocked(() => Publish(PresentationCompleted, item.Request, request => request.Copy()));
+                        if (item.Turn != null) lock (sync) NotifyLocked(() => Publish(PresentationCompleted, item.Request, request => request.Copy()));
                     }
                 }
-                catch (OperationCanceledException) when (item.Turn?.Source.IsCancellationRequested == true) { }
+                catch (OperationCanceledException) when (item.Turn?.Source.IsCancellationRequested == true || item.BackchannelSource?.IsCancellationRequested == true) { }
                 catch (Exception error)
                 {
                     item.StopCompletion?.TrySetException(error);
@@ -509,6 +549,7 @@ namespace ChatdollKit.Orchestration
                     lock (sync)
                     {
                         playing = null;
+                        item.BackchannelSource?.Dispose();
                         if (item.Turn != null) { item.Turn.Pending--; CleanupTurnLocked(item.Turn); }
                         if (playbackQueue.Count == 0) playbackIdle.TrySetResult(true);
                         UpdateSuppressionLocked("PresentationCompleted", item.Turn?.Id);
@@ -574,6 +615,7 @@ namespace ChatdollKit.Orchestration
                 completion = CompletionSource<bool>(); controlTask = completion.Task;
                 cancel = invocations.Select(item => item.Source).ToList();
                 if (activeAudio != null) cancel.Add(activeAudio);
+                StopBackchannelsLocked(cancel);
                 StopTurnsLocked(item => true, cancel);
                 stop = EnqueueStopBarrierLocked();
                 if (debugLogEnabled) TraceLocked($"control.started kind={(reset ? "Reset" : "Interrupt")}");
@@ -659,6 +701,7 @@ namespace ChatdollKit.Orchestration
                 disposing = true; control = controlTask;
                 cancel = invocations.Select(item => item.Source).ToList();
                 if (activeAudio != null) cancel.Add(activeAudio);
+                StopBackchannelsLocked(cancel);
                 StopTurnsLocked(item => true, cancel);
                 EnqueueStopBarrierLocked();
                 if (debugLogEnabled) { TraceAudioSummaryLocked("Dispose"); TraceLocked("engine.disposing"); }
